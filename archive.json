@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-08-26T01:17:06.790688+00:00",
+  "timestamp": "2025-08-31T01:18:56.733061+00:00",
   "repo": "mmaker/draft-irtf-cfrg-sigma-protocols",
   "labels": [
     {
@@ -1467,7 +1467,7 @@
       "labels": [],
       "body": "Fixes #25 ",
       "createdAt": "2025-06-14T16:49:17Z",
-      "updatedAt": "2025-08-09T01:38:55Z",
+      "updatedAt": "2025-08-28T04:19:56Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "52f3d59e926e7edcdf47b24213436c4b4169ae65",
@@ -1506,6 +1506,13 @@
           "body": "Are there updates to this PR following the suggestion (some kind of differentiator between normal and short proofs)? Asking because I'm not sure if I missed any changes due to the force-pushing to the `main` branch.",
           "createdAt": "2025-06-26T01:45:40Z",
           "updatedAt": "2025-06-26T01:45:40Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "@cathieyun no, feel free to complete this PR.",
+          "createdAt": "2025-08-28T04:19:56Z",
+          "updatedAt": "2025-08-28T04:19:56Z"
         }
       ],
       "reviews": [
