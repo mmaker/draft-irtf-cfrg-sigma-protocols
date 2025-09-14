@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-09-11T01:13:22.564917+00:00",
+  "timestamp": "2025-09-14T01:16:59.897729+00:00",
   "repo": "mmaker/draft-irtf-cfrg-sigma-protocols",
   "labels": [
     {
@@ -1005,9 +1005,17 @@
       "labels": [],
       "body": "The domain of the challenge (and, more generally, the distribution of the challenge) is not specified anywhere. There are at least two natural choices here: (1) choose the challenge uniformly from the underlying scalar field, or (2) choose the challenge uniformly in {0,1}^k for some desired security level k smaller than the bit-length of the underlying scalar field. ",
       "createdAt": "2025-09-09T13:41:56Z",
-      "updatedAt": "2025-09-09T13:41:56Z",
+      "updatedAt": "2025-09-11T16:46:49Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "cjpatton",
+          "authorAssociation": "NONE",
+          "body": "I think the right thing to do would be to use the method for generating random scalars that is specified by the `group` object.",
+          "createdAt": "2025-09-11T16:46:49Z",
+          "updatedAt": "2025-09-11T16:46:49Z"
+        }
+      ]
     },
     {
       "number": 69,
@@ -1046,6 +1054,74 @@
       "body": "1. You don't define or give references for \"special sound,\" \"honest-verifier zero-knowledge,\" or \"deniable.\"\n2. I found it odd that you mention the Fiat-Shamir transform here. (Perhaps this is a remnant of an earlier draft that also dealt with that.)\n3. Section 4: you mention the random oracle model, but perhaps it is also worth discussing the quantum RO model.\n4. Section 4.2: I'm not sure the best way to handle this, but it is worth noting that soundness is also unconditional (as you point out at the beginning of Section 4) and so it is not true that \"these proofs MUST NOT be relied upon for post-quantum soundness guarantees.\" As a particular example, even a quantum adversary cannot break soundness of a DLEQ proof. Similarly, the discussion of composition conflates the issue of (post-quantum) soundness with the issue of (post-quantum) hardness of inverting the linear map. These are distinct issues.",
       "createdAt": "2025-09-09T14:22:43Z",
       "updatedAt": "2025-09-09T14:22:43Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 71,
+      "id": "I_kwDONyiw_87LF0hg",
+      "title": "Distinguish random scalar and group element generation",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/71",
+      "state": "OPEN",
+      "author": "meyira",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently, the `random()` method is used to generate both random scalars and group elements. This may lead to ambiguity in the code. I propose to address this by replacing `random()` with the explicit calls `group.random_element()` and `group.random_scalar()`.",
+      "createdAt": "2025-09-11T16:36:08Z",
+      "updatedAt": "2025-09-13T21:01:51Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "cjpatton",
+          "authorAssociation": "NONE",
+          "body": "Thanks for spotting this. I think we should fix as suggested. However, eventually (perhaps sooner rather than later, given active work on ARC/ACT), this draft should adopt the standard boiler plate for prime order groups that is now common among CFRG documents. For example, see [Section 3.1](https://chris-wood.github.io/draft-arc/draft-yun-cfrg-arc.html#section-3.1) of the ARC draft.",
+          "createdAt": "2025-09-11T16:40:42Z",
+          "updatedAt": "2025-09-11T16:40:42Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "The method random()  is called the same for scalars and groups but it's for different types. Why do you think it is more confusing than, say, addition, or scalar multiplication? \n\nI believe my approach is better than the ARC one: we know how to build proofs for scalars that are not associated to prime order groups, and (even worse) sometimes we use the fields used in elliptic curves. \n\nFor this reason, it seems convenient to have methods for serialization and sampling within the scalar namespace. This choice is also consistent with most cryptographic libraries.",
+          "createdAt": "2025-09-12T08:03:42Z",
+          "updatedAt": "2025-09-12T08:03:42Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "NONE",
+          "body": "> The method random() is called the same for scalars and groups but it's for different types. Why do you think it is more confusing than, say, addition, or scalar multiplication?\n\nGood point, the fact that we can call `random()` on a `Group` or `random()` on a `Scalar` isn't ambiguous. Where I get confused personally is that it's not clear from the draft how one instantiates `Scalar`.\n\nIn one example we have an object `group` which is presumably an instance of a class `Group` (using python semantics, which appears to be the intent). Clearly you can generate a random element of the group with 'R = group.random()`. But how do we generate a scalar? Something like `r = group.scalar.random()`? This needs to be clarified in the draft.\n\n \n> I believe my approach is better than the ARC one: we know how to build proofs for scalars that are not associated to prime order groups, and (even worse) sometimes we use the fields used in elliptic curves.\n\nInteresting! This sounds like a bit of a mine field though. Too much generality tends to add complexity, so we should be sure it's necessary. Do we have use cases that need composite-order groups or proofs that break the group abstraction boundary? Should those use cases be in scope for this draft? Something to discuss at IETF 124 perhaps.\n\nThe prime group boiler plate used by ARC has been carefully vetted and honed over many years and is the current standard for CFRG drafts. In my opinion, draft-irtf-cfrg-sigma-protocols should adopt it unless there's a clear reason not to. If in fact we do need a more complex API, then we should extend the existing one.\n\n",
+          "createdAt": "2025-09-12T14:05:12Z",
+          "updatedAt": "2025-09-12T14:05:12Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "NONE",
+          "body": "Per offline discussion: `Group` has an attribute called `ScalarField`, so to address this issue in the short term, I think it would be sufficient to add text to the effect of:\n\n> `Group` has an attribute `ScalarField` that defines its scalar field. Its API is defined in Section 2.1.2.\n\n\nI would also add an example to illustrate how one generates a random scalar given an instance of `Group`.",
+          "createdAt": "2025-09-12T15:06:04Z",
+          "updatedAt": "2025-09-12T15:09:30Z"
+        },
+        {
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "body": "+1 to Chris's comment above (https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/71#issuecomment-3281798853) to use the standard group boilerplate, both for the spec and for the poc code... instead of defining sigma-spec-specific curve APIs? This will make interoperability and review significantly easier. \n\nFor instance, with the current approach (sigma-protocols using a different definition of groups than ARC), this will make an absolute mess when I am trying to use the sigma-protocol poc code in the ARC poc, as they will have mismatching group definitions.",
+          "createdAt": "2025-09-13T21:01:51Z",
+          "updatedAt": "2025-09-13T21:01:51Z"
+        }
+      ]
+    },
+    {
+      "number": 72,
+      "id": "I_kwDONyiw_87LZ2mF",
+      "title": "Mismatch between IV size of DuplexSponge",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/72",
+      "state": "OPEN",
+      "author": "armfazh",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Mismatch between size of IV of DuplesSponge.\nIn the document, IV is 32 bytes, while the implementation uses IV of 64 bytes.\n\nCode changes are tracked at: https://github.com/sigma-rs/sigma-proofs/pull/89",
+      "createdAt": "2025-09-13T04:10:44Z",
+      "updatedAt": "2025-09-13T04:10:44Z",
       "closedAt": null,
       "comments": []
     }
@@ -1555,7 +1631,7 @@
       "labels": [],
       "body": "Fixes #25 ",
       "createdAt": "2025-06-14T16:49:17Z",
-      "updatedAt": "2025-08-28T04:19:56Z",
+      "updatedAt": "2025-09-11T11:12:43Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "52f3d59e926e7edcdf47b24213436c4b4169ae65",
@@ -1601,6 +1677,13 @@
           "body": "@cathieyun no, feel free to complete this PR.",
           "createdAt": "2025-08-28T04:19:56Z",
           "updatedAt": "2025-08-28T04:19:56Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "@cathieyun ping",
+          "createdAt": "2025-09-11T11:12:43Z",
+          "updatedAt": "2025-09-11T11:12:43Z"
         }
       ],
       "reviews": [
