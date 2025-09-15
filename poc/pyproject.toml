@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sigma-protocols-py"
+version = "0.1.0"
+description = "Pure Python implementation of Sigma protocols for zero-knowledge proofs"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "MIT"}
+authors = [
+    {name = "Sigma Protocols Team"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "black",
+]
+
+[project.urls]
+Homepage = "https://github.com/sigma-protocols/sigma-protocols-py"
+Repository = "https://github.com/sigma-protocols/sigma-protocols-py"
+Issues = "https://github.com/sigma-protocols/sigma-protocols-py/issues"
+
+[project.scripts]
+sigma-test = "sigma_protocols.test:main"
+
+[tool.setuptools]
+packages = ["sigma_protocols"]
+
+[tool.setuptools.package-dir]
+sigma_protocols = "pylib"
+
+# Ruff configuration
+[tool.ruff]
+line-length = 88
+target-version = "py37"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+]
+
+# Black configuration
+[tool.black]
+line-length = 88
+target-version = ['py37']
