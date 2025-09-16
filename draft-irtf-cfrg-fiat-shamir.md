@@ -141,22 +141,22 @@ Upon initialization, the protocol receives as input an `iv` of 32-bytes which un
 We describe a codec for Schnorr proofs over groups of prime order `p` that is intended for duplex sponges where `Unit = u8`.
 
     class LinearMapCodec:
-        Group: groups.Group = None
+        group: Group = None
         DuplexSponge: DuplexSpongeInterface = None
 
         def init(self, iv: bytes):
             self.hash_state = self.DuplexSponge(iv)
 
         def prover_message(self, elements: list):
-            self.hash_state.absorb(self.Group.serialize(elements))
+            self.hash_state.absorb(self.group.serialize(elements))
             # calls can be chained
             return self
 
         def verifier_challenge(self):
             uniform_bytes = self.hash_state.squeeze(
-                self.Group.ScalarField.scalar_byte_length() + 16
+                self.group.ScalarField.scalar_byte_length() + 16
             )
-            scalar = OS2IP(uniform_bytes) % self.Group.ScalarField.order
+            scalar = OS2IP(uniform_bytes) % self.group.ScalarField.order
             return scalar
 
 # Ciphersuites
