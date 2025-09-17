@@ -44,10 +44,9 @@ Issues = "https://github.com/sigma-protocols/sigma-protocols-py/issues"
 sigma-test = "sigma_protocols.test:main"
 
 [tool.setuptools]
-packages = ["sigma_protocols"]
+packages = ["sigma_protocols", "groups", "fiat_shamir"]
 
-[tool.setuptools.package-dir]
-sigma_protocols = "pylib"
+# Remove the package-dir mapping since directories match package names
 
 # Ruff configuration
 [tool.ruff]
