@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-09-16T01:11:29.626312+00:00",
+  "timestamp": "2025-09-18T01:11:12.522065+00:00",
   "repo": "mmaker/draft-irtf-cfrg-sigma-protocols",
   "labels": [
     {
@@ -1149,6 +1149,22 @@
           "updatedAt": "2025-09-15T22:35:51Z"
         }
       ]
+    },
+    {
+      "number": 74,
+      "id": "I_kwDONyiw_87MSWVt",
+      "title": "Add prover/verifier creation APIs to spec",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/74",
+      "state": "OPEN",
+      "author": "cathieyun",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently, there is the following code in the poc for creating prover/verifiers:\n```\n    NIZK = CIPHERSUITE['sigma/Shake128+P256']\n    proof = NIZK(session_id, statement).prove(witness, rng)\n    print(f'Proof: {proof.hex()}')\n```\n\nHowever, this isn't reflected in the spec yet, which means we can't \"use\" this workflow from other specs (eg ARC, ACT). We need to add this to the sigma spec.\n\nAs an example, this is what the ARC spec is doing now - I synced with Michele and he said this isn't the right way to use the API, as I'm just initializing a factory class and not the right prover/verifier.\nhttps://github.com/chris-wood/draft-arc/pull/37/files#r2356381798",
+      "createdAt": "2025-09-17T18:32:16Z",
+      "updatedAt": "2025-09-17T18:32:40Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -1656,7 +1672,7 @@
       "labels": [],
       "body": "Fixes #25 ",
       "createdAt": "2025-06-14T16:49:17Z",
-      "updatedAt": "2025-09-11T11:12:43Z",
+      "updatedAt": "2025-09-17T21:08:33Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "52f3d59e926e7edcdf47b24213436c4b4169ae65",
@@ -1709,6 +1725,27 @@
           "body": "@cathieyun ping",
           "createdAt": "2025-09-11T11:12:43Z",
           "updatedAt": "2025-09-11T11:12:43Z"
+        },
+        {
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "body": "How widely used do we expect these to be? I'm wondering if we can pare down the spec and reduce complexity, by removing the API / definitions for short proofs, if we don't think it will be used much in practice.",
+          "createdAt": "2025-09-17T05:28:31Z",
+          "updatedAt": "2025-09-17T05:28:31Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "Hi Cathie, we can just drop short proof yes. \r\n\r\nHowever, so that you're better aware of the options: \r\n- short proofs can be as short as `32B + |response| ~ num_scalar_vars`  and do not require point validation* \r\n- batchable proofs are of size `|commitment| + |response| = num_scalar_vars + num_linear_equations`. For instance, they are `log(N)-1` larger for a range proof `0..N`.  However, they allow for batch verification.\r\n\r\n**to be double-checked, cf. the previous issue where you said that point validation should always be performed.",
+          "createdAt": "2025-09-17T16:17:28Z",
+          "updatedAt": "2025-09-17T16:17:28Z"
+        },
+        {
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I looked into the short proofs question more... and want to check my understanding.\r\nCurrently, it seems like we are actually using what you call a \"short proof\"\r\nin ARC, since we are expecting a challenge and an array of responses? See:\r\nhttps://github.com/chris-wood/draft-arc/pull/37/files#diff-956de759234f6559a65e044fe0e23d2720f11672f59704e475078830c2b6c9e1L1101",
+          "createdAt": "2025-09-17T19:56:21Z",
+          "updatedAt": "2025-09-17T21:08:33Z"
         }
       ],
       "reviews": [
@@ -2462,6 +2499,32 @@
           "comments": []
         }
       ]
+    },
+    {
+      "number": 73,
+      "id": "PR_kwDONyiw_86o07Zx",
+      "title": "sigma: make a distinction between groups and elements",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/73",
+      "state": "OPEN",
+      "author": "armfazh",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "sigma: make a distinction between groups and elements.\r\n",
+      "createdAt": "2025-09-16T10:20:26Z",
+      "updatedAt": "2025-09-16T10:20:27Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "f427eddc973bc9ef284c342913010b57f935d71a",
+      "headRepository": "armfazh/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "fixGroup",
+      "headRefOid": "b77b31dadbbbe430065779c97f9f595318300008",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
