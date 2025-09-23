@@ -1,9 +1,9 @@
-SAGEFILES := $(basename $(notdir $(wildcard *.sage)))
+SAGEFILES := $(basename $(notdir $(wildcard *.sage))) $(basename $(notdir $(wildcard groups/*.sage)))
 PYFILES := $(addprefix sagelib/, $(addsuffix .py,$(SAGEFILES)))
 .PRECIOUS: $(PYFILES)
 
 .PHONY: pyfiles
-pyfiles: sagelib/__init__.py $(PYFILES)
+pyfiles: sagelib/__init__.py $(PYFILES) sagelib/hash_to_field.py
 
 sagelib/__init__.py:
 	mkdir -p sagelib
@@ -14,11 +14,21 @@ sagelib/%.py: %.sage
 	@sage --preparse $<
 	@mv $<.py $@
 
+sagelib/%.py: groups/%.sage
+	@echo "Parsing $<"
+	@sage --preparse $<
+	@mv $<.py $@
+
+sagelib/hash_to_field.py: groups/hash_to_field.py
+	@echo "Copying $<"
+	@cp $< $@
+
 setup:
 	cp h2c/poc/hash_to_field.py .
 	cp h2c/poc/*.sage .
 
 test: pyfiles
+	sage test_duplex_sponge.sage
 	sage test_sigma_protocols.sage
 
 vectors: pyfiles

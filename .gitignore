@@ -9,6 +9,7 @@
 /*-[0-9][0-9].xml
 /.*.mk
 /.gems/
+/.idea/
 /.refcache
 /.venv/
 /.vscode/
@@ -17,8 +18,8 @@
 /versioned/
 Gemfile.lock
 archive.json
-draft-orru-zkproof-fiat-shamir.xml
-draft-orru-zkproof-sigma-protocols.xml
+draft-irtf-cfrg-fiat-shamir.xml
+draft-irtf-cfrg-sigma-protocols.xml
 package-lock.json
 report.xml
 !requirements.txt

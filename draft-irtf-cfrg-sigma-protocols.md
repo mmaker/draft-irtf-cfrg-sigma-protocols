@@ -1,23 +1,23 @@
 ---
-title: "Sigma Protocols"
+title: "Interactive Sigma Proofs"
 category: info
 
-docname: draft-orru-zkproof-sigma-protocols-latest
+docname: draft-irtf-cfrg-sigma-protocols-latest
 submissiontype: independent
 number:
 date:
 v: 3
-# area: AREA
-# workgroup: WG Working Group
+area: "IRTF"
+workgroup: "Crypto Forum"
 keyword:
  - zero-knowledge
 venue:
-#  group: WG
-#  type: Working Group
-#  mail: WG@examplecom
-#  arch: https://examplecom/WG
-  github: "mmaker/draft-zkproof-sigma-protocols"
-  latest: "https://mmaker.github.io/draft-zkproof-sigma-protocols/draft-orru-zkproof-sigma-protocols.html"
+  group: "Crypto Forum"
+  type: "Research Group"
+  mail: "cfrg@ietf.org"
+  arch: "https://mailarchive.ietf.org/arch/browse/cfrg"
+  github: "mmaker/draft-irtf-cfrg-sigma-protocols"
+  latest: "https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html"
 
 author:
  -
@@ -33,10 +33,12 @@ normative:
 
 informative:
   fiat-shamir:
-    title: "draft-orru-zkproofs-fiat-shamir"
+    title: "draft-irtf-cfrg-fiat-shamir"
     date: false
-    target: https://mmaker.github.io/spfs/draft-orru-zkproof-fiat-shamir.html
-  NISTCurves: DOI.10.6028/NIST.FIPS.186-5
+    target: https://mmaker.github.io/spfs/draft-irtf-cfrg-fiat-shamir.html
+  SP800:
+    title: "Recommendations for Discrete Logarithm-based Cryptography"
+    target: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-186.pdf
   SEC1:
     title: "SEC 1: Elliptic Curve Cryptography"
     target: https://www.secg.org/sec1-v2.pdf
@@ -74,57 +76,22 @@ informative:
         fullname: Dan Boneh
       -
         fullname: Victor Schoup
+  Stern93:
+    title: "A New Identification Scheme Based on Syndrome Decoding"
+    target: https://link.springer.com/chapter/10.1007/3-540-48329-2_2
+    date: 1993
+    author:
+      - fullname: "Jacques Stern"
 
 --- abstract
 
-This document describes Sigma protocols, a secure, general-purpose non-interactive zero-knowledge proof of knowledge. Concretely, the scheme allows proving knowledge of a witness, without revealing any information about the undisclosed messages or the signature itself, while at the same time, guarantying soundness of the overall protocols.
+This document describes interactive sigma protocols, a class of secure, general-purpose zero-knowledge proofs of knowledge consisting of three moves: commitment, challenge, and response. Concretely, the protocol allows one to prove knowledge of a secret witness without revealing any information about it.
 
 --- middle
 
 # Introduction
 
-A Sigma Protocol is a simple zero-knowledge proof of knowledge.
-Any sigma protocol must define three objects:
-
-- A commitment. This message is computed by the prover using secret nonces.
-- A challenge, computed using the Fiat-Shamir transformation using a hash function.
-- A response, computed by the prover, which depends on the commitment and the challenge.
-
-A sigma protocol allows a **prover** to convince a **verifier** of the knowledge of a secret **witness** satisfying a **statement**.
-
-# Public functions interface
-
-A non-interactive sigma protocol provides a `prove` and a `verify` public functions. It is parametrized by:
-
-- a `Codec`, which specifies how to encode prover messages for the hash function, and how to extract verifier challenges in the right domain;
-- a `SigmaProtocol`, which specifies an interactive 3-message protocol.
-
-For how to implement these function in prime-order groups and elliptic curves, see {{group-prove}}.
-Upon initialization, the protocol receives as input an `iv` of 32-bytes which uniquely describes the protocol and the session being proven and (optionally) pre-processes some information about the protocol using the instance. Guidelines on the generation of this value are given in {{iv-generation}}.
-
-    class NISigmaProtocol:
-        Protocol: SigmaProtocol
-        Codec: Codec
-
-        def __init__(self, iv: [], instance):
-            self.hash_state = self.Codec(iv)
-            self.sp = self.Protocol(instance)
-
-        def prove(self, witness, rng):
-            (prover_state, commitment) = self.sp.prover_commit(witness, rng)
-            challenge = self.hash_state.prover_message(commitment).verifier_challenge()
-            response = self.sp.prover_response(prover_state, challenge)
-
-            assert self.sp.verifier(commitment, challenge, response)
-            return self.sp.serialize_commitment(commitment) + self.sp.serialize_response(response)
-
-        def verify(self, proof):
-            commitment_bytes = proof[:self.sp.instance.commit_bytes_len]
-            response_bytes = proof[self.sp.instance.commit_bytes_len:]
-            commitment = self.sp.deserialize_commitment(commitment_bytes)
-            response = self.sp.deserialize_response(response_bytes)
-            challenge = self.hash_state.prover_message(commitment).verifier_challenge()
-            return self.sp.verifier(commitment, challenge, response)
+Any sigma protocol must define three objects: a *commitment* (computed by the prover), a *challenge* (computed by the verifier), and a *response* (computed by the prover).
 
 ## Core interface
 
@@ -147,7 +114,6 @@ The public functions are obtained relying on an internal structure containing th
 Where:
 
 - `new(instance) -> SigmaProtocol`, denoting the initialization function. This function takes as input an instance generated via the `LinearRelation`, the public information shared between prover and verifier.
-This function should pre-compute parts of the statement, or initialize the state of the hash function.
 
 - `prover_commit(self, witness: Witness, rng) -> (commitment, prover_state)`, denoting the **commitment phase**, that is, the computation of the first message sent by the prover in a Sigma protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator `rng`. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just of a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while `prover_state` must be kept secret.
 
@@ -163,9 +129,9 @@ This function should pre-compute parts of the statement, or initialize the state
 
 - `deserialize_response(self, data: bytes) -> response`, deserializes a byte array into a response. This function can raise a `DeserializeError` if deserialization fails.
 
-The final two algorithms describe the **zero-knowledge simulator** and are optional, as a sigma protocol is not necessarily zero-knowledge by definition. The simulator is primarily an efficient algorithm for proving zero-knowledge in a theoretical construction, but it is also needed for verifying short proofs and for or-composition, where a witness is not known and thus has to be simulated. We have:
+The final two algorithms describe the **zero-knowledge simulator**. In particular, they may be used for proof composition (e.g. OR-composition). The function `simulate_commitment` is also used when verifying short proofs. We have:
 
-- `simulate_response(self, rng) -> response`, denoting the first stage of the simulator. It is an algorithm drawing a random response given a specified cryptographically secure RNG that follows the same output distribution of the algorithm  `prover_response`.
+- `simulate_response(self, rng) -> response`, denoting the first stage of the simulator. It is an algorithm drawing a random response given a specified cryptographically secure RNG that follows the same output distribution of the algorithm `prover_response`.
 
 - `simulate_commitment(self, response, challenge) -> commitment`, returning a simulated commitment -- the second phase of the zero-knowledge simulator.
 
@@ -175,18 +141,16 @@ The abstraction `SigmaProtocol` allows implementing different types of statement
 
 # Sigma protocols over prime-order groups {#sigma-protocol-group}
 
-The following sub-section present concrete instantiations of sigma protocols over prime-order elliptic curve groups.
-It relies on two components:
-- a prime-order elliptic-curve group as described in {{group-abstraction}},
-- a hash function.
+The following sub-section presents concrete instantiations of sigma protocols over prime-order elliptic curve groups.
+It relies on a prime-order elliptic-curve group as described in {{group-abstraction}}.
 
-Valid choices of elliptic curves and hash functions can be found in {{ciphersuites}}.
+Valid choices of elliptic curves can be found in {{ciphersuites}}.
 
 Traditionally, sigma protocols are defined in Camenisch-Stadler notation as (for example):
 
     1. DLEQ(G, H, X, Y) = PoK{
     2.   (x):        // Secret variables
-    3.   X = x * G, Y = x * H
+    3.   X = x * G, Y = x * H        // Predicates to satisfy
     4. }
 
 In the above, line 1 declares that the proof name is "DLEQ", the public information (the **instance**) consists of the group elements `(G, X, H, Y)` denoted in upper-case.
@@ -225,31 +189,6 @@ In this spec, instead of `add` we will use `+` with infix notation; instead of `
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `mul` we will use `*`. A similar behavior can be achieved using operator overloading.
 
-## Codec for non-interactive proofs {#group-prove}
-
-We describe a codec for Schnorr proofs over groups of prime order `p` that is intended for byte-oriented hash functions. Informally, the prover messages are serialized by concatenating the point compresion functions, and the verifier challenge is generated by squeezing out `log2(p) + 16` element and reducing the result modulo `p`
-
-    class ByteSchnorrCodec:
-        Group: groups.Group = None
-        Hash: DuplexSpongeInterface = None
-
-        def __init__(self, iv: bytes):
-            self.hash_state = self.Hash(iv)
-
-        def prover_message(self, elements: list):
-            self.hash_state.absorb(self.Group.serialize(elements))
-            # calls can be chained
-            return self
-
-        def verifier_challenge(self):
-            from hash_to_field import OS2IP
-
-            uniform_bytes = self.hash_state.squeeze(
-                self.Group.ScalarField.scalar_byte_length() + 16
-            )
-            scalar = OS2IP(uniform_bytes) % self.Group.ScalarField.order
-            return scalar
-
 ## Proofs of preimage of a linear map
 
 ### Core protocol
@@ -258,7 +197,7 @@ This defines the object `SchnorrProof`. The initialization function takes as inp
 
 ### Prover procedures
 
-The prover of a sigma protocol is stateful and will send two message, a "commitment" and a "response" message, described below.
+The prover of a sigma protocol is stateful and will send two messages, a "commitment" and a "response" message, described below.
 
 #### Prover commitment
 
@@ -299,7 +238,7 @@ The prover of a sigma protocol is stateful and will send two message, a "commitm
     1. witness, nonces = prover_state
     2. return [nonces[i] + witness[i] * challenge for i in range(self.instance.linear_map.num_scalars)]
 
-### Verifier procedure
+### Verifier
 
     verify(self, commitment, challenge, response)
 
@@ -329,7 +268,7 @@ A witness is simply a list of `num_scalars` elements.
 
 ### Linear map {#linear-map}
 
-A `LinearMap` represents a function (a _linear map_ from the scalar field to the elliptic curve group) that, given as input an array of `Scalar` elements, outputs an array of `Group` element. This can be represented as matrix-vector (scalar) product using group multi-scalar multiplication. However, since the matrix is often times sparse, it is often more convenient to store the matrix in Yale sparse matrix.
+A `LinearMap` represents a function (a _linear map_ from the scalar field to the elliptic curve group) that, given as input an array of `Scalar` elements, outputs an array of `Group` elements. This can be represented as matrix-vector (scalar) product using group multi-scalar multiplication. However, since the matrix is oftentimes sparse, it is often more convenient to store the matrix in Yale sparse matrix format.
 
 Here is an example:
 
@@ -365,7 +304,7 @@ A witness can be mapped to a group element via:
 
     Inputs:
 
-    - self, the current sate of the constraint system
+    - self, the current state of the constraint system
     - witness,
 
     1. image = []
@@ -393,7 +332,7 @@ class LinearRelation:
 
 #### Element and scalar variables allocation
 
-Two function allow two allocate the new scalars (the witness) and group elements (the instance).
+Two functions allow to allocate the new scalars (the witness) and group elements (the instance).
 
     allocate_scalars(self, n)
 
@@ -491,49 +430,17 @@ Given group elements `G`, `H` such that `C = x * G + r * H`, then the statement 
     var_x, var_r = statement.allocate_scalars(2)
     statement.append_equation(C, [(var_x, G), (var_r, H)])
 
-
-### Serializing the statement for the Fiat-Shamir transformation
-
-Let `H` be a hash object. The statement is encoded in a stateful hash object as follows.
-
-    hasher = H.new(domain_separator)
-    hasher.update_usize([cs.num_statements, cs.num_scalars])
-    for equation in cs.equations:
-      hasher.update_usize([equation.lhs, equation.rhs[0], equation.rhs[1]])
-    hasher.update(generators)
-    iv = hasher.digest()
-
-In simpler terms, without stateful hash objects, this should correspond to the following:
-
-    bin_challenge = SHAKE128(iv).update(commitment).digest(scalar_bytes)
-    challenge = int(bin_challenge) % p
-
-and the nonce is produced as:
-
-    bin_nonce = SHAKE128(iv)
-                .update(random)
-                .update(pad)
-                .update(cs.scalars)
-                .digest(cs.num_scalars * scalar_bytes)
-    nonces = [int(bin_nonce[i*scalar_bytes: i*(scalar_bytes+1)]) % p
-              for i in range(cs.num_scalars-1)]
-
-Where:
-    - `pad` is a (padding) zero string of length `168 - len(random)`.
-    - `scalar_bytes` is the number of bytes required to produce a uniformly random group element
-    - `random` is a random seed obtained from the operating system memory
-
 ## Ciphersuites {#ciphersuites}
 
 ### P-256 (secp256r1)
 
-This ciphersuite uses P-256 {{NISTCurves}} for the Group.
+This ciphersuite uses P-256 {{SP800}} for the Group.
 
-#### Elliptic curve group of P-256 (secp384r1) {{NISTCurves}}
+#### Elliptic curve group of P-256 (secp256r1) {{SP800}}
 
-- `order()`: Return the integer `115792089237316195423570985008687907852837564279074904382605163141518161494337`.
+- `order()`: Return the integer `115792089210356248762697446949407573529996955224135760342422259061068512044369`.
 - `serialize([A])`: Implemented using the compressed Elliptic-Curve-Point-to-Octet-String method according to {{SEC1}}; `Ne = 33`.
-- `deserialize(buf)`: Implemented by attempting to read `buf` into chunks of 32-byte arrays and convert them using the compressed Octet-String-to-Elliptic-Curve-Point method according to {{SEC1}}, and then performs partial public-key validation as defined in section 5.6.2.3.4 of {{!KEYAGREEMENT=DOI.10.6028/NIST.SP.800-56Ar3}}. This includes checking that the coordinates of the resulting point are in the correct range, that the point is on the curve, and that the point is not the point at infinity.
+- `deserialize(buf)`: Implemented by attempting to read `buf` into chunks of 33-byte arrays and convert them using the compressed Octet-String-to-Elliptic-Curve-Point method according to {{SEC1}}, and then performs partial public-key validation as defined in section 5.6.2.3.4 of {{!KEYAGREEMENT=DOI.10.6028/NIST.SP.800-56Ar3}}. This includes checking that the coordinates of the resulting point are in the correct range, that the point is on the curve, and that the point is not the point at infinity.
 
 #### Scalar Field of P-256
 
@@ -542,13 +449,20 @@ This ciphersuite uses P-256 {{NISTCurves}} for the Group.
 
 # Security Considerations
 
-Sigma protocols provide the following guarantees in the random oracle model:
+Interactive sigma proofs are special sound and honest-verifier zero-knowledge. These proofs are deniable (without transferable message authenticity).
+
+We focus on the security guarantees of the non-interactive Fiat-Shamir transformation, where they provide the following guarantees (in the random oracle model):
 
 - **Knowledge soundness**: If the proof is valid, the prover must have knowledge of a secret witness satisfying the proof statement. This property ensures that valid proofs cannot be generated without possession of the corresponding witness.
 
 - **Zero-knowledge**: The proof string produced by the `prove` function does not reveal any information beyond what can be directly inferred from the statement itself. This ensures that verifiers gain no knowledge about the witness.
 
-While theoretical analysis demonstrates that both soundness and zero-knowledge properties are statistical in nature, practical security depends on the cryptographic strength of the underlying hash function. It's important to note that the soundness of a zero-knowledge proof provides no guarantees regarding the computational hardness of the relation being proven. An assessment of the specific hardness properties for relations proven using these protocols falls outside the scope of this document.
+While theoretical analysis demonstrates that both soundness and zero-knowledge properties are statistical in nature, practical security depends on the cryptographic strength of the underlying hash function, which is defined by the Fiat-Shamir transformation. It's important to note that the soundness of a zero-knowledge proof provides no guarantees regarding the computational hardness of the relation being proven. An assessment of the specific hardness properties for relations proven using these protocols falls outside the scope of this document.
+
+## Privacy Considerations
+
+Interactive sigma proofs are insecure against malicious verifiers and should not be used.
+The non-interactive Fiat-Shamir transformation leads to publicly verifiable (transferable) proofs that are statistically zero-knowledge.
 
 # Post-Quantum Security Considerations
 
@@ -574,16 +488,29 @@ Implementations requiring post-quantum soundness SHOULD transition to alternativ
 
 - MPC-in-the-Head approaches as described in {{GiacomelliMO16}}
 - Lattice-based approaches as described in {{AttemaCK21}}
+- Code-based approaches as described in {{Stern93}}
 
 Implementations should consider the timeline for quantum computing advances when planning migration to post-quantum sound alternatives.
 Implementers MAY adopt a hybrid approach during migration to post-quantum security by using AND composition of proofs. This approach enables gradual migration while maintaining security against classical adversaries.
-This composition retains soundness if **both** problem remains hard. AND composition of proofs is NOT described in this specification, but examples may be found in the proof-of-concept implementation and in {{BonehS23}}.
+This composition retains soundness if **both** problems remain hard. AND composition of proofs is NOT described in this specification, but examples may be found in the proof-of-concept implementation and in {{BonehS23}}.
 
-# Generation of the initialization vector {#iv-generation}
+# Generation of the protocol identifier {#protocol-id-generation}
 
-As of now, it is responsibility of the user to pick a unique initialization vector that identifies the proof system and the session being used. This will be expanded in future versions of this specification.
+As of now, it is responsibility of the user to pick a unique protocol identifier that identifies the proof system. This will be expanded in future versions of this specification.
+
+# Generation of the instance identifier {#instance-id-generation}
+
+As of now, it is responsibility of the user to pick a unique instance identifier that identifies the statement being proven.
+
+--- back
 
 # Acknowledgments
 {:numbered ="false"}
 
 The authors thank Jan Bobolz, Stephan Krenn, Mary Maller, Ivan Visconti, Yuwen Zhang for reviewing a previous edition of this specification.
+
+# Test Vectors
+{:numbered="false"}
+
+Test vectors will be made available in future versions of this specification.
+They are currently developed in the [proof-of-concept implementation](https://github.com/mmaker/draft-zkproof-sigma-protocols/tree/main/poc/vectors).
