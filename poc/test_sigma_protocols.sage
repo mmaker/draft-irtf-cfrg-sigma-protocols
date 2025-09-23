@@ -212,7 +212,10 @@ def bbs_blind_commitment_computation(rng, group):
     witness = [secret_prover_blind, msg_1, msg_2, msg_3]
     return statement, witness
 
+
 def main(path="vectors"):
+    # Run the short proof serialization test first
+
     vectors = {}
     test_vectors = [
         discrete_logarithm,
