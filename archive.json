@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-09-21T01:19:00.154922+00:00",
+  "timestamp": "2025-09-23T01:11:34.836708+00:00",
   "repo": "mmaker/draft-irtf-cfrg-sigma-protocols",
   "labels": [
     {
@@ -478,7 +478,7 @@
       "labels": [],
       "body": "In preimage morphism proofs you can also give proof outputs as `(challenge, response)` instead of `(commitment, response)`. ",
       "createdAt": "2025-04-03T13:50:20Z",
-      "updatedAt": "2025-05-10T19:05:11Z",
+      "updatedAt": "2025-09-22T16:14:31Z",
       "closedAt": null,
       "comments": [
         {
@@ -494,6 +494,13 @@
           "body": "Related: #5 ",
           "createdAt": "2025-05-10T19:05:10Z",
           "updatedAt": "2025-05-10T19:05:10Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "NONE",
+          "body": "Is there any reason to support both \"normal\" proofs and \"short\" proofs at the same time? All else being equal, it would be best if the spec specified exactly one of these rather than force users to choose.",
+          "createdAt": "2025-09-22T16:14:31Z",
+          "updatedAt": "2025-09-22T16:14:31Z"
         }
       ]
     },
@@ -1688,7 +1695,7 @@
       "labels": [],
       "body": "Fixes #25 ",
       "createdAt": "2025-06-14T16:49:17Z",
-      "updatedAt": "2025-09-17T21:08:33Z",
+      "updatedAt": "2025-09-22T19:58:41Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "52f3d59e926e7edcdf47b24213436c4b4169ae65",
@@ -1762,6 +1769,13 @@
           "body": "I looked into the short proofs question more... and want to check my understanding.\r\nCurrently, it seems like we are actually using what you call a \"short proof\"\r\nin ARC, since we are expecting a challenge and an array of responses? See:\r\nhttps://github.com/chris-wood/draft-arc/pull/37/files#diff-956de759234f6559a65e044fe0e23d2720f11672f59704e475078830c2b6c9e1L1101",
           "createdAt": "2025-09-17T19:56:21Z",
           "updatedAt": "2025-09-17T21:08:33Z"
+        },
+        {
+          "author": "jkatz2",
+          "authorAssociation": "NONE",
+          "body": "I'm a bit confused about what is the advantage of \"normal proofs.\" Why would you not prefer to only standardize short proofs?",
+          "createdAt": "2025-09-22T19:58:41Z",
+          "updatedAt": "2025-09-22T19:58:41Z"
         }
       ],
       "reviews": [
