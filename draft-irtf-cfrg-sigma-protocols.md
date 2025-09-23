@@ -170,11 +170,15 @@ We detail the functions that can be invoked on these objects. Example choices ca
 - `generator()`, returns the generator of the prime-order elliptic-curve subgroup used for cryptographic operations.
 - `order()`: Outputs the order of the group `p`.
 - `random()`: outputs a random element in the group.
-- `serialize(elements: [Group; N])`, serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
-- `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, and fails if the input is not the valid canonical byte representation of an element of the group. This function can raise a `DeserializeError` if deserialization fails.
-- `add(element: Group)`, implements elliptic curve addition for the two group elements.
-- `equal(element: Group)`, returns `true` if the two elements are the same and false` otherwise.
-- `scalar_mul(scalar: Scalar)`, implements scalar multiplication for a group element by an element in its respective scalar field.
+- `msm(k: list[Scalar], P: list[Element])`: returns the sum of scalar products, i.e.,  `k_1*P_1 + ... + k_N*P_N`.
+- `serialize(elements: [Element; N])`, serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
+- `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ne * N` into `[Element; N]`, and fails if the input is not the valid canonical byte representation of an element of the group. This function can raise a `DeserializeError` if deserialization fails.
+
+### Element
+
+- `add(element: Element)`, returns the addition of two elements.
+- `equal(element: Element)`, returns `true` if the two elements are the same and `false` otherwise.
+- `scalar_mul(scalar: Scalar)`, returns the scalar multiplication of a group element by a scalar.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `scalar_mul` we will use `*`. A similar behavior can be achieved using operator overloading.
 
@@ -268,7 +272,7 @@ A witness is simply a list of `num_scalars` elements.
 
 ### Linear map {#linear-map}
 
-A `LinearMap` represents a function (a _linear map_ from the scalar field to the elliptic curve group) that, given as input an array of `Scalar` elements, outputs an array of `Group` elements. This can be represented as matrix-vector (scalar) product using group multi-scalar multiplication. However, since the matrix is oftentimes sparse, it is often more convenient to store the matrix in Yale sparse matrix format.
+A `LinearMap` represents a function (a _linear map_ from the scalar field to the elliptic curve group) that, given as input an array of `Scalar` values, outputs an array of `Element` values. This can be represented as matrix-vector (scalar) product using group multi-scalar multiplication. However, since the matrix is often times sparse, it is often more convenient to store the matrix in Yale sparse matrix format.
 
 Here is an example:
 
@@ -279,17 +283,19 @@ Here is an example:
 The linear map can then be presented as:
 
     class LinearMap:
-        Group: groups.Group
+        group: Group
         linear_combinations: list[LinearCombination]
-        group_elements: list[Group]
+        group_elements: list[Element]
         num_scalars: int
         num_elements: int
 
-        def map(self, scalars: list[Group.ScalarField]) -> Group
+        def __init__(self, group: Group) -> None
+        def map(self, scalars: list[Scalar]) -> list[Element]
 
 #### Initialization
 
-The linear map `LinearMap` is initialized with
+The linear map `LinearMap` is initialized with a group description
+and the following values:
 
     linear_combinations = []
     group_elements = []
@@ -311,24 +317,24 @@ A witness can be mapped to a group element via:
     2. for linear_combination in self.linear_combinations:
     3.     coefficients = [scalars[i] for i in linear_combination.scalar_indices]
     4.     elements = [self.group_elements[i] for i in linear_combination.element_indices]
-    5.     image.append(self.Group.msm(coefficients, elements))
+    5.     image.append(self.group.msm(coefficients, elements))
     6. return image
 
 ### Statements for linear relations
 
 The object `LinearRelation` has two attributes: a linear map `linear_map`, which will be defined in {{linear-map}}, and `image`, the linear map image of which the prover wants to show the pre-image of.
 
-class LinearRelation:
-        Domain = group.ScalarField
-        Image = group.Group
+    class LinearRelation:
+        Domain: Scalar
+        Image: Element
+        linear_map: LinearMap
+        image: list[Element]
 
-        linear_map = LinearMap
-        image = list[group.Group]
-
-    def allocate_scalars(self, n: int) -> list[int]
-    def allocate_elements(self, n: int) -> list[int]
-    def append_equation(self, lhs: int, rhs: list[(int, int)]) -> None
-    def set_elements(self, elements: list[(int, Group)]) -> None
+        def __init__(self, group: Group) -> None
+        def allocate_scalars(self, n: int) -> list[int]
+        def allocate_elements(self, n: int) -> list[int]
+        def append_equation(self, lhs: int, rhs: list[(int, int)]) -> None
+        def set_elements(self, elements: list[(int, Element)]) -> None
 
 #### Element and scalar variables allocation
 
@@ -352,6 +358,12 @@ and below the allocation of group elements
 
     allocate_elements(self, n)
 
+    Inputs:
+        - self, the current state of the LinearRelation
+        - n, the number of elements to allocate
+    Outputs:
+        - indices, a list of integers each pointing to the new allocated elements
+
     1. linear_combination = LinearMap.LinearCombination(scalar_indices=[x[0] for x in rhs], element_indices=[x[1] for x in rhs])
     2. self.linear_map.append(linear_combination)
     3. self._image.append(lhs)
@@ -362,7 +374,7 @@ Group elements, being part of the instance, can later be set using the function 
 
     Inputs:
         - self, the current state of the LinearRelation
-        - elements, a list of pairs of indices and group elements to be set
+        - elements, a list of (ElementIndex, Element) pairs to be set
 
     Procedure:
 
@@ -377,7 +389,7 @@ Group elements, being part of the instance, can later be set using the function 
 
     - self, the current state of the constraint system
     - lhs, the left-hand side of the equation
-    - rhs, the right-hand side of the equation (a list of (ScalarIndex, GroupEltIndex) pairs)
+    - rhs, the right-hand side of the equation (a list of (ScalarIndex, ElementIndex) pairs)
 
     Outputs:
 
@@ -413,7 +425,7 @@ A DLEQ proof proves a statement:
 
 Given group elements `G`, `H` and `X`, `Y` such that `x * G = X` and `x * H = Y`, then the statement is generated as:
 
-    1. statement = LinearRelation()
+    1. statement = LinearRelation(group)
     2. [var_x] = statement.allocate_scalars(1)
     3. statement.append_equation(X, [(var_x, G)])
     4. statement.append_equation(Y, [(var_x, H)])
@@ -426,7 +438,7 @@ A representation proof proves a statement
 
 Given group elements `G`, `H` such that `C = x * G + r * H`, then the statement is generated as:
 
-    statement = LinearRelation()
+    statement = LinearRelation(group)
     var_x, var_r = statement.allocate_scalars(2)
     statement.append_equation(C, [(var_x, G), (var_r, H)])
 
