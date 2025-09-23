@@ -1,0 +1,5 @@
+include README.md
+include LICENSE
+recursive-include sigma_protocols *.py
+recursive-exclude * __pycache__
+recursive-exclude * *.pyc
