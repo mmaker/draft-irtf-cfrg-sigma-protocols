@@ -43,6 +43,34 @@ class NIZK:
         response = self.sigma_protocol.prover_response(prover_state, challenge)
         return (commitment, challenge, response)
 
+    def prove(self, witness, rng):
+        """
+        Proving method using challenge-response format.
+        """
+        (commitment, challenge, response) = self._prove(witness, rng)
+        assert self.sigma_protocol.verifier(commitment, challenge, response)
+        domain_sep = "NISigmaProtocolShortProof".encode('utf-8')
+        return domain_sep + self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
+
+    def verify(self, proof):
+        """
+        Verification method using challenge-response format.
+        """
+        # Check that serialized proof domain separator matches expected value
+        domain_sep = "NISigmaProtocolShortProof".encode('utf-8')
+        domain_sep_bytes = proof[:len(domain_sep)]
+        assert domain_sep_bytes == domain_sep
+
+        challenge_len = self.sigma_protocol.instance.Domain.scalar_byte_length()
+        challenge_bytes = proof[len(domain_sep):challenge_len]
+        response_bytes = proof[len(domain_sep) + challenge_len:]
+
+        challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
+        response = self.sigma_protocol.deserialize_response(response_bytes)
+        commitment = self.sigma_protocol.simulate_commitment(response, challenge)
+
+        return self.sigma_protocol.verifier(commitment, challenge, response)
+
     def prove_batchable(self, witness, rng):
         """
         Proving method using commitment-response format.
@@ -73,32 +101,4 @@ class NIZK:
 
         self.codec.prover_message(self.hash_state, commitment)
         challenge = self.codec.verifier_challenge(self.hash_state)
-        return self.sigma_protocol.verifier(commitment, challenge, response)
-
-    def prove(self, witness, rng):
-        """
-        Proving method using challenge-response format.
-        """
-        (commitment, challenge, response) = self._prove(witness, rng)
-        assert self.sigma_protocol.verifier(commitment, challenge, response)
-        domain_sep = "NISigmaProtocolShortProof".encode('utf-8')
-        return domain_sep + self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
-
-    def verify(self, proof):
-        """
-        Verification method using challenge-response format.
-        """
-        # Check that serialized proof domain separator matches expected value
-        domain_sep = "NISigmaProtocolShortProof".encode('utf-8')
-        domain_sep_bytes = proof[:len(domain_sep)]
-        assert domain_sep_bytes == domain_sep
-
-        challenge_len = self.sigma_protocol.instance.Domain.scalar_byte_length()
-        challenge_bytes = proof[len(domain_sep):challenge_len]
-        response_bytes = proof[len(domain_sep) + challenge_len:]
-
-        challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
-        response = self.sigma_protocol.deserialize_response(response_bytes)
-        commitment = self.sigma_protocol.simulate_commitment(response, challenge)
-
         return self.sigma_protocol.verifier(commitment, challenge, response)
