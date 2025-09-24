@@ -43,7 +43,7 @@ class NIZK:
         response = self.sigma_protocol.prover_response(prover_state, challenge)
         return (commitment, challenge, response)
 
-    def prove(self, witness, rng):
+    def prove_batchable(self, witness, rng):
         """
         Proving method using commitment-response format.
 
@@ -55,7 +55,7 @@ class NIZK:
         return self.sigma_protocol.serialize_commitment(commitment) + self.sigma_protocol.serialize_response(response)
 
 
-    def verify(self, proof):
+    def verify_batchable(self, proof):
         # Before running the sigma protocol verifier, one must also check that:
         # - the proof length is exactly commit_bytes_len + response_bytes_len
         assert len(proof) == self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len, f"Invalid proof length: {len(proof)} != {self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len}"
@@ -69,17 +69,17 @@ class NIZK:
         challenge = self.codec.verifier_challenge(self.hash_state)
         return self.sigma_protocol.verifier(commitment, challenge, response)
 
-    def prove_short(self, witness, rng):
+    def prove(self, witness, rng):
         """
-        Alternative proving method using challenge-response format.
+        Proving method using challenge-response format.
         """
         (commitment, challenge, response) = self._prove(witness, rng)
         assert self.sigma_protocol.verifier(commitment, challenge, response)
         return self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
 
-    def verify_short(self, proof):
+    def verify(self, proof):
         """
-        Alternative verification method using challenge-response format.
+        Verification method using challenge-response format.
         """
         challenge_len = self.sigma_protocol.instance.Domain.scalar_byte_length()
         challenge_bytes = proof[:challenge_len]
