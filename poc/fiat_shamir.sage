@@ -4,7 +4,7 @@ from sagelib.sigma_protocols import SigmaProtocol
 from sagelib.duplex_sponge import DuplexSpongeInterface
 
 
-class NIZK:
+class NISigmaProtocol:
     """
     The generic Fiat-Shamir transformation of a Sigma protocol.
     Puts together 3 components:
