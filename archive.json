@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-09-23T01:11:34.836708+00:00",
+  "timestamp": "2025-09-25T01:13:14.288987+00:00",
   "repo": "mmaker/draft-irtf-cfrg-sigma-protocols",
   "labels": [
     {
@@ -471,15 +471,15 @@
       "id": "I_kwDONyiw_86xAXvk",
       "title": "Add `short_proofs` support",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/25",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "mmaker",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "In preimage morphism proofs you can also give proof outputs as `(challenge, response)` instead of `(commitment, response)`. ",
       "createdAt": "2025-04-03T13:50:20Z",
-      "updatedAt": "2025-09-22T16:14:31Z",
-      "closedAt": null,
+      "updatedAt": "2025-09-23T15:41:18Z",
+      "closedAt": "2025-09-23T15:41:18Z",
       "comments": [
         {
           "author": "mmaker",
@@ -1169,9 +1169,31 @@
       "labels": [],
       "body": "Currently, there is the following code in the poc for creating prover/verifiers:\n```\n    NIZK = CIPHERSUITE['sigma/Shake128+P256']\n    proof = NIZK(session_id, statement).prove(witness, rng)\n    print(f'Proof: {proof.hex()}')\n```\n\nHowever, this isn't reflected in the spec yet, which means we can't \"use\" this workflow from other specs (eg ARC, ACT). We need to add this to the sigma spec.\n\nAs an example, this is what the ARC spec is doing now - I synced with Michele and he said this isn't the right way to use the API, as I'm just initializing a factory class and not the right prover/verifier.\nhttps://github.com/chris-wood/draft-arc/pull/37/files#r2356381798",
       "createdAt": "2025-09-17T18:32:16Z",
-      "updatedAt": "2025-09-17T18:32:40Z",
+      "updatedAt": "2025-09-24T15:56:52Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "body": "For reference, the NIZK code is here:\nhttps://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/main/poc/fiat_shamir.sage#L7\n",
+          "createdAt": "2025-09-23T23:50:38Z",
+          "updatedAt": "2025-09-23T23:50:38Z"
+        },
+        {
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "body": "It seems like the \"NISigmaProtocol\" in the spec might (non-precisely) map to the \"NIZK\" class in the code, with many gaps - for instance, NISigmaProtocol has no way to initialize the Codec, no Hash value, and quite a few other mismatches.\n\nGiven this, I think it makes sense to replace the \"NISigmaProtocol\" section in the spec with the \"NIZK\" pseudocode. I'll also pull in the CIPHERSUITE definitions into the spec (should this be as informative or normative examples?) since those need to be defined for NIZK to be instantiated.\n\n@mmaker  wdyt?",
+          "createdAt": "2025-09-24T00:10:25Z",
+          "updatedAt": "2025-09-24T02:55:50Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "Hi Cathie, thank you so much for your feedback here. It makes a lot of sense. \nMost of the \"fuzziness\" here was because of #50 while trying to cover for your absence, but I'm sure we can figure out a way to fix this fast.",
+          "createdAt": "2025-09-24T15:56:52Z",
+          "updatedAt": "2025-09-24T15:56:52Z"
+        }
+      ]
     },
     {
       "number": 75,
@@ -1188,6 +1210,54 @@
       "updatedAt": "2025-09-19T09:11:01Z",
       "closedAt": null,
       "comments": []
+    },
+    {
+      "number": 77,
+      "id": "I_kwDONyiw_87NcdnP",
+      "title": "Add short_proofs API to the Fiat-Shamir spec",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/77",
+      "state": "OPEN",
+      "author": "cathieyun",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Short_proofs were added to the poc here: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/50\nWe need to \"catch up\" the spec to also support short proofs. This issue will track that task.\n\nGoing forward, let's only make edits that keep the poc and spec in sync, or if they _have_ to be out of sync, the spec should be the leading edge (and an issue should be filed to catch up the poc). The same problem showed up with prover/verifier APIs, where the poc implemented something that the spec did not mention: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/74",
+      "createdAt": "2025-09-23T22:05:27Z",
+      "updatedAt": "2025-09-24T14:03:28Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Also, this is up for discussion but I would be in favor of calling the `short_proofs` (challenge + responses) the normal proofs (the ones that are returned from the usual prove/verify functions), and instead calling the normal proofs (commitments + responses) the \"batchable proofs\" which are returned from prove_batchable and verify_batchable functions.\n\nBecause the \"short_proofs\" are really the proofs we want in most situations, and the \"commitments + responses\" proofs only really make sense if you want to batch verify the proofs (at least, in the scope of the sigma spec, which doesn't encompass multi-round protocols).\n\nRelated discussion on batchable proofs:\nhttps://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/78",
+          "createdAt": "2025-09-23T23:55:23Z",
+          "updatedAt": "2025-09-23T23:57:11Z"
+        }
+      ]
+    },
+    {
+      "number": 78,
+      "id": "I_kwDONyiw_87Ncgh6",
+      "title": "[Discuss] add batched verification flow to spec and poc?",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/78",
+      "state": "CLOSED",
+      "author": "cathieyun",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "The \"normal proofs\" in the sigma spec support batched verification, as described here:\nhttps://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/50#issuecomment-3323786329\n\nIn my opinion, this is the only solid argument for keeping the \"normal proofs\" in the spec - instead of always using \"short proofs\", which is what ACT, ARC, ATHM, and many other schnorr-proof-using protocols do! See my comment about ARC here: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/50#issuecomment-3304383274\n(Aside - multi-round protocol support is out of scope for the sigma spec, so I don't think \"support for multi-round protocols\" is a good reason to support \"normal proofs\" in the sigma spec!)\n\nSo, given the power of batched verification, maybe we want to add a batched verification flow to the spec and poc, so adopters know how to take advantage of this workflow.\n\nNote, this is not blocking ARC/ACT adoption, since they are using \"short proofs\", but is an action item that I think would be good for rounding out the spec.",
+      "createdAt": "2025-09-23T22:10:55Z",
+      "updatedAt": "2025-09-24T13:57:18Z",
+      "closedAt": "2025-09-24T13:57:18Z",
+      "comments": [
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "Hi Cathie, as I said already in #50, the specification scope after the call for adoption is: \n\n>  This document describes how to construct a non-interactive proof via\n>   the Fiat\u2013Shamir transformation, using a generic procedure that\n>  compiles an interactive proof into a non-interactive one by relying\n > on a stateful hash object that provides a duplex sponge interface.\n\nWe now have different channels to talk about this: this issue, #77, #50, and the IETF slack.  Let's keep the discussion contained there.",
+          "createdAt": "2025-09-24T13:57:18Z",
+          "updatedAt": "2025-09-24T13:57:18Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -1688,24 +1758,26 @@
       "id": "PR_kwDONyiw_86aif5L",
       "title": "feat: add short_proofs.",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/50",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "mmaker",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
-      "body": "Fixes #25 ",
+      "body": "Fixes #25.",
       "createdAt": "2025-06-14T16:49:17Z",
-      "updatedAt": "2025-09-22T19:58:41Z",
+      "updatedAt": "2025-09-23T22:05:41Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
-      "baseRefOid": "52f3d59e926e7edcdf47b24213436c4b4169ae65",
+      "baseRefOid": "f427eddc973bc9ef284c342913010b57f935d71a",
       "headRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "headRefName": "feat/short-proofs",
-      "headRefOid": "9ffcf865ccda397b60f4b9fb6c2f329cd77791be",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "da62635d2a0512e86f73a8a57a3d5d2af39ce245",
+      "closedAt": "2025-09-23T15:41:17Z",
+      "mergedAt": "2025-09-23T15:41:17Z",
+      "mergedBy": "mmaker",
+      "mergeCommit": {
+        "oid": "3ab5b8787ef9d0c9677a9afcd5e5f6613a7b45a5"
+      },
       "comments": [
         {
           "author": "mmaker",
@@ -1776,6 +1848,27 @@
           "body": "I'm a bit confused about what is the advantage of \"normal proofs.\" Why would you not prefer to only standardize short proofs?",
           "createdAt": "2025-09-22T19:58:41Z",
           "updatedAt": "2025-09-22T19:58:41Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "Hi @jkatz2, \r\n\r\nI'm sorry this is not yet fixed, but let me first address why it's in scope, and why it might be interesting also for you.\r\n\r\nFrom the point of the adopters of this spec, you shouldn't worry too much and just pick whatever makes most sense to you. This is just a problem of providing the right interface.\r\n\r\nThe main reason is that the scope of the Fiat-Shamir specification, after the call for adoption, is the Fiat-Shamir transformation for interactive protocols (not specialized to this special class of Sigma Protocols).\r\n\r\nMost adopters of Fiat-Shamir are interested in multi-round protocols, and not in one-shot Schnorr proofs. \r\nIt would make little sense to standardize single-round protocols without thinking about being secure also in the multi-round case, especially given that sigma protocols are often the \"glue\" for more complex interactive protocols, and how we've been doing sequential composition in the literature. \r\nIn particular there's already an ongoing [Lean formalization for this](https://github.com/Verified-zkEVM/ArkLib/blob/main/ArkLib/Data/Hash/DuplexSponge.lean) that is specifically for multi-round protocols. You can benefit from this analysis without having any of the hurdles.\r\n\r\nAdditionally, the \"normal\" transformation is advantageous for batching in the case of sigma protocols. If I have many Schnorr equations, \r\n\r\n$$\r\n\\vec K = c \\vec X + \\mathbf{M} \\vec r\r\n$$\r\n\r\nThey can be verified at once sampling a random vector $\\vec \\mu$: \r\n\r\n$$\r\n\\langle \\vec \\mu, \\vec K \\rangle = c \\langle\\vec \\mu, \\vec X\\rangle +  \\vec \\mu \\mathbf{M} \\vec r\r\n$$\r\n\r\nand if some group elements are the same (e.g. the public key $X$): \r\n\r\n$$\r\n\\langle \\vec \\mu, \\vec K \\rangle = c \\left\\( \\sum_i \\mu_i \\right\\) X+ \\vec \\mu \\mathbf{M} \\vec r\r\n$$\r\n\r\nThe equation above trades off $O(n)$ group operations for field operations and multi-scalar multiplications (so $O(n/\\log n)$ group operations), which can be quite advantageous. It's for sure something that has been already standardized in [BIP240](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki) for Bitcoin and that I'm considering with some adopters. \r\n\r\nI'm not considering adding any of this to the actual specification for now, but I think it's good to position ourselves well for future questions, and keep the door open for people that need these sort of things.\r\n\r\nI'll come back here soon with a fix for this pull request that does should not bother you guys on your end unless @cathieyun pushes something before me.",
+          "createdAt": "2025-09-23T12:22:41Z",
+          "updatedAt": "2025-09-23T13:59:36Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "This PR was merged because I understood this was blocking for Sam and Chris (and has been open for a long time), but I'll have another pass at it. Don't consider this as abruptly closed",
+          "createdAt": "2025-09-23T20:47:07Z",
+          "updatedAt": "2025-09-23T20:47:07Z"
+        },
+        {
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "body": "This change only adds short-proofs to the poc, and not to the spec. Going forward, we need to keep the poc and spec in line - it is meaningless to add something to the poc if it doesn't exist in the spec! And it also doesn't unblock Sam and Chris (and other adopters) if it's not in the spec, ultimately the adopters need a sigma short_proof spec API use in their spec (eg ARC and ACT). \r\n\r\nI'll open an issue to add the short_proof API to the spec, but in the future let's only make edits that keep the poc and spec in sync, or if they _have_ to be out of sync, the spec should be the leading edge.\r\nhttps://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/77",
+          "createdAt": "2025-09-23T22:05:41Z",
+          "updatedAt": "2025-09-23T22:05:41Z"
         }
       ],
       "reviews": [
@@ -2570,6 +2663,271 @@
         }
       ],
       "reviews": []
+    },
+    {
+      "number": 76,
+      "id": "PR_kwDONyiw_86qGNS2",
+      "title": "Move PoC to Python for easier management",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/76",
+      "state": "OPEN",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "As we build a reference implementation on top of which other proof of concept implementations will build, the problem of maintaining different reference implementations becomes hard. Right now it's common to \u00a0share some boilerplate rust code that comes from hash-to-cuirve.\r\n\r\nThis however comes with a big downside:\r\n1. _security concerns_: the boilerplate IETF code does not properly do input validation, and I found this after a quick skim without in-depth investigation. This is a critical issue for zero-knowledge proofs.\r\n2. _dead code_: as we build on top of this libraries, we end up adding more and more files with dead code.\r\nFor instance, the current sigma spec does not rely on hash-to-curve and hash-to-field, which will confuse readers and (at least in the case of my spec) required more explainations to auditors.\r\n3. the lack of basic development tools, \u00a0we lack versioning with cfrg versions, authenticity of the package, linting, and most importantly more code to maintain make things very problematic in the future.\r\n\r\nI tried to overcome this problem writing a pure python library for sigma protocols.\r\nThis can be imported adding to requirements.txt and used for a specific branch via something like:\r\n\r\n```\r\ngit+https://github.com/mmaker/spfs.git@morru/pure-python#subdirectory=poc\r\n```\r\nIn the dependency's `requirement.txt`.\r\n\r\n**SAGE support** is still maintained, we're just containing it to the places where it's really needed.",
+      "createdAt": "2025-09-23T15:27:24Z",
+      "updatedAt": "2025-09-23T22:37:26Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "f427eddc973bc9ef284c342913010b57f935d71a",
+      "headRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "morru/pure-python",
+      "headRefOid": "71ddaa258f1cc5d2ce81db699461ee52af943d56",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDONyiw_87CS0z0",
+          "commit": {
+            "abbreviatedOid": "71ddaa2"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "NONE",
+          "state": "CHANGES_REQUESTED",
+          "body": "Thanks for the work here @mmaker. Personally, I'm hugely in favor of moving to pure-Python for the reference implementation, as it makes it much easier to work with. In any case, I don't think we need any of the richness of Sage for this since we're working with standard cryptographic primitives (SHAKE128, P256, etc.).\r\n\r\nOverall I like the structure of the code. However, the change is so large that I'm finding it impossible to review. (It may be easier for others that are already familiar with the code.)\r\n\r\nThe main problem is that there appear to be non-trivial changes from the old code to the new. For the convenience of other readers, I started posting diffs between the old files and the new ones, e.g.:\r\n\r\n```bash\r\ngit diff main:poc/composition.sage HEAD:poc/sigma_protocols/composition.py\r\n```\r\n\r\nThe diffs appear to be quite large in some cases, making it very difficult to review.\r\n\r\nAnother problem is that the test vectors appear to be changing. I haven't looked closely, but I can't tell if this is just because the format is changing or if there are actual breaking changes here.\r\n\r\nCan you please break up the PR into smaller commits that are easier to review? The main goal would be to isolate code movement from actual logical changes in the code. I realize this takes more time than just rewriting, but it saves _a lot_ on reviewer time.\r\n\r\n\r\n> **SAGE support** is still maintained, we're just containing it to the places where it's really needed.\r\n\r\nWhere is Sage still needed?",
+          "createdAt": "2025-09-23T22:00:08Z",
+          "updatedAt": "2025-09-23T22:37:00Z",
+          "comments": [
+            {
+              "originalPosition": 1,
+              "body": "Note: IETF is the copyright holder for RFCs. Reference code is a little fuzzy, but typically CFRG uses no copyright at all. See for example the reference code in these repos: https://github.com/cfrg\r\n\r\nMy suggestion would be to remove this and just leave the code in the public domain.",
+              "createdAt": "2025-09-23T22:00:08Z",
+              "updatedAt": "2025-09-23T22:37:00Z"
+            },
+            {
+              "originalPosition": 11,
+              "body": "This appears to be the wrong directory?\r\n```suggestion\r\ncd draft-irtf-cfrg-sigma-protocols\r\n```",
+              "createdAt": "2025-09-23T22:06:29Z",
+              "updatedAt": "2025-09-23T22:37:00Z"
+            },
+            {
+              "originalPosition": 27,
+              "body": "I don't see this anywhere in my path even after successful installation.\r\n\r\nIn any case, it would be more conventional to run unit tests with the `unittest` framework, as in \r\n```suggestion\r\npython -m unittest\r\n```",
+              "createdAt": "2025-09-23T22:09:41Z",
+              "updatedAt": "2025-09-23T22:37:00Z"
+            },
+            {
+              "originalPosition": 72,
+              "body": "I don't see a target for either `test` or `vectors`.",
+              "createdAt": "2025-09-23T22:11:26Z",
+              "updatedAt": "2025-09-23T22:37:00Z"
+            },
+            {
+              "originalPosition": 1,
+              "body": "Reviewer note:\r\n\r\n```diff\r\ndiff --git a/poc/ciphersuite.sage b/poc/sigma_protocols/ciphersuite.py\r\nindex fbceb3e..1c60381 100644\r\n--- a/poc/ciphersuite.sage\r\n+++ b/poc/sigma_protocols/ciphersuite.py\r\n@@ -1,28 +1,21 @@\r\n-from sagelib.fiat_shamir import NIZK\r\n-from sagelib.duplex_sponge import SHAKE128, KeccakDuplexSponge\r\n-from sagelib.sigma_protocols import SchnorrProof\r\n-from sagelib.codec import P256Codec, Bls12381Codec\r\n+\"\"\"\r\n+Pure Python implementation of ciphersuites for Sigma protocols.\r\n+\"\"\"\r\n \r\n-class NISchnorrProofShake128P256(NIZK):\r\n-    Protocol = SchnorrProof\r\n-    Codec = P256Codec\r\n-    Hash = SHAKE128\r\n-\r\n-\r\n-class NISchnorrProofShake128Bls12381(NIZK):\r\n-    Protocol = SchnorrProof\r\n-    Codec = Bls12381Codec\r\n-    Hash = SHAKE128\r\n-\r\n-\r\n-class NISchnorrProofKeccakDuplexSpongeBls12381(NIZK):\r\n-    Protocol = SchnorrProof\r\n-    Codec = Bls12381Codec\r\n-    Hash = KeccakDuplexSponge\r\n+from .sigma_protocols import SchnorrProof\r\n+from fiat_shamir import P256Codec, FiatShamirNIZK, Shake128DuplexSponge, Keccak256DuplexSponge\r\n \r\n \r\n+# Define ciphersuites for P-256\r\n CIPHERSUITE = {\r\n-    \"sigma/Shake128+P256\": NISchnorrProofShake128P256,\r\n-    \"sigma/Shake128+BLS12381\": NISchnorrProofShake128Bls12381,\r\n-    \"sigma/OWKeccak1600+Bls12381\": NISchnorrProofKeccakDuplexSpongeBls12381,\r\n+    \"P256_SHAKE128\": FiatShamirNIZK(\r\n+        SchnorrProof,\r\n+        P256Codec,\r\n+        Shake128DuplexSponge\r\n+    ),\r\n+    \"P256_KECCAK256\": FiatShamirNIZK(\r\n+        SchnorrProof,\r\n+        P256Codec,\r\n+        Keccak256DuplexSponge\r\n+    ),\r\n }\r\n\\ No newline at end of file\r\n```\r\n\r\n```bash\r\ngit diff main:poc/ciphersuite.sage HEAD:poc/sigma_protocols/ciphersuite.py\r\n```",
+              "createdAt": "2025-09-23T22:18:49Z",
+              "updatedAt": "2025-09-23T22:37:00Z"
+            },
+            {
+              "originalPosition": 1,
+              "body": "Reviewer note:\r\n\r\n```diff\r\ndiff --git a/poc/composition.sage b/poc/sigma_protocols/composition.py\r\nindex 3edbc65..f2d43a5 100644\r\n--- a/poc/composition.sage\r\n+++ b/poc/sigma_protocols/composition.py\r\n@@ -1,26 +1,43 @@\r\n-from sagelib.test_drng import TestDRNG\r\n-from sagelib.sigma_protocols import LinearRelation, SigmaProtocol, SchnorrProof\r\n-from sagelib.fiat_shamir import NIZK\r\n-from sagelib.codec import P256Codec\r\n-from sagelib.duplex_sponge import KeccakDuplexSponge\r\n-from sagelib import groups\r\n+\"\"\"\r\n+Composition of Sigma protocols (AND and OR proofs).\r\n+\"\"\"\r\n+\r\n+from .sigma_protocols import SchnorrProof\r\n+from fiat_shamir import P256Codec, FiatShamirNIZK, Keccak256DuplexSponge\r\n+\r\n \r\n class AndProof(SchnorrProof):\r\n-    ProverState: list[SchnorrProof.ProverState]\r\n+    \"\"\"\r\n+    AND composition of multiple Sigma protocols.\r\n+    Proves knowledge of witnesses for ALL instances.\r\n+    \"\"\"\r\n \r\n-    def __init__(self, instances: list[LinearRelation]):\r\n+    def __init__(self, instances):\r\n         self.protocols = [SchnorrProof(instance) for instance in instances]\r\n         self.instance = self  # For compatibility with fiat_shamir\r\n \r\n     @property\r\n     def commit_bytes_len(self):\r\n-        return sum(protocol.instance.commit_bytes_len for protocol in self.protocols)\r\n+        \"\"\"Total bytes needed for all commitments.\"\"\"\r\n+        return sum(\r\n+            len(protocol.serialize_commitment(\r\n+                [protocol.instance.Image.identity()] * protocol.instance.linear_map.num_constraints\r\n+            ))\r\n+            for protocol in self.protocols\r\n+        )\r\n \r\n     @property\r\n     def response_bytes_len(self):\r\n-        return sum(protocol.instance.response_bytes_len for protocol in self.protocols)\r\n+        \"\"\"Total bytes needed for all responses.\"\"\"\r\n+        return sum(\r\n+            len(protocol.serialize_response(\r\n+                [protocol.instance.Domain.field(0)] * protocol.instance.linear_map.num_scalars\r\n+            ))\r\n+            for protocol in self.protocols\r\n+        )\r\n \r\n     def prover_commit(self, witnesses, rng):\r\n+        \"\"\"Generate commitments for all subproofs.\"\"\"\r\n         prover_states = []\r\n         commitments = []\r\n \r\n@@ -32,6 +49,7 @@ class AndProof(SchnorrProof):\r\n         return (prover_states, commitments)\r\n \r\n     def prover_response(self, prover_states, challenge):\r\n+        \"\"\"Generate responses for all subproofs.\"\"\"\r\n         responses = []\r\n         for prover_state, protocol in zip(prover_states, self.protocols):\r\n             response = protocol.prover_response(prover_state, challenge)\r\n@@ -39,274 +57,188 @@ class AndProof(SchnorrProof):\r\n         return responses\r\n \r\n     def verifier(self, commitments, challenge, responses):\r\n+        \"\"\"Verify all subproofs.\"\"\"\r\n         assert len(commitments) == len(responses)\r\n-        assert all(\r\n-            protocol.verifier(commitment, challenge, response)\r\n-            for protocol, commitment, response in zip(self.protocols, commitments, responses)\r\n-        )\r\n+\r\n+        for protocol, commitment, response in zip(self.protocols, commitments, responses):\r\n+            if not protocol.verifier(commitment, challenge, response):\r\n+                return False\r\n         return True\r\n \r\n     def serialize_commitment(self, commitments):\r\n-        return b''.join([protocol.serialize_commitment(commitment) for protocol, commitment in zip(self.protocols, commitments)])\r\n+        \"\"\"Serialize all commitments.\"\"\"\r\n+        return b''.join([\r\n+            protocol.serialize_commitment(commitment)\r\n+            for protocol, commitment in zip(self.protocols, commitments)\r\n+        ])\r\n \r\n     def serialize_response(self, responses):\r\n-        return b''.join([protocol.serialize_response(response) for protocol, response in zip(self.protocols, responses)])\r\n+        \"\"\"Serialize all responses.\"\"\"\r\n+        return b''.join([\r\n+            protocol.serialize_response(response)\r\n+            for protocol, response in zip(self.protocols, responses)\r\n+        ])\r\n \r\n     def deserialize_commitment(self, data):\r\n+        \"\"\"Deserialize commitments for all subproofs.\"\"\"\r\n         commitments = []\r\n         offset = 0\r\n+\r\n         for protocol in self.protocols:\r\n-            commit_len = protocol.instance.commit_bytes_len\r\n+            # Calculate commitment length for this protocol\r\n+            dummy_commitment = [protocol.instance.Image.identity()] * protocol.instance.linear_map.num_constraints\r\n+            commit_len = len(protocol.serialize_commitment(dummy_commitment))\r\n+\r\n             commitment = protocol.deserialize_commitment(data[offset:offset + commit_len])\r\n             commitments.append(commitment)\r\n             offset += commit_len\r\n+\r\n         return commitments\r\n \r\n     def deserialize_response(self, data):\r\n+        \"\"\"Deserialize responses for all subproofs.\"\"\"\r\n         responses = []\r\n         offset = 0\r\n+\r\n         for protocol in self.protocols:\r\n-            response_len = protocol.instance.response_bytes_len\r\n+            # Calculate response length for this protocol\r\n+            dummy_response = [protocol.instance.Domain.field(0)] * protocol.instance.linear_map.num_scalars\r\n+            response_len = len(protocol.serialize_response(dummy_response))\r\n+\r\n             response = protocol.deserialize_response(data[offset:offset + response_len])\r\n             responses.append(response)\r\n             offset += response_len\r\n+\r\n         return responses\r\n \r\n+    def get_instance_label(self):\r\n+        \"\"\"Get combined instance label.\"\"\"\r\n+        import hashlib\r\n+        h = hashlib.sha256()\r\n+        h.update(b\"AND_PROOF\")\r\n+        for protocol in self.protocols:\r\n+            h.update(protocol.get_instance_label())\r\n+        return h.digest()\r\n+\r\n+    def get_label(self):\r\n+        \"\"\"Alias for get_instance_label for compatibility.\"\"\"\r\n+        return self.get_instance_label()\r\n+\r\n+    @staticmethod\r\n+    def get_protocol_id():\r\n+        \"\"\"Protocol identifier for AND proofs.\"\"\"\r\n+        return b'ietf sigma proof and composition' + b'\\0' * 32\r\n+\r\n \r\n class P256AndCodec(P256Codec):\r\n+    \"\"\"Codec for AND proofs over P-256.\"\"\"\r\n+\r\n     def prover_message(self, hash_state, elements):\r\n-        flat_elements = sum(elements, [])\r\n+        \"\"\"Flatten nested commitment list and absorb.\"\"\"\r\n+        flat_elements = []\r\n+        for element_list in elements:\r\n+            flat_elements.extend(element_list)\r\n         return super().prover_message(hash_state, flat_elements)\r\n \r\n \r\n-class NIAndProof(NIZK):\r\n-    Protocol = AndProof\r\n-    Codec = P256AndCodec\r\n-    Hash = KeccakDuplexSponge\r\n-\r\n-\r\n class OrProof(SchnorrProof):\r\n-    ProverState: list[SchnorrProof.ProverState]\r\n+    \"\"\"\r\n+    OR composition of multiple Sigma protocols.\r\n+    Proves knowledge of witness for AT LEAST ONE instance.\r\n+    \"\"\"\r\n \r\n-    def __init__(self, instances: list[LinearRelation]):\r\n+    def __init__(self, instances):\r\n         self.protocols = [SchnorrProof(instance) for instance in instances]\r\n         self.instance = self  # For compatibility with fiat_shamir\r\n \r\n-    @property\r\n-    def commit_bytes_len(self):\r\n-        return sum(protocol.instance.commit_bytes_len for protocol in self.protocols)\r\n-\r\n-    @property\r\n-    def response_bytes_len(self):\r\n-        return (sum(protocol.instance.response_bytes_len for protocol in self.protocols) +\r\n-                sum(protocol.instance.Domain.scalar_byte_length() for protocol in self.protocols[:-1]))\r\n-\r\n-    def prover_commit(self, witnesses, rng):\r\n-        assert witnesses.count(None) == len(self.protocols) - 1\r\n-\r\n+    def prover_commit(self, witness_index, witness, rng):\r\n+        \"\"\"\r\n+        Generate commitment for OR proof.\r\n+        witness_index: index of the instance we have a witness for\r\n+        witness: the actual witness for that instance\r\n+        \"\"\"\r\n         prover_states = []\r\n-        unknown_witness_prover_states = []\r\n         commitments = []\r\n \r\n-        # We want to keep track of the commitment of the known protocol,\r\n-        # as well as which index it occurs in in order to insert it in\r\n-        # the correct spot in the array.\r\n-        known_index = 0\r\n-        known_value_hit = False\r\n-        known_commitment = None\r\n-\r\n-        for protocol, witness in zip(self.protocols, witnesses):\r\n-            if not witness is None:\r\n-                known_value_hit = True\r\n-                prover_state, known_commitment = protocol.prover_commit(witness, rng)\r\n-                prover_states.append((prover_state, known_index))\r\n+        for i, protocol in enumerate(self.protocols):\r\n+            if i == witness_index:\r\n+                # Real proof for the instance we have witness for\r\n+                prover_state, commitment = protocol.prover_commit(witness, rng)\r\n+                prover_states.append(prover_state)\r\n+                commitments.append(commitment)\r\n             else:\r\n-                if not known_value_hit:\r\n-                    known_index += 1\r\n-                # We perform the simulator for the prover in order to generate valid commitments\r\n-                # for the unknown witnesses, assuming the prover starts with a random response.\r\n-                simulated_responses = protocol.simulate_response(rng)\r\n-                # Also pick a random value for the challenge\r\n-                prover_challenge = protocol.instance.Domain.random(rng)\r\n-                simulated_commitments = protocol.simulate_commitment(simulated_responses, prover_challenge)\r\n-                commitments.append(simulated_commitments)\r\n-                unknown_witness_prover_states.append((prover_challenge, simulated_responses))\r\n-        assert(not known_commitment is None)\r\n-        commitments.insert(known_index, known_commitment)\r\n-        # We assume there is only one protocol the prover knows the witness to.\r\n-        assert len(prover_states) == 1\r\n-        return ((prover_states, unknown_witness_prover_states), commitments)\r\n+                # Simulated proof for other instances\r\n+                simulated_response = protocol.simulate_response(rng)\r\n+                # We'll need the challenge to compute simulated commitment\r\n+                prover_states.append(None)  # Placeholder\r\n+                commitments.append(None)    # Will be filled after challenge\r\n \r\n-    def prover_response(self, prover_states, challenge):\r\n-        (known_prover_states, unknown_witness_prover_states) = prover_states\r\n-        known_state_challenge = challenge\r\n-        responses = []\r\n-        challenges = []\r\n+        return (prover_states, commitments, witness_index)\r\n \r\n-        # The sum of all of the challenges for each of the protocols should be\r\n-        # the verifier challenge. Therefore find the unknown challenge by\r\n-        # subtracting the prover's shares from the verifier challenge.\r\n-        for challenge_share, sim_responses in unknown_witness_prover_states:\r\n-            known_state_challenge -= challenge_share\r\n-            responses.append(sim_responses)\r\n-            challenges.append(challenge_share)\r\n+    def prover_response(self, prover_state, challenge):\r\n+        \"\"\"Generate response for OR proof after receiving challenge.\"\"\"\r\n+        prover_states, commitments, witness_index = prover_state\r\n+        responses = []\r\n \r\n-        # Include the response for the known protocol at the correct index\r\n-        # (i.e., the index of the protocol in the original list of protocols)\r\n-        (known_prover_state, known_index) = known_prover_states[0]\r\n-        known_response = self.protocols[known_index].prover_response(known_prover_state, known_state_challenge)\r\n+        for i, protocol in enumerate(self.protocols):\r\n+            if i == witness_index:\r\n+                # Real response\r\n+                real_prover_state = prover_states[i]\r\n+                response = protocol.prover_response(real_prover_state, challenge)\r\n+                responses.append(response)\r\n+            else:\r\n+                # Simulated response\r\n+                simulated_response = protocol.simulate_response(rng=None)  # Use deterministic sim\r\n+                responses.append(simulated_response)\r\n \r\n-        responses.insert(known_index, known_response)\r\n-        challenges.insert(known_index, known_state_challenge)\r\n+        return responses\r\n \r\n-        return (challenges[:-1], responses)\r\n+    def verifier(self, commitments, challenge, responses):\r\n+        \"\"\"Verify OR proof - at least one subproof must be valid.\"\"\"\r\n+        valid_count = 0\r\n \r\n-    def verifier(self, commitments, challenge, _response):\r\n-        challenges, responses = _response\r\n-        assert len(commitments) == len(responses)\r\n-        last_challenge = challenge - sum(challenges)\r\n-        challenges.append(last_challenge)\r\n-        assert all(\r\n-            protocol.verifier(commitment, challenge, response)\r\n-            for protocol, commitment, challenge, response in zip(self.protocols, commitments, challenges, responses)\r\n-        )\r\n+        for protocol, commitment, response in zip(self.protocols, commitments, responses):\r\n+            try:\r\n+                if protocol.verifier(commitment, challenge, response):\r\n+                    valid_count += 1\r\n+            except:\r\n+                # Verification failed for this subproof\r\n+                pass\r\n \r\n-        return True\r\n+        return valid_count >= 1  # At least one must be valid\r\n \r\n     def serialize_commitment(self, commitments):\r\n-        return b''.join([protocol.serialize_commitment(commitment) for protocol, commitment in zip(self.protocols, commitments)])\r\n+        \"\"\"Serialize OR proof commitments.\"\"\"\r\n+        return b''.join([\r\n+            protocol.serialize_commitment(commitment)\r\n+            for protocol, commitment in zip(self.protocols, commitments)\r\n+        ])\r\n \r\n-    def serialize_response(self, _response):\r\n-        challenges, responses = _response\r\n-        return (b''.join([protocol.serialize_response(response) for protocol, response in zip(self.protocols, responses)]) +\r\n-                b''.join([protocol.instance.Domain.serialize([challenge]) for (protocol, challenge) in zip(self.protocols[:-1], challenges)]))\r\n-\r\n-    def deserialize_commitment(self, data):\r\n-        commitments = []\r\n-        offset = 0\r\n-        for protocol in self.protocols:\r\n-            commit_len = protocol.instance.commit_bytes_len\r\n-            commitment = protocol.deserialize_commitment(data[offset:offset + commit_len])\r\n-            commitments.append(commitment)\r\n-            offset += commit_len\r\n-        return commitments\r\n-\r\n-    def deserialize_response(self, data):\r\n-        challenges = []\r\n-        responses = []\r\n-        offset = 0\r\n-\r\n-        # First deserialize all responses\r\n+    def serialize_response(self, responses):\r\n+        \"\"\"Serialize OR proof responses.\"\"\"\r\n+        return b''.join([\r\n+            protocol.serialize_response(response)\r\n+            for protocol, response in zip(self.protocols, responses)\r\n+        ])\r\n+\r\n+    def get_instance_label(self):\r\n+        \"\"\"Get combined instance label for OR proof.\"\"\"\r\n+        import hashlib\r\n+        h = hashlib.sha256()\r\n+        h.update(b\"OR_PROOF\")\r\n         for protocol in self.protocols:\r\n-            response_len = protocol.instance.response_bytes_len\r\n-            response = protocol.deserialize_response(data[offset:offset + response_len])\r\n-            responses.append(response)\r\n-            offset += response_len\r\n+            h.update(protocol.get_instance_label())\r\n+        return h.digest()\r\n \r\n-        # Then deserialize the challenges (all but the last one)\r\n-        for protocol in self.protocols[:-1]:\r\n-            challenge_len = protocol.instance.Domain.scalar_byte_length()\r\n-            challenge = protocol.instance.Domain.deserialize(data[offset:offset + challenge_len])\r\n-            challenges.append(challenge[0])\r\n-            offset += challenge_len\r\n+    @staticmethod\r\n+    def get_protocol_id():\r\n+        \"\"\"Protocol identifier for OR proofs.\"\"\"\r\n+        return b'ietf sigma proof or composition' + b'\\0' * 33\r\n \r\n-        return (challenges, responses)\r\n \r\n+# NIZK wrapper for AND proofs\r\n+class NIAndProof(FiatShamirNIZK):\r\n+    \"\"\"Non-interactive AND proof using Fiat-Shamir.\"\"\"\r\n \r\n-class P256OrCodec(P256Codec):\r\n-    def prover_message(self, hash_state, elements):\r\n-        flat_elements = sum(elements, [])\r\n-        return super().prover_message(hash_state, flat_elements)\r\n-\r\n-    def verifier_challenge(self, hash_state):\r\n-        return super().verifier_challenge(hash_state)\r\n-\r\n-\r\n-class NIOrProof(NIZK):\r\n-    Protocol = OrProof\r\n-    Codec = P256OrCodec\r\n-    Hash = KeccakDuplexSponge\r\n-\r\n-\r\n-def test_and_composition():\r\n-    CONTEXT_STRING = b'yellow submarine' * 2\r\n-    rng = TestDRNG(\"test vector seed\".encode('utf-8'))\r\n-    group = P256Codec.GG\r\n-\r\n-    statement_1 = LinearRelation(group)\r\n-    [var_x] = statement_1.allocate_scalars(1)\r\n-    [var_G, var_X] = statement_1.allocate_elements(2)\r\n-    statement_1.append_equation(var_X, [(var_x, var_G)])\r\n-    G = group.generator()\r\n-    statement_1.set_elements([(var_G, G)])\r\n-    x = group.ScalarField.random(rng)\r\n-    X = G * x\r\n-    assert [X] == statement_1.linear_map([x])\r\n-    statement_1.set_elements([(var_X, X)])\r\n-    witness_1 = [x]\r\n-\r\n-    statement_2 = LinearRelation(group)\r\n-    [var_y] = statement_2.allocate_scalars(1)\r\n-    [var_H, var_Y] = statement_2.allocate_elements(2)\r\n-    statement_2.append_equation(var_Y, [(var_y, var_H)])\r\n-    H = group.generator()\r\n-    statement_2.set_elements([(var_H, H)])\r\n-    y = group.ScalarField.random(rng)\r\n-    Y = H * y\r\n-    assert [Y] == statement_2.linear_map([y])\r\n-    statement_2.set_elements([(var_Y, Y)])\r\n-    witness_2 = [y]\r\n-\r\n-    instances = [statement_1, statement_2]\r\n-    witnesses = [witness_1, witness_2]\r\n-\r\n-    narg_string = NIAndProof(CONTEXT_STRING, instances).prove(witnesses, rng)\r\n-    assert NIAndProof(CONTEXT_STRING, instances).verify(narg_string)\r\n-    print(f\"test_and_composition narg_string: {narg_string.hex()}\\n\")\r\n-\r\n-\r\n-def test_or_composition():\r\n-    CONTEXT_STRING = b'yellow submarine' * 2\r\n-\r\n-    rng = TestDRNG(\"test vector seed\".encode('utf-8'))\r\n-    group = P256Codec.GG\r\n-\r\n-    statement_1 = LinearRelation(group)\r\n-    [var_x] = statement_1.allocate_scalars(1)\r\n-    [var_G, var_X] = statement_1.allocate_elements(2)\r\n-    statement_1.append_equation(var_X, [(var_x, var_G)])\r\n-    G = group.generator()\r\n-    statement_1.set_elements([(var_G, G)])\r\n-    x = group.ScalarField.random(rng)\r\n-    X = G * x\r\n-    assert [X] == statement_1.linear_map([x])\r\n-    statement_1.set_elements([(var_X, X)])\r\n-    witness_1 = [x]\r\n-\r\n-    statement_2 = LinearRelation(group)\r\n-    [var_y] = statement_2.allocate_scalars(1)\r\n-    [var_H, var_Y] = statement_2.allocate_elements(2)\r\n-    statement_2.append_equation(var_Y, [(var_y, var_H)])\r\n-    H = group.generator()\r\n-    statement_2.set_elements([(var_H, H)])\r\n-    y = group.ScalarField.random(rng)\r\n-    Y = H * y\r\n-    assert [Y] == statement_2.linear_map([y])\r\n-    statement_2.set_elements([(var_Y, Y)])\r\n-    witness_2 = None\r\n-\r\n-    instances = [statement_1, statement_2]\r\n-    witnesses = [witness_1, witness_2]\r\n-\r\n-    narg_string = NIOrProof(CONTEXT_STRING, instances).prove(witnesses, rng)\r\n-    assert NIOrProof(CONTEXT_STRING, instances).verify(narg_string)\r\n-    print(f\"test_or_composition narg_string: {narg_string.hex()}\")\r\n-\r\n-\r\n-def test():\r\n-    test_and_composition()\r\n-    test_or_composition()\r\n-\r\n-\r\n-if __name__ == \"__main__\":\r\n-    test()\r\n\\ No newline at end of file\r\n+    def __init__(self):\r\n+        super().__init__(AndProof, P256AndCodec, Keccak256DuplexSponge)\r\n\\ No newline at end of file\r\n```\r\n\r\n```bash\r\ngit diff main:poc/composition.sage HEAD:poc/sigma_protocols/composition.py\r\n```",
+              "createdAt": "2025-09-23T22:22:21Z",
+              "updatedAt": "2025-09-23T22:37:00Z"
+            },
+            {
+              "originalPosition": 1,
+              "body": "The amount of code movement in this PR makes it very hard to review. It would give me more confidence that the PR isn't introducing bugs if the test vectors weren't changing in the same PR. Can you modify the code so that it generates precisely the same test vectors?",
+              "createdAt": "2025-09-23T22:26:11Z",
+              "updatedAt": "2025-09-23T22:37:00Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87CTIj-",
+          "commit": {
+            "abbreviatedOid": "71ddaa2"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-23T22:37:26Z",
+          "updatedAt": "2025-09-23T22:37:26Z",
+          "comments": [
+            {
+              "originalPosition": 27,
+              "body": "(Feel free to punt to a future PR.)",
+              "createdAt": "2025-09-23T22:37:26Z",
+              "updatedAt": "2025-09-23T22:37:26Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 79,
+      "id": "PR_kwDONyiw_86qMDTJ",
+      "title": "Add NIZK class and instances to Fiat-Shamir spec",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/79",
+      "state": "OPEN",
+      "author": "cathieyun",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/74 by adding the NIZK class and instances\r\n\r\nFixes: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/77 by adding \"short proofs\" to the NIZK class\r\nIn practice, I am making the default proof a \"short proof\" (challenge, responses) and adding a \"batchable proof\" which is a proof in the (commitments, responses) format, as discussed here: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/77#issuecomment-3325924652\r\n\r\nI also noticed that some of the pseudocode in the spec for Codec and DuplexSpongeInterface was out of sync with the poc, so I updated the pseudocode with the updated poc code. \r\n\r\nAdded as of 9/24:\r\n- NIZK now called NISigmaProtocol\r\n- Added domain separation\r\n\r\nNOTE: I am not able to run tests or update the test vectors, because the `sigma_protocol.py/sage` file is missing, so the test can't run. So there may be some mistakes in the poc code I haven't caught yet. Following up with Michele on this.",
+      "createdAt": "2025-09-24T03:51:49Z",
+      "updatedAt": "2025-09-24T23:40:05Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "3ab5b8787ef9d0c9677a9afcd5e5f6613a7b45a5",
+      "headRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "NIZK-spec",
+      "headRefOid": "4f17d2fff44ee0fa260a0cc4d4ebbe2a0974499a",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "Hi Cathie, this is great thank you so much for your help in Fiat-Shamir! \r\nThe PR is batching too many issues at once: I am totally on the same page with #74 but I'm not convinced about #77. \r\nAny chance you can split it into two?",
+          "createdAt": "2025-09-24T15:57:37Z",
+          "updatedAt": "2025-09-24T15:58:00Z"
+        },
+        {
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Questions for @mmaker -\r\nDid our sync this morning convince you of #74 and #77, such that we can go forward with both fixes in one PR (given that this API is specific to NISigmaProtocol, and not all NIZK as that was what you had issues with?) Or would you like to change that naming to be even more specific, eg NISingleRoundSigmaProtocol (which is a mouthful, but I am okay with this if you feel that it is necessary to distinguish from multi-round protocols).\r\n\r\nAlso do you know what happened to the `sigma_protocols.py/sage` file? I can't actually run the code until that file exists, and I don't know when it went missing / what the most updated version of that should be.",
+          "createdAt": "2025-09-24T22:26:51Z",
+          "updatedAt": "2025-09-24T22:26:51Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDONyiw_87Ci46u",
+          "commit": {
+            "abbreviatedOid": "3650494"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-24T17:26:50Z",
+          "updatedAt": "2025-09-24T17:26:50Z",
+          "comments": [
+            {
+              "originalPosition": 57,
+              "body": "rename this to NISigmaProtocol (since not all NIZK supports short proofs)",
+              "createdAt": "2025-09-24T17:26:50Z",
+              "updatedAt": "2025-09-24T17:26:51Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87Ci5G0",
+          "commit": {
+            "abbreviatedOid": "3650494"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-24T17:27:05Z",
+          "updatedAt": "2025-09-24T17:27:05Z",
+          "comments": [
+            {
+              "originalPosition": 106,
+              "body": "Add domain separation",
+              "createdAt": "2025-09-24T17:27:05Z",
+              "updatedAt": "2025-09-24T17:27:05Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87Cm5wL",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "Nice ... this is definitely much closer to an API we can consume.\n\nNote that I didn't check that the code was copied properly in my review. ",
+          "createdAt": "2025-09-24T23:05:42Z",
+          "updatedAt": "2025-09-24T23:40:05Z",
+          "comments": [
+            {
+              "originalPosition": 23,
+              "body": "Two thoughts here:\n\n1. I wouldn't use the term \"domain separator\" for this. When I think of domain separation, I typically think of partitioning the domain of a function into disjoint sets such that the range has some desirable property. (E.g., if the function were a random oracle, then the outputs for different domains would be i.i.d.) I think a more accurate would be something like \"proof-type tag\".\n\n2. Based on our offline discussion (2025/9/24), adding this tag to the proof is intended to ensure that if a verifier is misconfigured will not accept the proof. For example, if it expects a short proof rather than a batachable one, then verify() should fail. Tagging seems like reasonable way to do this, but we should be careful not to blow up communication cost too much. I imagine 1-2 bytes ought to be sufficient to enumerate the different proof types we might want. The document would then have a table mapping the different proof types to their code point.\n\n   For what it's worth, an alternative to tagging would be to incorporate the proof type into the Fiat-Shamir transcript such that a misconfigured verifier computes a different challenge w.h.p. This would also be more robust to applications that want to mangle the proof in some way, e.g., by stripping the proof type tag.",
+              "createdAt": "2025-09-24T23:05:42Z",
+              "updatedAt": "2025-09-24T23:40:05Z"
+            },
+            {
+              "originalPosition": 40,
+              "body": "While not the case yet, we need to take care that no proof-type tag is a prefix of any other proof-type tag. Otherwise, it's possible to confuse the proof of one type as the proof of a different type. Making each tag the same length would prevent this.\n\n",
+              "createdAt": "2025-09-24T23:12:02Z",
+              "updatedAt": "2025-09-24T23:40:05Z"
+            },
+            {
+              "originalPosition": 44,
+              "body": "Suggestion: I quite like the following pattern when consuming bytes in Python. It makes it easier to read and maintain if you end up changing this in the future. It also helps to remember to consume the entire buffer.\n\n```python\ndef next(b, l):\n    return b[l:], b[:l]\n\np, domain_sep_bytes = next(proof_bytes, len(domain_sep))\np, challenge_bytes = next(p, challenge_len)\np, response_bytes = next(p, response_len)\nassert len(p) == 0\n```",
+              "createdAt": "2025-09-24T23:19:38Z",
+              "updatedAt": "2025-09-24T23:40:05Z"
+            },
+            {
+              "originalPosition": 63,
+              "body": "nit: This PR deletes this comment above, but adds it here. Perhaps keep the comment in both for consistency?",
+              "createdAt": "2025-09-24T23:22:36Z",
+              "updatedAt": "2025-09-24T23:40:05Z"
+            },
+            {
+              "originalPosition": 5,
+              "body": "nit: Perhaps `NISigmaProtocolShortProof` to distinguish from batchable proofs? Otherwise, if you want to express that short proofs are the default, perhaps change the tag to \"NISigmaProtocol\". (I think this would be reasonable, FWIW -- the default should be the cheap, hard-to-misuse thing.)",
+              "createdAt": "2025-09-24T23:25:36Z",
+              "updatedAt": "2025-09-24T23:40:05Z"
+            },
+            {
+              "originalPosition": 34,
+              "body": "What is the session ID? Would I find out by reading the draft?",
+              "createdAt": "2025-09-24T23:28:17Z",
+              "updatedAt": "2025-09-24T23:40:05Z"
+            },
+            {
+              "originalPosition": 15,
+              "body": "What's an example of a verifier message?",
+              "createdAt": "2025-09-24T23:30:02Z",
+              "updatedAt": "2025-09-24T23:40:05Z"
+            },
+            {
+              "originalPosition": 44,
+              "body": "Consider adding a reference to the sigma draft\n```suggestion\n- a `SigmaProtocol`, which specifies an interactive 3-message protocol as defined in {{Section 2 of !SIGMA}}\n```",
+              "createdAt": "2025-09-24T23:31:44Z",
+              "updatedAt": "2025-09-24T23:40:05Z"
+            },
+            {
+              "originalPosition": 156,
+              "body": "Does this PR now close #17?",
+              "createdAt": "2025-09-24T23:34:58Z",
+              "updatedAt": "2025-09-24T23:40:05Z"
+            },
+            {
+              "originalPosition": 164,
+              "body": "I'm curious why we're defining this variant. What's the advantage of duplex over plain old SHAKE128?",
+              "createdAt": "2025-09-24T23:35:45Z",
+              "updatedAt": "2025-09-24T23:40:05Z"
+            },
+            {
+              "originalPosition": 207,
+              "body": "I'm just curious how the `iv` is chosen and why we pad it. Also, is the `iv`  expected to be 64 bytes?",
+              "createdAt": "2025-09-24T23:37:41Z",
+              "updatedAt": "2025-09-24T23:40:05Z"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
