@@ -49,26 +49,30 @@ class NISigmaProtocol:
         """
         (commitment, challenge, response) = self._prove(witness, rng)
         assert self.sigma_protocol.verifier(commitment, challenge, response)
-        proof_type_tag = "01".encode('utf-8')
+        proof_type_tag = bytes.fromhex("AA")
         return proof_type_tag + self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
+        # return self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
 
     def verify(self, proof):
         """
         Verification method using challenge-response format.
         """
-        # Check that the proof type tag matches expected value
-        proof_type_tag = "01".encode('utf-8')
-        tag_bytes = proof[:len(proof_type_tag)]
-        assert proof_type_tag == proof_type_tag
+        # Before running the sigma protocol verifier, one must also check that:
+        # - the proof length is exactly len(proof_type_tag) + challenge_bytes_len + response_bytes_len
+        proof_type_tag = bytes.fromhex("AA")
+        challenge_bytes_len = self.sigma_protocol.instance.Domain.scalar_byte_length()
+        assert len(proof) == len(proof_type_tag) + challenge_bytes_len + self.sigma_protocol.instance.response_bytes_len, f"Invalid proof length: {len(proof)} != {len(proof_type_tag) + challenge_bytes_len + self.sigma_protocol.instance.response_bytes_len}"
 
-        challenge_len = self.sigma_protocol.instance.Domain.scalar_byte_length()
-        challenge_bytes = proof[len(proof_type_tag):challenge_len]
-        response_bytes = proof[len(proof_type_tag) + challenge_len:]
+        # - the proof type tag matches expected value
+        proof, tag_bytes = next(proof, len(proof_type_tag))
+        assert tag_bytes == proof_type_tag, f"Mismatched proof tag: {tag_bytes} (given) != {proof_type_tag} (expected)."
 
+        # - proof deserialization successfully produces a valid challenge and a valid response
+        response_bytes, challenge_bytes = next(proof, challenge_bytes_len)
         challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
         response = self.sigma_protocol.deserialize_response(response_bytes)
-        commitment = self.sigma_protocol.simulate_commitment(response, challenge)
 
+        commitment = self.sigma_protocol.simulate_commitment(response, challenge)
         return self.sigma_protocol.verifier(commitment, challenge, response)
 
     def prove_batchable(self, witness, rng):
@@ -80,25 +84,27 @@ class NISigmaProtocol:
         (commitment, challenge, response) = self._prove(witness, rng)
         # running the verifier here is just a sanity check
         assert self.sigma_protocol.verifier(commitment, challenge, response)
-        proof_type_tag = "02".encode('utf-8')
+        proof_type_tag = bytes.fromhex("BB")
         return proof_type_tag + self.sigma_protocol.serialize_commitment(commitment) + self.sigma_protocol.serialize_response(response)
 
     def verify_batchable(self, proof):
         # Before running the sigma protocol verifier, one must also check that:
-        # - the proof type tag matches expected value
-        proof_type_tag = "02".encode('utf-8')
-        tag_bytes = proof[:len(proof_type_tag)]
-        assert tag_bytes == proof_type_tag
-
         # - the proof length is exactly len(proof_type_tag) + commit_bytes_len + response_bytes_len
+        proof_type_tag = bytes.fromhex("BB")
         assert len(proof) == len(proof_type_tag) + self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len, f"Invalid proof length: {len(proof)} != {len(proof_type_tag) + self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len}"
 
+        # - the proof type tag matches expected value
+        proof, tag_bytes = next(proof, len(proof_type_tag))
+        assert tag_bytes == proof_type_tag, f"Mismatched proof tag: {tag_bytes} (given) != {proof_type_tag} (expected)."
+
         # - proof deserialization successfully produces a valid commitment and a valid response
-        commitment_bytes = proof[len(proof_type_tag):self.sigma_protocol.instance.commit_bytes_len]
-        response_bytes = proof[len(proof_type_tag) + self.sigma_protocol.instance.commit_bytes_len:]
+        response_bytes, commitment_bytes = next(proof, self.sigma_protocol.instance.commit_bytes_len) 
         commitment = self.sigma_protocol.deserialize_commitment(commitment_bytes)
         response = self.sigma_protocol.deserialize_response(response_bytes)
 
         self.codec.prover_message(self.hash_state, commitment)
         challenge = self.codec.verifier_challenge(self.hash_state)
         return self.sigma_protocol.verifier(commitment, challenge, response)
+
+def next(b, l):
+    return b[l:], b[:l]

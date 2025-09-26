@@ -21,7 +21,10 @@ def test_vector(test_vector_function):
         narg_string = NISigmaProtocol(session_id, instance).prove(witness, proof_generation_rng)
         assert NISigmaProtocol(session_id, instance).verify(narg_string)
         hex_narg_string = narg_string.hex()
-        print(f"{test_vector_name} test vector generated\n")
+        batchable_narg_string = NISigmaProtocol(session_id, instance).prove_batchable(witness, proof_generation_rng)
+        assert NISigmaProtocol(session_id, instance).verify_batchable(batchable_narg_string)
+        hex_batchable_narg_string = batchable_narg_string.hex()
+        print(f"{test_vector_name} test vectors generated\n")
 
         # Serialize the entire witness list at once
         witness_bytes = NISigmaProtocol.Codec.GG.ScalarField.serialize(witness)
@@ -34,6 +37,7 @@ def test_vector(test_vector_function):
             "Statement": instance.get_label().hex(),
             "Witness": witness_bytes.hex(),
             "Proof": hex_narg_string,
+            "Batchable Proof": hex_batchable_narg_string,
         }
 
     return inner
