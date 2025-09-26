@@ -85,7 +85,7 @@ Table of Contents
    3.  The Codec interface
    4.  Generation of the Initialization Vector
    5.  Fiat-Shamir transformation for Sigma Protocols
-     5.1.  NIZK instances (ciphersuites)
+     5.1.  NISigmaProtocol instances (ciphersuites)
    6.  Codec for Schnorr proofs
    7.  Duplex Sponge Interfaces
      7.1.  SHAKE128
@@ -215,8 +215,8 @@ Table of Contents
    We describe how to construct non-interactive proofs for sigma
    protocols.  The Fiat-Shamir transformation is parametrized by:
 
-   *  a SigmaProtocol, which specifies an interactive 3-message
-      protocol;
+   *  a SigmaProtocol, which specifies an interactive 3-message protocol
+      as defined in Section 2 of [SIGMA];
 
    *  a Codec, which specifies how to absorb prover messages and how to
       squeeze verifier challenges;
@@ -299,24 +299,24 @@ class NISigmaProtocol:
         challenge = self.codec.verifier_challenge(self.hash_state)
         return self.sigma_protocol.verifier(commitment, challenge, response)
 
-5.1.  NIZK instances (ciphersuites)
+5.1.  NISigmaProtocol instances (ciphersuites)
 
-   We describe NIZK instances for combinations of protocols
-   (SigmaProtocol), codec (Codec), and hash fuction
+   We describe noninteractive sigma protocol instances for combinations
+   of protocols (SigmaProtocol), codec (Codec), and hash fuction
    (DuplexSpongeInterface).  Descriptions of codecs and hash functions
    are in the following sections.
 
-   class NISchnorrProofShake128P256(NIZK):
+   class NISchnorrProofShake128P256(NISigmaProtocol):
        Protocol = SchnorrProof
        Codec = P256Codec
        Hash = SHAKE128
 
-   class NISchnorrProofShake128Bls12381(NIZK):
+   class NISchnorrProofShake128Bls12381(NISigmaProtocol):
        Protocol = SchnorrProof
        Codec = Bls12381Codec
        Hash = SHAKE128
 
-   class NISchnorrProofKeccakDuplexSpongeBls12381(NIZK):
+   class NISchnorrProofKeccakDuplexSpongeBls12381(NISigmaProtocol):
        Protocol = SchnorrProof
        Codec = Bls12381Codec
        Hash = KeccakDuplexSponge
@@ -356,19 +356,19 @@ class NISigmaProtocol:
 
 7.1.1.  Initialization
 
-   new(self, iv)
+  new(self, iv)
 
-   Inputs:
+  Inputs:
 
-   - iv, a byte array
+  - iv, a byte array
 
-   Outputs:
+  Outputs:
 
-   -  a hash state interface
+  -  a hash state interface
 
-   1. initial_block = iv + b'\00' * (168-64)
-   2. self.hash_state = hashlib.shake_128()
-   3. self.hash_state.update(initial_block)
+  1. initial_block = iv + b'\00' * 104  # len(iv) + 104 == SHAKE128 rate
+  2. self.hash_state = hashlib.shake_128()
+  3. self.hash_state.update(initial_block)
 
 7.1.2.  SHAKE128 Absorb
 
@@ -566,6 +566,11 @@ field_bytes_length, the number of bytes to represent the scalar element, equal t
               "PKCS #1: RSA Cryptography Specifications Version 2.2",
               RFC 8017, DOI 10.17487/RFC8017, November 2016,
               <https://www.rfc-editor.org/rfc/rfc8017>.
+
+   [SIGMA]    Orrù, M. and C. Yun, "Interactive Sigma Proofs", Work in
+              Progress, Internet-Draft, draft-irtf-cfrg-sigma-protocols-
+              00, 8 August 2025, <https://datatracker.ietf.org/doc/html/
+              draft-irtf-cfrg-sigma-protocols-00>.
 
 9.2.  Informative References
 

@@ -1166,7 +1166,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
             <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-fiat-shamir-transformation-" class="internal xref">Fiat-Shamir transformation for Sigma Protocols</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1">
-                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="auto internal xref">5.1</a>.  <a href="#name-nizk-instances-ciphersuites" class="internal xref">NIZK instances (ciphersuites)</a></p>
+                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="auto internal xref">5.1</a>.  <a href="#name-nisigmaprotocol-instances-c" class="internal xref">NISigmaProtocol instances (ciphersuites)</a></p>
 </li>
             </ul>
 </li>
@@ -1375,7 +1375,7 @@ hash_state.absorb(session_id)
 The Fiat-Shamir transformation is parametrized by:<a href="#section-5-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5-2.1">
-          <p id="section-5-2.1.1">a <code>SigmaProtocol</code>, which specifies an interactive 3-message protocol;<a href="#section-5-2.1.1" class="pilcrow">¶</a></p>
+          <p id="section-5-2.1.1">a <code>SigmaProtocol</code>, which specifies an interactive 3-message protocol as defined in <span><a href="https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-sigma-protocols-00#section-2" class="relref">Section 2</a> of [<a href="#SIGMA" class="cite xref">SIGMA</a>]</span>;<a href="#section-5-2.1.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-5-2.2">
           <p id="section-5-2.2.1">a <code>Codec</code>, which specifies how to absorb prover messages and how to squeeze verifier challenges;<a href="#section-5-2.2.1" class="pilcrow">¶</a></p>
@@ -1461,25 +1461,25 @@ class NISigmaProtocol:
         return self.sigma_protocol.verifier(commitment, challenge, response)
 </pre><a href="#section-5-4" class="pilcrow">¶</a>
 </div>
-<div id="nizk-instances-ciphersuites">
+<div id="nisigmaprotocol-instances-ciphersuites">
 <section id="section-5.1">
-        <h3 id="name-nizk-instances-ciphersuites">
-<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-nizk-instances-ciphersuites" class="section-name selfRef">NIZK instances (ciphersuites)</a>
+        <h3 id="name-nisigmaprotocol-instances-c">
+<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-nisigmaprotocol-instances-c" class="section-name selfRef">NISigmaProtocol instances (ciphersuites)</a>
         </h3>
-<p id="section-5.1-1">We describe NIZK instances for combinations of protocols (SigmaProtocol), codec (Codec), and hash fuction (DuplexSpongeInterface). Descriptions of codecs and hash functions are in the following sections.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+<p id="section-5.1-1">We describe noninteractive sigma protocol instances for combinations of protocols (SigmaProtocol), codec (Codec), and hash fuction (DuplexSpongeInterface). Descriptions of codecs and hash functions are in the following sections.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-5.1-2">
 <pre>
-class NISchnorrProofShake128P256(NIZK):
+class NISchnorrProofShake128P256(NISigmaProtocol):
     Protocol = SchnorrProof
     Codec = P256Codec
     Hash = SHAKE128
 
-class NISchnorrProofShake128Bls12381(NIZK):
+class NISchnorrProofShake128Bls12381(NISigmaProtocol):
     Protocol = SchnorrProof
     Codec = Bls12381Codec
     Hash = SHAKE128
 
-class NISchnorrProofKeccakDuplexSpongeBls12381(NIZK):
+class NISchnorrProofKeccakDuplexSpongeBls12381(NISigmaProtocol):
     Protocol = SchnorrProof
     Codec = Bls12381Codec
     Hash = KeccakDuplexSponge
@@ -1549,7 +1549,7 @@ Outputs:
 
 -  a hash state interface
 
-1. initial_block = iv + b'\00' * (168-64)
+1. initial_block = iv + b'\00' * 104  # len(iv) + 104 == SHAKE128 rate
 2. self.hash_state = hashlib.shake_128()
 3. self.hash_state.update(initial_block)
 </pre><a href="#section-7.1.1-1" class="pilcrow">¶</a>
@@ -1832,8 +1832,12 @@ Inputs:
         </h3>
 <dl class="references">
 <dt id="RFC8017">[RFC8017]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Moriarty, K., Ed.</span>, <span class="refAuthor">Kaliski, B.</span>, <span class="refAuthor">Jonsson, J.</span>, and <span class="refAuthor">A. Rusch</span>, <span class="refTitle">"PKCS #1: RSA Cryptography Specifications Version 2.2"</span>, <span class="seriesInfo">RFC 8017</span>, <span class="seriesInfo">DOI 10.17487/RFC8017</span>, <time datetime="2016-11" class="refDate">November 2016</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8017">https://www.rfc-editor.org/rfc/rfc8017</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="SIGMA">[SIGMA]</dt>
+      <dd>
+<span class="refAuthor">Orrù, M.</span> and <span class="refAuthor">C. Yun</span>, <span class="refTitle">"Interactive Sigma Proofs"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-irtf-cfrg-sigma-protocols-00</span>, <time datetime="2025-08-08" class="refDate">8 August 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-sigma-protocols-00">https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-sigma-protocols-00</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
 </section>
