@@ -49,21 +49,21 @@ class NISigmaProtocol:
         """
         (commitment, challenge, response) = self._prove(witness, rng)
         assert self.sigma_protocol.verifier(commitment, challenge, response)
-        domain_sep = "NISigmaProtocolShortProof".encode('utf-8')
-        return domain_sep + self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
+        proof_type_tag = "01".encode('utf-8')
+        return proof_type_tag + self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
 
     def verify(self, proof):
         """
         Verification method using challenge-response format.
         """
-        # Check that serialized proof domain separator matches expected value
-        domain_sep = "NISigmaProtocolShortProof".encode('utf-8')
-        domain_sep_bytes = proof[:len(domain_sep)]
-        assert domain_sep_bytes == domain_sep
+        # Check that the proof type tag matches expected value
+        proof_type_tag = "01".encode('utf-8')
+        tag_bytes = proof[:len(proof_type_tag)]
+        assert proof_type_tag == proof_type_tag
 
         challenge_len = self.sigma_protocol.instance.Domain.scalar_byte_length()
-        challenge_bytes = proof[len(domain_sep):challenge_len]
-        response_bytes = proof[len(domain_sep) + challenge_len:]
+        challenge_bytes = proof[len(proof_type_tag):challenge_len]
+        response_bytes = proof[len(proof_type_tag) + challenge_len:]
 
         challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
         response = self.sigma_protocol.deserialize_response(response_bytes)
@@ -80,22 +80,22 @@ class NISigmaProtocol:
         (commitment, challenge, response) = self._prove(witness, rng)
         # running the verifier here is just a sanity check
         assert self.sigma_protocol.verifier(commitment, challenge, response)
-        domain_sep = "NISigmaProtocolBatchableProof".encode('utf-8')
-        return domain_sep + self.sigma_protocol.serialize_commitment(commitment) + self.sigma_protocol.serialize_response(response)
+        proof_type_tag = "02".encode('utf-8')
+        return proof_type_tag + self.sigma_protocol.serialize_commitment(commitment) + self.sigma_protocol.serialize_response(response)
 
     def verify_batchable(self, proof):
         # Before running the sigma protocol verifier, one must also check that:
-        # - serialized proof domain separator matches expected value
-        domain_sep = "NISigmaProtocolBatchableProof".encode('utf-8')
-        domain_sep_bytes = proof[:len(domain_sep)]
-        assert domain_sep_bytes == domain_sep
+        # - the proof type tag matches expected value
+        proof_type_tag = "02".encode('utf-8')
+        tag_bytes = proof[:len(proof_type_tag)]
+        assert tag_bytes == proof_type_tag
 
-        # - the proof length is exactly len(domain_sep) + commit_bytes_len + response_bytes_len
-        assert len(proof) == len(domain_sep) + self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len, f"Invalid proof length: {len(proof)} != {len(domain_sep) + self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len}"
+        # - the proof length is exactly len(proof_type_tag) + commit_bytes_len + response_bytes_len
+        assert len(proof) == len(proof_type_tag) + self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len, f"Invalid proof length: {len(proof)} != {len(proof_type_tag) + self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len}"
 
         # - proof deserialization successfully produces a valid commitment and a valid response
-        commitment_bytes = proof[len(domain_sep):self.sigma_protocol.instance.commit_bytes_len]
-        response_bytes = proof[len(domain_sep) + self.sigma_protocol.instance.commit_bytes_len:]
+        commitment_bytes = proof[len(proof_type_tag):self.sigma_protocol.instance.commit_bytes_len]
+        response_bytes = proof[len(proof_type_tag) + self.sigma_protocol.instance.commit_bytes_len:]
         commitment = self.sigma_protocol.deserialize_commitment(commitment_bytes)
         response = self.sigma_protocol.deserialize_response(response_bytes)
 
