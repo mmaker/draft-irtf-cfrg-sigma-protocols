@@ -252,7 +252,7 @@ SHAKE128 is a variable-length hash function based on the Keccak sponge construct
 
     -  a hash state interface
 
-    1. initial_block = iv + b'\00' * (168-64)
+    1. initial_block = iv + b'\00' * 104  # len(iv) + 104 == SHAKE128 rate
     2. self.hash_state = hashlib.shake_128()
     3. self.hash_state.update(initial_block)
 

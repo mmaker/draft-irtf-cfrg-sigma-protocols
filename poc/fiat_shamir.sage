@@ -48,10 +48,10 @@ class NISigmaProtocol:
         Proving method using challenge-response format.
         """
         (commitment, challenge, response) = self._prove(witness, rng)
+        # running the verifier here is just a sanity check
         assert self.sigma_protocol.verifier(commitment, challenge, response)
         proof_type_tag = bytes.fromhex("AA")
         return proof_type_tag + self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
-        # return self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
 
     def verify(self, proof):
         """
