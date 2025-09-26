@@ -192,21 +192,21 @@ Upon initialization, the protocol receives as input:
             challenge = self.codec.verifier_challenge(self.hash_state)
             return self.sigma_protocol.verifier(commitment, challenge, response)
 
-## NIZK instances (ciphersuites)
+## NISigmaProtocol instances (ciphersuites)
 
-We describe NIZK instances for combinations of protocols (SigmaProtocol), codec (Codec), and hash fuction (DuplexSpongeInterface). Descriptions of codecs and hash functions are in the following sections.
+We describe noninteractive sigma protocol instances for combinations of protocols (SigmaProtocol), codec (Codec), and hash fuction (DuplexSpongeInterface). Descriptions of codecs and hash functions are in the following sections.
 
-    class NISchnorrProofShake128P256(NIZK):
+    class NISchnorrProofShake128P256(NISigmaProtocol):
         Protocol = SchnorrProof
         Codec = P256Codec
         Hash = SHAKE128
 
-    class NISchnorrProofShake128Bls12381(NIZK):
+    class NISchnorrProofShake128Bls12381(NISigmaProtocol):
         Protocol = SchnorrProof
         Codec = Bls12381Codec
         Hash = SHAKE128
 
-    class NISchnorrProofKeccakDuplexSpongeBls12381(NIZK):
+    class NISchnorrProofKeccakDuplexSpongeBls12381(NISigmaProtocol):
         Protocol = SchnorrProof
         Codec = Bls12381Codec
         Hash = KeccakDuplexSponge
