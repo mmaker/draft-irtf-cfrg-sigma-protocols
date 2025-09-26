@@ -113,7 +113,7 @@ This will be expanded in future versions of this specification.
 We describe how to construct non-interactive proofs for sigma protocols.
 The Fiat-Shamir transformation is parametrized by:
 
-- a `SigmaProtocol`, which specifies an interactive 3-message protocol;
+- a `SigmaProtocol`, which specifies an interactive 3-message protocol as defined in {{Section 2 of !SIGMA}};
 - a `Codec`, which specifies how to absorb prover messages and how to squeeze verifier challenges;
 - a `DuplexSpongeInterface`, which specifies a hash function for computing challenges.
 
