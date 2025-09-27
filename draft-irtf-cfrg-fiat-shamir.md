@@ -73,7 +73,7 @@ Where:
 
 A codec is a collection of:
 - functions that map prover messages into the hash function domain,
-- functions that map hash outputs into verifier messages (of the desired distribution).
+- functions that map hash outputs into a message output by the verifier in the Sigma protocol
 In addition, the "init" function initializes the hash state with a session ID and an instance label.
 For byte-oriented codecs, this is just the concatenation of the two prefixed by their lengths.
 
