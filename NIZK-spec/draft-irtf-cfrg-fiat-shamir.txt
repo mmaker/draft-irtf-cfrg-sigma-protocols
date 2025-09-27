@@ -4,8 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                         26 September 2025
-Expires: 30 March 2026
+Intended status: Informational                         27 September 2025
+Expires: 31 March 2026
 
 
                        Fiat-Shamir Transformation
@@ -62,7 +62,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 30 March 2026.
+   This Internet-Draft will expire on 31 March 2026.
 
 Copyright Notice
 
@@ -158,8 +158,8 @@ Table of Contents
 3.  The Codec interface
 
    A codec is a collection of: - functions that map prover messages into
-   the hash function domain, - functions that map hash outputs into
-   verifier messages (of the desired distribution).  In addition, the
+   the hash function domain, - functions that map hash outputs into a
+   message output by the verifier in the Sigma protocol In addition, the
    "init" function initializes the hash state with a session ID and an
    instance label.  For byte-oriented codecs, this is just the
    concatenation of the two prefixed by their lengths.
