@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-09-25T01:13:14.288987+00:00",
+  "timestamp": "2025-09-28T01:19:43.463593+00:00",
   "repo": "mmaker/draft-irtf-cfrg-sigma-protocols",
   "labels": [
     {
@@ -1258,6 +1258,122 @@
           "updatedAt": "2025-09-24T13:57:18Z"
         }
       ]
+    },
+    {
+      "number": 81,
+      "id": "I_kwDONyiw_87OEqh1",
+      "title": "OpenZeppelin audit: Incomplete Specification of Security-Critical Components",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/81",
+      "state": "OPEN",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Quoted from the audit: \n\n\nThe specification of the following security-critical components was found to be somewhat vague or incomplete:\n\n- [ ] IV: The IV-based sponge-initialization approach, while functional, lacks standardization justification. The specification [states](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/draft-irtf-cfrg-fiat-shamir.md#generation-of-the-initialization-vector-iv-generation) the IV \"embeds\" protocol_id, session_id, and instance_label. The implementation gives [two alternative methods](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/fiat_shamir.sage#L28-L33) to achieve this. While the two should be conceptually identical, one of them relies on a dedicated function [get_iv_from_identifiers](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/fiat_shamir.sage#L28C32-L28C55) that is left undefined.\n\n- [ ] RNG: The RNG requirements are underspecified, with the draft only mentioning the need for [\"access to a high-quality entropy source\"](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/draft-irtf-cfrg-sigma-protocols.md#core-interface) without defining what this means or providing implementation guidance. The codebase delegates RNG operations to the random() methods in [Scalar](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/groups/groups.sage#L32) and [Group](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/groups/groups.sage#L110) classes. The latter depend on the rng object, which is passed in by the caller (e.g., SchnorrProof) and its implementation is unspecified.\n\n- [ ] Session ID, Protocol ID, and Instance Label: These identifier components suffer from vague generation requirements that delegate [their computation](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/draft-irtf-cfrg-sigma-protocols.md#generation-of-the-protocol-identifier-protocol-id-generation) to [users](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/draft-irtf-cfrg-sigma-protocols.md#generation-of-the-instance-identifier-instance-id-generation) without proper guidance. The Protocol ID is [hardcoded](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/sigma_protocols.sage#L127) to a 64-byte string in the implementation, but the specification [states](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/sigma_protocols.sage#L127) that it is the \"responsibility of the user to pick a unique protocol identifier\", providing no guidance on collision avoidance or namespace management. Similarly, [Session ID](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/draft-irtf-cfrg-fiat-shamir.md#generation-of-the-initialization-vector-iv-generation) and [Instance Label](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/draft-irtf-cfrg-sigma-protocols.md#generation-of-the-instance-identifier-instance-id-generation) are described as \"user controlled\" without specifying uniqueness requirements and entropy needs. Proper specification of the identifiers is essential for preventing replay attacks and ensuring proof binding to specific contexts.\n\nThe above-listed gaps in the specification create implementation risks, as different implementers may make incompatible or insecure choices.\n\nConsider amending the specification and the corresponding parts of the implementation with concrete recommendations, security requirements, and standardized generation procedures for all three components to ensure interoperability and security across implementations.",
+      "createdAt": "2025-09-26T12:13:33Z",
+      "updatedAt": "2025-09-26T12:20:06Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 82,
+      "id": "I_kwDONyiw_87OEsjF",
+      "title": "OpenZeppelin audit: Initialization Vector Is of Type bytes While Input Is of Type list[Unit]",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/82",
+      "state": "OPEN",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Quoted from the audit: \n\n\nThe input to absorb in the general sponge construction DuplexSpongeInterface is declared as a [list of Units](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/duplex_sponge.sage#L20) to provide the flexibility for both binary sponge constructions (such as Keccak-256 or SHAKE-128) as well as arithmetization-oriented (AO) sponge constructions (such as Poseidon). However, in the current version of the Sage implementation, the type of the IV has been [declared as bytes](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/duplex_sponge.sage#L16). This works well in the implemented examples of Keccak-256 and SHAKE-128, where the IV is stored in the [capacity bytes](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/duplex_sponge.sage#L57) and the [last 64 bytes](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/duplex_sponge.sage#L37) of the first block, respectively. However, to include the IV into the initial state of an AO sponge construction would require converting from bytes to field elements before absorbing them.\n\nConsider changing the type of the initialization vector to list[Unit] to match the input to absorb to cover both binary and AO sponge constructions. In addition, consider specifying a rule for incorporating the initialization vector into the sponge construction's initial state that applies to all cases.",
+      "createdAt": "2025-09-26T12:15:32Z",
+      "updatedAt": "2025-09-26T12:19:55Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 83,
+      "id": "I_kwDONyiw_87OEtk-",
+      "title": "OpenZeppelin audit: Missing Protections Against Timing Attacks",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/83",
+      "state": "OPEN",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Quoted from the audit: \n\nThroughout the codebase, multiple instances of sensitive computations that may be susceptible to timing attacks were identified:\n\nThe prover_response computation [performs](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/sigma_protocols.sage#L75) nonces[i] + witness[i] * challenge for each scalar. In principle, timing variations could leak information about the witness values.\n[Random nonce generation](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/sigma_protocols.sage#L67) during the commitment phase is timing-sensitive and may leak information about the witness through timing patterns.\nThe [modular reduction](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/codec.sage#L46) in the Fiat-Shamir challenge derivation could leak timing information about the challenge value.\nThe verifier performs scalar multiplications and group operations on the response values, which contain [linear combinations](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/sigma_protocols.sage#L75) of the witness and nonces. Specifically, in the [verification equation](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/sigma_protocols.sage#L83-L86), the timing of scalar multiplication operations could leak information about the witness values embedded in the response.\nSerialization and deserialization are timing-sensitive as they handle witness data either directly upon [test vector generation](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/test_sigma_protocols.sage#L27) or indirectly through the [prover response](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/sigma_protocols.sage#L98-L99).\nConsider adding protection against timing attacks such as constant-time random number generation, constant-time algorithms for scalar multiplication, modular reduction, etc.",
+      "createdAt": "2025-09-26T12:16:37Z",
+      "updatedAt": "2025-09-26T12:20:26Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 84,
+      "id": "I_kwDONyiw_87OEud1",
+      "title": "OpenZeppelin audit: Missing Secure Cleanup of Sensitive Data",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/84",
+      "state": "OPEN",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [
+        "easy"
+      ],
+      "body": "The SchnorrProof implementation stores sensitive data in a ProverState [namedtuple](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/sigma_protocols.sage#L61) containing both the witness and the nonces. This data is created during the [commitment phase](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/sigma_protocols.sage#L66-L70) and used later in the [response phase](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/sigma_protocols.sage#L72-L77) in sigma_protocols.sage.\n\nHowever, the memory storing the mentioned sensitive data is not cleared after computing the proof, which may potentially leak sensitive information to an adversary. While not necessarily an issue for the reference SageMath implementation, this may be relevant for a production implementation in Rust or Solidity.\n\nConsider adding proper memory cleanup of unneeded memory containing sensitive data. For instance:\n\nExplicit memory zeroing after proof generation.\nSecure de-allocation of sensitive data structures.\nProtection against memory dumps or swap file exposure.\nTiming-safe operations for sensitive computations.\nIn addition, consider documenting these measures in the specification and in the reference implementation.",
+      "createdAt": "2025-09-26T12:17:28Z",
+      "updatedAt": "2025-09-26T12:19:43Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 85,
+      "id": "I_kwDONyiw_87OEvML",
+      "title": "OpenZeppelin audit: Missing Protections Against Small-Subgroup Attacks",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/85",
+      "state": "OPEN",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [
+        "easy"
+      ],
+      "body": "Quoted from the audit:\n\nSmall-subgroup attacks exploit the fact that elliptic curves may have points of small order that are not in the intended prime-order subgroup. Without subgroup membership testing, an attacker could potentially provide points of small order that could leak information about the discrete logarithm.\n\nCurrently, the implementation supports the NIST curves [P256](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/groups/groups.sage#L228), [P384](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/groups/groups.sage#L236), and [P251](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/groups/groups.sage#L244), the Edwards curves [Ristretto255](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/groups/groups.sage#L262) and [Decaf448](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/groups/groups.sage#L294), and the [BLS12-381](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/groups/groups.sage#L340) curve. To the best of our knowledge, the groups defined by the points of each of the listed curves do not have small subgroups, besides the trivial one. For that reason, the lack of small subgroups protection is not an issue at present, but may be a problem if the standard envisions support for other elliptic curves.\n\nIn the interest of making the standard applicable to a broader class of elliptic curves, consider adding checks against potential small subgroups attacks, for instance:\n\nSubgroup membership testing during point deserialization\nCo-factor multiplication to ensure points are in the correct subgroup (co-factor clearing)\nOrder verification for received points",
+      "createdAt": "2025-09-26T12:18:12Z",
+      "updatedAt": "2025-09-26T12:19:33Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 86,
+      "id": "I_kwDONyiw_87OEvy8",
+      "title": "OpenZeppelin audit: Inconsistency in IV Length Between Specification and PoC",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/86",
+      "state": "OPEN",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Quoted from the audit: \n\nThe Fiat-Shamir specification [states](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/draft-irtf-cfrg-fiat-shamir.md?plain=1#L68) that the IV for the duplex sponge is 32 bytes long, whereas both the SHAKE-128 and Keccak implementations in the PoC use a [64-byte IV](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/duplex_sponge.sage#L55).\n\nConsider editing the specification to align with the PoC implementation.",
+      "createdAt": "2025-09-26T12:18:44Z",
+      "updatedAt": "2025-09-26T12:25:11Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 87,
+      "id": "I_kwDONyiw_87OE2RJ",
+      "title": "OpenZeppelin audit: Wrong Indentation in class LinearRelation",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/87",
+      "state": "OPEN",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Building of Tests Fails for SageMath v.9.5\nTest building fails for SageMath v.9.5, which is a relatively old version, but is the highest version [supported](https://repology.org/project/sagemath/versions) by the package manager of Ubuntu 22.04.\n\nSpecifically, all three commands (make test, sage test_sigma_protocols.sage, and make vectors) fail with the AttributeError: 'sage.rings.integer.Integer' object has no attribute 'bit_length' error.\n\nConsider specifying the SageMath version that the PoC implementation has been tested with.",
+      "createdAt": "2025-09-26T12:24:18Z",
+      "updatedAt": "2025-09-26T12:24:18Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -2770,7 +2886,7 @@
     {
       "number": 79,
       "id": "PR_kwDONyiw_86qMDTJ",
-      "title": "Add NIZK class and instances to Fiat-Shamir spec",
+      "title": "Add NISigmaProtocol class and instances to Fiat-Shamir spec",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/79",
       "state": "OPEN",
       "author": "cathieyun",
@@ -2779,13 +2895,13 @@
       "labels": [],
       "body": "Fixes: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/74 by adding the NIZK class and instances\r\n\r\nFixes: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/77 by adding \"short proofs\" to the NIZK class\r\nIn practice, I am making the default proof a \"short proof\" (challenge, responses) and adding a \"batchable proof\" which is a proof in the (commitments, responses) format, as discussed here: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/77#issuecomment-3325924652\r\n\r\nI also noticed that some of the pseudocode in the spec for Codec and DuplexSpongeInterface was out of sync with the poc, so I updated the pseudocode with the updated poc code. \r\n\r\nAdded as of 9/24:\r\n- NIZK now called NISigmaProtocol\r\n- Added domain separation\r\n\r\nNOTE: I am not able to run tests or update the test vectors, because the `sigma_protocol.py/sage` file is missing, so the test can't run. So there may be some mistakes in the poc code I haven't caught yet. Following up with Michele on this.",
       "createdAt": "2025-09-24T03:51:49Z",
-      "updatedAt": "2025-09-24T23:40:05Z",
+      "updatedAt": "2025-09-27T09:12:49Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
-      "baseRefOid": "3ab5b8787ef9d0c9677a9afcd5e5f6613a7b45a5",
+      "baseRefOid": "d4436cfe019f7e0880b29abe1234f341d2a84761",
       "headRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "headRefName": "NIZK-spec",
-      "headRefOid": "4f17d2fff44ee0fa260a0cc4d4ebbe2a0974499a",
+      "headRefOid": "0672487b9352622d441c03107ca3fb7db019dcd7",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -2804,6 +2920,34 @@
           "body": "Questions for @mmaker -\r\nDid our sync this morning convince you of #74 and #77, such that we can go forward with both fixes in one PR (given that this API is specific to NISigmaProtocol, and not all NIZK as that was what you had issues with?) Or would you like to change that naming to be even more specific, eg NISingleRoundSigmaProtocol (which is a mouthful, but I am okay with this if you feel that it is necessary to distinguish from multi-round protocols).\r\n\r\nAlso do you know what happened to the `sigma_protocols.py/sage` file? I can't actually run the code until that file exists, and I don't know when it went missing / what the most updated version of that should be.",
           "createdAt": "2025-09-24T22:26:51Z",
           "updatedAt": "2025-09-24T22:26:51Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "hmm I'm not super happy that both issues are fixed at once: one is about the API interface, the other one breaks test vectors and touches security, that's not good but I'm proceeding for sake of everyone's time.\r\n\r\n# Interface and API\r\n\r\nIn our meeting I suggested to wrap the `NIZK` class in a `NISigmaProtocol(NIZK)`, that has `prove_batchable` and `prove_short`. This felt very explicit as you requested and a good fix for #50 and #44: not disturbing the API you have in mind, and not disturbing the scope of the spec as we're just changing the guts of `NISigmaProtocols`. \r\n\r\n# Domain separation for proof serialization\r\n\r\nAbout domain separation: Chris was worried that different proof serialization formats might require a domain separator, and I said I'd think more about that. \r\n\r\nAfter some thinking, I _don't_ think domain separation on the proof serialization format is ever a security issue. If there existed an adversary able to produce a proof string that verifies, whatever that is (even the proof of another instance and proof system), then you will have a break for simulation extractability, and in most cases knowledge extraction. \r\n\r\nTo make a real-world example, domain separation is never put in signatures for the worry that \"they may collide\" between each other.\r\n\r\nI do see a usability appeal, being able to tell the user \"this is not a proof in the right format\". However, that seems arbitrary with respect to the rest of the ciphersuite information (why this and not the rest of the protocol?). Furthermore, it's creating a potential verification oracle. (I don't see this as a big problem except service discovery maybe?)\r\n\r\nCan you elaborate why this is important for you?\r\n\r\n# The Protocol ID  \r\n\r\nOn the other hand, I _do_ think protocol identifiers are a big security problem and I owe explanations in the spec for it. This is also called \"tag\" in other specifications. \r\n\r\nFor security, you need a unique identifier for your  zero-knowledge proof (Schnorr proof, batched schnorr, OR proof, compressed sigmas, plonk, hyperplonk, turboplonk, fri, deepfri, whir, stir, whatever). \r\nYou want to waste a hash block for this, so that it doesn't bother anybody. \r\n\r\nThis has been done in the past, for example in  [BIP0327](https://github.com/bitcoin/bips/blob/master/bip-0327.mediawiki#notation) where you have: \r\n\r\nSHA256(SHA256(tag) || SHA256(tag) || x)\r\n\r\nThe tag is put twice so that you consume the first block and start with full rate.\r\nAbout the actual length of the protocol id: you need at least 32 bytes for this to have some hope of collision resistance, BUT (and Trevor got me here) you NEED domain separation or you'll end up in having to rely in cross collisions for different hash functions, e.g. if at some point \r\n\r\nH(SHA256(tag) || SHA256(tag)) = H(SHA3(tag) || SHA3(tag))\r\nwhere H = SHA256, SHA3, Poseidon, whatever. \r\n\r\nSolution: waste the first block, use 32 bytes for protocol id, reserve 32 for future use.\r\n\r\nIt was a huge mess to get people from academia and engineers sides to agree, but I think this is future-proof without wasting any resource.\r\n\r\n\r\nAbout the naming, we need three ingredients: \r\n- protocol id: set by the protocol\r\n- instance: defined by the relation\r\n- session id: set by the application\r\nIn the spec I'm using `IV`, which going back to it feels confusing. I'd be in favor of just replacing it with `protocol id` if you're down for it",
+          "createdAt": "2025-09-26T16:07:20Z",
+          "updatedAt": "2025-09-26T16:07:20Z"
+        },
+        {
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> After some thinking, I don't think domain separation on the proof serialization format is ever a security issue. If there existed an adversary able to produce a proof string that verifies, whatever that is (even the proof of another instance and proof system), then you will have a break for simulation extractability, and in most cases knowledge extraction.\r\n\r\nJust checking that I'm understanding Michele's stance - you are arguing against adding a tag when serializing short or batchable proofs, right?\r\n\r\nI didn't see your response when writing my comment on this topic (https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/79#discussion_r2382863216), but my takeaway was basically that \"encode proof type in protocol_id\" wasn't a great solution (my argument), and also that \"encode proof type in tag during serialization\" wasn't a great solution (chris's argument). Maybe the solution is to do neither :)\r\n\r\nI guess to follow the logical thread - we are trying to make sure we don't create a proof that is then (mistakenly) verified using a different method than proof creation. Hence trying to encode the proof types. However similarly, you could make a proof with one session_id and instance, and verify it with a *different* session_id and instance (probably on accident), and you wouldn't realize this until you get back a failed verification - there is nothing about what session_id and instance to use in the proof serialization itself! This feels fairly analogous to using the wrong proof types, and is an argument for not encoding any information for the proof type (since ultimately, verifying with the wrong proof type would just fail, it's not a security vulnerability, just a usability concern).",
+          "createdAt": "2025-09-26T16:29:17Z",
+          "updatedAt": "2025-09-26T16:29:17Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "Yeah! I think you rephrased my point well. The serialization shouldn't affect security so it's not a good idea to have it in the protocol id, and if that's for usability it feels kinda arbitrary with the other \"moving pieces\" of a proof",
+          "createdAt": "2025-09-26T16:35:46Z",
+          "updatedAt": "2025-09-26T16:35:46Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "> About domain separation: Chris was worried that different proof serialization formats might require a domain separator, and I said I'd think more about that.\r\n\r\nMy concern was more generically about \"protocol confusion\", by which I mean the prover and verifier don't agree on the protocol's parameters. By parameters I mean the elliptic curve, the hash function, the statement to be proved, and what we've been calling the \"proof type\" (short, batchable, etc.). Perhaps what we're calling the \"proof type\" is what you're calling the \"protocol\" above (I don't care what we call it). Quote:\r\n\r\n> For security, you need a unique identifier for your zero-knowledge proof (Schnorr proof, batched schnorr, OR proof, compressed sigmas, plonk, hyperplonk, turboplonk, fri, deepfri, whir, stir, whatever).\r\n\r\nGenerally speaking, when a cryptosystem has a lot of agility (as this one does), we need to consider the risk of an attacker influencing the parameters used in the actual protocol execution. Historically, this has been a huge attack vector for real world crypto (TLS, SSH, etc.).\r\n\r\nSpecifically, my question is: consider a malicious prover that wants to force the verifier to accept an invalid proof. Suppose we give it a bit more power, in that it can choose the parameters used by the verifier, in particular the proof type. I'm calling this a \"protocol confusion attack\". Does this extra power give the attacker any extra advantage?\r\n\r\nIf the attacker controls the parameters, it can force the verifier to use the weakest parameters. This seems like it would be a problem for the statement, the curve, or hash function. Perhaps it's not a problem for the proof type?\r\n\r\n> I do see a usability appeal, being able to tell the user \"this is not a proof in the right format\". However, that seems arbitrary with respect to the rest of the ciphersuite information (why this and not the rest of the protocol?). Furthermore, it's creating a potential verification oracle. (I don't see this as a big problem except service discovery maybe?\r\n\r\nTo be clear, I don't think adding the 1-byte tag to the proof to denote its type is the best way to address protocol confusion attacks. I think it would be better to incorporate the proof type into the Fiat-Shamir transcript. Though from the above, it sounds like that might already be your intent with the \"protocol ID\"?\r\n\r\n\r\nTaking a step back: I'm perfectly happy to defer to y'all's judgment. My only ask:\r\n\r\n1. If you decide protocol confusion attacks aren't a problem, then say why not in Security Considerations.\r\n2. If you decide they are potentially a problem, but don't think the draft should address them, then give users some guidance in Security Considerations on how they could deal with this problem themselves.\r\n3. If the spec already addresses these attacks, e.g., the \"protocol ID\" implies one and only one proof type and is somehow incorporated into the transcript, then great!\r\n",
+          "createdAt": "2025-09-26T17:58:59Z",
+          "updatedAt": "2025-09-26T19:01:28Z"
         }
       ],
       "reviews": [
@@ -2853,7 +2997,7 @@
             "abbreviatedOid": "4f17d2f"
           },
           "author": "cjpatton",
-          "authorAssociation": "NONE",
+          "authorAssociation": "CONTRIBUTOR",
           "state": "COMMENTED",
           "body": "Nice ... this is definitely much closer to an API we can consume.\n\nNote that I didn't check that the code was copied properly in my review. ",
           "createdAt": "2025-09-24T23:05:42Z",
@@ -2926,6 +3070,680 @@
               "updatedAt": "2025-09-24T23:40:05Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87CqZyP",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-25T06:02:47Z",
+          "updatedAt": "2025-09-25T06:02:47Z",
+          "comments": [
+            {
+              "originalPosition": 207,
+              "body": "@mmaker could you answer this one? I am just copying this over from the poc since it seemed like they had gotten out of sync :)",
+              "createdAt": "2025-09-25T06:02:47Z",
+              "updatedAt": "2025-09-25T06:08:04Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87CqbKr",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-25T06:04:43Z",
+          "updatedAt": "2025-09-25T06:04:43Z",
+          "comments": [
+            {
+              "originalPosition": 164,
+              "body": "@mmaker could you answer this one? I am just copying this over from the poc since it seemed like they had gotten out of sync :)\r\nI'm okay skipping defining this in the spec if it seems unnecessary though, I'm all for reducing complexity :)",
+              "createdAt": "2025-09-25T06:04:43Z",
+              "updatedAt": "2025-09-25T06:07:46Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87Cqbf3",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-25T06:05:17Z",
+          "updatedAt": "2025-09-25T06:05:17Z",
+          "comments": [
+            {
+              "originalPosition": 156,
+              "body": "Not totally, we'd also want to define the ciphersuite in the spec group definitions themselves.",
+              "createdAt": "2025-09-25T06:05:17Z",
+              "updatedAt": "2025-09-25T06:05:17Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87Cqbna",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-25T06:05:31Z",
+          "updatedAt": "2025-09-25T06:05:32Z",
+          "comments": [
+            {
+              "originalPosition": 15,
+              "body": "@mmaker could you answer this one? I am just copying this over from the poc since it seemed like they had gotten out of sync :)",
+              "createdAt": "2025-09-25T06:05:31Z",
+              "updatedAt": "2025-09-25T06:05:32Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87Cqcqq",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-25T06:07:27Z",
+          "updatedAt": "2025-09-25T06:07:28Z",
+          "comments": [
+            {
+              "originalPosition": 34,
+              "body": "Yes, at least later on we say \"`session_id`, which identifies the session being proven\"... not the most descriptive, can take a TODO to expand on this description. @mmaker iirc session ID doesn't have to be unique right, so we could use \"ARCPresentationProof\" as a session id?",
+              "createdAt": "2025-09-25T06:07:27Z",
+              "updatedAt": "2025-09-25T06:07:28Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87CzDFM",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-25T14:46:23Z",
+          "updatedAt": "2025-09-25T14:46:23Z",
+          "comments": [
+            {
+              "originalPosition": 164,
+              "body": "Probably best to hold off on adding it until someone needs it.",
+              "createdAt": "2025-09-25T14:46:23Z",
+              "updatedAt": "2025-09-25T14:46:24Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87CzKtE",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "armfazh",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-25T14:51:51Z",
+          "updatedAt": "2025-09-25T14:51:51Z",
+          "comments": [
+            {
+              "originalPosition": 156,
+              "body": "Where is the definition of NIKZ class (or interface)?\r\n ",
+              "createdAt": "2025-09-25T14:51:51Z",
+              "updatedAt": "2025-09-25T14:51:51Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87CzKvB",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-25T14:51:53Z",
+          "updatedAt": "2025-09-25T14:51:53Z",
+          "comments": [
+            {
+              "originalPosition": 207,
+              "body": "The \"IV\" used to initialize the hash state is defined [here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-fiat-shamir.html#section-1-2.1.1):\r\n\r\n> An initialization vector (IV) uniquely identifying the protocol, the session, and the statement being proven.",
+              "createdAt": "2025-09-25T14:51:53Z",
+              "updatedAt": "2025-09-25T14:51:53Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87CzNFc",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-25T14:53:55Z",
+          "updatedAt": "2025-09-25T14:53:55Z",
+          "comments": [
+            {
+              "originalPosition": 207,
+              "body": "More details [here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-fiat-shamir.html#section-4). It appears to be 32 bytes.",
+              "createdAt": "2025-09-25T14:53:55Z",
+              "updatedAt": "2025-09-25T14:53:55Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87CzN-g",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-25T14:54:49Z",
+          "updatedAt": "2025-09-25T14:54:50Z",
+          "comments": [
+            {
+              "originalPosition": 23,
+              "body": "More concrete suggestion for alternative: incorporate the proof type into the IV: https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-fiat-shamir.html#section-4",
+              "createdAt": "2025-09-25T14:54:50Z",
+              "updatedAt": "2025-09-25T14:54:50Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87CzP2f",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-25T14:56:40Z",
+          "updatedAt": "2025-09-25T14:56:40Z",
+          "comments": [
+            {
+              "originalPosition": 34,
+              "body": "[Section 4 has a pretty concise definition](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-fiat-shamir.html#section-4-2.2.1):\r\n\r\n> A session_id: the session identifier, for user-provided contextual information about the context where the proof is made (e.g. a URL, or a timestamp).",
+              "createdAt": "2025-09-25T14:56:40Z",
+              "updatedAt": "2025-09-25T14:56:41Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87CzabE",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-25T15:07:03Z",
+          "updatedAt": "2025-09-25T15:07:03Z",
+          "comments": [
+            {
+              "originalPosition": 156,
+              "body": "Here: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/3ab5b8787ef9d0c9677a9afcd5e5f6613a7b45a5/poc/fiat_shamir.sage#L7",
+              "createdAt": "2025-09-25T15:07:03Z",
+              "updatedAt": "2025-09-25T15:07:03Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87C68pS",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T05:48:12Z",
+          "updatedAt": "2025-09-26T05:48:12Z",
+          "comments": [
+            {
+              "originalPosition": 23,
+              "body": "I'm somewhat opposed to incorporating the \"proof type\" into the transcript itself... I understand the logic (the proof verification will fail if it's the wrong type, it's robust) but ultimately the \"short proofs\" and \"batchable proofs\" are the same proof (commitments, challenge, responses), just different pieces of it, so it feels sort of wrong to tie the final representation to the core. \r\n\r\nIn a more concrete sense, I think you should be able to initialize a NISigmaProtocol instance without having that initialization tied to a certain proof representation type, which is what you'd have to do if you tied the transcript to the proof representation type (eg via the iv or session_id).\r\n\r\nAnyway, I can be flexible here (opinions held lightly) but that's my inclination.",
+              "createdAt": "2025-09-26T05:48:12Z",
+              "updatedAt": "2025-09-26T05:48:13Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87C7Xdi",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T06:24:11Z",
+          "updatedAt": "2025-09-26T06:24:12Z",
+          "comments": [
+            {
+              "originalPosition": 44,
+              "body": "Very nice, I was having off-by-one errors when reading bytes and this made it way more avoidable / easy to debug :)",
+              "createdAt": "2025-09-26T06:24:12Z",
+              "updatedAt": "2025-09-26T06:24:12Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87C7X-H",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T06:25:08Z",
+          "updatedAt": "2025-09-26T06:25:08Z",
+          "comments": [
+            {
+              "originalPosition": 5,
+              "body": "I just shortened the tag to one byte, 0x\"AA\" and 0x\"BB\", which I think addresses the constant-size-tag and prefixing concerns. Happy to change the exact byte, but I do think that a one-byte tag is better on multiple fronts.",
+              "createdAt": "2025-09-26T06:25:08Z",
+              "updatedAt": "2025-09-26T06:25:08Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87C7Y8j",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T06:26:58Z",
+          "updatedAt": "2025-09-26T06:26:58Z",
+          "comments": [
+            {
+              "originalPosition": 156,
+              "body": "Note that this code is outdated, I've now named all references to \"NIZK\" to be \"NISigmaProtocol\" instead, for specificity. So you shouldn't see NIZK referenced anywhere after this PR cleans it up.",
+              "createdAt": "2025-09-26T06:26:58Z",
+              "updatedAt": "2025-09-26T06:26:58Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87C7baU",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T06:31:08Z",
+          "updatedAt": "2025-09-26T06:31:08Z",
+          "comments": [
+            {
+              "originalPosition": 164,
+              "body": "Hm, I expect @mmaker will want to keep it - for example, Duplex Sponge is desirable because it is used in web3 protocols, such as zkEVM. Hence why it's modeled in lean here: https://github.com/Verified-zkEVM/ArkLib/blob/main/ArkLib/Data/Hash/DuplexSponge.lean\r\n\r\nBut will let him weigh in here.",
+              "createdAt": "2025-09-26T06:31:08Z",
+              "updatedAt": "2025-09-26T06:31:08Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87C7cQJ",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T06:32:39Z",
+          "updatedAt": "2025-09-26T06:32:39Z",
+          "comments": [
+            {
+              "originalPosition": 44,
+              "body": "done!",
+              "createdAt": "2025-09-26T06:32:39Z",
+              "updatedAt": "2025-09-26T06:32:39Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87C7coE",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T06:33:23Z",
+          "updatedAt": "2025-09-26T06:33:23Z",
+          "comments": [
+            {
+              "originalPosition": 40,
+              "body": "Resolved by making all tags 1 byte!",
+              "createdAt": "2025-09-26T06:33:23Z",
+              "updatedAt": "2025-09-26T06:33:23Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87DEXGy",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T15:12:26Z",
+          "updatedAt": "2025-09-26T15:12:27Z",
+          "comments": [
+            {
+              "originalPosition": 207,
+              "body": "Assuming the intent is to pad the initial block up to the rate, this looks correct, specifically for SHAKE128. I would suggest making this more clear:\r\n```suggestion\r\n    1. initial_block = iv + b'\\00' * 104  # len(iv) + 104 == SHAKE128 rate\r\n```",
+              "createdAt": "2025-09-26T15:12:26Z",
+              "updatedAt": "2025-09-26T15:12:50Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87DEaQa",
+          "commit": {
+            "abbreviatedOid": "db2108d"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T15:16:34Z",
+          "updatedAt": "2025-09-26T15:48:52Z",
+          "comments": [
+            {
+              "originalPosition": 25,
+              "body": "Did you mean to clean this up?\n```suggestion\n```",
+              "createdAt": "2025-09-26T15:16:34Z",
+              "updatedAt": "2025-09-26T15:48:52Z"
+            },
+            {
+              "originalPosition": 63,
+              "body": "Bump",
+              "createdAt": "2025-09-26T15:19:06Z",
+              "updatedAt": "2025-09-26T15:48:52Z"
+            },
+            {
+              "originalPosition": 23,
+              "body": "> I'm somewhat opposed to incorporating the \"proof type\" into the transcript itself... I understand the logic (the proof verification will fail if it's the wrong type, it's robust) but ultimately the \"short proofs\" and \"batchable proofs\" are the same proof (commitments, challenge, responses), just different pieces of it, so it feels sort of wrong to tie the final representation to the core.\r\n>\r\n> In a more concrete sense, I think you should be able to initialize a NISigmaProtocol instance without having that initialization tied to a certain proof representation type, which is what you'd have to do if you tied the transcript to the proof representation type (eg via the iv or session_id).\r\n\r\nIt sounds like you're anticipating a situation where you have a proof of some type that you want to \"convert\" to a proof of a different type. For example, suppose you have a large, batchable proof that you want to make succinct. Is this the sort of thing your thinking of?\r\n\r\nIf we want to be able to do this kind of thing, then I actually think tagging is an anti-pattern. If you want to change the type of some proof, you have to fiddle with the encoding of the proof, which makes things more complicated.\r\n\r\nUltimately, I think defense against protocol confusion attacks is inherently in conflict with this use case. If we decide to support it, then I think we should go all the way and not bother with tagging at all. However I also think we should be clear about the use case, warn users about the potential downsides of mixing proof types and discuss how to mitigate. As you  mentioned, the \"session ID\" can provide whatever domain separation we want.\r\n\r\n",
+              "createdAt": "2025-09-26T15:46:48Z",
+              "updatedAt": "2025-09-26T15:48:52Z"
+            },
+            {
+              "originalPosition": 164,
+              "body": "It makes sense to keep if someone is using it.",
+              "createdAt": "2025-09-26T15:48:40Z",
+              "updatedAt": "2025-09-26T15:48:52Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87DFFve",
+          "commit": {
+            "abbreviatedOid": "db2108d"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T16:04:25Z",
+          "updatedAt": "2025-09-26T16:04:26Z",
+          "comments": [
+            {
+              "originalPosition": 25,
+              "body": "Oops, yes",
+              "createdAt": "2025-09-26T16:04:26Z",
+              "updatedAt": "2025-09-26T16:04:26Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87DFGbd",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T16:05:13Z",
+          "updatedAt": "2025-09-26T16:05:13Z",
+          "comments": [
+            {
+              "originalPosition": 207,
+              "body": "Thanks for looking into that, fixed.\r\n(Once github permissions are fixed, feel free to resolve this thread if you feel that it's addressed?",
+              "createdAt": "2025-09-26T16:05:13Z",
+              "updatedAt": "2025-09-26T16:05:13Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87DFH7h",
+          "commit": {
+            "abbreviatedOid": "db2108d"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T16:06:58Z",
+          "updatedAt": "2025-09-26T16:06:58Z",
+          "comments": [
+            {
+              "originalPosition": 63,
+              "body": "good catch, added the comment back above",
+              "createdAt": "2025-09-26T16:06:58Z",
+              "updatedAt": "2025-09-26T16:06:58Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87DFJ_O",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T16:09:28Z",
+          "updatedAt": "2025-09-26T16:09:28Z",
+          "comments": [
+            {
+              "originalPosition": 164,
+              "body": "@cjpatton thanks for bringing it up! let's discuss this in a separate issue, I agree with you but wanted to share more state about this. It shouldn't be blocking for now",
+              "createdAt": "2025-09-26T16:09:28Z",
+              "updatedAt": "2025-09-26T16:15:03Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87DFNW7",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T16:13:16Z",
+          "updatedAt": "2025-09-26T16:13:16Z",
+          "comments": [
+            {
+              "originalPosition": 15,
+              "body": "yea, thanks -- @cjpatton this is standard nomenclature: a verifier message is a.. message from the verifier.\r\n\r\nSee: \r\n<img width=\"657\" height=\"338\" alt=\"Screenshot 2025-09-26 at 18 11 04\" src=\"https://github.com/user-attachments/assets/c6d61f10-f0ac-46f5-9ddc-9f14fff0f68f\" />\r\nIn [Justin's book](https://people.cs.georgetown.edu/jthaler/ProofsArgsAndZK.pdf).\r\n\r\nSee also:\r\n<img width=\"857\" height=\"229\" alt=\"Screenshot 2025-09-26 at 18 12 58\" src=\"https://github.com/user-attachments/assets/566dab91-6de8-4168-be7d-0e5bf04d5a96\" />\r\nIn [Ale''s book](https://snargsbook.org/)",
+              "createdAt": "2025-09-26T16:13:16Z",
+              "updatedAt": "2025-09-26T16:13:16Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87DFOac",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T16:14:35Z",
+          "updatedAt": "2025-09-26T16:14:36Z",
+          "comments": [
+            {
+              "originalPosition": 23,
+              "body": "I commented this [below](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/79#issuecomment-3339382715)",
+              "createdAt": "2025-09-26T16:14:35Z",
+              "updatedAt": "2025-09-26T16:14:36Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87DFO28",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T16:15:05Z",
+          "updatedAt": "2025-09-26T16:15:05Z",
+          "comments": [
+            {
+              "originalPosition": 23,
+              "body": "Hm, that's not exactly the use case I had in mind - I was more thinking about the situation where you initialize the NISigmaProtocol and don't know if you want to make a short or batchable proof, and don't have to decide between the two until you make the proof.\r\n\r\nAlso, if you use \"session_id\" (or equivalent) to denote the expected proof type when initializing an NISigmaProtocol, then you have to \"remember\" what proof type you initialized with, and then you'd get an error if using with the wrong proof type? At that point it seems more correct to have two classes, NISigmaProtocol and NISigmaProtocolBatchable (names tbd) which support \"prove\" and \"prove_batchable\"... but that just results in code sprawl and duplication. For instance, then we'd have to support both types for every Protocol/Codec/Hash combination:\r\n\r\nclass NISchnorrProofShake128Bls12381(NISigmaProtocol):\r\n    Protocol = SchnorrProof\r\n    Codec = Bls12381Codec\r\n    Hash = SHAKE128\r\n    \r\nAND\r\n\r\nclass NISchnorrProofShake128Bls12381(NISigmaProtocolBatchable):\r\n    Protocol = SchnorrProof\r\n    Codec = Bls12381Codec\r\n    Hash = SHAKE128\r\n    \r\nSo, I am coming around to your idea of encoding the proof type (short/batchable) in the session_id, but only if we have a clean way to make the API work for that, and right now it looks sort of weird/messy.",
+              "createdAt": "2025-09-26T16:15:05Z",
+              "updatedAt": "2025-09-26T16:15:28Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87DFTKF",
+          "commit": {
+            "abbreviatedOid": "4f17d2f"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T16:20:48Z",
+          "updatedAt": "2025-09-26T16:20:48Z",
+          "comments": [
+            {
+              "originalPosition": 34,
+              "body": "@cathieyun yes that would work! \r\nYou can put an epoch there (2 years or so) if needed if that helps you in practice.",
+              "createdAt": "2025-09-26T16:20:48Z",
+              "updatedAt": "2025-09-26T16:21:18Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87DFtOL",
+          "commit": {
+            "abbreviatedOid": "1c9dbd2"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-09-26T16:51:35Z",
+          "updatedAt": "2025-09-26T17:59:44Z",
+          "comments": [
+            {
+              "originalPosition": 15,
+              "body": "Got it, I think I was thrown by \"from the desired distribution\". It would be nice to describe this more plainly and in a way that is self-consistent. Perhaps:\r\n```suggestion\r\n- functions that map hash outputs into a message output by the verifier in the Sigma protocol\r\n```",
+              "createdAt": "2025-09-26T16:51:35Z",
+              "updatedAt": "2025-09-26T17:59:44Z"
+            },
+            {
+              "originalPosition": 23,
+              "body": "> Hm, that's not exactly the use case I had in mind - I was more thinking about the situation where you initialize the NISigmaProtocol and don't know if you want to make a short or batchable proof, and don't have to decide between the two until you make the proof.\r\n\r\nAh got it, thanks for clarifying!\r\n\r\n> Also, if you use \"session_id\" (or equivalent) to denote the expected proof type when initializing an NISigmaProtocol, then you have to \"remember\" what proof type you initialized with, and then you'd get an error if using with the wrong proof type? At that point it seems more correct to have two classes, NISigmaProtocol and NISigmaProtocolBatchable (names tbd) which support \"prove\" and \"prove_batchable\"... but that just results in code sprawl and duplication. For instance, then we'd have to support both types for every Protocol/Codec/Hash combination:\r\n> \r\n> class NISchnorrProofShake128Bls12381(NISigmaProtocol): Protocol = SchnorrProof Codec = Bls12381Codec Hash = SHAKE128\r\n> \r\n> AND\r\n> \r\n> class NISchnorrProofShake128Bls12381(NISigmaProtocolBatchable): Protocol = SchnorrProof Codec = Bls12381Codec Hash = SHAKE128\r\n\r\nMakes sense. In other words, the class should determine the ciphersuite, not the proof type. I'm good with that.\r\n\r\n> So, I am coming around to your idea of encoding the proof type (short/batchable) in the session_id, but only if we have a clean way to make the API work for that, and right now it looks sort of weird/messy.\r\n\r\nAgreed. I think the answer depends on how we design the proof type API and when the session ID is determined.\r\n\r\nSuppose we go with what we have right now, which is a single class `NISigmaProtocol` that has methods for generating proofs of different types. Let's say we pass in the session ID to the class constructor. In this case, I don't think it's appropriate to encode the proof type in the session ID, since the API lets construct any proof type we want.\r\n\r\nAt a minimum we would need to pass the session ID into the proof generation function. I would be fine with this, but as a means of defending against protocol confusion attacks, I don't think it's ideal. It would be better for the proof generation method (`prove()`, `prove_batchable()`) did the domain separation itself so that the user doesn't have to overload the session ID themselves.",
+              "createdAt": "2025-09-26T17:11:46Z",
+              "updatedAt": "2025-09-26T17:59:44Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 80,
+      "id": "PR_kwDONyiw_86qjPh-",
+      "title": "Add sigma_protocols.sage",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/80",
+      "state": "MERGED",
+      "author": "cjpatton",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "This was erroneously removed in a previous commit.",
+      "createdAt": "2025-09-25T16:53:02Z",
+      "updatedAt": "2025-09-25T17:15:58Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "3ab5b8787ef9d0c9677a9afcd5e5f6613a7b45a5",
+      "headRepository": "cjpatton/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "cjpatton/add-sigma-protocols",
+      "headRefOid": "cff9b579fdcb1a0269466d80c5d54f1aa9a9e0e9",
+      "closedAt": "2025-09-25T17:15:58Z",
+      "mergedAt": "2025-09-25T17:15:58Z",
+      "mergedBy": "mmaker",
+      "mergeCommit": {
+        "oid": "d4436cfe019f7e0880b29abe1234f341d2a84761"
+      },
+      "comments": [
+        {
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Thanks for tracking this down! LGTM :)",
+          "createdAt": "2025-09-25T17:13:07Z",
+          "updatedAt": "2025-09-25T17:13:07Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDONyiw_87C1RZz",
+          "commit": {
+            "abbreviatedOid": "cff9b57"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-09-25T17:13:19Z",
+          "updatedAt": "2025-09-25T17:13:19Z",
+          "comments": []
         }
       ]
     }
