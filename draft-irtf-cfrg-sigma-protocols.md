@@ -82,6 +82,12 @@ informative:
     date: 1993
     author:
       - fullname: "Jacques Stern"
+  CS97:
+      title: "Proof Systems for General Statements about Discrete Logarithms"
+      author:
+        - fullname: "Jan Camenisch"
+        - fullname: "Markus Stadler"
+      target: https://crypto.ethz.ch/publications/files/CamSta97b.pdf
 
 --- abstract
 
@@ -146,7 +152,7 @@ It relies on a prime-order elliptic-curve group as described in {{group-abstract
 
 Valid choices of elliptic curves can be found in {{ciphersuites}}.
 
-Traditionally, sigma protocols are defined in Camenisch-Stadler notation as (for example):
+Traditionally, sigma protocols are defined in Camenisch-Stadler {{CS97}} notation as (for example):
 
     1. DLEQ(G, H, X, Y) = PoK{
     2.   (x):        // Secret variables
