@@ -1049,7 +1049,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù &amp; Yun</td>
-<td class="center">Expires 29 March 2026</td>
+<td class="center">Expires 2 April 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1062,12 +1062,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-irtf-cfrg-sigma-protocols-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2025-09-25" class="published">25 September 2025</time>
+<time datetime="2025-09-29" class="published">29 September 2025</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-03-29">29 March 2026</time></dd>
+<dd class="expires"><time datetime="2026-04-02">2 April 2026</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1121,7 +1121,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 29 March 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 2 April 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1298,7 +1298,7 @@ class SigmaProtocol:
             <p id="section-1.1-4.2.1"><code>prover_commit(self, witness: Witness, rng) -&gt; (commitment, prover_state)</code>, denoting the <strong>commitment phase</strong>, that is, the computation of the first message sent by the prover in a Sigma protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator <code>rng</code>. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just of a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while <code>prover_state</code> must be kept secret.<a href="#section-1.1-4.2.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-1.1-4.3">
-            <p id="section-1.1-4.3.1"><code>prover_response(self, prover_state, challenge) -&gt; response</code>, denoting the <strong>response phase</strong>, that is, the computation of the second message sent by the prover, depending on the witness, the statement, the challenge received from the verifier, and the internal state <code>prover_state</code>. The returned value <code>response</code> is meant to be shared.<a href="#section-1.1-4.3.1" class="pilcrow">¶</a></p>
+            <p id="section-1.1-4.3.1"><code>prover_response(self, prover_state, challenge) -&gt; response</code>, denoting the <strong>response phase</strong>, that is, the computation of the second message sent by the prover, depending on the witness, the statement, the challenge received from the verifier, and the internal state <code>prover_state</code>. The return value response is a public value and is transmitted to the verifier.<a href="#section-1.1-4.3.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-1.1-4.4">
             <p id="section-1.1-4.4.1"><code>verifier(self, commitment, challenge, response) -&gt; bool</code>, denoting the <strong>verifier algorithm</strong>. This method checks that the protocol transcript is valid for the given statement. The verifier algorithm outputs true if verification succeeds, or false if verification fails.<a href="#section-1.1-4.4.1" class="pilcrow">¶</a></p>
@@ -1381,7 +1381,7 @@ Finally, line 3 states that the linear relation that need to be proven is
               <p id="section-2.1.1-1.5.1"><code>serialize(elements: [Group; N])</code>, serializes a list of group elements and returns a canonical byte array <code>buf</code> of fixed length <code>Ne * N</code>.<a href="#section-2.1.1-1.5.1" class="pilcrow">¶</a></p>
 </li>
             <li class="normal" id="section-2.1.1-1.6">
-              <p id="section-2.1.1-1.6.1"><code>deserialize(buffer)</code>, attempts to map a byte array <code>buffer</code> of size <code>Ne * N</code> into <code>[Group; N]</code>, and fails if the input is not the valid canonical byte representation of an element of the group. This function can raise a <code>DeserializeError</code> if deserialization fails.<a href="#section-2.1.1-1.6.1" class="pilcrow">¶</a></p>
+              <p id="section-2.1.1-1.6.1"><code>deserialize(buffer)</code>, attempts to map a byte array <code>buffer</code> of size <code>Ne * N</code> into <code>[Group; N]</code>, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a <code>DeserializeError</code> if deserialization fails.<a href="#section-2.1.1-1.6.1" class="pilcrow">¶</a></p>
 </li>
             <li class="normal" id="section-2.1.1-1.7">
               <p id="section-2.1.1-1.7.1"><code>add(element: Group)</code>, implements elliptic curve addition for the two group elements.<a href="#section-2.1.1-1.7.1" class="pilcrow">¶</a></p>
@@ -1418,7 +1418,7 @@ Finally, line 3 states that the linear relation that need to be proven is
               <p id="section-2.1.2-1.5.1"><code>serialize(scalars: list[Scalar; N])</code>: serializes a list of scalars and returns their canonical representation of fixed length <code>Ns * N</code>.<a href="#section-2.1.2-1.5.1" class="pilcrow">¶</a></p>
 </li>
             <li class="normal" id="section-2.1.2-1.6">
-              <p id="section-2.1.2-1.6.1"><code>deserialize(buffer)</code>, attempts to map a byte array <code>buffer</code> of size <code>Ns * N</code> into <code>[Scalar; N]</code>, and fails if the input is not the valid canonical byte representation of an element of the group. This function can raise a <code>DeserializeError</code> if deserialization fails.<a href="#section-2.1.2-1.6.1" class="pilcrow">¶</a></p>
+              <p id="section-2.1.2-1.6.1"><code>deserialize(buffer)</code>, attempts to map a byte array <code>buffer</code> of size <code>Ns * N</code> into <code>[Scalar; N]</code>, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a <code>DeserializeError</code> if deserialization fails.<a href="#section-2.1.2-1.6.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
 <p id="section-2.1.2-2">In this spec, instead of <code>add</code> we will use <code>+</code> with infix notation; instead of <code>equal</code> we will use <code>==</code>, and instead of <code>mul</code> we will use <code>*</code>. A similar behavior can be achieved using operator overloading.<a href="#section-2.1.2-2" class="pilcrow">¶</a></p>
