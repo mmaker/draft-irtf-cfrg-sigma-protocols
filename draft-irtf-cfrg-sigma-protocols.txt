@@ -202,7 +202,7 @@ Table of Contents
    Valid choices of elliptic curves can be found in Section 2.3.
 
    Traditionally, sigma protocols are defined in Camenisch-Stadler
-   notation as (for example):
+   [CS97] notation as (for example):
 
    1. DLEQ(G, H, X, Y) = PoK{
    2.   (x):        // Secret variables
@@ -697,6 +697,10 @@ Procedure:
 
    [BonehS23] Boneh, D. and V. Schoup, "A Graduate Course in Applied
               Cryptography", n.d., <https://toc.cryptobook.us/>.
+
+   [CS97]     Camenisch, J. and M. Stadler, "Proof Systems for General
+              Statements about Discrete Logarithms", n.d.,
+              <https://crypto.ethz.ch/publications/files/CamSta97b.pdf>.
 
    [fiat-shamir]
               "draft-irtf-cfrg-fiat-shamir",
