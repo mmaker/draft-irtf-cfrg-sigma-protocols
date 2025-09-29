@@ -318,7 +318,7 @@ A witness can be mapped to a group element via:
 
 The object `LinearRelation` has two attributes: a linear map `linear_map`, which will be defined in {{linear-map}}, and `image`, the linear map image of which the prover wants to show the pre-image of.
 
-class LinearRelation:
+    class LinearRelation:
         Domain = group.ScalarField
         Image = group.Group
 
