@@ -117,7 +117,7 @@ Where:
 
 - `prover_commit(self, witness: Witness, rng) -> (commitment, prover_state)`, denoting the **commitment phase**, that is, the computation of the first message sent by the prover in a Sigma protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator `rng`. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just of a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while `prover_state` must be kept secret.
 
-- `prover_response(self, prover_state, challenge) -> response`, denoting the **response phase**, that is, the computation of the second message sent by the prover, depending on the witness, the statement, the challenge received from the verifier, and the internal state `prover_state`. The returned value `response` is meant to be shared.
+- `prover_response(self, prover_state, challenge) -> response`, denoting the **response phase**, that is, the computation of the second message sent by the prover, depending on the witness, the statement, the challenge received from the verifier, and the internal state `prover_state`. The return value response is a public value and is transmitted to the verifier.
 
 - `verifier(self, commitment, challenge, response) -> bool`, denoting the **verifier algorithm**. This method checks that the protocol transcript is valid for the given statement. The verifier algorithm outputs true if verification succeeds, or false if verification fails.
 
@@ -171,7 +171,7 @@ We detail the functions that can be invoked on these objects. Example choices ca
 - `order()`: Outputs the order of the group `p`.
 - `random()`: outputs a random element in the group.
 - `serialize(elements: [Group; N])`, serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
-- `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, and fails if the input is not the valid canonical byte representation of an element of the group. This function can raise a `DeserializeError` if deserialization fails.
+- `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a `DeserializeError` if deserialization fails.
 - `add(element: Group)`, implements elliptic curve addition for the two group elements.
 - `equal(element: Group)`, returns `true` if the two elements are the same and false` otherwise.
 - `scalar_mul(scalar: Scalar)`, implements scalar multiplication for a group element by an element in its respective scalar field.
@@ -185,7 +185,7 @@ In this spec, instead of `add` we will use `+` with infix notation; instead of `
 - `mul(scalar: Scalar)`, implements field multiplication.
 - `random()`: outputs a random scalar field element.
 - `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
-- `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an element of the group. This function can raise a `DeserializeError` if deserialization fails.
+- `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a `DeserializeError` if deserialization fails.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `mul` we will use `*`. A similar behavior can be achieved using operator overloading.
 
