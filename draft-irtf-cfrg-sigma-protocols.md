@@ -268,7 +268,7 @@ The prover of a sigma protocol is stateful and will send two messages, a "commit
 
 ### Witness representation {#witness}
 
-A witness is simply a list of `num_scalars` elements.
+A witness is simply represented as a list of scalar elements of size `num_scalars`.
 
     Witness = [Scalar; num_scalars]
 
