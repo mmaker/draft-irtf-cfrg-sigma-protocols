@@ -50,22 +50,16 @@ class NISigmaProtocol:
         (commitment, challenge, response) = self._prove(witness, rng)
         # running the verifier here is just a sanity check
         assert self.sigma_protocol.verifier(commitment, challenge, response)
-        proof_type_tag = bytes.fromhex("AA")
-        return proof_type_tag + self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
+        return self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
 
     def verify(self, proof):
         """
         Verification method using challenge-response format.
         """
         # Before running the sigma protocol verifier, one must also check that:
-        # - the proof length is exactly len(proof_type_tag) + challenge_bytes_len + response_bytes_len
-        proof_type_tag = bytes.fromhex("AA")
+        # - the proof length is exactly challenge_bytes_len + response_bytes_len
         challenge_bytes_len = self.sigma_protocol.instance.Domain.scalar_byte_length()
-        assert len(proof) == len(proof_type_tag) + challenge_bytes_len + self.sigma_protocol.instance.response_bytes_len, f"Invalid proof length: {len(proof)} != {len(proof_type_tag) + challenge_bytes_len + self.sigma_protocol.instance.response_bytes_len}"
-
-        # - the proof type tag matches expected value
-        proof, tag_bytes = next(proof, len(proof_type_tag))
-        assert tag_bytes == proof_type_tag, f"Mismatched proof tag: {tag_bytes} (given) != {proof_type_tag} (expected)."
+        assert len(proof) == challenge_bytes_len + self.sigma_protocol.instance.response_bytes_len, f"Invalid proof length: {len(proof)} != {challenge_bytes_len + self.sigma_protocol.instance.response_bytes_len}"
 
         # - proof deserialization successfully produces a valid challenge and a valid response
         response_bytes, challenge_bytes = next(proof, challenge_bytes_len)
@@ -84,18 +78,12 @@ class NISigmaProtocol:
         (commitment, challenge, response) = self._prove(witness, rng)
         # running the verifier here is just a sanity check
         assert self.sigma_protocol.verifier(commitment, challenge, response)
-        proof_type_tag = bytes.fromhex("BB")
-        return proof_type_tag + self.sigma_protocol.serialize_commitment(commitment) + self.sigma_protocol.serialize_response(response)
+        return self.sigma_protocol.serialize_commitment(commitment) + self.sigma_protocol.serialize_response(response)
 
     def verify_batchable(self, proof):
         # Before running the sigma protocol verifier, one must also check that:
-        # - the proof length is exactly len(proof_type_tag) + commit_bytes_len + response_bytes_len
-        proof_type_tag = bytes.fromhex("BB")
-        assert len(proof) == len(proof_type_tag) + self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len, f"Invalid proof length: {len(proof)} != {len(proof_type_tag) + self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len}"
-
-        # - the proof type tag matches expected value
-        proof, tag_bytes = next(proof, len(proof_type_tag))
-        assert tag_bytes == proof_type_tag, f"Mismatched proof tag: {tag_bytes} (given) != {proof_type_tag} (expected)."
+        # - the proof length is exactly commit_bytes_len + response_bytes_len
+        assert len(proof) == self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len, f"Invalid proof length: {len(proof)} != {self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len}"
 
         # - proof deserialization successfully produces a valid commitment and a valid response
         response_bytes, commitment_bytes = next(proof, self.sigma_protocol.instance.commit_bytes_len) 
