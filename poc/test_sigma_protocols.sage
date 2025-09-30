@@ -18,12 +18,12 @@ def test_vector(test_vector_function):
         instance, witness = test_vector_function(instance_witness_rng, NISigmaProtocol.Codec.GG)
 
         session_id = test_vector_name.encode('utf-8')
-        narg_string = NISigmaProtocol(session_id, instance).prove(witness, proof_generation_rng)
-        assert NISigmaProtocol(session_id, instance).verify(narg_string)
-        hex_narg_string = narg_string.hex()
         batchable_narg_string = NISigmaProtocol(session_id, instance).prove_batchable(witness, proof_generation_rng)
         assert NISigmaProtocol(session_id, instance).verify_batchable(batchable_narg_string)
         hex_batchable_narg_string = batchable_narg_string.hex()
+        narg_string = NISigmaProtocol(session_id, instance).prove(witness, proof_generation_rng)
+        assert NISigmaProtocol(session_id, instance).verify(narg_string)
+        hex_narg_string = narg_string.hex()
         print(f"{test_vector_name} test vectors generated\n")
 
         # Serialize the entire witness list at once
