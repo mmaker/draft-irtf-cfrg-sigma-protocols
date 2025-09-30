@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 2 April 2026                                        Apple, Inc.
-                                                       29 September 2025
+Expires: 3 April 2026                                        Apple, Inc.
+                                                       30 September 2025
 
 
                         Interactive Sigma Proofs
@@ -53,7 +53,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 2 April 2026.
+   This Internet-Draft will expire on 3 April 2026.
 
 Copyright Notice
 
@@ -426,7 +426,9 @@ Inputs:
    linear_map, which will be defined in Section 2.2.5, and image, the
    linear map image of which the prover wants to show the pre-image of.
 
-   class LinearRelation: Domain = group.ScalarField Image = group.Group
+   class LinearRelation:
+       Domain = group.ScalarField
+       Image = group.Group
 
        linear_map = LinearMap
        image = list[group.Group]
