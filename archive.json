@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-09-28T01:19:43.463593+00:00",
+  "timestamp": "2025-09-30T01:14:02.239311+00:00",
   "repo": "mmaker/draft-irtf-cfrg-sigma-protocols",
   "labels": [
     {
@@ -221,16 +221,24 @@
       "id": "I_kwDONyiw_86snkVK",
       "title": "Support deterministic nonce generation",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/10",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "mmaker",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "It is good practice in the signature world to re-seed the operating system randomness with the signing key. One such example is [RFC6979](https://datatracker.ietf.org/doc/html/rfc6979). This requires some care because (1) we want to preprocess the information with the challenge generation, (2) we don't want to expose the witness to side-channel attacks, and (3) make the spec more complicated than it needs to be. \n\nFor the case of sigma protocols, something simple as \n```\nnonce     = SHAKE128(description || message || random || PAD || witness)\nchallenge = SHAKE128(description || message || commitment)\n```\n\nwould be ideal, but the problem comes in when thinking of multi-round protocols, each of which might requires extra randomness in the middle of the protocol. \n\nThe approach used in [Nimue](https://github.com/mmaker/nimue) is to have the NARG prover state also hold a private sponge, which is ratcheted seeded with operating system randomness every time an absorb is performed. This seems OK but wasteful.\nA better alternative would be to expect the interactive (ZK) prover to take as input an rng, and seed that rng with the witness and some os randomness once and for all. The downside of this approach is that recovering the initial seed will break the whole protocol, but this does not seem to be such a problem? all in all, there is not much academic literature about leakage in zk proof of these sort.",
       "createdAt": "2025-03-05T03:47:21Z",
-      "updatedAt": "2025-03-05T03:47:58Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2025-09-29T06:58:44Z",
+      "closedAt": "2025-09-29T06:58:43Z",
+      "comments": [
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "considered out of scope for now -- implemented in [SpongeFiSh](https://github.com/arkworks-rs/spongefish) if a reference is needed. ",
+          "createdAt": "2025-09-29T06:58:40Z",
+          "updatedAt": "2025-09-29T06:58:40Z"
+        }
+      ]
     },
     {
       "number": 12,
@@ -975,12 +983,12 @@
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/66",
       "state": "OPEN",
       "author": "cjpatton",
-      "authorAssociation": "NONE",
+      "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
-      "body": "# TODO \u2014 Feedback on draft-irtf-cfrg-sigma-protocols (commit f427eddc973bc9ef284c342913010b57f935d71a)\n\n- [ ] Define terminology (e.g., `LinearRelation` is referenced without definition).  \n- [ ] Rephrase [\"The returned value response is meant to be shared\"](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-1.1-4.3.1) \u2192 \"The return value response is a public value and is transmitted to the verifier.\"  \n- [ ] Clearly define the challenge. Specify it as a random element of the scalar field? Provide an algorithm for generation in the [API](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-1.1-3). Also define serialization/deserialization.  \n- [ ] Introduce the notion of proof composition earlier. Explain motivation and possible security pitfalls (forward reference to security considerations is enough).  \n- [ ] Add reference for [Camenisch\u2013Stadler notation](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2-3).  \n- [ ] Fix artwork overflow (e.g., [prover commitment spec](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.2.1-1)). Break lines at 69 characters.  \n- [ ] Define variable `linear_map` before first use. What does this function do?  \n- [ ] Define variable `image` before first use. Clarify what it means. Also define \"constraint.\"  \n- [ ] Clarify or remove [Witness type definition](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.4-2). Pseudocode is unclear.  \n- [ ] Clarify if `map` = [`linear_map`](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5-5).  \n- [ ] Clarify input to the linear map in [this paragraph](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5-1). Is it the sequence of prover nonces?  \n- [ ] Define `msm` operation (used [here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5.2-2)). Check whether the output is a single group element or a list.  \n- [ ] Fix Section 2.2.6: it says `linear_map` *will be defined* in a *prior* section.  \n- [ ] Fix rendering issue [here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.6-2).  \n- [ ] Provide references for [security properties](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-3-1): special soundness, HVZK, deniability, transferable message authenticity.  \n- [ ] Revisit Fiat\u2013Shamir references in Security Considerations (they may no longer make sense since it's split out into its own draft).  \n",
+      "body": "# TODO \u2014 Feedback on draft-irtf-cfrg-sigma-protocols (commit f427eddc973bc9ef284c342913010b57f935d71a)\n\n- [ ] Define terminology (e.g., `LinearRelation` is referenced without definition).  \n- [x] Rephrase [\"The returned value response is meant to be shared\"](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-1.1-4.3.1) \u2192 \"The return value response is a public value and is transmitted to the verifier.\"  \n- [ ] Clearly define the challenge. Specify it as a random element of the scalar field? Provide an algorithm for generation in the [API](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-1.1-3). Also define serialization/deserialization.  \n- [ ] Introduce the notion of proof composition earlier. Explain motivation and possible security pitfalls (forward reference to security considerations is enough).  \n- [ ] Add reference for [Camenisch\u2013Stadler notation](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2-3).  \n- [ ] Fix artwork overflow (e.g., [prover commitment spec](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.2.1-1)). Break lines at 69 characters.  \n- [ ] Define variable `linear_map` before first use. What does this function do?  \n- [ ] Define variable `image` before first use. Clarify what it means. Also define \"constraint.\"  \n- [ ] Clarify or remove [Witness type definition](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.4-2). Pseudocode is unclear.  \n- [ ] Clarify if `map` = [`linear_map`](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5-5).  \n- [ ] Clarify input to the linear map in [this paragraph](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5-1). Is it the sequence of prover nonces?  \n- [ ] Define `msm` operation (used [here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5.2-2)). Check whether the output is a single group element or a list.  \n- [ ] Fix Section 2.2.6: it says `linear_map` *will be defined* in a *prior* section.  \n- [ ] Fix rendering issue [here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.6-2).  \n- [ ] Provide references for [security properties](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-3-1): special soundness, HVZK, deniability, transferable message authenticity.  \n- [ ] Revisit Fiat\u2013Shamir references in Security Considerations (they may no longer make sense since it's split out into its own draft).  \n",
       "createdAt": "2025-09-04T22:50:42Z",
-      "updatedAt": "2025-09-19T09:11:02Z",
+      "updatedAt": "2025-09-29T09:50:11Z",
       "closedAt": null,
       "comments": []
     },
@@ -1034,17 +1042,17 @@
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
-      "body": "1. You say \"Valid choices of elliptic curves can be found in [Section 2.3](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#ciphersuites),\" though in fact you only give one choice. Is there any reason to restrict the choice of elliptic curves at all in this document?\n2. \"the linear relation that need to be proven\" should be \"the linear relation that needs to be proven.\"\n3. Again, I feel like it would be helpful for the reader to define what a linear relation is in this context.\n4. Nit: \"random element\" should be \"uniform element.\" Same comment later for \"random scalar field element.\"\n5. `Ne` is never defined. Same comment for `Ns`.\n6. In Section 2.1.1, \"fails if the input is not the valid canonical byte representation of an element of the group\" should be \"fails if the input is not the valid canonical byte representation of an array of elements of the group.\"\n7. \" false` \" should be `false`.\n8. In Section 2.1.2, \"fails if the input is not the valid canonical byte representation of an element of the group\" should be \"fails if the input is not the valid canonical byte representation of an array of scalars.\"\n9. Calling the core protocol SchnorrProof might be confusing, since that is typically used for the special case of proving knowledge of a preimage of the map xG = X. (In fact, you use it that way in Section 2.2.7.)\n10. The terms linear_map, num_scalars, and num_constraints are not defined until Section 2.2.4 and beyond. It would help to set up this notation earlier as part of defining a linear map.\n11. It may be more efficient to implement the verifier by computing got - expected (without computing each separately) and checking that this equals the identity.\n12. I had trouble following Sections 2.2.5 and 2.2.6; perhaps an accompanying example would help.\n13. Section 2.2.5.2: \"A witness can be mapped to a group element\" should be \"A witness can be mapped to a vector of group elements.\"\n14. Section 2.2.7: you don't actually define Schnorr proofs in [Section 2](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#name-sigma-protocols-over-prime-).",
+      "body": "- [ ] You say \"Valid choices of elliptic curves can be found in [Section 2.3](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#ciphersuites),\" though in fact you only give one choice. Is there any reason to restrict the choice of elliptic curves at all in this document?\n- [ ] \"the linear relation that need to be proven\" should be \"the linear relation that needs to be proven.\"\n- [ ] Again, I feel like it would be helpful for the reader to define what a linear relation is in this context.\n- [ ] Nit: \"random element\" should be \"uniform element.\" Same comment later for \"random scalar field element.\"\n- [ ] `Ne` is never defined. Same comment for `Ns`.\n- [ ] In Section 2.1.1, \"fails if the input is not the valid canonical byte representation of an element of the group\" should be \"fails if the input is not the valid canonical byte representation of an array of elements of the group.\"\n- [ ] \" false` \" should be `false`.\n- [x] In Section 2.1.2, \"fails if the input is not the valid canonical byte representation of an element of the group\" should be \"fails if the input is not the valid canonical byte representation of an array of scalars.\"\n- [ ] Calling the core protocol SchnorrProof might be confusing, since that is typically used for the special case of proving knowledge of a preimage of the map xG = X. (In fact, you use it that way in Section 2.2.7.)\n- [ ] The terms linear_map, num_scalars, and num_constraints are not defined until Section 2.2.4 and beyond. It would help to set up this notation earlier as part of defining a linear map.\n- [ ] It may be more efficient to implement the verifier by computing got - expected (without computing each separately) and checking that this equals the identity.\n- [ ] I had trouble following Sections 2.2.5 and 2.2.6; perhaps an accompanying example would help.\n- [ ] Section 2.2.5.2: \"A witness can be mapped to a group element\" should be \"A witness can be mapped to a vector of group elements.\"\n- [ ] Section 2.2.7: you don't actually define Schnorr proofs in [Section 2](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#name-sigma-protocols-over-prime-).",
       "createdAt": "2025-09-09T14:13:52Z",
-      "updatedAt": "2025-09-09T14:25:06Z",
+      "updatedAt": "2025-09-29T09:49:32Z",
       "closedAt": null,
       "comments": [
         {
           "author": "jkatz2",
           "authorAssociation": "NONE",
-          "body": "In item 11, it should be \"checking that this equals the vector of identity elements.\"",
+          "body": "- [ ] In item 11, it should be \"checking that this equals the vector of identity elements.\"",
           "createdAt": "2025-09-09T14:25:06Z",
-          "updatedAt": "2025-09-09T14:25:06Z"
+          "updatedAt": "2025-09-29T07:01:56Z"
         }
       ]
     },
@@ -2895,7 +2903,7 @@
       "labels": [],
       "body": "Fixes: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/74 by adding the NIZK class and instances\r\n\r\nFixes: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/77 by adding \"short proofs\" to the NIZK class\r\nIn practice, I am making the default proof a \"short proof\" (challenge, responses) and adding a \"batchable proof\" which is a proof in the (commitments, responses) format, as discussed here: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/77#issuecomment-3325924652\r\n\r\nI also noticed that some of the pseudocode in the spec for Codec and DuplexSpongeInterface was out of sync with the poc, so I updated the pseudocode with the updated poc code. \r\n\r\nAdded as of 9/24:\r\n- NIZK now called NISigmaProtocol\r\n- Added domain separation\r\n\r\nNOTE: I am not able to run tests or update the test vectors, because the `sigma_protocol.py/sage` file is missing, so the test can't run. So there may be some mistakes in the poc code I haven't caught yet. Following up with Michele on this.",
       "createdAt": "2025-09-24T03:51:49Z",
-      "updatedAt": "2025-09-27T09:12:49Z",
+      "updatedAt": "2025-09-28T17:26:53Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "d4436cfe019f7e0880b29abe1234f341d2a84761",
@@ -2945,9 +2953,9 @@
         {
           "author": "cjpatton",
           "authorAssociation": "CONTRIBUTOR",
-          "body": "> About domain separation: Chris was worried that different proof serialization formats might require a domain separator, and I said I'd think more about that.\r\n\r\nMy concern was more generically about \"protocol confusion\", by which I mean the prover and verifier don't agree on the protocol's parameters. By parameters I mean the elliptic curve, the hash function, the statement to be proved, and what we've been calling the \"proof type\" (short, batchable, etc.). Perhaps what we're calling the \"proof type\" is what you're calling the \"protocol\" above (I don't care what we call it). Quote:\r\n\r\n> For security, you need a unique identifier for your zero-knowledge proof (Schnorr proof, batched schnorr, OR proof, compressed sigmas, plonk, hyperplonk, turboplonk, fri, deepfri, whir, stir, whatever).\r\n\r\nGenerally speaking, when a cryptosystem has a lot of agility (as this one does), we need to consider the risk of an attacker influencing the parameters used in the actual protocol execution. Historically, this has been a huge attack vector for real world crypto (TLS, SSH, etc.).\r\n\r\nSpecifically, my question is: consider a malicious prover that wants to force the verifier to accept an invalid proof. Suppose we give it a bit more power, in that it can choose the parameters used by the verifier, in particular the proof type. I'm calling this a \"protocol confusion attack\". Does this extra power give the attacker any extra advantage?\r\n\r\nIf the attacker controls the parameters, it can force the verifier to use the weakest parameters. This seems like it would be a problem for the statement, the curve, or hash function. Perhaps it's not a problem for the proof type?\r\n\r\n> I do see a usability appeal, being able to tell the user \"this is not a proof in the right format\". However, that seems arbitrary with respect to the rest of the ciphersuite information (why this and not the rest of the protocol?). Furthermore, it's creating a potential verification oracle. (I don't see this as a big problem except service discovery maybe?\r\n\r\nTo be clear, I don't think adding the 1-byte tag to the proof to denote its type is the best way to address protocol confusion attacks. I think it would be better to incorporate the proof type into the Fiat-Shamir transcript. Though from the above, it sounds like that might already be your intent with the \"protocol ID\"?\r\n\r\n\r\nTaking a step back: I'm perfectly happy to defer to y'all's judgment. My only ask:\r\n\r\n1. If you decide protocol confusion attacks aren't a problem, then say why not in Security Considerations.\r\n2. If you decide they are potentially a problem, but don't think the draft should address them, then give users some guidance in Security Considerations on how they could deal with this problem themselves.\r\n3. If the spec already addresses these attacks, e.g., the \"protocol ID\" implies one and only one proof type and is somehow incorporated into the transcript, then great!\r\n",
+          "body": "> About domain separation: Chris was worried that different proof serialization formats might require a domain separator, and I said I'd think more about that.\r\n\r\nMy concern was more generically about \"protocol confusion\", by which I mean the prover and verifier don't agree on the protocol's parameters. By parameters I mean the elliptic curve, the hash function, the statement to be proved, and what we've been calling the \"proof type\" (short, batchable, etc.). Perhaps what we're calling the \"proof type\" is what you're calling the \"protocol\" above (I don't care what we call it). Quote:\r\n\r\n> For security, you need a unique identifier for your zero-knowledge proof (Schnorr proof, batched schnorr, OR proof, compressed sigmas, plonk, hyperplonk, turboplonk, fri, deepfri, whir, stir, whatever).\r\n\r\nGenerally speaking, when a cryptosystem has a lot of agility (as this one does), we need to consider the risk of an attacker influencing the parameters used in the actual protocol execution. Historically, this has been a huge attack vector for real world crypto (TLS, SSH, etc.).\r\n\r\nSpecifically, my question is: consider a malicious prover that wants to force the verifier to accept an invalid proof. Suppose we give it a bit more power, in that it can choose the parameters used by the verifier, in particular the proof type. I'm calling this a \"protocol confusion attack\". Does this extra power give the attacker any extra advantage?\r\n\r\nIf the attacker controls the parameters, it can force the verifier to use the weakest parameters. This seems like it would be a problem for the statement, the curve, or hash function. Perhaps it's not a problem for the proof type?\r\n\r\n> I do see a usability appeal, being able to tell the user \"this is not a proof in the right format\". However, that seems arbitrary with respect to the rest of the ciphersuite information (why this and not the rest of the protocol?). Furthermore, it's creating a potential verification oracle. (I don't see this as a big problem except service discovery maybe?\r\n\r\nTo be clear, I don't think adding the 1-byte tag to the proof to denote its type is the best way to address protocol confusion attacks. I think it would be better to incorporate the proof type into the Fiat-Shamir transcript. Though from the above, it sounds like that might already be your intent with the \"protocol ID\"?\r\n\r\n\r\nTaking a step back: I'm perfectly happy to defer to y'all's judgment. It does seem unlikely that confusing proof types would be much of a problem in practice.\r\n",
           "createdAt": "2025-09-26T17:58:59Z",
-          "updatedAt": "2025-09-26T19:01:28Z"
+          "updatedAt": "2025-09-28T17:26:53Z"
         }
       ],
       "reviews": [
@@ -3746,6 +3754,181 @@
           "comments": []
         }
       ]
+    },
+    {
+      "number": 88,
+      "id": "PR_kwDONyiw_86rBtlY",
+      "title": "chore(sigma-protocols): update deserialization documentation",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/88",
+      "state": "MERGED",
+      "author": "Drapsag74",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "From issue #69:\r\nIn Section 2.1.1, \"fails if the input is not the valid canonical byte representation of an element of the group\" should be \"fails if the input is not the valid canonical byte representation of an array of elements of the group.\"",
+      "createdAt": "2025-09-29T07:16:59Z",
+      "updatedAt": "2025-09-29T08:54:18Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "d4436cfe019f7e0880b29abe1234f341d2a84761",
+      "headRepository": "Drapsag74/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "main",
+      "headRefOid": "54e040e5f1ed628c8e9dd82f268a3ad337008a16",
+      "closedAt": "2025-09-29T08:54:18Z",
+      "mergedAt": "2025-09-29T08:54:18Z",
+      "mergedBy": "mmaker",
+      "mergeCommit": {
+        "oid": "71d97f55c08dc1b6db1c2e2fe9bb705220915861"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDONyiw_87DZvDG",
+          "commit": {
+            "abbreviatedOid": "02ad6e1"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-09-29T07:31:37Z",
+          "updatedAt": "2025-09-29T07:31:37Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDONyiw_87Da8fg",
+          "commit": {
+            "abbreviatedOid": "54e040e"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-09-29T08:53:56Z",
+          "updatedAt": "2025-09-29T08:53:56Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 89,
+      "id": "PR_kwDONyiw_86rDRvU",
+      "title": "chore(sigma-protocols): introduce proof composition early",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/89",
+      "state": "OPEN",
+      "author": "Drapsag74",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "From issue #66:\r\nIntroduce the notion of proof composition earlier. Explain motivation and possible security pitfalls (forward reference to security considerations is enough).",
+      "createdAt": "2025-09-29T09:25:22Z",
+      "updatedAt": "2025-09-29T13:20:14Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "71d97f55c08dc1b6db1c2e2fe9bb705220915861",
+      "headRepository": "Drapsag74/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "main",
+      "headRefOid": "ba00397341581ca0dd59d4d460ccb0d21566987f",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 90,
+      "id": "PR_kwDONyiw_86rGFc5",
+      "title": "chore(sigma-protocols): fix artwork overflow",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/90",
+      "state": "OPEN",
+      "author": "Drapsag74",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Issue #66:\r\nFix artwork overflow (e.g., prover commitment spec). Break lines at 69 characters.",
+      "createdAt": "2025-09-29T12:45:18Z",
+      "updatedAt": "2025-09-29T12:45:19Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "71d97f55c08dc1b6db1c2e2fe9bb705220915861",
+      "headRepository": "Drapsag74/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "chore/sigma-protocols-defines",
+      "headRefOid": "762bb83e43f15d7c78a3576bdf8cfd0e8937215f",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 91,
+      "id": "PR_kwDONyiw_86rGZwX",
+      "title": "chore(sigma-protocols): add reference for CS",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/91",
+      "state": "MERGED",
+      "author": "Drapsag74",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Issue #66:\r\nAdd reference for Camenisch\u2013Stadler notation.",
+      "createdAt": "2025-09-29T13:08:01Z",
+      "updatedAt": "2025-09-29T13:46:23Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "71d97f55c08dc1b6db1c2e2fe9bb705220915861",
+      "headRepository": "Drapsag74/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "chore/sigma-protocols-add-ref",
+      "headRefOid": "22147835bdda1c2b4f1f5f64cdf9415dfc5ab340",
+      "closedAt": "2025-09-29T13:46:23Z",
+      "mergedAt": "2025-09-29T13:46:23Z",
+      "mergedBy": "mmaker",
+      "mergeCommit": {
+        "oid": "c4e29b10bf909771aa6ae805bc7fe1f520c10b59"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDONyiw_87Df9Vf",
+          "commit": {
+            "abbreviatedOid": "2214783"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-09-29T13:46:16Z",
+          "updatedAt": "2025-09-29T13:46:16Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 92,
+      "id": "PR_kwDONyiw_86rJsEo",
+      "title": "chore(sigma-protocols): fix rendering",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/92",
+      "state": "OPEN",
+      "author": "Drapsag74",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "From issue #66:\r\nFix rendering issue here.",
+      "createdAt": "2025-09-29T17:25:50Z",
+      "updatedAt": "2025-09-29T17:25:50Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "c4e29b10bf909771aa6ae805bc7fe1f520c10b59",
+      "headRepository": "Drapsag74/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "chore/sigma-protocols-fix-rendering",
+      "headRefOid": "0511098281aea99b083a53987f77066cfc751b8f",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
