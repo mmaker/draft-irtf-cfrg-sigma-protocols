@@ -119,7 +119,7 @@ The public functions are obtained relying on an internal structure containing th
 
 Where:
 
-- `new(instance) -> SigmaProtocol`, denoting the initialization function. This function takes as input an instance generated via the `LinearRelation`, the public information shared between prover and verifier.
+- `new(instance) -> SigmaProtocol`, denoting the initialization function. This function takes as input an instance generated via a `LinearRelation`, the public information shared between prover and verifier.
 
 - `prover_commit(self, witness: Witness, rng) -> (commitment, prover_state)`, denoting the **commitment phase**, that is, the computation of the first message sent by the prover in a Sigma protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator `rng`. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just of a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while `prover_state` must be kept secret.
 
