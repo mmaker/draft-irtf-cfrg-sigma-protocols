@@ -129,8 +129,8 @@ Table of Contents
 
    *  new(instance) -> SigmaProtocol, denoting the initialization
       function.  This function takes as input an instance generated via
-      the LinearRelation, the public information shared between prover
-      and verifier.
+      a LinearRelation, the public information shared between prover and
+      verifier.
 
    *  prover_commit(self, witness: Witness, rng) -> (commitment,
       prover_state), denoting the *commitment phase*, that is, the
