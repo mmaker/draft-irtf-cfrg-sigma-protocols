@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 3 April 2026                                        Apple, Inc.
-                                                       30 September 2025
+Expires: 5 April 2026                                        Apple, Inc.
+                                                          2 October 2025
 
 
                         Interactive Sigma Proofs
@@ -53,7 +53,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 3 April 2026.
+   This Internet-Draft will expire on 5 April 2026.
 
 Copyright Notice
 
@@ -213,8 +213,8 @@ Table of Contents
    public information (the *instance*) consists of the group elements
    (G, X, H, Y) denoted in upper-case.  Line 2 states that the private
    information (the *witness*) consists of the scalar x.  Finally, line
-   3 states that the linear relation that need to be proven is x * G = X
-   and x * H = Y.
+   3 states that the linear relation that needs to be proven is x * G =
+   X and x * H = Y.
 
 2.1.  Group abstraction
 
