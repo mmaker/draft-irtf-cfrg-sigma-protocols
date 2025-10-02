@@ -253,7 +253,7 @@ Table of Contents
       two group elements.
 
    *  equal(element: Group), returns true if the two elements are the
-      same and false` otherwise.
+      same and false otherwise.
 
    *  scalar_mul(scalar: Scalar), implements scalar multiplication for a
       group element by an element in its respective scalar field.
