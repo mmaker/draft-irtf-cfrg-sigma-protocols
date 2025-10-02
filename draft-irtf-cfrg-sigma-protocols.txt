@@ -139,8 +139,8 @@ Table of Contents
       associated prover state, depending on the witness known to the
       prover, the statement to be proven, and a random number generator
       rng.  This step generally requires access to a high-quality
-      entropy source to perform the commitment.  Leakage of even just of
-      a few bits of the commitment could allow for the complete recovery
+      entropy source to perform the commitment.  Leakage of even just a
+      few bits of the commitment could allow for the complete recovery
       of the witness.  The commitment is meant to be shared, while
       prover_state must be kept secret.
 
