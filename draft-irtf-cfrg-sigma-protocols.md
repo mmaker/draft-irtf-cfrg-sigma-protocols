@@ -155,7 +155,7 @@ Traditionally, sigma protocols are defined in Camenisch-Stadler notation as (for
 
 In the above, line 1 declares that the proof name is "DLEQ", the public information (the **instance**) consists of the group elements `(G, X, H, Y)` denoted in upper-case.
 Line 2 states that the private information (the **witness**) consists of the scalar `x`.
-Finally, line 3 states that the linear relation that need to be proven is
+Finally, line 3 states that the linear relation that needs to be proven is
 `x * G  = X` and `x * H = Y`.
 
 ## Group abstraction {#group-abstraction}
