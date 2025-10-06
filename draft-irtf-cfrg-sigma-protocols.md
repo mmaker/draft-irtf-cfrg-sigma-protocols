@@ -314,7 +314,7 @@ A witness can be mapped to a list of group elements called the image via:
     5.     image.append(self.Group.msm(coefficients, elements))
     6. return image
 
-For example, given a witness of two scalars `w=[x, r]`, three group elements `group_elements = [G, H, U]` and a `LinearMap` for the two following `LinearCombination`:
+For example, given a witness of two scalars `w = [x, r]`, three group elements `group_elements = [G, H, U]` and a `LinearMap` for the two following `LinearCombination`:
 
     LinearCombination(scalar_indices=[0, 1], element_indices=[0, 1])  # lc0 = w[0]*G + w[1]*H
     LinearCombination(scalar_indices=[0], element_indices=[2])        # lc1 = w[0]*U
