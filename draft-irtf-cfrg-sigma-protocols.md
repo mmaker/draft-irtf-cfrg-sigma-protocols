@@ -96,6 +96,12 @@ informative:
     date: 1997
     author:
       - fullname: "Ronald Cramer"
+  CS97:
+      title: "Proof Systems for General Statements about Discrete Logarithms"
+      author:
+        - fullname: "Jan Camenisch"
+        - fullname: "Markus Stadler"
+      target: https://crypto.ethz.ch/publications/files/CamSta97b.pdf
 
 --- abstract
 
@@ -127,9 +133,9 @@ The public functions are obtained relying on an internal structure containing th
 
 Where:
 
-- `new(instance) -> SigmaProtocol`, denoting the initialization function. This function takes as input an instance generated via the `LinearRelation`, the public information shared between prover and verifier.
+- `new(instance) -> SigmaProtocol`, denoting the initialization function. This function takes as input an instance generated via a `LinearRelation`, the public information shared between prover and verifier.
 
-- `prover_commit(self, witness: Witness, rng) -> (commitment, prover_state)`, denoting the **commitment phase**, that is, the computation of the first message sent by the prover in a Sigma protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator `rng`. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just of a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while `prover_state` must be kept secret.
+- `prover_commit(self, witness: Witness, rng) -> (commitment, prover_state)`, denoting the **commitment phase**, that is, the computation of the first message sent by the prover in a Sigma protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator `rng`. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while `prover_state` must be kept secret.
 
 - `prover_response(self, prover_state, challenge) -> response`, denoting the **response phase**, that is, the computation of the second message sent by the prover, depending on the witness, the statement, the challenge received from the verifier, and the internal state `prover_state`. The return value response is a public value and is transmitted to the verifier.
 
@@ -160,7 +166,7 @@ It relies on a prime-order elliptic-curve group as described in {{group-abstract
 
 Valid choices of elliptic curves can be found in {{ciphersuites}}.
 
-Traditionally, sigma protocols are defined in Camenisch-Stadler notation as (for example):
+Traditionally, sigma protocols are defined in Camenisch-Stadler {{CS97}} notation as (for example):
 
     1. DLEQ(G, H, X, Y) = PoK{
     2.   (x):        // Secret variables
@@ -169,7 +175,7 @@ Traditionally, sigma protocols are defined in Camenisch-Stadler notation as (for
 
 In the above, line 1 declares that the proof name is "DLEQ", the public information (the **instance**) consists of the group elements `(G, X, H, Y)` denoted in upper-case.
 Line 2 states that the private information (the **witness**) consists of the scalar `x`.
-Finally, line 3 states that the linear relation that need to be proven is
+Finally, line 3 states that the linear relation that needs to be proven is
 `x * G  = X` and `x * H = Y`.
 
 ## Group abstraction {#group-abstraction}
@@ -182,12 +188,12 @@ We detail the functions that can be invoked on these objects. Example choices ca
 
 - `identity()`, returns the neutral element in the group.
 - `generator()`, returns the generator of the prime-order elliptic-curve subgroup used for cryptographic operations.
-- `order()`: Outputs the order of the group `p`.
-- `random()`: outputs a random element in the group.
+- `order()`: returns the order of the group `p`.
+- `random()`: returns an element sampled uniformly at random from the group.
 - `serialize(elements: [Group; N])`, serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
 - `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a `DeserializeError` if deserialization fails.
 - `add(element: Group)`, implements elliptic curve addition for the two group elements.
-- `equal(element: Group)`, returns `true` if the two elements are the same and false` otherwise.
+- `equal(element: Group)`, returns `true` if the two elements are the same and `false` otherwise.
 - `scalar_mul(scalar: Scalar)`, implements scalar multiplication for a group element by an element in its respective scalar field.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `scalar_mul` we will use `*`. A similar behavior can be achieved using operator overloading.
@@ -197,7 +203,7 @@ In this spec, instead of `add` we will use `+` with infix notation; instead of `
 - `identity()`: outputs the (additive) identity element in the scalar field.
 - `add(scalar: Scalar)`: implements field addition for the elements in the field.
 - `mul(scalar: Scalar)`, implements field multiplication.
-- `random()`: outputs a random scalar field element.
+- `random()`: returns an element sampled uniformly at random from the scalar field.
 - `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
 - `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a `DeserializeError` if deserialization fails.
 
@@ -276,7 +282,7 @@ The prover of a sigma protocol is stateful and will send two messages, a "commit
 
 ### Witness representation {#witness}
 
-A witness is simply a list of `num_scalars` elements.
+A witness is simply represented as a list of scalar elements of size `num_scalars`.
 
     Witness = [Scalar; num_scalars]
 
@@ -332,7 +338,7 @@ A witness can be mapped to a group element via:
 
 The object `LinearRelation` has two attributes: a linear map `linear_map`, which will be defined in {{linear-map}}, and `image`, the linear map image of which the prover wants to show the pre-image of.
 
-class LinearRelation:
+    class LinearRelation:
         Domain = group.ScalarField
         Image = group.Group
 
