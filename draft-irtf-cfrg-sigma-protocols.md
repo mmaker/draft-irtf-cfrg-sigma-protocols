@@ -82,6 +82,20 @@ informative:
     date: 1993
     author:
       - fullname: "Jacques Stern"
+  CramerDS94:
+    title: "Proofs of Partial Knowledge and Simplified Design of Witness Hiding Protocols"
+    target: https://ir.cwi.nl/pub/1456/1456D.pdf
+    date: 1994
+    author:
+      - fullname: "Ronald Cramer"
+      - fullname: "Ivan Damgaard"
+      - fullname: "Berry Schoenmakers"
+  Cramer97:
+    title: "Modular Design of Secure yet Practical Cryptographic Protocols"
+    target: https://ir.cwi.nl/pub/21438
+    date: 1997
+    author:
+      - fullname: "Ronald Cramer"
 
 --- abstract
 
@@ -91,7 +105,7 @@ This document describes interactive sigma protocols, a class of secure, general-
 
 # Introduction
 
-Any sigma protocol must define three objects: a *commitment* (computed by the prover), a *challenge* (computed by the verifier), and a *response* (computed by the prover). One of the advantages of sigma protocols is their composability which enables the construction of more complex protocols. A classic example is the OR composition where the prover seeks to convince the verifier that it knows a valid witness for at least one out of two relations. If there exists a sigma protocol for each relation individually, it is possible to build an OR proof (see Chapter 19.7 of {{BonehS23}} for details). However, such compositions must be handled carefully to preserve security properties as discussed in {{sec-cons}}.
+Any sigma protocol must define three objects: a *commitment* (computed by the prover), a *challenge* (computed by the verifier), and a *response* (computed by the prover). One of the advantages of sigma protocols is their composability which enables the construction of more complex protocols. A classic example is the OR composition {{CramerDS94}} where the prover seeks to convince the verifier that it knows a valid witness for at least one out of two relations. If there exists a sigma protocol for each relation individually, it is possible to build an OR proof. Also, this composed sigma protocols can be made non-interactive using the Fiat-Shamir transform {{Cramer97}}. However, such compositions must be handled carefully to preserve security properties as discussed in {{sec-cons}}.
 
 ## Core interface
 
