@@ -238,7 +238,7 @@ def main(path="vectors"):
         for proof_type in vectors:
             write_group_vectors(f, proof_type, vectors[proof_type])
 
-    print(f"Test vectors written to {path}/allVectors.json")
+    print(f"Test vectors written to {path}/testSigmaProtocols.json")
 
 
 if __name__ == "__main__":
