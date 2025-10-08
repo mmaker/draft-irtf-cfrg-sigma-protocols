@@ -178,17 +178,17 @@ We detail the functions that can be invoked on these objects. Example choices ca
 - `random()`: returns an element sampled uniformly at random from the group.
 - `serialize(elements: [Group; N])`, serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
 - `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a `DeserializeError` if deserialization fails.
-- `add(element: Group)`, implements elliptic curve addition for the two group elements.
-- `equal(element: Group)`, returns `true` if the two elements are the same and `false` otherwise.
-- `scalar_mul(scalar: Scalar, element: Group)`, implements scalar multiplication for a group element by an element in its respective scalar field.
+- `add(P: Group, Q: Group)`, implements elliptic curve addition for the two 'P' and 'Q' group elements.
+- `equal(P: Group, Q: Group)`, returns `true` if the two elements 'P' and 'Q' are the same and `false` otherwise.
+- `scalar_mul(a: Scalar, P: Group)`, implements scalar multiplication for a group element 'P' by an element 'a' in its respective scalar field.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `scalar_mul` we will use `*`. A similar behavior can be achieved using operator overloading.
 
 ### Scalar
 
 - `identity()`: outputs the (additive) identity element in the scalar field.
-- `add(scalar: Scalar)`: implements field addition for the elements in the field.
-- `mul(scalar: Scalar)`, implements field multiplication.
+- `add(a: Scalar, b: Scalar)`: implements field addition for the 'a' and 'b' elements in the field.
+- `mul(a: Scalar, b: Scalar)`, implements field multiplication.
 - `random()`: returns an element sampled uniformly at random from the scalar field.
 - `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
 - `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a `DeserializeError` if deserialization fails.
