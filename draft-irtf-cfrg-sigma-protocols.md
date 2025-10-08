@@ -172,17 +172,30 @@ We detail the functions that can be invoked on these objects. Example choices ca
 
 ### Group {#group}
 
-- `identity()`, returns the neutral element in the group.
+#### Properties and Constants
+
+These methods provide access to fundamental group parameters and utilities.
+
 - `generator()`, returns the generator of the prime-order elliptic-curve subgroup used for cryptographic operations.
 - `order()`: returns the order 'p' of the group.
 - `random()`: returns an element sampled uniformly at random from the group.
-- `serialize(elements: [Group; N])`, serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
-- `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a `DeserializeError` if deserialization fails.
+
+#### Algebraic Operations
+
+- `identity()`, returns the neutral element in the group.
 - `add(P: Group, Q: Group)`, implements elliptic curve addition for the two 'P' and 'Q' group elements.
 - `equal(P: Group, Q: Group)`, returns `true` if the two elements 'P' and 'Q' are the same and `false` otherwise.
 - `scalar_mul(a: Scalar, P: Group)`, implements scalar multiplication for a group element 'P' by an element 'a' in its respective scalar field.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `scalar_mul` we will use `*`. A similar behavior can be achieved using operator overloading.
+
+#### Encoding
+
+These methods ensure correct and interoperable serialization for communication and storage.
+
+- `serialize(elements: [Group; N])`, serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
+- `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a `DeserializeError` if deserialization fails.
+
 
 ### Scalar
 
