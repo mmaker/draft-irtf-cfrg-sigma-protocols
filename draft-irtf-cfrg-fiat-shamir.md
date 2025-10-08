@@ -56,7 +56,7 @@ It depends on:
 
 # The Duplex Sponge Interface
 
-A duplex sponge operates over an abstract `Unit` type and provides the following interface.
+The duplex sponge interface defines the space (the `Unit`) where the hash function operates in, plus a function for absorbing and squeezing prover messages. It provides the following interface.
 
     class DuplexSponge:
       def new(iv: bytes) -> DuplexSponge
@@ -71,18 +71,24 @@ Where:
 
 # The Codec interface
 
+A codec is a collection of:
+- functions that map prover messages into the hash function domain,
+- functions that map hash outputs into a message output by the verifier in the Sigma protocol
+In addition, the "init" function initializes the hash state with a session ID and an instance label.
+For byte-oriented codecs, this is just the concatenation of the two prefixed by their lengths.
+
 A codec provides the following interface.
 
     class Codec:
-        def new(iv: bytes) -> Codec
-        def prover_message(self, prover_message)
-        def verifier_challenge(self) -> verifier_challenge
+        def init(session_id, instance_label) -> hash_state
+        def prover_message(self, hash_state, elements)
+        def verifier_challenge(self, hash_state) -> verifier_challenge
 
 Where:
 
-- `init(iv: bytes) -> DuplexSponge` denotes the initialization function. This function takes as input a 32-byte initialization vector `iv` and initializes the state of the codec.
-- `prover_message(self, prover_message) -> self` denotes the absorb operation of the codec. This function takes as input a prover message `prover_message` and mutates the codec's internal state.
-- `verifier_challenge(self) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes no inputs and uses the codec's internal state to produce an unpredictable verifier challenge `verifier_challenge`.
+- `init(session_id, instance_label) -> hash_state` denotes the initialization function. This function takes as input a session ID and an instance label, and returns the initial hash state.
+- `prover_message(self, hash_state, elements) -> self` denotes the absorb operation of the codec. This function takes as input the hash state, and elements with which to mutate the hash state.
+- `verifier_challenge(self, hash_state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the hash state to produce an unpredictable verifier challenge `verifier_challenge`.
 
 # Generation of the Initialization Vector {#iv-generation}
 
@@ -107,59 +113,120 @@ This will be expanded in future versions of this specification.
 We describe how to construct non-interactive proofs for sigma protocols.
 The Fiat-Shamir transformation is parametrized by:
 
+- a `SigmaProtocol`, which specifies an interactive 3-message protocol as defined in {{Section 2 of !SIGMA=I-D.draft-irtf-cfrg-sigma-protocols-00}};
 - a `Codec`, which specifies how to absorb prover messages and how to squeeze verifier challenges;
-- a `SigmaProtocol`, which specifies an interactive 3-message protocol.
+- a `DuplexSpongeInterface`, which specifies a hash function for computing challenges.
 
-Upon initialization, the protocol receives as input an `iv` of 32-bytes which uniquely identifies the protocol and the session being proven and (optionally) pre-processes some information about the protocol using the instance.
+Upon initialization, the protocol receives as input:
+- `session_id`, which identifies the session being proven
+- `instance`, the sigma protocol instance for proving or verifying
 
     class NISigmaProtocol:
-        Protocol: SigmaProtocol
-        Codec: Codec
+        Protocol: SigmaProtocol = None
+        Codec: Codec = None
+        Hash: DuplexSpongeInterface = None
 
-        def init(self, iv: bytes, instance):
+        def __init__(self, session_id, instance):
             self.hash_state = self.Codec(iv)
             self.ip = self.Protocol(instance)
 
-        def prove(self, witness, rng):
-            (prover_state, commitment) = self.ip.prover_commit(witness, rng)
-            challenge = self.hash_state.prover_message(commitment).verifier_challenge()
-            response = self.ip.prover_response(prover_state, challenge)
+        def _prove(self, witness, rng):
+            # Core proving logic that returns commitment, challenge, and response.
+            # The challenge is generated via the hash function.
+            (prover_state, commitment) = self.sigma_protocol.prover_commit(witness, rng)
+            self.codec.prover_message(self.hash_state, commitment)
+            challenge = self.codec.verifier_challenge(self.hash_state)
+            response = self.sigma_protocol.prover_response(prover_state, challenge)
+            return (commitment, challenge, response)
 
-            assert self.ip.verifier(commitment, challenge, response)
-            return self.ip.serialize_commitment(commitment) + self.ip.serialize_response(response)
+        def prove(self, witness, rng):
+            # Default proving method using challenge-response format.
+            (commitment, challenge, response) = self._prove(witness, rng)
+            assert self.sigma_protocol.verifier(commitment, challenge, response)
+            assert self.sigma_protocol.verifier(commitment, challenge, response)
+            return self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
 
         def verify(self, proof):
-            commitment_bytes = proof[:self.ip.instance.commit_bytes_len]
-            response_bytes = proof[self.ip.instance.commit_bytes_len:]
-            commitment = self.ip.deserialize_commitment(commitment_bytes)
-            response = self.ip.deserialize_response(response_bytes)
-            challenge = self.hash_state.prover_message(commitment).verifier_challenge()
-            return self.ip.verifier(commitment, challenge, response)
+            # Before running the sigma protocol verifier, one must also check that:
+            # - the proof length is exactly challenge_bytes_len + response_bytes_len
+            challenge_bytes_len = self.sigma_protocol.instance.Domain.scalar_byte_length()
+            assert len(proof) == challenge_bytes_len + self.sigma_protocol.instance.response_bytes_len
 
-## Codec for Linear maps {#group-prove}
+            # - proof deserialization successfully produces a valid challenge and a valid response
+            challenge_bytes = proof[:challenge_bytes_len]
+            response_bytes = proof[challenge_bytes_len:]
+            challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
+            response = self.sigma_protocol.deserialize_response(response_bytes)
 
-We describe a codec for Schnorr proofs over groups of prime order `p` that is intended for duplex sponges where `Unit = u8`.
+            commitment = self.sigma_protocol.simulate_commitment(response, challenge)
+            return self.sigma_protocol.verifier(commitment, challenge, response)
 
-    class LinearMapCodec:
-        Group: groups.Group = None
-        DuplexSponge: DuplexSpongeInterface = None
+        def prove_batchable(self, witness, rng):
+            # Proving method using commitment-response format.
+            # Allows for batching.
+            (commitment, challenge, response) = self._prove(witness, rng)
+            # running the verifier here is just a sanity check
+            assert self.sigma_protocol.verifier(commitment, challenge, response)
+            return self.sigma_protocol.serialize_commitment(commitment) + self.sigma_protocol.serialize_response(response)
 
-        def init(self, iv: bytes):
-            self.hash_state = self.DuplexSponge(iv)
+        def verify_batchable(self, proof):
+            # Before running the sigma protocol verifier, one must also check that:
+            # - the proof length is exactly commit_bytes_len + response_bytes_len
+            assert len(proof) == self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len
+
+            # - proof deserialization successfully produces a valid commitment and a valid response
+            commitment_bytes = proof[:self.sigma_protocol.instance.commit_bytes_len]
+            response_bytes = proof[self.sigma_protocol.instance.commit_bytes_len:]
+            commitment = self.sigma_protocol.deserialize_commitment(commitment_bytes)
+            response = self.sigma_protocol.deserialize_response(response_bytes)
+
+            self.codec.prover_message(self.hash_state, commitment)
+            challenge = self.codec.verifier_challenge(self.hash_state)
+            return self.sigma_protocol.verifier(commitment, challenge, response)
+
+## NISigmaProtocol instances (ciphersuites)
+
+We describe noninteractive sigma protocol instances for combinations of protocols (SigmaProtocol), codec (Codec), and hash fuction (DuplexSpongeInterface). Descriptions of codecs and hash functions are in the following sections.
+
+    class NISchnorrProofShake128P256(NISigmaProtocol):
+        Protocol = SchnorrProof
+        Codec = P256Codec
+        Hash = SHAKE128
+
+    class NISchnorrProofShake128Bls12381(NISigmaProtocol):
+        Protocol = SchnorrProof
+        Codec = Bls12381Codec
+        Hash = SHAKE128
+
+    class NISchnorrProofKeccakDuplexSpongeBls12381(NISigmaProtocol):
+        Protocol = SchnorrProof
+        Codec = Bls12381Codec
+        Hash = KeccakDuplexSponge
+
+# Codec for Schnorr proofs {#group-prove}
+
+We describe a codec for Schnorr proofs over groups of prime order `p` where `Unit = u8`.
+
+    class ByteSchnorrCodec(Codec):
+        GG: groups.Group = None
 
         def prover_message(self, elements: list):
-            self.hash_state.absorb(self.Group.serialize(elements))
-            # calls can be chained
-            return self
+            hash_state.absorb(self.GG.serialize(elements))
 
-        def verifier_challenge(self):
-            uniform_bytes = self.hash_state.squeeze(
-                self.Group.ScalarField.scalar_byte_length() + 16
+        def verifier_challenge(self, hash_state):
+            # see https://eprint.iacr.org/2025/536.pdf, Appendix C.
+            uniform_bytes = hash_state.squeeze(
+                self.GG.ScalarField.scalar_byte_length() + 16
             )
-            scalar = OS2IP(uniform_bytes) % self.Group.ScalarField.order
+            scalar = OS2IP(uniform_bytes) % self.GG.ScalarField.order
             return scalar
 
-# Ciphersuites
+We describe a codec for the P256 curve.
+
+    class P256Codec(ByteSchnorrCodec):
+        GG = groups.GroupP256()
+
+# Duplex Sponge Interfaces
 
 ## SHAKE128
 
@@ -177,8 +244,9 @@ SHAKE128 is a variable-length hash function based on the Keccak sponge construct
 
     -  a hash state interface
 
-    1. h = shake_128(iv)
-    2. return h
+    1. initial_block = iv + b'\00' * 104  # len(iv) + 104 == SHAKE128 rate
+    2. self.hash_state = hashlib.shake_128()
+    3. self.hash_state.update(initial_block)
 
 ### SHAKE128 Absorb
 
@@ -200,7 +268,7 @@ SHAKE128 is a variable-length hash function based on the Keccak sponge construct
     - hash_state, the hash state
     - length, the number of elements to be squeezed
 
-    1. h.copy().digest(length)
+    1. return self.hash_state.copy().digest(length)
 
 ## Duplex Sponge
 
@@ -349,7 +417,6 @@ Where the function `scalar_to_bytes` is defined in {{notation}}
     1. for i in range(length):
     2.     scalar_bytes = hash_state.squeeze(field_bytes_length + 16)
     3.     scalars.append(bytes_to_scalar_mod_order(scalar_bytes))
-
 
 --- back
 
