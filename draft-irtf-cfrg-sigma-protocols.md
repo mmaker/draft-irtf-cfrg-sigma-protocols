@@ -199,14 +199,23 @@ These methods ensure correct and interoperable serialization for communication a
 
 ### Scalar
 
+#### Properties and Constants
+
 - `identity()`: outputs the (additive) identity element in the scalar field.
+- `random()`: returns an element sampled uniformly at random from the scalar field.
+
+#### Algebraic Operations
+
 - `add(a: Scalar, b: Scalar)`: implements field addition for the 'a' and 'b' elements in the field.
 - `mul(a: Scalar, b: Scalar)`, implements field multiplication.
-- `random()`: returns an element sampled uniformly at random from the scalar field.
+
+In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `mul` we will use `*`. A similar behavior can be achieved using operator overloading.
+
+#### Encoding
+
 - `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
 - `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a `DeserializeError` if deserialization fails.
 
-In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `mul` we will use `*`. A similar behavior can be achieved using operator overloading.
 
 ## Proofs of preimage of a linear map
 
