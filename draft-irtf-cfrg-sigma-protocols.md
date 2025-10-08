@@ -191,7 +191,7 @@ In this spec, instead of `add` we will use `+` with infix notation; instead of `
 
 #### Encoding
 
-These methods ensure correct and interoperable serialization for communication and storage.
+These methods ensure correct and interoperable serialization for communication and storage. For a given group, the encoding length of its elements is fixed and will subsequently be denoted as 'Ne'.
 
 - `serialize(elements: [Group; N])`, serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
 - `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a `DeserializeError` if deserialization fails.
@@ -206,12 +206,14 @@ These methods ensure correct and interoperable serialization for communication a
 
 #### Algebraic Operations
 
-- `add(a: Scalar, b: Scalar)`: implements field addition for the 'a' and 'b' elements in the field.
+- `add(a: Scalar, b: Scalar)`: implements field addition for the 'a' and 'b' scalars in the field.
 - `mul(a: Scalar, b: Scalar)`, implements field multiplication.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `mul` we will use `*`. A similar behavior can be achieved using operator overloading.
 
 #### Encoding
+
+These methods ensure correct and interoperable serialization for communication and storage. For a given field, the encoding length of its scalars is fixed and will subsequently be denoted as 'Ns'.
 
 - `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
 - `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a `DeserializeError` if deserialization fails.
