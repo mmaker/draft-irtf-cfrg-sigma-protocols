@@ -304,7 +304,7 @@ The linear map `LinearMap` is initialized with
 
 #### Linear map evaluation
 
-A witness can be mapped to a group element via:
+A witness can be mapped to a vector of group elements via:
 
     map(self, scalars: [Scalar; num_scalars])
 
