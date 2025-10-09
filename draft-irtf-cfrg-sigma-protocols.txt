@@ -407,7 +407,7 @@ Procedure:
 
 2.2.5.2.  Linear map evaluation
 
-   A witness can be mapped to a group element via:
+   A witness can be mapped to a vector of group elements via:
 
 map(self, scalars: [Scalar; num_scalars])
 
