@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-10-07T01:12:11.502831+00:00",
+  "timestamp": "2025-10-09T01:13:00.541143+00:00",
   "repo": "mmaker/draft-irtf-cfrg-sigma-protocols",
   "labels": [
     {
@@ -1173,15 +1173,15 @@
       "id": "I_kwDONyiw_87MSWVt",
       "title": "Add prover/verifier creation APIs to spec",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/74",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "cathieyun",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Currently, there is the following code in the poc for creating prover/verifiers:\n```\n    NIZK = CIPHERSUITE['sigma/Shake128+P256']\n    proof = NIZK(session_id, statement).prove(witness, rng)\n    print(f'Proof: {proof.hex()}')\n```\n\nHowever, this isn't reflected in the spec yet, which means we can't \"use\" this workflow from other specs (eg ARC, ACT). We need to add this to the sigma spec.\n\nAs an example, this is what the ARC spec is doing now - I synced with Michele and he said this isn't the right way to use the API, as I'm just initializing a factory class and not the right prover/verifier.\nhttps://github.com/chris-wood/draft-arc/pull/37/files#r2356381798",
       "createdAt": "2025-09-17T18:32:16Z",
-      "updatedAt": "2025-09-24T15:56:52Z",
-      "closedAt": null,
+      "updatedAt": "2025-10-08T17:29:02Z",
+      "closedAt": "2025-10-08T17:29:02Z",
       "comments": [
         {
           "author": "cathieyun",
@@ -1227,15 +1227,15 @@
       "id": "I_kwDONyiw_87NcdnP",
       "title": "Add short_proofs API to the Fiat-Shamir spec",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/77",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "cathieyun",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Short_proofs were added to the poc here: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/50\nWe need to \"catch up\" the spec to also support short proofs. This issue will track that task.\n\nGoing forward, let's only make edits that keep the poc and spec in sync, or if they _have_ to be out of sync, the spec should be the leading edge (and an issue should be filed to catch up the poc). The same problem showed up with prover/verifier APIs, where the poc implemented something that the spec did not mention: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/74",
       "createdAt": "2025-09-23T22:05:27Z",
-      "updatedAt": "2025-09-24T14:03:28Z",
-      "closedAt": null,
+      "updatedAt": "2025-10-08T17:29:02Z",
+      "closedAt": "2025-10-08T17:29:02Z",
       "comments": [
         {
           "author": "cathieyun",
@@ -2899,24 +2899,26 @@
       "id": "PR_kwDONyiw_86qMDTJ",
       "title": "Add NISigmaProtocol class and instances to Fiat-Shamir spec",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/79",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "cathieyun",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/74 by adding the NIZK class and instances\r\n\r\nFixes: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/77 by adding \"short proofs\" to the NIZK class\r\nIn practice, I am making the default proof a \"short proof\" (challenge, responses) and adding a \"batchable proof\" which is a proof in the (commitments, responses) format, as discussed here: https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/77#issuecomment-3325924652\r\n\r\nI also noticed that some of the pseudocode in the spec for Codec and DuplexSpongeInterface was out of sync with the poc, so I updated the pseudocode with the updated poc code. \r\n\r\nAdded as of 9/24:\r\n- NIZK now called NISigmaProtocol\r\n- Added domain separation\r\n\r\nNOTE: I am not able to run tests or update the test vectors, because the `sigma_protocol.py/sage` file is missing, so the test can't run. So there may be some mistakes in the poc code I haven't caught yet. Following up with Michele on this.",
       "createdAt": "2025-09-24T03:51:49Z",
-      "updatedAt": "2025-09-30T23:54:13Z",
+      "updatedAt": "2025-10-08T17:29:01Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "d4436cfe019f7e0880b29abe1234f341d2a84761",
       "headRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "headRefName": "NIZK-spec",
       "headRefOid": "22a661dbcbf93c3f336fd2645607d6ee603cecd2",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2025-10-08T17:29:01Z",
+      "mergedAt": "2025-10-08T17:29:01Z",
+      "mergedBy": "mmaker",
+      "mergeCommit": {
+        "oid": "629db509fcd8f73d363cbffaee251ff9e4a22b8c"
+      },
       "comments": [
         {
           "author": "mmaker",
@@ -2973,6 +2975,20 @@
           "body": "[Edit: resolved]\r\nHm, the \"batchable proof\" test vectors should be the same as the previous \"proof\" test vectors, it should just have been a proof type rename. But that doesn't seem to be the case, I'm looking into if there are other things that I changed along the way which result in the test vector \"breakage\".\r\n\r\nUpdate: I figured it out, it's just because the \"batchable proof\" was being generated after the \"proof\", so the rng state had changed. I fixed the ordering, and now the \"batchable proof\" test vector perfectly matches what used to be the \"proof\" test vector. So, all is working as expected! :)",
           "createdAt": "2025-09-30T22:16:17Z",
           "updatedAt": "2025-09-30T22:22:05Z"
+        },
+        {
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "body": "After discussion, we decided that we are happy with the PR as-is (no tag for short/batchable proof serialization).\r\n@mmaker if that sounds good to you, can you review / approve this PR so we can merge it in? It's currently blocking 3 other adopter PRs, so it would be great to have this finalized.\r\n\r\nAdopters:\r\nhttps://github.com/chris-wood/draft-arc/pull/38\r\nhttps://github.com/chris-wood/draft-arc/pull/37/files\r\nhttps://github.com/SamuelSchlesinger/draft-act/pull/12",
+          "createdAt": "2025-10-07T22:10:45Z",
+          "updatedAt": "2025-10-07T22:10:45Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "LGTM, nothing to say. Thank you so much @cathieyun  and @cjpatton !",
+          "createdAt": "2025-10-08T17:28:51Z",
+          "updatedAt": "2025-10-08T17:28:51Z"
         }
       ],
       "reviews": [
@@ -3759,6 +3775,19 @@
               "updatedAt": "2025-09-30T23:54:14Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87Fo7kz",
+          "commit": {
+            "abbreviatedOid": "22a661d"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-08T17:28:32Z",
+          "updatedAt": "2025-10-08T17:28:32Z",
+          "comments": []
         }
       ]
     },
@@ -3879,13 +3908,13 @@
       "labels": [],
       "body": "From issue #66:\r\nIntroduce the notion of proof composition earlier. Explain motivation and possible security pitfalls (forward reference to security considerations is enough).",
       "createdAt": "2025-09-29T09:25:22Z",
-      "updatedAt": "2025-10-05T14:40:26Z",
+      "updatedAt": "2025-10-07T09:19:24Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
-      "baseRefOid": "71d97f55c08dc1b6db1c2e2fe9bb705220915861",
+      "baseRefOid": "590ca8b977602d4cee5d56b169baaa6e0344bf6d",
       "headRepository": "Drapsag74/draft-irtf-cfrg-sigma-protocols",
       "headRefName": "main",
-      "headRefOid": "84785233ba8c7fbe604b4030c97a0ce1e609865e",
+      "headRefOid": "2a8e2398c6bf03cd9b95d1710e30b8f38898124d",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -3964,6 +3993,26 @@
           "createdAt": "2025-10-05T14:40:26Z",
           "updatedAt": "2025-10-05T14:40:26Z",
           "comments": []
+        },
+        {
+          "id": "PRR_kwDONyiw_87FPlmO",
+          "commit": {
+            "abbreviatedOid": "2a8e239"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2025-10-07T09:19:14Z",
+          "updatedAt": "2025-10-07T09:19:24Z",
+          "comments": [
+            {
+              "originalPosition": 9,
+              "body": "move target below title, let's be consistent with the other citations",
+              "createdAt": "2025-10-07T09:19:14Z",
+              "updatedAt": "2025-10-07T09:19:24Z"
+            }
+          ]
         }
       ]
     },
@@ -4559,6 +4608,58 @@
       "headRepository": "Drapsag74/draft-irtf-cfrg-sigma-protocols",
       "headRefName": "chore/sigma-protocols-valid-witness-vector-group-elements",
       "headRefOid": "9092e10bb070159667df92807a85f6f749cc82e5",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 105,
+      "id": "PR_kwDONyiw_86skB09",
+      "title": "Remove unused test files",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/105",
+      "state": "OPEN",
+      "author": "nougzarm",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "The test source file poc/test_sigma_protocols_with_fixed_label.sage was deleted in the past, but the corresponding JSON file was kept and is now unnecessary. This PR aims to clean up the test-related files. ",
+      "createdAt": "2025-10-07T19:34:39Z",
+      "updatedAt": "2025-10-07T19:34:39Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "590ca8b977602d4cee5d56b169baaa6e0344bf6d",
+      "headRepository": "nougzarm/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "test-refactor",
+      "headRefOid": "eb3ede7467caa9cfcb116186ff25f4be07c86e51",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 106,
+      "id": "PR_kwDONyiw_86sv5oq",
+      "title": "General Specification Improvements",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/106",
+      "state": "OPEN",
+      "author": "nougzarm",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2025-10-08T17:38:54Z",
+      "updatedAt": "2025-10-08T18:08:22Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "629db509fcd8f73d363cbffaee251ff9e4a22b8c",
+      "headRepository": "nougzarm/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "spec-update",
+      "headRefOid": "a9ad93f015f8284604c175dc63be97ad191053e9",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
