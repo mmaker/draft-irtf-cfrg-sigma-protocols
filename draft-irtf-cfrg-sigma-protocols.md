@@ -1,5 +1,5 @@
 ---
-title: "Interactive Sigma Proofs"
+title: "Interactive Sigma Protocols"
 category: info
 
 docname: draft-irtf-cfrg-sigma-protocols-latest
@@ -121,7 +121,7 @@ Where:
 
 - `new(instance) -> SigmaProtocol`, denoting the initialization function. This function takes as input an instance generated via a `LinearRelation`, the public information shared between prover and verifier.
 
-- `prover_commit(self, witness: Witness, rng) -> (commitment, prover_state)`, denoting the **commitment phase**, that is, the computation of the first message sent by the prover in a Sigma protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator `rng`. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while `prover_state` must be kept secret.
+- `prover_commit(self, witness: Witness, rng) -> (commitment, prover_state)`, denoting the **commitment phase**, that is, the computation of the first message sent by the prover in a sigma protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator `rng`. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while `prover_state` must be kept secret.
 
 - `prover_response(self, prover_state, challenge) -> response`, denoting the **response phase**, that is, the computation of the second message sent by the prover, depending on the witness, the statement, the challenge received from the verifier, and the internal state `prover_state`. The return value response is a public value and is transmitted to the verifier.
 
@@ -455,7 +455,7 @@ This ciphersuite uses P-256 {{SP800}} for the Group.
 
 # Security Considerations
 
-Interactive sigma proofs are special sound and honest-verifier zero-knowledge. These proofs are deniable (without transferable message authenticity).
+Interactive sigma protocols are special sound and honest-verifier zero-knowledge. These proofs are deniable (without transferable message authenticity).
 
 We focus on the security guarantees of the non-interactive Fiat-Shamir transformation, where they provide the following guarantees (in the random oracle model):
 
@@ -467,7 +467,7 @@ While theoretical analysis demonstrates that both soundness and zero-knowledge p
 
 ## Privacy Considerations
 
-Interactive sigma proofs are insecure against malicious verifiers and should not be used.
+Interactive sigma protocols are insecure against malicious verifiers and should not be used.
 The non-interactive Fiat-Shamir transformation leads to publicly verifiable (transferable) proofs that are statistically zero-knowledge.
 
 # Post-Quantum Security Considerations
