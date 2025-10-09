@@ -137,7 +137,7 @@ Where:
 
 The final two algorithms describe the **zero-knowledge simulator**. In particular, they may be used for proof composition (e.g. OR-composition). The function `simulate_commitment` is also used when verifying short proofs. We have:
 
-- `simulate_response(self, rng) -> response`, denoting the first stage of the simulator. It is an algorithm drawing a random response given a specified cryptographically secure RNG that follows the same output distribution of the algorithm `prover_response`.
+- `simulate_response(self, rng) -> response`, denoting the first stage of the simulator.
 
 - `simulate_commitment(self, response, challenge) -> commitment`, returning a simulated commitment -- the second phase of the zero-knowledge simulator.
 
