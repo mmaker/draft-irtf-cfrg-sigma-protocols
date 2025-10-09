@@ -177,9 +177,7 @@ Table of Contents
    verifying short proofs.  We have:
 
    *  simulate_response(self, rng) -> response, denoting the first stage
-      of the simulator.  It is an algorithm drawing a random response
-      given a specified cryptographically secure RNG that follows the
-      same output distribution of the algorithm prover_response.
+      of the simulator.
 
    *  simulate_commitment(self, response, challenge) -> commitment,
       returning a simulated commitment -- the second phase of the zero-

@@ -1319,7 +1319,7 @@ class SigmaProtocol:
 <p id="section-1.1-5">The final two algorithms describe the <strong>zero-knowledge simulator</strong>. In particular, they may be used for proof composition (e.g. OR-composition). The function <code>simulate_commitment</code> is also used when verifying short proofs. We have:<a href="#section-1.1-5" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-1.1-6.1">
-            <p id="section-1.1-6.1.1"><code>simulate_response(self, rng) -&gt; response</code>, denoting the first stage of the simulator. It is an algorithm drawing a random response given a specified cryptographically secure RNG that follows the same output distribution of the algorithm <code>prover_response</code>.<a href="#section-1.1-6.1.1" class="pilcrow">¶</a></p>
+            <p id="section-1.1-6.1.1"><code>simulate_response(self, rng) -&gt; response</code>, denoting the first stage of the simulator.<a href="#section-1.1-6.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-1.1-6.2">
             <p id="section-1.1-6.2.1"><code>simulate_commitment(self, response, challenge) -&gt; commitment</code>, returning a simulated commitment -- the second phase of the zero-knowledge simulator.<a href="#section-1.1-6.2.1" class="pilcrow">¶</a></p>
