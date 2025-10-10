@@ -97,24 +97,27 @@ This document describes interactive sigma protocols, a class of secure, general-
 
 # Introduction
 
-Any sigma protocol must define three objects: a *commitment* (computed by the prover), a *challenge* (computed by the verifier), and a *response* (computed by the prover).
+Any sigma protocol must define three objects: a *commitment* (first message, computed by the prover), a *challenge* (second message, computed by the verifier), and a *response* (third message, computed by the prover).
+The tuple `(commitment, challenge, response)` is called a transcript of the protocol.
 
 ## Core interface
 
-The public functions are obtained relying on an internal structure containing the definition of a sigma protocol.
+The public interface exposes functions derived from an internal structure containing the definition of a sigma protocol.
 
     class SigmaProtocol:
        def new(instance) -> SigmaProtocol
        def prover_commit(self, witness, rng) -> (commitment, prover_state)
        def prover_response(self, prover_state, challenge) -> response
        def verifier(self, commitment, challenge, response) -> bool
+
+       # Serialization primitives
        def serialize_commitment(self, commitment) -> bytes
        def serialize_response(self, response) -> bytes
        def deserialize_commitment(self, data: bytes) -> commitment
        def deserialize_response(self, data: bytes) -> response
-       # optional
+
+       # Simulator primitives (optional)
        def simulate_response(self, rng) -> response
-       # optional
        def simulate_commitment(self, response, challenge) -> commitment
 
 Where:
