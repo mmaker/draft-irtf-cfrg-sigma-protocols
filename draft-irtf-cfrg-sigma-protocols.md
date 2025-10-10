@@ -173,7 +173,11 @@ Because of their dominance, the presentation in the following focuses on proof g
 
 We detail the functions that can be invoked on these objects. Example choices can be found in {{ciphersuites}}.
 
+This subsection is divided into two parts: the first specifies groups and their elements, and the second specifies the coefficient field (or the exponent field, in the case of a residue group) associated with the group.
+
 ### Group {#group}
+
+A group is represented by an interface named 'Group' and provides a set of functions and values associated with the underlying structure that implements it. Each group has an associated type, named Scalar, which MUST represent the elements of the coefficient field associated with the group. The properties of this field are detailed in the following section.
 
 #### Properties and Constants
 
@@ -184,6 +188,8 @@ These methods provide access to fundamental group parameters and utilities.
 - `random()`: returns an element sampled uniformly at random from the group.
 
 #### Algebraic Operations
+
+The basic functions that Group must implement are the algebraic operations associated with the group structure, such as addition, subtraction, or scalar multiplication.
 
 - `identity()`, returns the neutral element in the group.
 - `add(P: Group, Q: Group)`, implements elliptic curve addition for the two `P` and `Q` group elements.
