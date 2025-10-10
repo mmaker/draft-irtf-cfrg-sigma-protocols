@@ -177,7 +177,7 @@ This subsection is divided into two parts: the first specifies groups and their 
 
 ### Group {#group}
 
-A group is represented by an interface named 'Group' and provides a set of functions and values associated with the underlying structure that implements it. Each group has an associated type, named Scalar, which MUST represent the elements of the coefficient field associated with the group. The properties of this field are detailed in the following section.
+A group is represented by an interface named `Group` and provides a set of functions and values associated with the underlying structure that implements it. Each group has an associated type `Scalar`, which MUST represent the elements of the coefficient field associated with the group. The properties of this field are detailed in the following section.
 
 #### Properties and Constants
 
