@@ -97,24 +97,27 @@ This document describes interactive sigma protocols, a class of secure, general-
 
 # Introduction
 
-Any sigma protocol must define three objects: a *commitment* (computed by the prover), a *challenge* (computed by the verifier), and a *response* (computed by the prover).
+Any sigma protocol must define three objects: a *commitment* (first message, computed by the prover), a *challenge* (second message, computed by the verifier), and a *response* (third message, computed by the prover).
+The tuple `(commitment, challenge, response)` is called a transcript of the protocol.
 
 ## Core interface
 
-The public functions are obtained relying on an internal structure containing the definition of a sigma protocol.
+The public interface exposes functions derived from an internal structure containing the definition of a sigma protocol.
 
     class SigmaProtocol:
        def new(instance) -> SigmaProtocol
        def prover_commit(self, witness, rng) -> (commitment, prover_state)
        def prover_response(self, prover_state, challenge) -> response
        def verifier(self, commitment, challenge, response) -> bool
+
+       # Serialization primitives
        def serialize_commitment(self, commitment) -> bytes
        def serialize_response(self, response) -> bytes
        def deserialize_commitment(self, data: bytes) -> commitment
        def deserialize_response(self, data: bytes) -> response
-       # optional
+
+       # Simulator primitives (optional)
        def simulate_response(self, rng) -> response
-       # optional
        def simulate_commitment(self, response, challenge) -> commitment
 
 Where:
@@ -170,30 +173,62 @@ Because of their dominance, the presentation in the following focuses on proof g
 
 We detail the functions that can be invoked on these objects. Example choices can be found in {{ciphersuites}}.
 
+This subsection is divided into two parts: the first specifies groups and their elements, and the second specifies the coefficient field (or the exponent field, in the case of a residue group) associated with the group.
+
 ### Group {#group}
 
-- `identity()`, returns the neutral element in the group.
-- `generator()`, returns the generator of the prime-order elliptic-curve subgroup used for cryptographic operations.
-- `order()`: returns the order of the group `p`.
+A group is represented by an interface named `Group` and provides a set of functions and values associated with the underlying structure that implements it. Each group has an associated type `Scalar`, which MUST represent the elements of the coefficient field associated with the group. The properties of this field are detailed in the following section.
+
+#### Properties and Constants
+
+These methods provide access to fundamental group parameters and utilities.
+
+- `generator()`: returns the generator of the prime-order elliptic-curve subgroup used for cryptographic operations.
+- `order()`: returns the order `p` of the group.
 - `random()`: returns an element sampled uniformly at random from the group.
-- `serialize(elements: [Group; N])`, serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
-- `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a `DeserializeError` if deserialization fails.
-- `add(element: Group)`, implements elliptic curve addition for the two group elements.
-- `equal(element: Group)`, returns `true` if the two elements are the same and `false` otherwise.
-- `scalar_mul(scalar: Scalar)`, implements scalar multiplication for a group element by an element in its respective scalar field.
+
+#### Algebraic Operations
+
+The basic functions that Group must implement are the algebraic operations associated with the group structure, such as addition, subtraction, or scalar multiplication.
+
+- `identity()`: returns the neutral element in the group.
+- `add(P: Group, Q: Group)`: implements elliptic curve addition for the two `P` and `Q` group elements.
+- `equal(P: Group, Q: Group)`: returns `true` if the two elements `P` and `Q` are the same and `false` otherwise.
+- `scalar_mul(a: Scalar, P: Group)`: implements scalar multiplication for a group element `P` by an element `a` in its respective scalar field.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `scalar_mul` we will use `*`. A similar behavior can be achieved using operator overloading.
 
-### Scalar
+#### Encoding
 
-- `identity()`: outputs the (additive) identity element in the scalar field.
-- `add(scalar: Scalar)`: implements field addition for the elements in the field.
-- `mul(scalar: Scalar)`, implements field multiplication.
+These methods ensure correct and interoperable serialization for communication and storage. For a given group, the encoding length of its elements is fixed and will subsequently be denoted as `Ne`.
+
+- `serialize(elements: [Group; N])`: serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
+- `deserialize(buffer)`: attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group (see Section [Serialization](#serialization)). This function can raise a `DeserializeError` if deserialization fails.
+
+### Scalar {#scalar}
+
+#### Properties and Constants
+
+- `identity()`: outputs the zero element (the additive identity element) in the scalar field.
 - `random()`: returns an element sampled uniformly at random from the scalar field.
-- `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
-- `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a `DeserializeError` if deserialization fails.
+
+#### Algebraic Operations
+
+- `add(a: Scalar, b: Scalar)`: implements field addition for the `a` and `b` scalars in the field.
+- `mul(a: Scalar, b: Scalar)`: implements field multiplication.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `mul` we will use `*`. A similar behavior can be achieved using operator overloading.
+
+#### Encoding
+
+These methods ensure correct and interoperable serialization for communication and storage. For a given field, the encoding length of its scalars is fixed and will subsequently be denoted as `Ns`.
+
+- `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
+- `deserialize(buffer)`: attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field (see Section [Serialization](#serialization)). This function can raise a `DeserializeError` if deserialization fails.
+
+### Serialization {#serialization}
+
+The serialization of group elements as well as scalars of the associated field MUST be canonical. In other words, each element has exactly one valid byte-string representation, called the canonical representation. Consequently, the `deserialize()` method MUST only convert the canonical representation of elements into group and field elements; otherwise, it MUST return an error. This uniqueness, also referred to as non-malleability of the encoding, provides a form of security for Sigma protocols.
 
 ## Proofs of preimage of a linear map
 
