@@ -203,14 +203,13 @@ In this spec, instead of `add` we will use `+` with infix notation; instead of `
 These methods ensure correct and interoperable serialization for communication and storage. For a given group, the encoding length of its elements is fixed and will subsequently be denoted as `Ne`.
 
 - `serialize(elements: [Group; N])`: serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
-- `deserialize(buffer)`: attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a `DeserializeError` if deserialization fails.
+- `deserialize(buffer)`: attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group (see Section [Serialization](#serialization)). This function can raise a `DeserializeError` if deserialization fails.
 
-
-### Scalar
+### Scalar {#scalar}
 
 #### Properties and Constants
 
-- `identity()`: outputs the (additive) identity element in the scalar field.
+- `identity()`: outputs the zero element (the additive identity element) in the scalar field.
 - `random()`: returns an element sampled uniformly at random from the scalar field.
 
 #### Algebraic Operations
@@ -225,10 +224,9 @@ In this spec, instead of `add` we will use `+` with infix notation; instead of `
 These methods ensure correct and interoperable serialization for communication and storage. For a given field, the encoding length of its scalars is fixed and will subsequently be denoted as `Ns`.
 
 - `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
-- `deserialize(buffer)`: attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a `DeserializeError` if deserialization fails.
+- `deserialize(buffer)`: attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field (see Section [Serialization](#serialization)). This function can raise a `DeserializeError` if deserialization fails.
 
-
-### Serialization
+### Serialization {#serialization}
 
 The serialization of group elements as well as scalars of the associated field MUST be canonical. In other words, each element has exactly one valid byte-string representation, called the canonical representation. Consequently, the `deserialize()` method MUST only convert the canonical representation of elements into group and field elements; otherwise, it MUST return an error. This uniqueness, also referred to as non-malleability of the encoding, provides a form of security for Sigma protocols.
 
