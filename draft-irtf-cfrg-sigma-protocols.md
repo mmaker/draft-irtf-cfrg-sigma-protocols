@@ -183,7 +183,7 @@ A group is represented by an interface named `Group` and provides a set of funct
 
 These methods provide access to fundamental group parameters and utilities.
 
-- `generator()`, returns the generator of the prime-order elliptic-curve subgroup used for cryptographic operations.
+- `generator()`: returns the generator of the prime-order elliptic-curve subgroup used for cryptographic operations.
 - `order()`: returns the order `p` of the group.
 - `random()`: returns an element sampled uniformly at random from the group.
 
@@ -191,10 +191,10 @@ These methods provide access to fundamental group parameters and utilities.
 
 The basic functions that Group must implement are the algebraic operations associated with the group structure, such as addition, subtraction, or scalar multiplication.
 
-- `identity()`, returns the neutral element in the group.
-- `add(P: Group, Q: Group)`, implements elliptic curve addition for the two `P` and `Q` group elements.
-- `equal(P: Group, Q: Group)`, returns `true` if the two elements `P` and `Q` are the same and `false` otherwise.
-- `scalar_mul(a: Scalar, P: Group)`, implements scalar multiplication for a group element `P` by an element `a` in its respective scalar field.
+- `identity()`: returns the neutral element in the group.
+- `add(P: Group, Q: Group)`: implements elliptic curve addition for the two `P` and `Q` group elements.
+- `equal(P: Group, Q: Group)`: returns `true` if the two elements `P` and `Q` are the same and `false` otherwise.
+- `scalar_mul(a: Scalar, P: Group)`: implements scalar multiplication for a group element `P` by an element `a` in its respective scalar field.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `scalar_mul` we will use `*`. A similar behavior can be achieved using operator overloading.
 
@@ -202,8 +202,8 @@ In this spec, instead of `add` we will use `+` with infix notation; instead of `
 
 These methods ensure correct and interoperable serialization for communication and storage. For a given group, the encoding length of its elements is fixed and will subsequently be denoted as `Ne`.
 
-- `serialize(elements: [Group; N])`, serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
-- `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a `DeserializeError` if deserialization fails.
+- `serialize(elements: [Group; N])`: serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
+- `deserialize(buffer)`: attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a `DeserializeError` if deserialization fails.
 
 
 ### Scalar
@@ -216,7 +216,7 @@ These methods ensure correct and interoperable serialization for communication a
 #### Algebraic Operations
 
 - `add(a: Scalar, b: Scalar)`: implements field addition for the `a` and `b` scalars in the field.
-- `mul(a: Scalar, b: Scalar)`, implements field multiplication.
+- `mul(a: Scalar, b: Scalar)`: implements field multiplication.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `mul` we will use `*`. A similar behavior can be achieved using operator overloading.
 
@@ -225,8 +225,12 @@ In this spec, instead of `add` we will use `+` with infix notation; instead of `
 These methods ensure correct and interoperable serialization for communication and storage. For a given field, the encoding length of its scalars is fixed and will subsequently be denoted as `Ns`.
 
 - `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
-- `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a `DeserializeError` if deserialization fails.
+- `deserialize(buffer)`: attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a `DeserializeError` if deserialization fails.
 
+
+### Serialization
+
+The serialization of group elements as well as scalars of the associated field MUST be canonical. In other words, each element has exactly one valid byte-string representation, called the canonical representation. Consequently, the `deserialize()` method MUST only convert the canonical representation of elements into group and field elements; otherwise, it MUST return an error. This uniqueness, also referred to as non-malleability of the encoding, provides a form of security for Sigma protocols.
 
 ## Proofs of preimage of a linear map
 
