@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-10-09T01:13:00.541143+00:00",
+  "timestamp": "2025-10-12T01:16:21.094814+00:00",
   "repo": "mmaker/draft-irtf-cfrg-sigma-protocols",
   "labels": [
     {
@@ -621,11 +621,13 @@
       "state": "OPEN",
       "author": "BasileiosKal",
       "authorAssociation": "NONE",
-      "assignees": [],
+      "assignees": [
+        "cathieyun"
+      ],
       "labels": [],
       "body": "Hey all,\n\nThere seems to be an issue when trying to use the current drafts to implement [BBS Signatures](https://datatracker.ietf.org/doc/draft-irtf-cfrg-bbs-signatures/).\n\nIn the current draft, when serializing the proof, the challenge will be the first element, consistent with academic literature.\n\nFor the BBS, the challenge is at the end (see below for reasoning).\n\nWould hate to introduce breaking changes at this point in any of the drafts. Was wondering if the function for serialising the proof could be made more general, for example, as a ciphersuite constant (different curves would need their own serialization operations either way).\n\nThe current draft could define a default one to be used with the NIST curves and one of the BBS drafts could define a BLS12-381 suite with a proof serialization that would not break the current BBS draft.\n\n\n##\n\n### BBS challenge placement explanation\n\nA BBS proof is not just a Schnorr proof, but a set of points `(A1, A2, A3)` and then a Schnorr proof (`\\pi`). In the literature this was serialised as the points first and the proof after, so it would be `BBS_proof = (A1, A2, A3, \\pi)`.\n\nIf the Schnorr proof serialization convention was to be followed, the challenge would end up at the middle of the `BBS_proof`. This would make it harder to \u201cparse\u201d the challenge out, when multiple BBS proofs were generated in parallel (sharing the same challenge). A diversion from the literature was required and we decided to move the challenge at the end of the Schnorr proof.",
       "createdAt": "2025-04-18T23:18:35Z",
-      "updatedAt": "2025-04-18T23:18:35Z",
+      "updatedAt": "2025-10-10T05:51:38Z",
       "closedAt": null,
       "comments": []
     },
@@ -1002,9 +1004,9 @@
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
-      "body": "- [ ] 1. You refer interchangeably to \"sigma protocols\" and \"sigma proofs.\" Also, sometimes you capitalize Sigma and sometimes you don't. \n- [ ] 2. The [abstract](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#abstract) says you are defining general sigma protocols, but in fact you are describing a special case (preimage of linear maps over prime-order groups).\n- [ ] 3. It will be helpful to define `LinearRelation` (both formally and informally) before it is first used.\n- [x] 4. [Here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#name-core-interface) you refer to \"the `LinearRelation`\" but perhaps it should be \"a `LinearRelation`.\"\n- [x] 5. [Here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#name-core-interface), \"Leakage of even just of a few bits\" should be \"Leakage of even just a few bits.\"\n- [ ] 6. I believe `simulate_response` should also output `simulator_state`, and then `simulate_commitment` should take `simulator_state` as input.\n- [ ] 7. For `simulate_response` you write \"It is an algorithm drawing a random response given a specified cryptographically secure RNG that follows the same output distribution of the algorithm `prover_response`.\" I would omit this, since you do not discuss security properties of any of the other algorithms here (and, in particular, you do not say anything about  the output distribution of `simulate_commitment`).\n- [x] 8. \"Together, these zero-knowledge simulators provide a transcript that should be computationally indistinguishable ...\" Actually, they are perfectly indistingiushable, and you stress this fact toward the end of the document.",
+      "body": "- [ ] 1. You refer interchangeably to \"sigma protocols\" and \"sigma proofs.\" Also, sometimes you capitalize Sigma and sometimes you don't. \n- [ ] 2. The [abstract](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#abstract) says you are defining general sigma protocols, but in fact you are describing a special case (preimage of linear maps over prime-order groups).\n- [ ] 3. It will be helpful to define `LinearRelation` (both formally and informally) before it is first used.\n- [x] 4. [Here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#name-core-interface) you refer to \"the `LinearRelation`\" but perhaps it should be \"a `LinearRelation`.\"\n- [x] 5. [Here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#name-core-interface), \"Leakage of even just of a few bits\" should be \"Leakage of even just a few bits.\"\n- [ ] 6. I believe `simulate_response` should also output `simulator_state`, and then `simulate_commitment` should take `simulator_state` as input.\n- [x] 7. For `simulate_response` you write \"It is an algorithm drawing a random response given a specified cryptographically secure RNG that follows the same output distribution of the algorithm `prover_response`.\" I would omit this, since you do not discuss security properties of any of the other algorithms here (and, in particular, you do not say anything about  the output distribution of `simulate_commitment`).\n- [x] 8. \"Together, these zero-knowledge simulators provide a transcript that should be computationally indistinguishable ...\" Actually, they are perfectly indistingiushable, and you stress this fact toward the end of the document.",
       "createdAt": "2025-09-09T13:38:12Z",
-      "updatedAt": "2025-10-06T09:44:27Z",
+      "updatedAt": "2025-10-09T09:54:59Z",
       "closedAt": null,
       "comments": []
     },
@@ -1016,16 +1018,18 @@
       "state": "OPEN",
       "author": "jkatz2",
       "authorAssociation": "NONE",
-      "assignees": [],
+      "assignees": [
+        "cathieyun"
+      ],
       "labels": [],
       "body": "The domain of the challenge (and, more generally, the distribution of the challenge) is not specified anywhere. There are at least two natural choices here: (1) choose the challenge uniformly from the underlying scalar field, or (2) choose the challenge uniformly in {0,1}^k for some desired security level k smaller than the bit-length of the underlying scalar field. ",
       "createdAt": "2025-09-09T13:41:56Z",
-      "updatedAt": "2025-09-11T16:46:49Z",
+      "updatedAt": "2025-10-10T05:52:59Z",
       "closedAt": null,
       "comments": [
         {
           "author": "cjpatton",
-          "authorAssociation": "NONE",
+          "authorAssociation": "CONTRIBUTOR",
           "body": "I think the right thing to do would be to use the method for generating random scalars that is specified by the `group` object.",
           "createdAt": "2025-09-11T16:46:49Z",
           "updatedAt": "2025-09-11T16:46:49Z"
@@ -1045,9 +1049,9 @@
         "editorial",
         "easy"
       ],
-      "body": "- [ ] You say \"Valid choices of elliptic curves can be found in [Section 2.3](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#ciphersuites),\" though in fact you only give one choice. Is there any reason to restrict the choice of elliptic curves at all in this document?\n- [x] \"the linear relation that need to be proven\" should be \"the linear relation that needs to be proven.\"\n- [ ] Again, I feel like it would be helpful for the reader to define what a linear relation is in this context.\n- [x] Nit: \"random element\" should be \"uniform element.\" Same comment later for \"random scalar field element.\"\n- [ ] `Ne` is never defined. Same comment for `Ns`.\n- [ ] In Section 2.1.1, \"fails if the input is not the valid canonical byte representation of an element of the group\" should be \"fails if the input is not the valid canonical byte representation of an array of elements of the group.\"\n- [x] \" false` \" should be `false`.\n- [x] In Section 2.1.2, \"fails if the input is not the valid canonical byte representation of an element of the group\" should be \"fails if the input is not the valid canonical byte representation of an array of scalars.\"\n- [ ] Calling the core protocol SchnorrProof might be confusing, since that is typically used for the special case of proving knowledge of a preimage of the map xG = X. (In fact, you use it that way in Section 2.2.7.)\n- [ ] The terms linear_map, num_scalars, and num_constraints are not defined until Section 2.2.4 and beyond. It would help to set up this notation earlier as part of defining a linear map.\n- [ ] It may be more efficient to implement the verifier by computing got - expected (without computing each separately) and checking that this equals the identity.\n- [ ] I had trouble following Sections 2.2.5 and 2.2.6; perhaps an accompanying example would help.\n- [ ] Section 2.2.5.2: \"A witness can be mapped to a group element\" should be \"A witness can be mapped to a vector of group elements.\"\n- [ ] Section 2.2.7: you don't actually define Schnorr proofs in [Section 2](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#name-sigma-protocols-over-prime-).",
+      "body": "- [ ] You say \"Valid choices of elliptic curves can be found in [Section 2.3](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#ciphersuites),\" though in fact you only give one choice. Is there any reason to restrict the choice of elliptic curves at all in this document?\n- [x] \"the linear relation that need to be proven\" should be \"the linear relation that needs to be proven.\"\n- [ ] Again, I feel like it would be helpful for the reader to define what a linear relation is in this context.\n- [x] Nit: \"random element\" should be \"uniform element.\" Same comment later for \"random scalar field element.\"\n- [ ] `Ne` is never defined. Same comment for `Ns`.\n- [x] In Section 2.1.1, \"fails if the input is not the valid canonical byte representation of an element of the group\" should be \"fails if the input is not the valid canonical byte representation of an array of elements of the group.\"\n- [x] \" false` \" should be `false`.\n- [x] In Section 2.1.2, \"fails if the input is not the valid canonical byte representation of an element of the group\" should be \"fails if the input is not the valid canonical byte representation of an array of scalars.\"\n- [ ] Calling the core protocol SchnorrProof might be confusing, since that is typically used for the special case of proving knowledge of a preimage of the map xG = X. (In fact, you use it that way in Section 2.2.7.)\n- [ ] The terms linear_map, num_scalars, and num_constraints are not defined until Section 2.2.4 and beyond. It would help to set up this notation earlier as part of defining a linear map.\n- [ ] It may be more efficient to implement the verifier by computing got - expected (without computing each separately) and checking that this equals the identity.\n- [ ] I had trouble following Sections 2.2.5 and 2.2.6; perhaps an accompanying example would help.\n- [ ] Section 2.2.5.2: \"A witness can be mapped to a group element\" should be \"A witness can be mapped to a vector of group elements.\"\n- [ ] Section 2.2.7: you don't actually define Schnorr proofs in [Section 2](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#name-sigma-protocols-over-prime-).",
       "createdAt": "2025-09-09T14:13:52Z",
-      "updatedAt": "2025-10-06T09:46:29Z",
+      "updatedAt": "2025-10-09T07:35:02Z",
       "closedAt": null,
       "comments": [
         {
@@ -1135,14 +1139,16 @@
       "state": "OPEN",
       "author": "armfazh",
       "authorAssociation": "NONE",
-      "assignees": [],
+      "assignees": [
+        "cathieyun"
+      ],
       "labels": [
         "bug",
         "easy"
       ],
       "body": "Mismatch between size of IV of DuplesSponge.\nIn the document, IV is 32 bytes, while the implementation uses IV of 64 bytes.\n\nCode changes are tracked at: https://github.com/sigma-rs/sigma-proofs/pull/89",
       "createdAt": "2025-09-13T04:10:44Z",
-      "updatedAt": "2025-09-15T22:35:51Z",
+      "updatedAt": "2025-10-10T05:50:26Z",
       "closedAt": null,
       "comments": [
         {
@@ -1214,11 +1220,13 @@
       "state": "OPEN",
       "author": "mmaker",
       "authorAssociation": "OWNER",
-      "assignees": [],
+      "assignees": [
+        "cathieyun"
+      ],
       "labels": [],
       "body": "",
       "createdAt": "2025-09-19T09:11:01Z",
-      "updatedAt": "2025-09-19T09:11:01Z",
+      "updatedAt": "2025-10-10T05:53:25Z",
       "closedAt": null,
       "comments": []
     },
@@ -1362,11 +1370,13 @@
       "state": "OPEN",
       "author": "mmaker",
       "authorAssociation": "OWNER",
-      "assignees": [],
+      "assignees": [
+        "cathieyun"
+      ],
       "labels": [],
       "body": "Quoted from the audit: \n\nThe Fiat-Shamir specification [states](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/draft-irtf-cfrg-fiat-shamir.md?plain=1#L68) that the IV for the duplex sponge is 32 bytes long, whereas both the SHAKE-128 and Keccak implementations in the PoC use a [64-byte IV](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/duplex_sponge.sage#L55).\n\nConsider editing the specification to align with the PoC implementation.",
       "createdAt": "2025-09-26T12:18:44Z",
-      "updatedAt": "2025-09-26T12:25:11Z",
+      "updatedAt": "2025-10-10T05:57:11Z",
       "closedAt": null,
       "comments": []
     },
@@ -4516,26 +4526,42 @@
       "id": "PR_kwDONyiw_86sOIHM",
       "title": "chore(sigma-protocols): simulator transcript indistinguishability",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/101",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "mmaker",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "While computational indistinguishability suffices for proving honest-verifier zero-knowledge and carrying out the fiat-shamir transformation, this has been misleading  e.g. in #67: \r\n\r\n> 8. \"Together, these zero-knowledge simulators provide a transcript that should be computationally indistinguishable ...\" Actually, they are perfectly indistingiushable, and you stress this fact toward the end of the document.",
       "createdAt": "2025-10-06T09:11:47Z",
-      "updatedAt": "2025-10-06T09:11:48Z",
+      "updatedAt": "2025-10-09T14:16:27Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "a7499f4f63dc64eecde534d8ddbd7f6eeeff95a2",
       "headRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "headRefName": "mmaker-patch-1",
       "headRefOid": "a7e4bbe2567e1a6d6dbbd62a86541889c3e1fb4c",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2025-10-09T14:16:27Z",
+      "mergedAt": "2025-10-09T14:16:27Z",
+      "mergedBy": "mmaker",
+      "mergeCommit": {
+        "oid": "6364a5e99c15b8720f0dfdb9645b4785125afb4f"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDONyiw_87F1q7u",
+          "commit": {
+            "abbreviatedOid": "a7e4bbe"
+          },
+          "author": "cjpatton",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "\ud83d\udc4d  that's a lot clearer.",
+          "createdAt": "2025-10-09T14:08:01Z",
+          "updatedAt": "2025-10-09T14:08:01Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 102,
@@ -4568,78 +4594,139 @@
       "id": "PR_kwDONyiw_86sRZla",
       "title": "chore(sigma-protocols): remove details for simulate_response",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/103",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "Drapsag74",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "From #67:\r\n7. For simulate_response you write \"It is an algorithm drawing a random response given a specified cryptographically secure RNG that follows the same output distribution of the algorithm prover_response.\" I would omit this, since you do not discuss security properties of any of the other algorithms here (and, in particular, you do not say anything about the output distribution of simulate_commitment).",
       "createdAt": "2025-10-06T13:25:19Z",
-      "updatedAt": "2025-10-06T13:25:19Z",
+      "updatedAt": "2025-10-09T09:54:53Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "a7499f4f63dc64eecde534d8ddbd7f6eeeff95a2",
       "headRepository": "Drapsag74/draft-irtf-cfrg-sigma-protocols",
       "headRefName": "chore/sigma-protocols-simulate-response",
       "headRefOid": "269e0f1e255f43429397a43b8cba8cf212745d78",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2025-10-09T09:54:53Z",
+      "mergedAt": "2025-10-09T09:54:53Z",
+      "mergedBy": "mmaker",
+      "mergeCommit": {
+        "oid": "e3e6cbdc1f5b5070988af0d4d4a701622ab781aa"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDONyiw_87Fxqt7",
+          "commit": {
+            "abbreviatedOid": "269e0f1"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-09T09:54:43Z",
+          "updatedAt": "2025-10-09T09:54:43Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 104,
       "id": "PR_kwDONyiw_86sRuOb",
       "title": "chore(sigma-protocols): fix map output",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/104",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "Drapsag74",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "From #69:\r\nSection 2.2.5.2: \"A witness can be mapped to a group element\" should be \"A witness can be mapped to a vector of group elements.\"",
       "createdAt": "2025-10-06T13:45:41Z",
-      "updatedAt": "2025-10-06T13:45:42Z",
+      "updatedAt": "2025-10-09T07:34:56Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "a7499f4f63dc64eecde534d8ddbd7f6eeeff95a2",
       "headRepository": "Drapsag74/draft-irtf-cfrg-sigma-protocols",
       "headRefName": "chore/sigma-protocols-valid-witness-vector-group-elements",
       "headRefOid": "9092e10bb070159667df92807a85f6f749cc82e5",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2025-10-09T07:34:55Z",
+      "mergedAt": "2025-10-09T07:34:55Z",
+      "mergedBy": "mmaker",
+      "mergeCommit": {
+        "oid": "97e9fbac96f2daf8addbd09e0ec64e6a1473bbac"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDONyiw_87Fvnyg",
+          "commit": {
+            "abbreviatedOid": "9092e10"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-09T07:34:48Z",
+          "updatedAt": "2025-10-09T07:34:48Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 105,
       "id": "PR_kwDONyiw_86skB09",
       "title": "Remove unused test files",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/105",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "nougzarm",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "The test source file poc/test_sigma_protocols_with_fixed_label.sage was deleted in the past, but the corresponding JSON file was kept and is now unnecessary. This PR aims to clean up the test-related files. ",
       "createdAt": "2025-10-07T19:34:39Z",
-      "updatedAt": "2025-10-07T19:34:39Z",
+      "updatedAt": "2025-10-09T07:33:57Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "590ca8b977602d4cee5d56b169baaa6e0344bf6d",
       "headRepository": "nougzarm/draft-irtf-cfrg-sigma-protocols",
       "headRefName": "test-refactor",
       "headRefOid": "eb3ede7467caa9cfcb116186ff25f4be07c86e51",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2025-10-09T07:33:57Z",
+      "mergedAt": "2025-10-09T07:33:57Z",
+      "mergedBy": "mmaker",
+      "mergeCommit": {
+        "oid": "bea1f1ac7e450bbcbb3c03d5bb2002b07500926a"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDONyiw_87Fvmao",
+          "commit": {
+            "abbreviatedOid": "eb3ede7"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-09T07:32:57Z",
+          "updatedAt": "2025-10-09T07:32:57Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDONyiw_87Fvmo0",
+          "commit": {
+            "abbreviatedOid": "eb3ede7"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-09T07:33:15Z",
+          "updatedAt": "2025-10-09T07:33:15Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 106,
@@ -4653,13 +4740,13 @@
       "labels": [],
       "body": "",
       "createdAt": "2025-10-08T17:38:54Z",
-      "updatedAt": "2025-10-08T18:08:22Z",
+      "updatedAt": "2025-10-10T18:10:46Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
-      "baseRefOid": "629db509fcd8f73d363cbffaee251ff9e4a22b8c",
+      "baseRefOid": "6364a5e99c15b8720f0dfdb9645b4785125afb4f",
       "headRepository": "nougzarm/draft-irtf-cfrg-sigma-protocols",
       "headRefName": "spec-update",
-      "headRefOid": "a9ad93f015f8284604c175dc63be97ad191053e9",
+      "headRefOid": "81033d76d946475553431c9f14fb0b4fab59eada",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
