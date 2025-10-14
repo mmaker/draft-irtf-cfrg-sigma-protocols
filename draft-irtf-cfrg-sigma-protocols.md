@@ -156,7 +156,7 @@ Throughout this document, the following mathematical notation and conventions ar
 
 `p` : Prime order of the group 𝔾.
 
-`x`, `r`, `c` or `s` : Scalars in 𝔽ₚ (typically witnesses components, randomness, challenges, or responses).
+`a`, `b`, `x`, `r`, or `s` : Scalars in 𝔽ₚ (typically witnesses components, randomness, challenges, or responses).
 
 `X` or `Y` : Group elements (or points if elliptic curve) in 𝔾 (typically public parameters or commitments components).
 
@@ -607,12 +607,12 @@ As of now, it is responsibility of the user to pick a unique instance identifier
 
 --- back
 
-# 7. Acknowledgments
+# Acknowledgments
 {:numbered ="false"}
 
 The authors thank Jan Bobolz, Stephan Krenn, Mary Maller, Ivan Visconti, Yuwen Zhang for reviewing a previous edition of this specification.
 
-# 8.  Test Vectors
+# Test Vectors
 {:numbered="false"}
 
 Test vectors will be made available in future versions of this specification.
