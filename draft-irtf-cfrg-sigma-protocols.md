@@ -105,6 +105,7 @@ During execution, the Prover first sends a *commitment* to the Verifier, encapsu
 The following figure illustrates the general message flow of a Sigma protocol, highlighting the interactive nature of the exchange between the Prover and the Verifier.
 
 !---
+~~~ ascii-art
   (1) prover_commit()                     (6) verifier()
    +-----+                                   +-----+
    |     |                                   |     |
@@ -124,6 +125,7 @@ The following figure illustrates the general message flow of a Sigma protocol, h
    |     |
    +-----+
   (4) prover_response()
+~~~
 !--- Figure: Three-Move Interaction in a Sigma Protocol
 
 ## 1.1. Terminology
