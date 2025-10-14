@@ -102,9 +102,8 @@ The protocol proceeds through three sequential steps—commitment, challenge, an
 
 During execution, the Prover first sends a *commitment* to the Verifier, encapsulating information derived from the witness without revealing it. The Verifier then issues a random *challenge*, ensuring that the proof cannot be reused or forged. Finally, the Prover computes a *response* based on both the challenge and the witness, which the Verifier uses to verify correctness.
 
-The following figure illustrates the general message flow of a Sigma protocol, highlighting the interactive nature of the exchange between the Prover and the Verifier.
+The following figure illustrates the general message flow of a Sigma protocol, highlighting the interactive nature of the exchange between the Prover and the Verifier :
 
-!---
 ~~~ ascii-art
   (1) prover_commit()                     (6) verifier()
    +-----+                                   +-----+
@@ -126,7 +125,7 @@ The following figure illustrates the general message flow of a Sigma protocol, h
    +-----+
   (4) prover_response()
 ~~~
-!--- Figure: Three-Move Interaction in a Sigma Protocol
+Figure: Three-Move Interaction in a Sigma Protocol
 
 ## 1.1. Terminology
 
@@ -146,7 +145,7 @@ The following terminology is used throughout this document:
 
 `scalar` : An element of the finite field `𝔽ₚ` associated with the group, where p is the prime order of the group.
 
-`group element` : An element of a prime-order (elliptic curve) group `𝔾`. Group operations are written additively.
+`group element` (or `group point`) : An element of a prime-order (elliptic curve) group `𝔾`. Group operations are written additively.
 
 `msm` : Multi-scalar multiplication.
 
@@ -158,7 +157,7 @@ Throughout this document, the following mathematical notation and conventions ar
 
 `a`, `b`, `x`, `r`, or `s` : Scalars in 𝔽ₚ (typically witnesses components, randomness, challenges, or responses).
 
-`X` or `Y` : Group elements (or points if elliptic curve) in 𝔾 (typically public parameters or commitments components).
+`X`, `Y`, `G` or `H` : Group elements (or points if elliptic curve) in 𝔾 (typically public parameters or commitments components).
 
 `*` : Scalar multiplication in the group (`a * X`).
 
