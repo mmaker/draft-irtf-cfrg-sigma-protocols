@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-10-12T01:16:21.094814+00:00",
+  "timestamp": "2025-10-14T01:12:56.616439+00:00",
   "repo": "mmaker/draft-irtf-cfrg-sigma-protocols",
   "labels": [
     {
@@ -2772,7 +2772,7 @@
       "labels": [],
       "body": "sigma: make a distinction between groups and elements.\r\n",
       "createdAt": "2025-09-16T10:20:26Z",
-      "updatedAt": "2025-09-18T08:19:09Z",
+      "updatedAt": "2025-10-13T23:42:34Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "f427eddc973bc9ef284c342913010b57f935d71a",
@@ -2797,6 +2797,13 @@
           "body": "What I was trying to make a distinsion is between the properties of a group and those of a group element.\r\n\r\nFor example, we can add group elements, but we cannot add groups.\r\nAn ambiguous example, we can get the order of the group, but also the order of a group element. (Not always is the same, if composite groups).\r\nAnother one, we can get the G.Identity(), when G is a group, but not when G is a group element.\r\nIdentity is a property of the group.\r\n\r\nCurrently, the properties of group and group elements are mixed. ",
           "createdAt": "2025-09-18T08:19:09Z",
           "updatedAt": "2025-09-18T08:19:09Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "Hi @armfazh thank you so much for this PR and sorry for the slow response here.\r\nThe reason it hasn't been merged yet is that we're still in the process of discussing the group interface: the IETF has at least 3 different descriptions of the Group API and we're trying to converge on one that makes everyone happy while keeping compatibility with other Internet Drafts. Some relevant issues: #76 #6, #106, #71, and more.\r\n\r\nHappy to discuss this more over a call if that is blocking for you!",
+          "createdAt": "2025-10-13T23:42:34Z",
+          "updatedAt": "2025-10-13T23:42:34Z"
         }
       ],
       "reviews": []
@@ -4740,7 +4747,7 @@
       "labels": [],
       "body": "",
       "createdAt": "2025-10-08T17:38:54Z",
-      "updatedAt": "2025-10-10T18:10:46Z",
+      "updatedAt": "2025-10-13T23:07:49Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "6364a5e99c15b8720f0dfdb9645b4785125afb4f",
@@ -4751,8 +4758,30 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
-      "reviews": []
+      "comments": [
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "Hey @nougzarm good job. Are there still changes that you want to do here?",
+          "createdAt": "2025-10-13T23:07:37Z",
+          "updatedAt": "2025-10-13T23:07:49Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDONyiw_87Grtwr",
+          "commit": {
+            "abbreviatedOid": "81033d7"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-13T23:06:57Z",
+          "updatedAt": "2025-10-13T23:06:57Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
