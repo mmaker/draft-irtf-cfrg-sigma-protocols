@@ -9,7 +9,7 @@ date:
 v: 3
 area: "IRTF"
 workgroup: "Crypto Forum"
-keywords: ["zero-knowledge", "sigma protocols", "cryptography", "proofs of knowledge"]
+keyword: ["zero-knowledge", "sigma protocols", "cryptography", "proofs of knowledge"]
 venue:
   group: "Crypto Forum"
   type: "Research Group"
@@ -18,7 +18,7 @@ venue:
   github: "mmaker/draft-irtf-cfrg-sigma-protocols"
   latest: "https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html"
 
-authors:
+author:
   - fullname: "Michele Orrù"
     organization: CNRS
     email: "m@orru.net"
