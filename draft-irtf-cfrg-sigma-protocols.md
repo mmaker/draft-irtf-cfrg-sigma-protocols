@@ -9,7 +9,7 @@ date:
 v: 3
 area: "IRTF"
 workgroup: "Crypto Forum"
-keyword: ["zero-knowledge", "sigma protocols", "cryptography", "proofs of knowledge"]
+keywords: ["zero-knowledge", "sigma protocols", "cryptography", "proofs of knowledge"]
 venue:
   group: "Crypto Forum"
   type: "Research Group"
@@ -18,7 +18,7 @@ venue:
   github: "mmaker/draft-irtf-cfrg-sigma-protocols"
   latest: "https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html"
 
-author:
+authors:
   - fullname: "Michele Orrù"
     organization: CNRS
     email: "m@orru.net"
@@ -102,7 +102,7 @@ The protocol proceeds through three sequential steps—commitment, challenge, an
 
 During execution, the Prover first sends a *commitment* to the Verifier, encapsulating information derived from the witness without revealing it. The Verifier then issues a random *challenge*, ensuring that the proof cannot be reused or forged. Finally, the Prover computes a *response* based on both the challenge and the witness, which the Verifier uses to verify correctness.
 
-The following figure illustrates the general message flow of a Sigma protocol, highlighting the interactive nature of the exchange between the Prover and the Verifier :
+The following figure illustrates the general message flow of a Sigma protocol, highlighting the interactive nature of the exchange between the Prover and the Verifier:
 
 ~~~ ascii-art
   (1) prover_commit()                     (6) verifier()
@@ -125,7 +125,7 @@ The following figure illustrates the general message flow of a Sigma protocol, h
    +-----+
   (4) prover_response()
 ~~~
-Figure: Three-Move Interaction in a Sigma Protocol
+Figure 1 — Message Flow of a Generic Sigma Protocol
 
 ## 1.1. Terminology
 
