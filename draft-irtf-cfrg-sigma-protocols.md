@@ -9,8 +9,7 @@ date:
 v: 3
 area: "IRTF"
 workgroup: "Crypto Forum"
-keyword:
- - zero-knowledge
+keyword: ["zero-knowledge", "sigma protocols", "cryptography", "proofs of knowledge"]
 venue:
   group: "Crypto Forum"
   type: "Research Group"
@@ -20,14 +19,12 @@ venue:
   latest: "https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html"
 
 author:
- -
-    fullname: "Michele Orrù"
+  - fullname: "Michele Orrù"
     organization: CNRS
     email: "m@orru.net"
- -
-    fullname: "Cathie Yun"
+  - fullname: "Cathie Yun"
     organization: Apple, Inc.
-    email: cathieyun@gmail.com
+    email: "cathieyun@gmail.com"
 
 normative:
 
@@ -91,30 +88,97 @@ informative:
 
 --- abstract
 
-This document describes interactive sigma protocols, a class of secure, general-purpose zero-knowledge proofs of knowledge consisting of three moves: commitment, challenge, and response. Concretely, the protocol allows one to prove knowledge of a secret witness without revealing any information about it.
+This document describes Sigma protocols, a family of interactive zero-knowledge proofs that enable a prover to convince a verifier of the validity of a statement without revealing any additional information.
+A Sigma protocol proceeds in three moves—commitment, challenge, and response—and provides the foundational structure for many cryptographic constructions, including digital signatures, identification schemes, and complex zero-knowledge proofs.
+Concretely, Sigma protocols allow proving knowledge of secret values satisfying certain relations, such as discrete logarithm equations, while preserving zero-knowledge and soundness.
+Being zero-knowledge, they ensure that no information about the witness is leaked, while the verifier remains assured of the correctness of the claimed statement.
 
 --- middle
 
-# Introduction
+# 1. Introduction
 
-Any sigma protocol must define three objects: a *commitment* (computed by the prover), a *challenge* (computed by the verifier), and a *response* (computed by the prover).
+A *Sigma protocol* is a three-move interactive proof system between two parties: a Prover, who holds a secret witness, and a Verifier, who wishes to be convinced that the Prover knows a valid witness for a given statement.
+The protocol proceeds through three sequential steps—commitment, challenge, and response—that together enable the Verifier to check the validity of the claim without learning anything about the witness itself.
 
-## Core interface
+During execution, the Prover first sends a *commitment* to the Verifier, encapsulating information derived from the witness without revealing it. The Verifier then issues a random *challenge*, ensuring that the proof cannot be reused or forged. Finally, the Prover computes a *response* based on both the challenge and the witness, which the Verifier uses to verify correctness.
 
-The public functions are obtained relying on an internal structure containing the definition of a sigma protocol.
+The following figure illustrates the general message flow of a Sigma protocol, highlighting the interactive nature of the exchange between the Prover and the Verifier:
+
+~~~ ascii-art
+  (1) prover_commit()                     (6) verifier()
+   +-----+                                   +-----+
+   |     |                                   |     |
+   |     |                                   |     |
+   |    \ /                                  |    \ /
++-----------+                             +-----------+
+|           |                             |           |
+|           |------ (2) commitment ------>|           |
+|           |                             |           |
+|   Prover  |<------ (3) challenge -------|  Verifier |
+|           |                             |           |
+|           |------- (5) response ------->|           |
+|           |                             |           |
++-----------+                             +-----------+
+   |    / \
+   |     |
+   |     |
+   +-----+
+  (4) prover_response()
+~~~
+Figure 1 — Message Flow of a Generic Sigma Protocol
+
+## 1.1. Terminology
+
+The following terminology is used throughout this document:
+
+`witness` : The secret of which the prover must prove knowledge.
+
+`statement` (or `instance`) :  The set of public data (or public parameters) for which the Prover claims the existence of a corresponding witness. This information is known to both the Prover and the Verifier and is used by the Verifier to check the validity of the proof.
+
+`commitment` : First message of the interaction, computed by the prover.
+
+`challenge` : Second message of the interaction, computed by the verifier.
+
+`response` : Third message of the interaction, computed by the prover.
+
+`transcript` : The tuple `(commitment, challenge, response)` representing one full execution of the protocol.
+
+`scalar` : An element of the finite field `𝔽ₚ` associated with the group, where p is the prime order of the group.
+
+`group element` (or `group point`) : An element of a prime-order (elliptic curve) group `𝔾`. Group operations are written additively.
+
+`msm` : Multi-scalar multiplication.
+
+## 1.2. Notation
+
+Throughout this document, the following mathematical notation and conventions are used:
+
+`p` : Prime order of the group 𝔾.
+
+`a`, `b`, `x`, `r`, or `s` : Scalars in 𝔽ₚ (typically witnesses components, randomness, challenges, or responses).
+
+`X`, `Y`, `G` or `H` : Group elements (or points if elliptic curve) in 𝔾 (typically public parameters or commitments components).
+
+`*` : Scalar multiplication in the group (`a * X`).
+
+## 1.3. Core interface
+
+The public interface exposes functions derived from an internal structure containing the definition of a sigma protocol.
 
     class SigmaProtocol:
        def new(instance) -> SigmaProtocol
        def prover_commit(self, witness, rng) -> (commitment, prover_state)
        def prover_response(self, prover_state, challenge) -> response
        def verifier(self, commitment, challenge, response) -> bool
+
+       # Serialization primitives
        def serialize_commitment(self, commitment) -> bytes
        def serialize_response(self, response) -> bytes
        def deserialize_commitment(self, data: bytes) -> commitment
        def deserialize_response(self, data: bytes) -> response
-       # optional
+
+       # Simulator primitives (optional)
        def simulate_response(self, rng) -> response
-       # optional
        def simulate_commitment(self, response, challenge) -> commitment
 
 Where:
@@ -145,7 +209,7 @@ The simulated transcript `(commitment, challenge, response)` must be indistingui
 
 The abstraction `SigmaProtocol` allows implementing different types of statements and combiners of those, such as OR statements, validity of t-out-of-n statements, and more.
 
-# Sigma protocols over prime-order groups {#sigma-protocol-group}
+# 2. Sigma protocols over prime-order groups {#sigma-protocol-group}
 
 The following sub-section presents concrete instantiations of sigma protocols over prime-order elliptic curve groups.
 It relies on a prime-order elliptic-curve group as described in {{group-abstraction}}.
@@ -164,38 +228,70 @@ Line 2 states that the private information (the **witness**) consists of the sca
 Finally, line 3 states that the linear relation that needs to be proven is
 `x * G  = X` and `x * H = Y`.
 
-## Group abstraction {#group-abstraction}
+## 2.1. Group abstraction {#group-abstraction}
 
 Because of their dominance, the presentation in the following focuses on proof goals over elliptic curves, therefore leveraging additive notation. For prime-order subgroups of residue classes, all notation needs to be changed to multiplicative, and references to elliptic curves (e.g., curve) need to be replaced by their respective counterparts over residue classes.
 
 We detail the functions that can be invoked on these objects. Example choices can be found in {{ciphersuites}}.
 
-### Group {#group}
+This subsection is divided into two parts: the first specifies groups and their elements, and the second specifies the coefficient field (or the exponent field, in the case of a residue group) associated with the group.
 
-- `identity()`, returns the neutral element in the group.
-- `generator()`, returns the generator of the prime-order elliptic-curve subgroup used for cryptographic operations.
-- `order()`: returns the order of the group `p`.
+### 2.1.1. Group {#group}
+
+A group is represented by an interface named `Group` and provides a set of functions and values associated with the underlying structure that implements it. Each group has an associated type `Scalar`, which MUST represent the elements of the coefficient field associated with the group. The properties of this field are detailed in the following section.
+
+#### Properties and Constants
+
+These methods provide access to fundamental group parameters and utilities.
+
+- `generator()`: returns the generator of the prime-order elliptic-curve subgroup used for cryptographic operations.
+- `order()`: returns the order `p` of the group.
 - `random()`: returns an element sampled uniformly at random from the group.
-- `serialize(elements: [Group; N])`, serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
-- `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a `DeserializeError` if deserialization fails.
-- `add(element: Group)`, implements elliptic curve addition for the two group elements.
-- `equal(element: Group)`, returns `true` if the two elements are the same and `false` otherwise.
-- `scalar_mul(scalar: Scalar)`, implements scalar multiplication for a group element by an element in its respective scalar field.
+
+#### Algebraic Operations
+
+The basic functions that Group must implement are the algebraic operations associated with the group structure, such as addition, subtraction, or scalar multiplication.
+
+- `identity()`: returns the neutral element in the group.
+- `add(X: Group, Y: Group)`: implements elliptic curve addition for the two `X` and `Y` group elements.
+- `equal(X: Group, Y: Group)`: returns `true` if the two elements `X` and `Y` are the same and `false` otherwise.
+- `scalar_mul(a: Scalar, X: Group)`: implements scalar multiplication for a group element `X` by an element `a` in its respective scalar field.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `scalar_mul` we will use `*`. A similar behavior can be achieved using operator overloading.
 
-### Scalar
+#### Encoding
 
-- `identity()`: outputs the (additive) identity element in the scalar field.
-- `add(scalar: Scalar)`: implements field addition for the elements in the field.
-- `mul(scalar: Scalar)`, implements field multiplication.
+These methods ensure correct and interoperable serialization for communication and storage. For a given group, the encoding length of its elements is fixed and will subsequently be denoted as `Ne`.
+
+- `serialize(elements: [Group; N])`: serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
+- `deserialize(buffer)`: attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group (see Section [Serialization](#serialization)). This function can raise a `DeserializeError` if deserialization fails.
+
+### 2.1.2. Scalar {#scalar}
+
+#### Properties and Constants
+
+- `identity()`: outputs the zero element (the additive identity element) in the scalar field.
 - `random()`: returns an element sampled uniformly at random from the scalar field.
-- `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
-- `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a `DeserializeError` if deserialization fails.
+
+#### Algebraic Operations
+
+- `add(a: Scalar, b: Scalar)`: implements field addition for the `a` and `b` scalars in the field.
+- `mul(a: Scalar, b: Scalar)`: implements field multiplication.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `mul` we will use `*`. A similar behavior can be achieved using operator overloading.
 
-## Proofs of preimage of a linear map
+#### Encoding
+
+These methods ensure correct and interoperable serialization for communication and storage. For a given field, the encoding length of its scalars is fixed and will subsequently be denoted as `Ns`.
+
+- `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
+- `deserialize(buffer)`: attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field (see Section [Serialization](#serialization)). This function can raise a `DeserializeError` if deserialization fails.
+
+### 2.1.3. Serialization {#serialization}
+
+The serialization of group elements as well as scalars of the associated field MUST be canonical. In other words, each element has exactly one valid byte-string representation, called the canonical representation. Consequently, the `deserialize()` method MUST only convert the canonical representation of elements into group and field elements; otherwise, it MUST return an error. This uniqueness, also referred to as non-malleability of the encoding, provides a form of security for Sigma protocols.
+
+## 2.2. Proofs of preimage of a linear map
 
 ### Core protocol
 
@@ -436,7 +532,7 @@ Given group elements `G`, `H` such that `C = x * G + r * H`, then the statement 
     var_x, var_r = statement.allocate_scalars(2)
     statement.append_equation(C, [(var_x, G), (var_r, H)])
 
-## Ciphersuites {#ciphersuites}
+## 2.3. Ciphersuites {#ciphersuites}
 
 ### P-256 (secp256r1)
 
@@ -453,7 +549,7 @@ This ciphersuite uses P-256 {{SP800}} for the Group.
 - `serialize(s)`: Relies on the Field-Element-to-Octet-String conversion according to {{SEC1}}; `Ns = 32`.
 - `deserialize(buf)`: Reads the byte array `buf` in chunks of 32 bytes using Octet-String-to-Field-Element from {{SEC1}}. This function can fail if the input does not represent a Scalar in the range `[0, G.Order() - 1]`.
 
-# Security Considerations
+# 3. Security Considerations
 
 Interactive sigma proofs are special sound and honest-verifier zero-knowledge. These proofs are deniable (without transferable message authenticity).
 
@@ -465,16 +561,16 @@ We focus on the security guarantees of the non-interactive Fiat-Shamir transform
 
 While theoretical analysis demonstrates that both soundness and zero-knowledge properties are statistical in nature, practical security depends on the cryptographic strength of the underlying hash function, which is defined by the Fiat-Shamir transformation. It's important to note that the soundness of a zero-knowledge proof provides no guarantees regarding the computational hardness of the relation being proven. An assessment of the specific hardness properties for relations proven using these protocols falls outside the scope of this document.
 
-## Privacy Considerations
+## 3.1. Privacy Considerations
 
 Interactive sigma proofs are insecure against malicious verifiers and should not be used.
 The non-interactive Fiat-Shamir transformation leads to publicly verifiable (transferable) proofs that are statistically zero-knowledge.
 
-# Post-Quantum Security Considerations
+# 4. Post-Quantum Security Considerations
 
 The zero-knowledge proofs described in this document provide statistical zero-knowledge and statistical soundness properties when modeled in the random oracle model.
 
-## Privacy Considerations
+## 4.1. Privacy Considerations
 
 These proofs offer zero-knowledge guarantees, meaning they do not leak any information about the prover's witness beyond what can be inferred from the proven statement itself. This property holds even against quantum adversaries with unbounded computational power.
 
@@ -485,7 +581,7 @@ Specifically, these proofs can be used to protect privacy against post-quantum a
 - Post-quantum blindness
 - Protection against "harvest now, decrypt later" attacks.
 
-## Soundness Considerations
+## 4.2. Soundness Considerations
 
 While the proofs themselves offer privacy protections against quantum adversaries, the hardness of the relation being proven depends (at best) on the hardness of the discrete logarithm problem over the elliptic curves specified in {{ciphersuites}}.
 Since this problem is known to be efficiently solvable by quantum computers using Shor's algorithm, these proofs MUST NOT be relied upon for post-quantum soundness guarantees.
@@ -500,11 +596,11 @@ Implementations should consider the timeline for quantum computing advances when
 Implementers MAY adopt a hybrid approach during migration to post-quantum security by using AND composition of proofs. This approach enables gradual migration while maintaining security against classical adversaries.
 This composition retains soundness if **both** problems remain hard. AND composition of proofs is NOT described in this specification, but examples may be found in the proof-of-concept implementation and in {{BonehS23}}.
 
-# Generation of the protocol identifier {#protocol-id-generation}
+# 5. Generation of the protocol identifier {#protocol-id-generation}
 
 As of now, it is responsibility of the user to pick a unique protocol identifier that identifies the proof system. This will be expanded in future versions of this specification.
 
-# Generation of the instance identifier {#instance-id-generation}
+# 6. Generation of the instance identifier {#instance-id-generation}
 
 As of now, it is responsibility of the user to pick a unique instance identifier that identifies the statement being proven.
 
