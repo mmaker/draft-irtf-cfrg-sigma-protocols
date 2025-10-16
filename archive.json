@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-10-14T01:12:56.616439+00:00",
+  "timestamp": "2025-10-16T01:14:16.433148+00:00",
   "repo": "mmaker/draft-irtf-cfrg-sigma-protocols",
   "labels": [
     {
@@ -321,16 +321,24 @@
       "id": "I_kwDONyiw_86woV_E",
       "title": "Example: Linear equations for sigma protocols",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/18",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "mmaker",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "A common extension for sigma protocols is to show that a commitment satisfies a given linear equation, without requiring expensive group operations. \n\nThere should be an example in \nhttps://github.com/mmaker/draft-zkproof-sigma-protocols/blob/main/poc/test_sigma_protocols.sage that implements linear constraints in addition to morphism preimages.\n\nAn example is available at https://sigma.zkproof.org/tex-spec.pdf, section 3.3 -- but there is no need to use Gaussian elimination!  The math to work out should be pretty straightforward.",
       "createdAt": "2025-04-01T12:55:25Z",
-      "updatedAt": "2025-04-01T12:55:25Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2025-10-15T03:07:17Z",
+      "closedAt": "2025-10-15T03:07:17Z",
+      "comments": [
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "Setting this aside for now as we haven't found a reason for adoption just yet. \n/cc @cathieyun FYI",
+          "createdAt": "2025-10-15T03:07:17Z",
+          "updatedAt": "2025-10-15T03:07:17Z"
+        }
+      ]
     },
     {
       "number": 19,
@@ -988,9 +996,9 @@
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
-      "body": "# TODO \u2014 Feedback on draft-irtf-cfrg-sigma-protocols (commit f427eddc973bc9ef284c342913010b57f935d71a)\n\n- [ ] Define terminology (e.g., `LinearRelation` is referenced without definition).  \n- [x] Rephrase [\"The returned value response is meant to be shared\"](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-1.1-4.3.1) \u2192 \"The return value response is a public value and is transmitted to the verifier.\"  \n- [ ] Clearly define the challenge. Specify it as a random element of the scalar field? Provide an algorithm for generation in the [API](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-1.1-3). Also define serialization/deserialization.  \n- [ ] Introduce the notion of proof composition earlier. Explain motivation and possible security pitfalls (forward reference to security considerations is enough).  \n- [ ] Add reference for [Camenisch\u2013Stadler notation](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2-3).  \n- [ ] Fix artwork overflow (e.g., [prover commitment spec](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.2.1-1)). Break lines at 69 characters.  \n- [ ] Define variable `linear_map` before first use. What does this function do?  \n- [ ] Define variable `image` before first use. Clarify what it means. Also define \"constraint.\"  \n- [x] Clarify or remove [Witness type definition](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.4-2). Pseudocode is unclear.  \n- [ ] Clarify if `map` = [`linear_map`](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5-5).  \n- [ ] Clarify input to the linear map in [this paragraph](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5-1). Is it the sequence of prover nonces?  \n- [ ] Define `msm` operation (used [here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5.2-2)). Check whether the output is a single group element or a list.  \n- [ ] Fix Section 2.2.6: it says `linear_map` *will be defined* in a *prior* section.  \n- [x] Fix rendering issue [here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.6-2).  \n- [ ] Provide references for [security properties](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-3-1): special soundness, HVZK, deniability, transferable message authenticity.  \n- [ ] Revisit Fiat\u2013Shamir references in Security Considerations (they may no longer make sense since it's split out into its own draft).  \n",
+      "body": "# TODO \u2014 Feedback on draft-irtf-cfrg-sigma-protocols (commit f427eddc973bc9ef284c342913010b57f935d71a)\n\n- [ ] Define terminology (e.g., `LinearRelation` is referenced without definition).  \n- [x] Rephrase [\"The returned value response is meant to be shared\"](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-1.1-4.3.1) \u2192 \"The return value response is a public value and is transmitted to the verifier.\"  \n- [ ] Clearly define the challenge. Specify it as a random element of the scalar field? Provide an algorithm for generation in the [API](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-1.1-3). Also define serialization/deserialization.  \n- [ ] Introduce the notion of proof composition earlier. Explain motivation and possible security pitfalls (forward reference to security considerations is enough).  \n- [x] Add reference for [Camenisch\u2013Stadler notation](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2-3).  \n- [ ] Fix artwork overflow (e.g., [prover commitment spec](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.2.1-1)). Break lines at 69 characters.  \n- [ ] Define variable `linear_map` before first use. What does this function do?  \n- [ ] Define variable `image` before first use. Clarify what it means. Also define \"constraint.\"  \n- [x] Clarify or remove [Witness type definition](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.4-2). Pseudocode is unclear.  \n- [ ] Clarify if `map` = [`linear_map`](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5-5).  \n- [ ] Clarify input to the linear map in [this paragraph](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5-1). Is it the sequence of prover nonces?  \n- [ ] Define `msm` operation (used [here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5.2-2)). Check whether the output is a single group element or a list.  \n- [ ] Fix Section 2.2.6: it says `linear_map` *will be defined* in a *prior* section.  \n- [x] Fix rendering issue [here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.6-2).  \n- [ ] Provide references for [security properties](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-3-1): special soundness, HVZK, deniability, transferable message authenticity.  \n- [ ] Revisit Fiat\u2013Shamir references in Security Considerations (they may no longer make sense since it's split out into its own draft).  \n",
       "createdAt": "2025-09-04T22:50:42Z",
-      "updatedAt": "2025-09-30T11:38:01Z",
+      "updatedAt": "2025-10-15T02:58:57Z",
       "closedAt": null,
       "comments": []
     },
@@ -999,16 +1007,24 @@
       "id": "I_kwDONyiw_87KkZ7q",
       "title": "Editorial feedback -- Section 1",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/67",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "jkatz2",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
-      "body": "- [ ] 1. You refer interchangeably to \"sigma protocols\" and \"sigma proofs.\" Also, sometimes you capitalize Sigma and sometimes you don't. \n- [ ] 2. The [abstract](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#abstract) says you are defining general sigma protocols, but in fact you are describing a special case (preimage of linear maps over prime-order groups).\n- [ ] 3. It will be helpful to define `LinearRelation` (both formally and informally) before it is first used.\n- [x] 4. [Here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#name-core-interface) you refer to \"the `LinearRelation`\" but perhaps it should be \"a `LinearRelation`.\"\n- [x] 5. [Here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#name-core-interface), \"Leakage of even just of a few bits\" should be \"Leakage of even just a few bits.\"\n- [ ] 6. I believe `simulate_response` should also output `simulator_state`, and then `simulate_commitment` should take `simulator_state` as input.\n- [x] 7. For `simulate_response` you write \"It is an algorithm drawing a random response given a specified cryptographically secure RNG that follows the same output distribution of the algorithm `prover_response`.\" I would omit this, since you do not discuss security properties of any of the other algorithms here (and, in particular, you do not say anything about  the output distribution of `simulate_commitment`).\n- [x] 8. \"Together, these zero-knowledge simulators provide a transcript that should be computationally indistinguishable ...\" Actually, they are perfectly indistingiushable, and you stress this fact toward the end of the document.",
+      "body": "- [x] 4. [Here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#name-core-interface) you refer to \"the `LinearRelation`\" but perhaps it should be \"a `LinearRelation`.\"\n- [x] 5. [Here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#name-core-interface), \"Leakage of even just of a few bits\" should be \"Leakage of even just a few bits.\"\n- [x] 7. For `simulate_response` you write \"It is an algorithm drawing a random response given a specified cryptographically secure RNG that follows the same output distribution of the algorithm `prover_response`.\" I would omit this, since you do not discuss security properties of any of the other algorithms here (and, in particular, you do not say anything about  the output distribution of `simulate_commitment`).\n- [x] 8. \"Together, these zero-knowledge simulators provide a transcript that should be computationally indistinguishable ...\" Actually, they are perfectly indistingiushable, and you stress this fact toward the end of the document.",
       "createdAt": "2025-09-09T13:38:12Z",
-      "updatedAt": "2025-10-09T09:54:59Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2025-10-15T03:34:09Z",
+      "closedAt": "2025-10-15T03:32:27Z",
+      "comments": [
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "Hi @jkatz2,\n\nThank you so, so much for your feedback\u2014this is great.\nI've implemented all the editorial changes and created sub-issues for the following points:\n\n## Points 1 and 2: Title and framing\n\nThese are:\n\n> You refer interchangeably to \"sigma protocols\" and \"sigma proofs.\" Also, sometimes you capitalize Sigma and sometimes you don't.\n\n> The [abstract](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#abstract)\n says you are defining general sigma protocols, but in fact you are describing a special case (preimage of linear maps over prime-order groups).\n\nYou're highlighting an important issue with naming.\n\nContext: I think \"sigma proof\" is used by Cathie and the IETF to distinguish it from other \"SIGMA\" usages in the IETF (an issue pointed out in the CFRG mailing list). I'll make a single choice with @cathieyun this week and ensure consistency.\n\nTitle reasoning: I personally think it's important to define the generic sigma protocol interface so that we don't lock out people from language composition (as pointed out in recent CFRG mail threads). However, since the only reason for adoption for now is given by linear relations, we're focusing on those.\n\nI'll discuss with Cathie whether we should change the title again, but most importantly, I\u2019m happy to take your concrete input on titling given the presence of this generic interface. Something closer to \"Interactive sigma proofs [and proofs] for group morphisms,\" but less esoteric for engineers?\n\n## Point 6: The simulator\n\nThis is:\n\n> 6. I believe simulate_response should also output simulator_state, and then simulate_commitment should take simulator_state as input.\n[#108](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/108)\n\nCorrect. I created a separate sub-issue about this so that decisions will be more transparent, especially regarding the special zk vs zk interface.",
+          "createdAt": "2025-10-15T03:32:27Z",
+          "updatedAt": "2025-10-15T03:34:09Z"
+        }
+      ]
     },
     {
       "number": 68,
@@ -1393,6 +1409,70 @@
       "body": "Building of Tests Fails for SageMath v.9.5\nTest building fails for SageMath v.9.5, which is a relatively old version, but is the highest version [supported](https://repology.org/project/sagemath/versions) by the package manager of Ubuntu 22.04.\n\nSpecifically, all three commands (make test, sage test_sigma_protocols.sage, and make vectors) fail with the AttributeError: 'sage.rings.integer.Integer' object has no attribute 'bit_length' error.\n\nConsider specifying the SageMath version that the PoC implementation has been tested with.",
       "createdAt": "2025-09-26T12:24:18Z",
       "updatedAt": "2025-09-26T12:24:18Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 107,
+      "id": "I_kwDONyiw_87RlGun",
+      "title": "1. You refer interchangeably to \"sigma protocols\" and \"sigma proofs.\" Also, sometimes you capitalize Sigma and sometimes you don't.",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/107",
+      "state": "OPEN",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2025-10-15T03:08:19Z",
+      "updatedAt": "2025-10-15T03:08:19Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 108,
+      "id": "I_kwDONyiw_87RlG5h",
+      "title": "6. I believe `simulate_response` should also output `simulator_state`, and then `simulate_commitment` should take `simulator_state` as input.",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/108",
+      "state": "OPEN",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2025-10-15T03:08:47Z",
+      "updatedAt": "2025-10-15T03:08:47Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 109,
+      "id": "I_kwDONyiw_87RlHJ6",
+      "title": "2. The [abstract](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#abstract) says you are defining general sigma protocols, but in fact you are describing a special case (preimage of linear maps over prime-order groups).",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/109",
+      "state": "OPEN",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2025-10-15T03:09:24Z",
+      "updatedAt": "2025-10-15T03:09:24Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 110,
+      "id": "I_kwDONyiw_87RlHPm",
+      "title": "3. It will be helpful to define `LinearRelation` (both formally and informally) before it is first used.",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/110",
+      "state": "OPEN",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2025-10-15T03:09:38Z",
+      "updatedAt": "2025-10-15T03:09:38Z",
       "closedAt": null,
       "comments": []
     }
@@ -4747,13 +4827,13 @@
       "labels": [],
       "body": "",
       "createdAt": "2025-10-08T17:38:54Z",
-      "updatedAt": "2025-10-13T23:07:49Z",
+      "updatedAt": "2025-10-15T09:20:31Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "6364a5e99c15b8720f0dfdb9645b4785125afb4f",
       "headRepository": "nougzarm/draft-irtf-cfrg-sigma-protocols",
       "headRefName": "spec-update",
-      "headRefOid": "81033d76d946475553431c9f14fb0b4fab59eada",
+      "headRefOid": "4047c3774e075906cc457f12265e76c418aadabc",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -4765,6 +4845,13 @@
           "body": "Hey @nougzarm good job. Are there still changes that you want to do here?",
           "createdAt": "2025-10-13T23:07:37Z",
           "updatedAt": "2025-10-13T23:07:49Z"
+        },
+        {
+          "author": "nougzarm",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "> Hey @nougzarm good job. Are there still changes that you want to do here?\r\n\r\nThanks @mmaker ! No, I\u2019ve finished all the changes I wanted to make. It\u2019s ready on my side.",
+          "createdAt": "2025-10-15T09:20:31Z",
+          "updatedAt": "2025-10-15T09:20:31Z"
         }
       ],
       "reviews": [
