@@ -1367,63 +1367,36 @@ Finally, line 3 states that the linear relation that needs to be proven is
           <h4 id="name-group">
 <a href="#section-2.1.1" class="section-number selfRef">2.1.1. </a><a href="#name-group" class="section-name selfRef">Group</a>
           </h4>
-<div id="properties-and-constants">
-<section id="section-2.1.1.1">
-            <h5 id="name-properties-and-constants">
-<a href="#section-2.1.1.1" class="section-number selfRef">2.1.1.1. </a><a href="#name-properties-and-constants" class="section-name selfRef">Properties and Constants</a>
-            </h5>
-<p id="section-2.1.1.1-1">These methods provide access to fundamental group parameters and utilities.<a href="#section-2.1.1.1-1" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-2.1.1.1-2.1">
-                <p id="section-2.1.1.1-2.1.1"><code>generator()</code>, returns the generator of the prime-order elliptic-curve subgroup used for cryptographic operations.<a href="#section-2.1.1.1-2.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-2.1.1-1.1">
+              <p id="section-2.1.1-1.1.1"><code>identity()</code>, returns the neutral element in the group.<a href="#section-2.1.1-1.1.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-2.1.1.1-2.2">
-                <p id="section-2.1.1.1-2.2.1"><code>order()</code>: returns the order <code>p</code> of the group.<a href="#section-2.1.1.1-2.2.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.1-1.2">
+              <p id="section-2.1.1-1.2.1"><code>generator()</code>, returns the generator of the prime-order elliptic-curve subgroup used for cryptographic operations.<a href="#section-2.1.1-1.2.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-2.1.1.1-2.3">
-                <p id="section-2.1.1.1-2.3.1"><code>random()</code>: returns an element sampled uniformly at random from the group.<a href="#section-2.1.1.1-2.3.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.1-1.3">
+              <p id="section-2.1.1-1.3.1"><code>order()</code>: returns the order of the group <code>p</code>.<a href="#section-2.1.1-1.3.1" class="pilcrow">¶</a></p>
 </li>
-            </ul>
-</section>
-</div>
-<div id="algebraic-operations">
-<section id="section-2.1.1.2">
-            <h5 id="name-algebraic-operations">
-<a href="#section-2.1.1.2" class="section-number selfRef">2.1.1.2. </a><a href="#name-algebraic-operations" class="section-name selfRef">Algebraic Operations</a>
-            </h5>
-<ul class="normal">
-<li class="normal" id="section-2.1.1.2-1.1">
-                <p id="section-2.1.1.2-1.1.1"><code>identity()</code>, returns the neutral element in the group.<a href="#section-2.1.1.2-1.1.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.1-1.4">
+              <p id="section-2.1.1-1.4.1"><code>random()</code>: returns an element sampled uniformly at random from the group.<a href="#section-2.1.1-1.4.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-2.1.1.2-1.2">
-                <p id="section-2.1.1.2-1.2.1"><code>add(P: Group, Q: Group)</code>, implements elliptic curve addition for the two <code>P</code> and <code>Q</code> group elements.<a href="#section-2.1.1.2-1.2.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.1-1.5">
+              <p id="section-2.1.1-1.5.1"><code>serialize(elements: [Group; N])</code>, serializes a list of group elements and returns a canonical byte array <code>buf</code> of fixed length <code>Ne * N</code>.<a href="#section-2.1.1-1.5.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-2.1.1.2-1.3">
-                <p id="section-2.1.1.2-1.3.1"><code>equal(P: Group, Q: Group)</code>, returns <code>true</code> if the two elements <code>P</code> and <code>Q</code> are the same and <code>false</code> otherwise.<a href="#section-2.1.1.2-1.3.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.1-1.6">
+              <p id="section-2.1.1-1.6.1"><code>deserialize(buffer)</code>, attempts to map a byte array <code>buffer</code> of size <code>Ne * N</code> into <code>[Group; N]</code>, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a <code>DeserializeError</code> if deserialization fails.<a href="#section-2.1.1-1.6.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-2.1.1.2-1.4">
-                <p id="section-2.1.1.2-1.4.1"><code>scalar_mul(a: Scalar, P: Group)</code>, implements scalar multiplication for a group element <code>P</code> by an element <code>a</code> in its respective scalar field.<a href="#section-2.1.1.2-1.4.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.1-1.7">
+              <p id="section-2.1.1-1.7.1"><code>add(element: Group)</code>, implements elliptic curve addition for the two group elements.<a href="#section-2.1.1-1.7.1" class="pilcrow">¶</a></p>
 </li>
-            </ul>
-<p id="section-2.1.1.2-2">In this spec, instead of <code>add</code> we will use <code>+</code> with infix notation; instead of <code>equal</code> we will use <code>==</code>, and instead of <code>scalar_mul</code> we will use <code>*</code>. A similar behavior can be achieved using operator overloading.<a href="#section-2.1.1.2-2" class="pilcrow">¶</a></p>
-</section>
-</div>
-<div id="encoding">
-<section id="section-2.1.1.3">
-            <h5 id="name-encoding">
-<a href="#section-2.1.1.3" class="section-number selfRef">2.1.1.3. </a><a href="#name-encoding" class="section-name selfRef">Encoding</a>
-            </h5>
-<p id="section-2.1.1.3-1">These methods ensure correct and interoperable serialization for communication and storage. For a given group, the encoding length of its elements is fixed and will subsequently be denoted as <code>Ne</code>.<a href="#section-2.1.1.3-1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-2.1.1.3-2.1">
-                <p id="section-2.1.1.3-2.1.1"><code>serialize(elements: [Group; N])</code>, serializes a list of group elements and returns a canonical byte array <code>buf</code> of fixed length <code>Ne * N</code>.<a href="#section-2.1.1.3-2.1.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.1-1.8">
+              <p id="section-2.1.1-1.8.1"><code>equal(element: Group)</code>, returns <code>true</code> if the two elements are the same and <code>false</code> otherwise.<a href="#section-2.1.1-1.8.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-2.1.1.3-2.2">
-                <p id="section-2.1.1.3-2.2.1"><code>deserialize(buffer)</code>, attempts to map a byte array <code>buffer</code> of size <code>Ne * N</code> into <code>[Group; N]</code>, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a <code>DeserializeError</code> if deserialization fails.<a href="#section-2.1.1.3-2.2.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.1-1.9">
+              <p id="section-2.1.1-1.9.1"><code>scalar_mul(scalar: Scalar)</code>, implements scalar multiplication for a group element by an element in its respective scalar field.<a href="#section-2.1.1-1.9.1" class="pilcrow">¶</a></p>
 </li>
-            </ul>
-</section>
-</div>
+          </ul>
+<p id="section-2.1.1-2">In this spec, instead of <code>add</code> we will use <code>+</code> with infix notation; instead of <code>equal</code> we will use <code>==</code>, and instead of <code>scalar_mul</code> we will use <code>*</code>. A similar behavior can be achieved using operator overloading.<a href="#section-2.1.1-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="scalar">
@@ -1431,53 +1404,27 @@ Finally, line 3 states that the linear relation that needs to be proven is
           <h4 id="name-scalar">
 <a href="#section-2.1.2" class="section-number selfRef">2.1.2. </a><a href="#name-scalar" class="section-name selfRef">Scalar</a>
           </h4>
-<div id="properties-and-constants-1">
-<section id="section-2.1.2.1">
-            <h5 id="name-properties-and-constants-2">
-<a href="#section-2.1.2.1" class="section-number selfRef">2.1.2.1. </a><a href="#name-properties-and-constants-2" class="section-name selfRef">Properties and Constants</a>
-            </h5>
 <ul class="normal">
-<li class="normal" id="section-2.1.2.1-1.1">
-                <p id="section-2.1.2.1-1.1.1"><code>identity()</code>: outputs the (additive) identity element in the scalar field.<a href="#section-2.1.2.1-1.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-2.1.2-1.1">
+              <p id="section-2.1.2-1.1.1"><code>identity()</code>: outputs the (additive) identity element in the scalar field.<a href="#section-2.1.2-1.1.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-2.1.2.1-1.2">
-                <p id="section-2.1.2.1-1.2.1"><code>random()</code>: returns an element sampled uniformly at random from the scalar field.<a href="#section-2.1.2.1-1.2.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.2-1.2">
+              <p id="section-2.1.2-1.2.1"><code>add(scalar: Scalar)</code>: implements field addition for the elements in the field.<a href="#section-2.1.2-1.2.1" class="pilcrow">¶</a></p>
 </li>
-            </ul>
-</section>
-</div>
-<div id="algebraic-operations-1">
-<section id="section-2.1.2.2">
-            <h5 id="name-algebraic-operations-2">
-<a href="#section-2.1.2.2" class="section-number selfRef">2.1.2.2. </a><a href="#name-algebraic-operations-2" class="section-name selfRef">Algebraic Operations</a>
-            </h5>
-<ul class="normal">
-<li class="normal" id="section-2.1.2.2-1.1">
-                <p id="section-2.1.2.2-1.1.1"><code>add(a: Scalar, b: Scalar)</code>: implements field addition for the <code>a</code> and <code>b</code> scalars in the field.<a href="#section-2.1.2.2-1.1.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.2-1.3">
+              <p id="section-2.1.2-1.3.1"><code>mul(scalar: Scalar)</code>, implements field multiplication.<a href="#section-2.1.2-1.3.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-2.1.2.2-1.2">
-                <p id="section-2.1.2.2-1.2.1"><code>mul(a: Scalar, b: Scalar)</code>, implements field multiplication.<a href="#section-2.1.2.2-1.2.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.2-1.4">
+              <p id="section-2.1.2-1.4.1"><code>random()</code>: returns an element sampled uniformly at random from the scalar field.<a href="#section-2.1.2-1.4.1" class="pilcrow">¶</a></p>
 </li>
-            </ul>
-<p id="section-2.1.2.2-2">In this spec, instead of <code>add</code> we will use <code>+</code> with infix notation; instead of <code>equal</code> we will use <code>==</code>, and instead of <code>mul</code> we will use <code>*</code>. A similar behavior can be achieved using operator overloading.<a href="#section-2.1.2.2-2" class="pilcrow">¶</a></p>
-</section>
-</div>
-<div id="encoding-1">
-<section id="section-2.1.2.3">
-            <h5 id="name-encoding-2">
-<a href="#section-2.1.2.3" class="section-number selfRef">2.1.2.3. </a><a href="#name-encoding-2" class="section-name selfRef">Encoding</a>
-            </h5>
-<p id="section-2.1.2.3-1">These methods ensure correct and interoperable serialization for communication and storage. For a given field, the encoding length of its scalars is fixed and will subsequently be denoted as <code>Ns</code>.<a href="#section-2.1.2.3-1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-2.1.2.3-2.1">
-                <p id="section-2.1.2.3-2.1.1"><code>serialize(scalars: list[Scalar; N])</code>: serializes a list of scalars and returns their canonical representation of fixed length <code>Ns * N</code>.<a href="#section-2.1.2.3-2.1.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.2-1.5">
+              <p id="section-2.1.2-1.5.1"><code>serialize(scalars: list[Scalar; N])</code>: serializes a list of scalars and returns their canonical representation of fixed length <code>Ns * N</code>.<a href="#section-2.1.2-1.5.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-2.1.2.3-2.2">
-                <p id="section-2.1.2.3-2.2.1"><code>deserialize(buffer)</code>, attempts to map a byte array <code>buffer</code> of size <code>Ns * N</code> into <code>[Scalar; N]</code>, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a <code>DeserializeError</code> if deserialization fails.<a href="#section-2.1.2.3-2.2.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-2.1.2-1.6">
+              <p id="section-2.1.2-1.6.1"><code>deserialize(buffer)</code>, attempts to map a byte array <code>buffer</code> of size <code>Ns * N</code> into <code>[Scalar; N]</code>, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a <code>DeserializeError</code> if deserialization fails.<a href="#section-2.1.2-1.6.1" class="pilcrow">¶</a></p>
 </li>
-            </ul>
-</section>
-</div>
+          </ul>
+<p id="section-2.1.2-2">In this spec, instead of <code>add</code> we will use <code>+</code> with infix notation; instead of <code>equal</code> we will use <code>==</code>, and instead of <code>mul</code> we will use <code>*</code>. A similar behavior can be achieved using operator overloading.<a href="#section-2.1.2-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
