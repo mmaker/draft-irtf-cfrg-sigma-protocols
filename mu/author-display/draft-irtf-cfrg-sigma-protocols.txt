@@ -729,9 +729,9 @@ Procedure:
 
 Appendix A.  Acknowledgments
 
-   The authors thank Jan Bobolz, Stephan Krenn, Mary Maller, Ivan
-   Visconti, Yuwen Zhang for reviewing a previous edition of this
-   specification.
+   The authors thank Jan Bobolz, Vishruti Ganesh, Stephan Krenn, Mary
+   Maller, Ivan Visconti, Yuwen Zhang for reviewing a previous edition
+   of this specification.
 
 Test Vectors
 
