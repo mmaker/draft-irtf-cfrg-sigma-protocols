@@ -464,7 +464,7 @@ This ciphersuite uses P-256 {{SP800}} for the Group.
 - `serialize(s)`: Relies on the Field-Element-to-Octet-String conversion according to {{SEC1}}; `Ns = 32`.
 - `deserialize(buf)`: Reads the byte array `buf` in chunks of 32 bytes using Octet-String-to-Field-Element from {{SEC1}}. This function can fail if the input does not represent a Scalar in the range `[0, G.Order() - 1]`.
 
-# Security Considerations {#sec-cons}
+# Security Considerations {#security-considerations}
 
 Sigma Protocols are special sound and honest-verifier zero-knowledge. These proofs are deniable (without transferable message authenticity).
 
