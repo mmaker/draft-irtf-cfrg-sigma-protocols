@@ -14,7 +14,7 @@ Expires: 21 April 2026                                       Apple, Inc.
 
 Abstract
 
-   This document describes interactive sigma protocols, a class of
+   This document describes interactive Sigma Protocols, a class of
    secure, general-purpose zero-knowledge proofs of knowledge consisting
    of three moves: commitment, challenge, and response.  Concretely, the
    protocol allows one to prove knowledge of a secret witness without
@@ -70,7 +70,7 @@ Table of Contents
 
    1.  Introduction
      1.1.  Core interface
-   2.  Sigma protocols over prime-order groups
+   2.  Sigma Protocols over prime-order groups
      2.1.  Group abstraction
        2.1.1.  Group
        2.1.2.  Scalar
@@ -102,14 +102,14 @@ Table of Contents
 
 1.  Introduction
 
-   Any sigma protocol must define three objects: a _commitment_
+   Any Sigma Protocol must define three objects: a _commitment_
    (computed by the prover), a _challenge_ (computed by the verifier),
    and a _response_ (computed by the prover).
 
 1.1.  Core interface
 
    The public functions are obtained relying on an internal structure
-   containing the definition of a sigma protocol.
+   containing the definition of a Sigma Protocol.
 
   class SigmaProtocol:
      def new(instance) -> SigmaProtocol
@@ -135,7 +135,7 @@ Table of Contents
    *  prover_commit(self, witness: Witness, rng) -> (commitment,
       prover_state), denoting the *commitment phase*, that is, the
       computation of the first message sent by the prover in a Sigma
-      protocol.  This method outputs a new commitment together with its
+      Protocol.  This method outputs a new commitment together with its
       associated prover state, depending on the witness known to the
       prover, the statement to be proven, and a random number generator
       rng.  This step generally requires access to a high-quality
@@ -190,15 +190,15 @@ Table of Contents
    statements and combiners of those, such as OR statements, validity of
    t-out-of-n statements, and more.
 
-2.  Sigma protocols over prime-order groups
+2.  Sigma Protocols over prime-order groups
 
-   The following sub-section presents concrete instantiations of sigma
-   protocols over prime-order elliptic curve groups.  It relies on a
+   The following sub-section presents concrete instantiations of Sigma
+   Protocols over prime-order elliptic curve groups.  It relies on a
    prime-order elliptic-curve group as described in Section 2.1.
 
    Valid choices of elliptic curves can be found in Section 2.3.
 
-   Traditionally, sigma protocols are defined in Camenisch-Stadler
+   Traditionally, Sigma Protocols are defined in Camenisch-Stadler
    [CS97] notation as (for example):
 
    1. DLEQ(G, H, X, Y) = PoK{
@@ -295,7 +295,7 @@ Table of Contents
 
 2.2.2.  Prover procedures
 
-   The prover of a sigma protocol is stateful and will send two
+   The prover of a Sigma Protocol is stateful and will send two
    messages, a "commitment" and a "response" message, described below.
 
 2.2.2.1.  Prover commitment
@@ -579,8 +579,8 @@ Procedure:
 
 3.  Security Considerations
 
-   Interactive sigma proofs are special sound and honest-verifier zero-
-   knowledge.  These proofs are deniable (without transferable message
+   Sigma Protocols are special sound and honest-verifier zero-knowledge.
+   These proofs are deniable (without transferable message
    authenticity).
 
    We focus on the security guarantees of the non-interactive Fiat-
@@ -609,10 +609,10 @@ Procedure:
 
 3.1.  Privacy Considerations
 
-   Interactive sigma proofs are insecure against malicious verifiers and
-   should not be used.  The non-interactive Fiat-Shamir transformation
-   leads to publicly verifiable (transferable) proofs that are
-   statistically zero-knowledge.
+   Sigma Protocols are insecure against malicious verifiers and should
+   not be used.  The non-interactive Fiat-Shamir transformation leads to
+   publicly verifiable (transferable) proofs that are statistically
+   zero-knowledge.
 
 4.  Post-Quantum Security Considerations
 
