@@ -88,17 +88,17 @@ informative:
 
 --- abstract
 
-This document describes interactive sigma protocols, a class of secure, general-purpose zero-knowledge proofs of knowledge consisting of three moves: commitment, challenge, and response. Concretely, the protocol allows one to prove knowledge of a secret witness without revealing any information about it.
+This document describes interactive Sigma Protocols, a class of secure, general-purpose zero-knowledge proofs of knowledge consisting of three moves: commitment, challenge, and response. Concretely, the protocol allows one to prove knowledge of a secret witness without revealing any information about it.
 
 --- middle
 
 # Introduction
 
-Any sigma protocol must define three objects: a *commitment* (computed by the prover), a *challenge* (computed by the verifier), and a *response* (computed by the prover).
+Any Sigma Protocol must define three objects: a *commitment* (computed by the prover), a *challenge* (computed by the verifier), and a *response* (computed by the prover).
 
 ## Core interface
 
-The public functions are obtained relying on an internal structure containing the definition of a sigma protocol.
+The public functions are obtained relying on an internal structure containing the definition of a Sigma Protocol.
 
     class SigmaProtocol:
        def new(instance) -> SigmaProtocol
@@ -118,7 +118,7 @@ Where:
 
 - `new(instance) -> SigmaProtocol`, denoting the initialization function. This function takes as input an instance generated via a `LinearRelation`, the public information shared between prover and verifier.
 
-- `prover_commit(self, witness: Witness, rng) -> (commitment, prover_state)`, denoting the **commitment phase**, that is, the computation of the first message sent by the prover in a Sigma protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator `rng`. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while `prover_state` must be kept secret.
+- `prover_commit(self, witness: Witness, rng) -> (commitment, prover_state)`, denoting the **commitment phase**, that is, the computation of the first message sent by the prover in a Sigma Protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator `rng`. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while `prover_state` must be kept secret.
 
 - `prover_response(self, prover_state, challenge) -> response`, denoting the **response phase**, that is, the computation of the second message sent by the prover, depending on the witness, the statement, the challenge received from the verifier, and the internal state `prover_state`. The return value response is a public value and is transmitted to the verifier.
 
@@ -142,14 +142,14 @@ The simulated transcript `(commitment, challenge, response)` must be indistingui
 
 The abstraction `SigmaProtocol` allows implementing different types of statements and combiners of those, such as OR statements, validity of t-out-of-n statements, and more.
 
-# Sigma protocols over prime-order groups {#sigma-protocol-group}
+# Sigma Protocols over prime-order groups {#sigma-protocol-group}
 
-The following sub-section presents concrete instantiations of sigma protocols over prime-order elliptic curve groups.
+The following sub-section presents concrete instantiations of Sigma Protocols over prime-order elliptic curve groups.
 It relies on a prime-order elliptic-curve group as described in {{group-abstraction}}.
 
 Valid choices of elliptic curves can be found in {{ciphersuites}}.
 
-Traditionally, sigma protocols are defined in Camenisch-Stadler {{CS97}} notation as (for example):
+Traditionally, Sigma Protocols are defined in Camenisch-Stadler {{CS97}} notation as (for example):
 
     1. DLEQ(G, H, X, Y) = PoK{
     2.   (x):        // Secret variables
@@ -200,7 +200,7 @@ This defines the object `SchnorrProof`. The initialization function takes as inp
 
 ### Prover procedures
 
-The prover of a sigma protocol is stateful and will send two messages, a "commitment" and a "response" message, described below.
+The prover of a Sigma Protocol is stateful and will send two messages, a "commitment" and a "response" message, described below.
 
 #### Prover commitment
 
@@ -452,7 +452,7 @@ This ciphersuite uses P-256 {{SP800}} for the Group.
 
 # Security Considerations
 
-Interactive sigma proofs are special sound and honest-verifier zero-knowledge. These proofs are deniable (without transferable message authenticity).
+Sigma Protocols are special sound and honest-verifier zero-knowledge. These proofs are deniable (without transferable message authenticity).
 
 We focus on the security guarantees of the non-interactive Fiat-Shamir transformation, where they provide the following guarantees (in the random oracle model):
 
@@ -464,7 +464,7 @@ While theoretical analysis demonstrates that both soundness and zero-knowledge p
 
 ## Privacy Considerations
 
-Interactive sigma proofs are insecure against malicious verifiers and should not be used.
+Sigma Protocols are insecure against malicious verifiers and should not be used.
 The non-interactive Fiat-Shamir transformation leads to publicly verifiable (transferable) proofs that are statistically zero-knowledge.
 
 # Post-Quantum Security Considerations
