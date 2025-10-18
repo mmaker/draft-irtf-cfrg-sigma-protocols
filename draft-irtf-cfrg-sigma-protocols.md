@@ -221,9 +221,9 @@ The prover of a sigma protocol is stateful and will send two messages, a "commit
 
     Procedure:
 
-    1. nonces = [self.instance.Domain.random(rng) for _ in range(self.instance.linear_map.num_scalars)]
-    2. prover_state = self.ProverState(witness, nonces)
-    3. commitment = self.instance.linear_map(nonces)
+    1. blindings = [self.instance.Domain.random(rng) for _ in range(self.instance.linear_map.num_scalars)]
+    2. prover_state = self.ProverState(witness, blindings)
+    3. commitment = self.instance.linear_map(blindings)
     4. return (prover_state, commitment)
 
 #### Prover response
@@ -241,8 +241,8 @@ The prover of a sigma protocol is stateful and will send two messages, a "commit
 
     Procedure:
 
-    1. witness, nonces = prover_state
-    2. return [nonces[i] + witness[i] * challenge for i in range(self.instance.linear_map.num_scalars)]
+    1. witness, blindings = prover_state
+    2. return [blindings[i] + witness[i] * challenge for i in range(self.instance.linear_map.num_scalars)]
 
 ### Verifier
 
