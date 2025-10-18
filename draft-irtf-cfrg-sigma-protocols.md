@@ -213,14 +213,17 @@ The prover of a Sigma Protocol is stateful and will send two messages, a "commit
 
     Outputs:
 
-    - A (private) prover state, holding the information of the interactive prover necessary for producing the protocol response
-    - A (public) commitment message, an element of the linear map image, that is, a vector of group elements.
+    - A (private) prover state, holding the information of the
+    interactive prover necessary for producing the protocol response
+    - A (public) commitment message, an element of the linear map
+    image, that is, a vector of group elements.
 
     Procedure:
 
-    1. nonces = [self.instance.Domain.random(rng) for _ in range(self.instance.linear_map.num_scalars)]
-    2. prover_state = self.ProverState(witness, nonces)
-    3. commitment = self.instance.linear_map(nonces)
+    1. commit_rand = [self.instance.Domain.random(rng) for _ in
+    range(self.instance.linear_map.num_scalars)]
+    2. prover_state = self.ProverState(witness, commit_rand)
+    3. commitment = self.instance.linear_map(commit_rand)
     4. return (prover_state, commitment)
 
 #### Prover response
@@ -239,7 +242,8 @@ The prover of a Sigma Protocol is stateful and will send two messages, a "commit
     Procedure:
 
     1. witness, nonces = prover_state
-    2. return [nonces[i] + witness[i] * challenge for i in range(self.instance.linear_map.num_scalars)]
+    2. return [nonces[i] + witness[i] * challenge for i in
+    range(self.instance.linear_map.num_scalars)]
 
 ### Verifier
 
@@ -258,9 +262,12 @@ The prover of a Sigma Protocol is stateful and will send two messages, a "commit
 
     Procedure:
 
-    1. assert len(commitment) == self.instance.linear_map.num_constraints and len(response) == self.instance.linear_map.num_scalars
+    1. assert len(commitment) == self.instance.linear_map
+    .num_constraints and len(response) == self.instance.linear_map
+    .num_scalars
     2. expected = self.instance.linear_map(response)
-    3. got = [commitment[i] + self.instance.image[i] * challenge for i in range(self.instance.linear_map.num_constraints)]
+    3. got = [commitment[i] + self.instance.image[i] * challenge
+    for i in range(self.instance.linear_map.num_constraints)]
     4. return got == expected
 
 ### Witness representation {#witness}
@@ -312,8 +319,10 @@ A witness can be mapped to a vector of group elements via:
 
     1. image = []
     2. for linear_combination in self.linear_combinations:
-    3.     coefficients = [scalars[i] for i in linear_combination.scalar_indices]
-    4.     elements = [self.group_elements[i] for i in linear_combination.element_indices]
+    3.     coefficients = [scalars[i] for i in linear_combination
+           .scalar_indices]
+    4.     elements = [self.group_elements[i] for i in
+           linear_combination.element_indices]
     5.     image.append(self.Group.msm(coefficients, elements))
     6. return image
 
@@ -343,7 +352,8 @@ Two functions allow to allocate the new scalars (the witness) and group elements
         - self, the current state of the LinearRelation
         - n, the number of scalars to allocate
     Outputs:
-        - indices, a list of integers each pointing to the new allocated scalars
+        - indices, a list of integers each pointing to the new
+        allocated scalars
 
     Procedure:
 
@@ -355,7 +365,9 @@ and below the allocation of group elements
 
     allocate_elements(self, n)
 
-    1. linear_combination = LinearMap.LinearCombination(scalar_indices=[x[0] for x in rhs], element_indices=[x[1] for x in rhs])
+    1. linear_combination = LinearMap
+    .LinearCombination(scalar_indices=[x[0] for x in rhs],
+    element_indices=[x[1] for x in rhs])
     2. self.linear_map.append(linear_combination)
     3. self._image.append(lhs)
 
@@ -365,7 +377,8 @@ Group elements, being part of the instance, can later be set using the function 
 
     Inputs:
         - self, the current state of the LinearRelation
-        - elements, a list of pairs of indices and group elements to be set
+        - elements, a list of pairs of indices and group elements to
+        be set
 
     Procedure:
 
@@ -380,7 +393,8 @@ Group elements, being part of the instance, can later be set using the function 
 
     - self, the current state of the constraint system
     - lhs, the left-hand side of the equation
-    - rhs, the right-hand side of the equation (a list of (ScalarIndex, GroupEltIndex) pairs)
+    - rhs, the right-hand side of the equation
+    (a list of (ScalarIndex, GroupEltIndex) pairs)
 
     Outputs:
 
@@ -388,7 +402,9 @@ Group elements, being part of the instance, can later be set using the function 
 
     Procedure:
 
-    1. linear_combination = LinearMap.LinearCombination(scalar_indices=[x[0] for x in rhs], element_indices=[x[1] for x in rhs])
+    1. linear_combination = LinearMap.LinearCombination(
+    scalar_indices=[x[0] for x in rhs], element_indices=[x[1]
+    for x in rhs])
     2. self.linear_map.append(linear_combination)
     3. self._image.append(lhs)
 
