@@ -9,8 +9,7 @@ date:
 v: 3
 area: "IRTF"
 workgroup: "Crypto Forum"
-keyword:
- - zero-knowledge
+keyword: ["zero-knowledge", "sigma protocols", "cryptography", "proofs of knowledge"]
 venue:
   group: "Crypto Forum"
   type: "Research Group"
@@ -20,14 +19,12 @@ venue:
   latest: "https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html"
 
 author:
- -
-    fullname: "Michele Orrù"
+  - fullname: "Michele Orrù"
     organization: CNRS
     email: "m@orru.net"
- -
-    fullname: "Cathie Yun"
+  - fullname: "Cathie Yun"
     organization: Apple, Inc.
-    email: cathieyun@gmail.com
+    email: "cathieyun@gmail.com"
 
 normative:
 
@@ -513,7 +510,7 @@ As of now, it is responsibility of the user to pick a unique instance identifier
 # Acknowledgments
 {:numbered ="false"}
 
-The authors thank Jan Bobolz, Stephan Krenn, Mary Maller, Ivan Visconti, Yuwen Zhang for reviewing a previous edition of this specification.
+The authors thank Jan Bobolz, Vishruti Ganesh, Stephan Krenn, Mary Maller, Ivan Visconti, Yuwen Zhang for reviewing a previous edition of this specification.
 
 # Test Vectors
 {:numbered="false"}
