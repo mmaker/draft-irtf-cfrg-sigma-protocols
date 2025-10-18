@@ -58,21 +58,21 @@ class SchnorrProof(SigmaProtocol):
     """
     A sigma protocol for simple linear relations.
     """
-    ProverState = namedtuple("ProverState", ["witness", "nonces"])
+    ProverState = namedtuple("ProverState", ["witness", "blindings"])
 
     def __init__(self, instance):
         self.instance = instance
 
     def prover_commit(self, witness, rng):
-        nonces = [self.instance.Domain.random(rng) for _ in range(self.instance.linear_map.num_scalars)]
-        prover_state = self.ProverState(witness, nonces)
-        commitment = self.instance.linear_map(nonces)
+        blindings = [self.instance.Domain.random(rng) for _ in range(self.instance.linear_map.num_scalars)]
+        prover_state = self.ProverState(witness, blindings)
+        commitment = self.instance.linear_map(blindings)
         return (prover_state, commitment)
 
     def prover_response(self, prover_state: ProverState, challenge):
-        witness, nonces = prover_state
+        witness, blindings = prover_state
         return [
-            nonces[i] + witness[i] * challenge
+            blindings[i] + witness[i] * challenge
             for i in range(self.instance.linear_map.num_scalars)
         ]
 
