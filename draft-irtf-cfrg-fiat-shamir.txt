@@ -4,8 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                           18 October 2025
-Expires: 21 April 2026
+Intended status: Informational                           19 October 2025
+Expires: 22 April 2026
 
 
                        Fiat-Shamir Transformation
@@ -62,7 +62,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 21 April 2026.
+   This Internet-Draft will expire on 22 April 2026.
 
 Copyright Notice
 
@@ -144,7 +144,7 @@ Table of Contents
    Where:
 
    *  init(iv: bytes) -> DuplexSponge denotes the initialization
-      function.  This function takes as input a 32-byte initialization
+      function.  This function takes as input a 64-byte initialization
       vector iv and initializes the state of the duplex sponge.
 
    *  absorb(self, values: list[Unit]) denotes the absorb operation of
@@ -188,7 +188,7 @@ Table of Contents
 
 4.  Generation of the Initialization Vector
 
-   The initialization vector is a 32-bytes string that embeds:
+   The initialization vector is a 64-byte string that embeds:
 
    *  A protocol_id: the unique identifier for the interactive protocol
       and the associated relation being proven.
@@ -202,7 +202,7 @@ Table of Contents
 
    It is implemented as follows.
 
-   hash_state = DuplexSponge.init([0] * 32)
+   hash_state = DuplexSponge.init([0] * 64)
    hash_state.absorb(I2OSP(len(protocol_id), 4))
    hash_state.absorb(protocol_id)
    hash_state.absorb(I2OSP(len(session_id), 4))
@@ -394,12 +394,12 @@ class NISigmaProtocol:
 7.2.1.  Initialization
 
    This is the constructor for a duplex sponge object.  It is
-   initialized with a 32-byte initialization vector.
+   initialized with a 64-byte initialization vector.
 
   new(iv)
 
   Inputs:
-  - iv, a 32-byte initialization vector
+  - iv, a 64-byte initialization vector
 
   Procedure:
   1. self.absorb_index = 0
