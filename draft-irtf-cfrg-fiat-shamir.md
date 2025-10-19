@@ -81,6 +81,7 @@ Where:
 
 <!-- maybe it would be cleaner to specify a codec as a wrapper around the duplex, taking and producing bytes or whatever is the consumer type -->
 # The Codec interface
+<!-- maybe it would be good to give some intuitions as to why this is useful here? (e.g. sometimes the base type is a finite field, and care must be taken in order to canonicaly encode bytestrings to field elements and vice versa)-->
 
 A codec is a collection of:
 - functions that encode prover messages into the duplex construction's domain
@@ -128,6 +129,7 @@ This will be expanded in future versions of this specification.
 
 # Fiat-Shamir transformation for Sigma Protocols
 
+<!-- IMO this example is out of place, better would be to just link to the sigma protocol if people want to see an example on how this spec is being used -->
 We describe how to construct non-interactive proofs for sigma protocols.
 The Fiat-Shamir transformation is parametrized by:
 
@@ -244,6 +246,13 @@ We describe a codec for the P256 curve.
     class P256Codec(ByteSchnorrCodec):
         GG = groups.GroupP256()
 
+<!-- the structure of the spec is not super clear to me, IMO it would be good to separate into:
+
+* what is the primitive that this spec helps you implement (the codec wrapper)
+* what parts must be instantiated (the duplex construction, encoding functions, both will be used by the codec wrapper)
+* what instantiations are given in this spec (e.g. shake128), and how people can extend this spec to add more instantiations
+
+-->
 # Duplex Interfaces
 
 ## SHAKE128
