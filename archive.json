@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-10-16T01:14:16.433148+00:00",
+  "timestamp": "2025-10-19T01:22:31.952841+00:00",
   "repo": "mmaker/draft-irtf-cfrg-sigma-protocols",
   "labels": [
     {
@@ -635,9 +635,17 @@
       "labels": [],
       "body": "Hey all,\n\nThere seems to be an issue when trying to use the current drafts to implement [BBS Signatures](https://datatracker.ietf.org/doc/draft-irtf-cfrg-bbs-signatures/).\n\nIn the current draft, when serializing the proof, the challenge will be the first element, consistent with academic literature.\n\nFor the BBS, the challenge is at the end (see below for reasoning).\n\nWould hate to introduce breaking changes at this point in any of the drafts. Was wondering if the function for serialising the proof could be made more general, for example, as a ciphersuite constant (different curves would need their own serialization operations either way).\n\nThe current draft could define a default one to be used with the NIST curves and one of the BBS drafts could define a BLS12-381 suite with a proof serialization that would not break the current BBS draft.\n\n\n##\n\n### BBS challenge placement explanation\n\nA BBS proof is not just a Schnorr proof, but a set of points `(A1, A2, A3)` and then a Schnorr proof (`\\pi`). In the literature this was serialised as the points first and the proof after, so it would be `BBS_proof = (A1, A2, A3, \\pi)`.\n\nIf the Schnorr proof serialization convention was to be followed, the challenge would end up at the middle of the `BBS_proof`. This would make it harder to \u201cparse\u201d the challenge out, when multiple BBS proofs were generated in parallel (sharing the same challenge). A diversion from the literature was required and we decided to move the challenge at the end of the Schnorr proof.",
       "createdAt": "2025-04-18T23:18:35Z",
-      "updatedAt": "2025-10-10T05:51:38Z",
+      "updatedAt": "2025-10-18T04:01:12Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Could you explain what it would look like to \"generate multiple BBS proofs in parallel that share the same challenge\"? Would that look like one sigma proof (just with many constraints), or would it be multiple \"batchable\" sigma proofs (where each batchable proof is of the format ([commitments], [responses]) and doesn't contain the challenge, such that you can generate a joint challenge for all of them)?\n\nI ask because in the latter case, of multiple \"batchable proofs\" that are combined, then you wouldn't need to include a challenge at all - each proof would just be of the format `[commitments], [responses]` and multiple batchable proofs could be combined. Then the verifier would re-derive the challenge, so the challenge never has to get serialized. See the proof of concept for how this would look in practice:\nhttps://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/main/poc/fiat_shamir.sage#L81",
+          "createdAt": "2025-10-18T04:01:12Z",
+          "updatedAt": "2025-10-18T04:01:12Z"
+        }
+      ]
     },
     {
       "number": 33,
@@ -996,9 +1004,9 @@
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
-      "body": "# TODO \u2014 Feedback on draft-irtf-cfrg-sigma-protocols (commit f427eddc973bc9ef284c342913010b57f935d71a)\n\n- [ ] Define terminology (e.g., `LinearRelation` is referenced without definition).  \n- [x] Rephrase [\"The returned value response is meant to be shared\"](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-1.1-4.3.1) \u2192 \"The return value response is a public value and is transmitted to the verifier.\"  \n- [ ] Clearly define the challenge. Specify it as a random element of the scalar field? Provide an algorithm for generation in the [API](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-1.1-3). Also define serialization/deserialization.  \n- [ ] Introduce the notion of proof composition earlier. Explain motivation and possible security pitfalls (forward reference to security considerations is enough).  \n- [x] Add reference for [Camenisch\u2013Stadler notation](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2-3).  \n- [ ] Fix artwork overflow (e.g., [prover commitment spec](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.2.1-1)). Break lines at 69 characters.  \n- [ ] Define variable `linear_map` before first use. What does this function do?  \n- [ ] Define variable `image` before first use. Clarify what it means. Also define \"constraint.\"  \n- [x] Clarify or remove [Witness type definition](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.4-2). Pseudocode is unclear.  \n- [ ] Clarify if `map` = [`linear_map`](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5-5).  \n- [ ] Clarify input to the linear map in [this paragraph](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5-1). Is it the sequence of prover nonces?  \n- [ ] Define `msm` operation (used [here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5.2-2)). Check whether the output is a single group element or a list.  \n- [ ] Fix Section 2.2.6: it says `linear_map` *will be defined* in a *prior* section.  \n- [x] Fix rendering issue [here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.6-2).  \n- [ ] Provide references for [security properties](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-3-1): special soundness, HVZK, deniability, transferable message authenticity.  \n- [ ] Revisit Fiat\u2013Shamir references in Security Considerations (they may no longer make sense since it's split out into its own draft).  \n",
+      "body": "# TODO \u2014 Feedback on draft-irtf-cfrg-sigma-protocols (commit f427eddc973bc9ef284c342913010b57f935d71a)\n\n- [ ] Define terminology (e.g., `LinearRelation` is referenced without definition).  \n- [x] Rephrase [\"The returned value response is meant to be shared\"](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-1.1-4.3.1) \u2192 \"The return value response is a public value and is transmitted to the verifier.\"  \n- [x] Clearly define the challenge. Specify it as a random element of the scalar field? Provide an algorithm for generation in the [API](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-1.1-3). Also define serialization/deserialization.  \n- [ ] Introduce the notion of proof composition earlier. Explain motivation and possible security pitfalls (forward reference to security considerations is enough).  \n- [x] Add reference for [Camenisch\u2013Stadler notation](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2-3).  \n- [ ] Fix artwork overflow (e.g., [prover commitment spec](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.2.1-1)). Break lines at 69 characters.  \n- [ ] Define variable `linear_map` before first use. What does this function do?  \n- [ ] Define variable `image` before first use. Clarify what it means. Also define \"constraint.\"  \n- [x] Clarify or remove [Witness type definition](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.4-2). Pseudocode is unclear.  \n- [ ] Clarify if `map` = [`linear_map`](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5-5).  \n- [ ] Clarify input to the linear map in [this paragraph](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5-1). Is it the sequence of prover nonces?  \n- [ ] Define `msm` operation (used [here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.5.2-2)). Check whether the output is a single group element or a list.  \n- [ ] Fix Section 2.2.6: it says `linear_map` *will be defined* in a *prior* section.  \n- [x] Fix rendering issue [here](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-2.2.6-2).  \n- [ ] Provide references for [security properties](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-3-1): special soundness, HVZK, deniability, transferable message authenticity.  \n- [ ] Revisit Fiat\u2013Shamir references in Security Considerations (they may no longer make sense since it's split out into its own draft).  \n",
       "createdAt": "2025-09-04T22:50:42Z",
-      "updatedAt": "2025-10-15T02:58:57Z",
+      "updatedAt": "2025-10-18T03:54:26Z",
       "closedAt": null,
       "comments": []
     },
@@ -1040,7 +1048,7 @@
       "labels": [],
       "body": "The domain of the challenge (and, more generally, the distribution of the challenge) is not specified anywhere. There are at least two natural choices here: (1) choose the challenge uniformly from the underlying scalar field, or (2) choose the challenge uniformly in {0,1}^k for some desired security level k smaller than the bit-length of the underlying scalar field. ",
       "createdAt": "2025-09-09T13:41:56Z",
-      "updatedAt": "2025-10-10T05:52:59Z",
+      "updatedAt": "2025-10-18T03:54:17Z",
       "closedAt": null,
       "comments": [
         {
@@ -1049,6 +1057,20 @@
           "body": "I think the right thing to do would be to use the method for generating random scalars that is specified by the `group` object.",
           "createdAt": "2025-09-11T16:46:49Z",
           "updatedAt": "2025-09-11T16:46:49Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "@cathieyun I know you're assigned to this issue but want to give some more context. \n\nI think we all agree that the domain of the challenge must be scalars (whether small like 128-bit, or uniform in the full field).\nWe also all agree that the challenge is generated from the public coins of the verifier.\n\nHere's where it gets tricky:\n\n## The Fiat-Shamir layer must map the bytes into scalars\n\nThis map is what's called a \"codec\" and defined as $\\psi$ in [the paper](https://eprint.iacr.org/2025/536.pdf).\n\n<img width=\"746\" height=\"275\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/fdaf9b22-9306-4d12-9863-6ae00ba2c113\" />\n\nThis map must be distribution-preserving: given $x$ uniformly sampled from the domain $\\psi(x)$ is also uniformly distributed. \nThere's other requirements (pre-image sampling, computation time of the inverse for the extraction), but let's skip those for now.\nTalking practical, there are 3 secure ways that I saw this in practice: \n\n1. **small challenge**: sample a random $n$-bit string (with $128 \\leq n \\leq \\lfloor \\log_2 p \\rfloor$ and parse it as a scalar.\n2. **canonical**: sample a random $(\\lceil \\log_2 p\\rceil + 128)$-bit string, parse it as a big integer and reduce it modulo $p$\n3. **rejection sampling**: sample a random $\\lceil \\log_2 p\\rceil$-bit string, parse it as an integer $<p$ and if it fails resample\n\n(1) leads to smaller proofs (because the challenge is 128 vs 256 bits). (2) is the only one I think we should specify. (3) is used in other internet drafts. I'm excluding algebraic hashes in this list.\n\nIn short: I would push for the codec (2) be defined in Fiat-Shamir and used as default in sigma-protocols\n\n\n## The Sigma Protocols spec requires to specify the scalars distribution\n\nIn order to make claims about HVZK we must know the scalar distribution, but in practice all 3 of the above are fine. \nI would push to make this only editorial and say that the challenge must be uniformly distributed in the scalar space. \nIf someone later decides to use (1) they're on their own.",
+          "createdAt": "2025-10-18T03:44:21Z",
+          "updatedAt": "2025-10-18T03:45:49Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "Related sub-item in #66: \n\n> Clearly define the challenge. Specify it as a random element of the scalar field? Provide an algorithm for generation in the [API](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#section-1.1-3). Also define serialization/deserialization.\n\nNote: serialization/deserialization is the job of Fiat-Shamir.",
+          "createdAt": "2025-10-18T03:54:17Z",
+          "updatedAt": "2025-10-18T03:54:17Z"
         }
       ]
     },
@@ -1239,12 +1261,23 @@
       "assignees": [
         "cathieyun"
       ],
-      "labels": [],
+      "labels": [
+        "editorial",
+        "easy"
+      ],
       "body": "",
       "createdAt": "2025-09-19T09:11:01Z",
-      "updatedAt": "2025-10-10T05:53:25Z",
+      "updatedAt": "2025-10-18T04:00:19Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I agree that `nonces` are a confusing term here, but I prefer a shorter term and one that can be made \"plural\", so I'll suggest `blindings`. This is also what we called it in the \"proof compiler\" in ARC.",
+          "createdAt": "2025-10-18T03:09:49Z",
+          "updatedAt": "2025-10-18T03:09:49Z"
+        }
+      ]
     },
     {
       "number": 77,
@@ -1320,9 +1353,9 @@
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
-      "body": "Quoted from the audit: \n\n\nThe input to absorb in the general sponge construction DuplexSpongeInterface is declared as a [list of Units](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/duplex_sponge.sage#L20) to provide the flexibility for both binary sponge constructions (such as Keccak-256 or SHAKE-128) as well as arithmetization-oriented (AO) sponge constructions (such as Poseidon). However, in the current version of the Sage implementation, the type of the IV has been [declared as bytes](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/duplex_sponge.sage#L16). This works well in the implemented examples of Keccak-256 and SHAKE-128, where the IV is stored in the [capacity bytes](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/duplex_sponge.sage#L57) and the [last 64 bytes](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/duplex_sponge.sage#L37) of the first block, respectively. However, to include the IV into the initial state of an AO sponge construction would require converting from bytes to field elements before absorbing them.\n\nConsider changing the type of the initialization vector to list[Unit] to match the input to absorb to cover both binary and AO sponge constructions. In addition, consider specifying a rule for incorporating the initialization vector into the sponge construction's initial state that applies to all cases.",
+      "body": "Quoted from the audit: \n\n\n> The input to absorb in the general sponge construction DuplexSpongeInterface is declared as a [list of Units](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/duplex_sponge.sage#L20) to provide the flexibility for both binary sponge constructions (such as Keccak-256 or SHAKE-128) as well as arithmetization-oriented (AO) sponge constructions (such as Poseidon). However, in the current version of the Sage implementation, the type of the IV has been [declared as bytes](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/duplex_sponge.sage#L16). This works well in the implemented examples of Keccak-256 and SHAKE-128, where the IV is stored in the [capacity bytes](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/duplex_sponge.sage#L57) and the [last 64 bytes](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/blob/f427eddc973bc9ef284c342913010b57f935d71a/poc/duplex_sponge.sage#L37) of the first block, respectively. However, to include the IV into the initial state of an AO sponge construction would require converting from bytes to field elements before absorbing them.\n\n> Consider changing the type of the initialization vector to list[Unit] to match the input to absorb to cover both binary and AO sponge constructions. In addition, consider specifying a rule for incorporating the initialization vector into the sponge construction's initial state that applies to all cases.",
       "createdAt": "2025-09-26T12:15:32Z",
-      "updatedAt": "2025-09-26T12:19:55Z",
+      "updatedAt": "2025-10-17T07:08:06Z",
       "closedAt": null,
       "comments": []
     },
@@ -1399,33 +1432,45 @@
     {
       "number": 87,
       "id": "I_kwDONyiw_87OE2RJ",
-      "title": "OpenZeppelin audit: Wrong Indentation in class LinearRelation",
+      "title": "OpenZeppelin audit: Sagemath v9.5 support",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/87",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "mmaker",
       "authorAssociation": "OWNER",
-      "assignees": [],
+      "assignees": [
+        "mmaker"
+      ],
       "labels": [],
       "body": "Building of Tests Fails for SageMath v.9.5\nTest building fails for SageMath v.9.5, which is a relatively old version, but is the highest version [supported](https://repology.org/project/sagemath/versions) by the package manager of Ubuntu 22.04.\n\nSpecifically, all three commands (make test, sage test_sigma_protocols.sage, and make vectors) fail with the AttributeError: 'sage.rings.integer.Integer' object has no attribute 'bit_length' error.\n\nConsider specifying the SageMath version that the PoC implementation has been tested with.",
       "createdAt": "2025-09-26T12:24:18Z",
-      "updatedAt": "2025-09-26T12:24:18Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2025-10-18T03:57:37Z",
+      "closedAt": "2025-10-18T03:57:30Z",
+      "comments": [
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "This issue is going to solved with #76.",
+          "createdAt": "2025-10-18T03:57:30Z",
+          "updatedAt": "2025-10-18T03:57:30Z"
+        }
+      ]
     },
     {
       "number": 107,
       "id": "I_kwDONyiw_87RlGun",
-      "title": "1. You refer interchangeably to \"sigma protocols\" and \"sigma proofs.\" Also, sometimes you capitalize Sigma and sometimes you don't.",
+      "title": "Inconsistencies in use of \"Sigma Protocols\" and \"Sigma Proofs\"",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/107",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "mmaker",
       "authorAssociation": "OWNER",
-      "assignees": [],
+      "assignees": [
+        "mmaker"
+      ],
       "labels": [],
-      "body": "",
+      "body": "This issue tracks the editorial comment: \n\n> 1. You refer interchangeably to \"sigma protocols\" and \"sigma proofs.\" Also, sometimes you capitalize Sigma and sometimes you don't.\n\n\nI'm taking the stance of using the term \"Sigma Proof\" in the title, and \"Sigma Protocol\" (titled) inside the document.\nFurther discussions can happen here.",
       "createdAt": "2025-10-15T03:08:19Z",
-      "updatedAt": "2025-10-15T03:08:19Z",
-      "closedAt": null,
+      "updatedAt": "2025-10-18T03:27:21Z",
+      "closedAt": "2025-10-18T03:27:20Z",
       "comments": []
     },
     {
@@ -1438,41 +1483,44 @@
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
-      "body": "",
+      "body": "This issue tracks the editorial comment: \n\n>  6. I believe `simulate_response` should also output `simulator_state`, and then `simulate_commitment` should take `simulator_state` as input.\n\nThe main concern here is to keep a simulator API that doesn't lock out threshold proofs where the challenge is going to be set by the caller.\nI see two ways forward: \n\n1. Add the simulator state\n2. Drop `simulate_commitment` and `simulate_response` in favor of a `simulator` that takes as input the challenge.",
       "createdAt": "2025-10-15T03:08:47Z",
-      "updatedAt": "2025-10-15T03:08:47Z",
+      "updatedAt": "2025-10-18T03:05:13Z",
       "closedAt": null,
       "comments": []
     },
     {
       "number": 109,
       "id": "I_kwDONyiw_87RlHJ6",
-      "title": "2. The [abstract](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#abstract) says you are defining general sigma protocols, but in fact you are describing a special case (preimage of linear maps over prime-order groups).",
+      "title": "Set up reader's expectations in abstract.",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/109",
       "state": "OPEN",
       "author": "mmaker",
       "authorAssociation": "OWNER",
-      "assignees": [],
+      "assignees": [
+        "mmaker",
+        "cathieyun"
+      ],
       "labels": [],
-      "body": "",
+      "body": "This issue tracks the editorial comment: \n\n> 2. The [abstract](https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html#abstract) says you are defining general sigma protocols, but in fact you are describing a special case (preimage of linear maps over prime-order groups).\n\n\nI think this specification should introduce the API for sigma protocols, but that's true that currently the spec contains only a special case for them (because we haven't found another case of immediate applicability, cf. previous OR/AND composition discussions). I feel strongly about maintaining the API description (at the very least in text / spec layout) and can elaborate on why if needed, but agree that the abstract is right now confusing for the reader.",
       "createdAt": "2025-10-15T03:09:24Z",
-      "updatedAt": "2025-10-15T03:09:24Z",
+      "updatedAt": "2025-10-17T10:36:41Z",
       "closedAt": null,
       "comments": []
     },
     {
       "number": 110,
       "id": "I_kwDONyiw_87RlHPm",
-      "title": "3. It will be helpful to define `LinearRelation` (both formally and informally) before it is first used.",
+      "title": "Properly introduce `LinearRelation`",
       "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/110",
       "state": "OPEN",
       "author": "mmaker",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
-      "body": "",
+      "body": "This issue tracks the editorial comments from #66 and #67: \n\n> 3. It will be helpful to define `LinearRelation` (both formally and informally) before it is first used.\n\n> Define terminology (e.g., LinearRelation is referenced without definition).",
       "createdAt": "2025-10-15T03:09:38Z",
-      "updatedAt": "2025-10-15T03:09:38Z",
+      "updatedAt": "2025-10-18T03:56:28Z",
       "closedAt": null,
       "comments": []
     }
@@ -4005,13 +4053,13 @@
       "labels": [],
       "body": "From issue #66:\r\nIntroduce the notion of proof composition earlier. Explain motivation and possible security pitfalls (forward reference to security considerations is enough).",
       "createdAt": "2025-09-29T09:25:22Z",
-      "updatedAt": "2025-10-07T09:19:24Z",
+      "updatedAt": "2025-10-18T04:10:59Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
-      "baseRefOid": "590ca8b977602d4cee5d56b169baaa6e0344bf6d",
+      "baseRefOid": "819608276cc26b86c219addc23aca29a68de1c1a",
       "headRepository": "Drapsag74/draft-irtf-cfrg-sigma-protocols",
       "headRefName": "main",
-      "headRefOid": "2a8e2398c6bf03cd9b95d1710e30b8f38898124d",
+      "headRefOid": "393e9b8b92f23ba4df45fa736da9507960a7248d",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -4108,6 +4156,38 @@
               "body": "move target below title, let's be consistent with the other citations",
               "createdAt": "2025-10-07T09:19:14Z",
               "updatedAt": "2025-10-07T09:19:24Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87H02fz",
+          "commit": {
+            "abbreviatedOid": "2a8e239"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-18T04:05:07Z",
+          "updatedAt": "2025-10-18T04:09:40Z",
+          "comments": [
+            {
+              "originalPosition": 1,
+              "body": "```suggestion\ntitle: \"Proof Systems for General Statements about Discrete Logarithms\"\ntarget: https://crypto.ethz.ch/publications/files/CamSta97b.pdf\nauthor:\n- fullname: \"Jan Camenisch\"\n- fullname: \"Markus Stadler\"\n```",
+              "createdAt": "2025-10-18T04:05:07Z",
+              "updatedAt": "2025-10-18T04:09:40Z"
+            },
+            {
+              "originalPosition": 26,
+              "body": "```suggestion\r\nAny Sigma Protocol must define a *commitment* (computed by the prover), a *challenge* (randomly sampled from a specific distribution), and a *response* (computed by the prover). One of the advantages of Sigma Protocols is their composability, which enables the construction of more complex protocols. A classic example is the OR composition {{CramerDS94}}. Given a Sigma Protocol for N relations, it is possible to prove knowledge of one of of N witnesses for those relations . The composed sigma protocols can be made non-interactive using the Fiat-Shamir transformation {{Cramer97}}. However, such compositions must be handled carefully to preserve security properties as discussed in {{sec-cons}}.\r\n```",
+              "createdAt": "2025-10-18T04:09:17Z",
+              "updatedAt": "2025-10-18T04:11:15Z"
+            },
+            {
+              "originalPosition": 35,
+              "body": "```suggestion\n# Security Considerations {#security-considerations}\n```",
+              "createdAt": "2025-10-18T04:09:35Z",
+              "updatedAt": "2025-10-18T04:09:40Z"
             }
           ]
         }
@@ -4827,7 +4907,7 @@
       "labels": [],
       "body": "",
       "createdAt": "2025-10-08T17:38:54Z",
-      "updatedAt": "2025-10-15T09:20:31Z",
+      "updatedAt": "2025-10-17T09:38:30Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "6364a5e99c15b8720f0dfdb9645b4785125afb4f",
@@ -4867,8 +4947,279 @@
           "createdAt": "2025-10-13T23:06:57Z",
           "updatedAt": "2025-10-13T23:06:57Z",
           "comments": []
+        },
+        {
+          "id": "PRR_kwDONyiw_87Hnft0",
+          "commit": {
+            "abbreviatedOid": "4047c37"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "CHANGES_REQUESTED",
+          "body": "I can't merge this now, there's lots of things that aren't appropriate. Some suggestions below.",
+          "createdAt": "2025-10-17T09:06:49Z",
+          "updatedAt": "2025-10-17T09:38:30Z",
+          "comments": [
+            {
+              "originalPosition": 287,
+              "body": "```suggestion\n# Generation of the instance identifier {#instance-id-generation}\n```",
+              "createdAt": "2025-10-17T09:06:49Z",
+              "updatedAt": "2025-10-17T09:38:30Z"
+            },
+            {
+              "originalPosition": 282,
+              "body": "```suggestion\n# Generation of the protocol identifier {#protocol-id-generation}\n```",
+              "createdAt": "2025-10-17T09:06:59Z",
+              "updatedAt": "2025-10-17T09:38:30Z"
+            },
+            {
+              "originalPosition": 273,
+              "body": "```suggestion\n## Soundness Considerations\n```",
+              "createdAt": "2025-10-17T09:07:11Z",
+              "updatedAt": "2025-10-17T09:38:30Z"
+            },
+            {
+              "originalPosition": 54,
+              "body": "what is this picture meant to describe? More precisely:\nwhat is the meaning of the self-feeding arrows? and the one of the verifier? \nMaybe you can use the picture from here: eprint.iacr.org/2025/536.pdf and just pick the interactive protocol?",
+              "createdAt": "2025-10-17T09:33:15Z",
+              "updatedAt": "2025-10-17T09:38:30Z"
+            },
+            {
+              "originalPosition": 82,
+              "body": "the `statement` is the predicate to be proven, the `instance` is the word in the language associated with the proof system, they're not the same. Why is prover, verifier also capitalized only here?",
+              "createdAt": "2025-10-17T09:34:02Z",
+              "updatedAt": "2025-10-17T09:38:30Z"
+            },
+            {
+              "originalPosition": 94,
+              "body": "Let's keep the spec without utf8 math symbols",
+              "createdAt": "2025-10-17T09:34:36Z",
+              "updatedAt": "2025-10-17T09:38:30Z"
+            },
+            {
+              "originalPosition": 106,
+              "body": "```suggestion\n`X`, `Y`, `G`, or `H` : Group elements (or points if elliptic curve) in \ud835\udd3e (typically public parameters or commitments components).\n```",
+              "createdAt": "2025-10-17T09:34:57Z",
+              "updatedAt": "2025-10-17T09:38:30Z"
+            },
+            {
+              "originalPosition": 127,
+              "body": "```suggestion\n       # Simulator (optional)\n```",
+              "createdAt": "2025-10-17T09:35:27Z",
+              "updatedAt": "2025-10-17T09:38:30Z"
+            },
+            {
+              "originalPosition": 156,
+              "body": "Is this organization related at all with the previous IETF RFCs that I sent?",
+              "createdAt": "2025-10-17T09:37:44Z",
+              "updatedAt": "2025-10-17T09:38:30Z"
+            }
+          ]
         }
       ]
+    },
+    {
+      "number": 111,
+      "id": "PR_kwDONyiw_86uRU_8",
+      "title": "nit: consistent author display",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/111",
+      "state": "MERGED",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Add Vishruti as contributor, take from #106 author listing improvements.",
+      "createdAt": "2025-10-17T10:04:14Z",
+      "updatedAt": "2025-10-18T00:38:01Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "6364a5e99c15b8720f0dfdb9645b4785125afb4f",
+      "headRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "mu/author-display",
+      "headRefOid": "fdb5c1cd2d94a28e8758f66710a7ea28c94f321b",
+      "closedAt": "2025-10-18T00:38:01Z",
+      "mergedAt": "2025-10-18T00:38:01Z",
+      "mergedBy": "cathieyun",
+      "mergeCommit": {
+        "oid": "db606bca6bf2fc5d5afa9beeeeae20794fb450cf"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDONyiw_87H0em4",
+          "commit": {
+            "abbreviatedOid": "fdb5c1c"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "LGTM! Thanks again Vishruti for your help and contributions!",
+          "createdAt": "2025-10-18T00:37:46Z",
+          "updatedAt": "2025-10-18T00:37:46Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 112,
+      "id": "PR_kwDONyiw_86uRgcH",
+      "title": "Consistently use the term \"Sigma Protocols\"",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/112",
+      "state": "MERGED",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2025-10-17T10:17:36Z",
+      "updatedAt": "2025-10-18T03:30:16Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "6364a5e99c15b8720f0dfdb9645b4785125afb4f",
+      "headRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "fix/107",
+      "headRefOid": "727f59c3337cd9707e4e165f8f246126ccf62940",
+      "closedAt": "2025-10-18T03:27:20Z",
+      "mergedAt": "2025-10-18T03:27:20Z",
+      "mergedBy": "cathieyun",
+      "mergeCommit": {
+        "oid": "819608276cc26b86c219addc23aca29a68de1c1a"
+      },
+      "comments": [
+        {
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Fixes #107 ",
+          "createdAt": "2025-10-18T03:26:19Z",
+          "updatedAt": "2025-10-18T03:26:19Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "The commit message is sufficient for closing the issue :) \r\nWill title the PR better in the future, you're right.",
+          "createdAt": "2025-10-18T03:30:16Z",
+          "updatedAt": "2025-10-18T03:30:16Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDONyiw_87H0y9i",
+          "commit": {
+            "abbreviatedOid": "727f59c"
+          },
+          "author": "cathieyun",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "Changes LGTM.\r\nWould be nicer to title the PR in a more informative way, for ease of review (especially when looking through commit logs) - instead of \"fix #107\", which is hard to parse. I've updated that here, but is a request for future PRs.\r\n\r\nAlso, if you put \"Fixes #107\" in the PR description, then it will auto-close #107 when this PR is merged in (auto-adds #107 to the \"development\" tracker), which is a nice trick!",
+          "createdAt": "2025-10-18T03:23:05Z",
+          "updatedAt": "2025-10-18T03:25:57Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 113,
+      "id": "PR_kwDONyiw_86uSc_w",
+      "title": "Update specification abstract",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/113",
+      "state": "OPEN",
+      "author": "mmaker",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Better set the reader's expectation for the spec. We are introducing the Sigma Protocols interface, but will be doing linear relations over EC groups",
+      "createdAt": "2025-10-17T11:27:09Z",
+      "updatedAt": "2025-10-18T04:03:10Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "819608276cc26b86c219addc23aca29a68de1c1a",
+      "headRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "fix/109",
+      "headRefOid": "3a9d6c3e582a777eb3d0f3ea57f0938cdb30f526",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 114,
+      "id": "PR_kwDONyiw_86uaMw-",
+      "title": "Rename nonces to blindings",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/114",
+      "state": "OPEN",
+      "author": "cathieyun",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Editorial: rename \"nonces\" (which is a confusing term, they should be random but don't have to be nonces) to \"blindings\" which is what we called it in the proof compiler in ARC, and is the generally-accepted term for the random scalar used to blind a commitment.\r\n\r\nCloses #75 ",
+      "createdAt": "2025-10-18T03:12:21Z",
+      "updatedAt": "2025-10-18T03:14:01Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "db606bca6bf2fc5d5afa9beeeeae20794fb450cf",
+      "headRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "cathie/ietf124-cleanup",
+      "headRefOid": "b9f292b3807f3f30c1aeaf2a2e6a3f1689d64cd1",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 115,
+      "id": "PR_kwDONyiw_86uaOHo",
+      "title": "Update IV length from 32 to 64 bytes",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/115",
+      "state": "OPEN",
+      "author": "cathieyun",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #72\r\nFixes #86 ",
+      "createdAt": "2025-10-18T03:19:06Z",
+      "updatedAt": "2025-10-18T03:19:18Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "db606bca6bf2fc5d5afa9beeeeae20794fb450cf",
+      "headRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "cathie/iv-fix",
+      "headRefOid": "764cbf30847d05f065e050479e9badd837d75db5",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 116,
+      "id": "PR_kwDONyiw_86uemY1",
+      "title": "diverse feedback",
+      "url": "https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/pull/116",
+      "state": "OPEN",
+      "author": "mimoo",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "not sure if it's better to directly modify or just comment, I ended up in a weird middle place, let me know what's useful and feel free to ignore what you disagree with. I'm going through the doc now and trying to split feedback into commits.\r\n\r\ngeneral feedback:\r\n\r\n* it's \"duplex construction\", not \"sponge duplex\"\r\n* I think it's better to reuse common language for developers, as this is targeting developers\r\n* always define terms/slang the first time you use them\r\n",
+      "createdAt": "2025-10-19T01:08:10Z",
+      "updatedAt": "2025-10-19T01:21:00Z",
+      "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
+      "baseRefName": "main",
+      "baseRefOid": "819608276cc26b86c219addc23aca29a68de1c1a",
+      "headRepository": "mimoo/draft-irtf-cfrg-sigma-protocols",
+      "headRefName": "patch-1",
+      "headRefOid": "4587ab4a44f29e8c881c78c17d09dacd117a9399",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
