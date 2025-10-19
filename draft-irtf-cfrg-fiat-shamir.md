@@ -90,6 +90,8 @@ Where:
 - `prover_message(self, hash_state, elements) -> self` denotes the absorb operation of the codec. This function takes as input the hash state, and elements with which to mutate the hash state.
 - `verifier_challenge(self, hash_state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the hash state to produce an unpredictable verifier challenge `verifier_challenge`.
 
+The `verifier_challenge` function must generate a challenge uniformly from the underlying scalar field, from the public inputs given to the verifier. The default way to generate the challenge is by sampling a random `(|log_2(p)| + 128)`-bit string, parsing it as a big integer, and reducing it modulo the prime order of the group `p`.
+
 # Generation of the Initialization Vector {#iv-generation}
 
 The initialization vector is a 64-byte string that embeds:
@@ -183,6 +185,8 @@ Upon initialization, the protocol receives as input:
             self.codec.prover_message(self.hash_state, commitment)
             challenge = self.codec.verifier_challenge(self.hash_state)
             return self.sigma_protocol.verifier(commitment, challenge, response)
+
+Serialization and deserialization of scalars and group elements are defined by the ciphersuite chosen in the Sigma Protocol. In particular, `serialize_challenge`, `deserialize_challenge`, `serialize_response`, and `deserialize_response` call into the scalar `serialize` and `deserialize` functions. Likewise, `serialize_commitment` and `deserialize_commitment` call into the group element `serialize` and `deserialize` functions.
 
 ## NISigmaProtocol instances (ciphersuites)
 
