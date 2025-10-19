@@ -36,11 +36,15 @@ informative:
 
 --- abstract
 
-This document describes how to construct a non-interactive proof via the Fiat–Shamir transformation, using a generic procedure that compiles an interactive proof into a non-interactive one by relying on a stateful hash object that provides a duplex sponge interface.
+This document describes how to construct a non-interactive proof via the Fiat–Shamir transformation, using a generic procedure that compiles an interactive proof into a non-interactive one by relying on a stateful hash object that provides a duplex interface.
 
-The duplex sponge interface requires two methods: absorb and squeeze, which respectively read and write elements of a specified base type. The absorb operation incrementally updates the sponge's internal hash state, while the squeeze operation produces variable-length, unpredictable outputs. This interface can be instantiated with various hash functions based on permutation or compression functions.
+The duplex interface requires two methods: absorb and squeeze, which respectively allow one to write and read elements of a specified base type into and from the state. 
+From the point of view of the Fiat-Shamir transformation, absorb (resp. squeeze) can be mapped to a prover sending a message (resp. a verifier producing a challenge).
+The absorb operation incrementally updates the sponge's internal hash state, while the squeeze operation produces variable-length, unpredictable outputs. 
+<!-- david: usually you instantiate the sponge/duplex with a permutation or a transformation, not with a hash function -->
+This interface can be instantiated with various hash functions based on permutation or compression functions.
 
-This specification also defines codecs to securely map elements from the prover into the duplex sponge domain, and from the duplex sponge domain into verifier messages.
+This specification also defines codecs to securely serialize proof-specific data into the expected input type of the duplex construction, and from the duplex domain into verifier messages.
 
 --- middle
 
@@ -51,12 +55,12 @@ It depends on:
 
 - An _initialization vector_ (IV) uniquely identifying the protocol, the session, and the statement being proven.
 - An _interactive protocol_ supporting a family of statements to be proven.
-- A _hash function_ implementing the duplex sponge interface, capable of absorbing inputs incrementally and squeezing variable-length unpredictable messages.
-- A _codec_, which securely remaps prover elements into the base alphabet, and outputs of the duplex sponge into verifier messages (preserving the distribution).
+- A _hash function_ implementing the duplex interface, capable of absorbing inputs incrementally and squeezing variable-length unpredictable messages.
+- A _codec_, which securely remaps prover elements into the base alphabet, and outputs of the duplex into verifier messages (preserving the distribution).
 
-# The Duplex Sponge Interface
+# The Duplex Interface
 
-The duplex sponge interface defines the space (the `Unit`) where the hash function operates in, plus a function for absorbing and squeezing prover messages. It provides the following interface.
+The duplex interface defines the space (the `Unit`) where the hash function operates in, plus a function for absorbing and squeezing prover messages. It provides the following interface.
 
     class DuplexSponge:
       def new(iv: bytes) -> DuplexSponge
@@ -65,7 +69,7 @@ The duplex sponge interface defines the space (the `Unit`) where the hash functi
 
 Where:
 
-- `init(iv: bytes) -> DuplexSponge` denotes the initialization function. This function takes as input a 32-byte initialization vector `iv` and initializes the state of the duplex sponge.
+- `init(iv: bytes) -> DuplexSponge` denotes the initialization function. This function takes as input a 32-byte initialization vector `iv` and initializes the state of the duplex.
 - `absorb(self, values: list[Unit])` denotes the absorb operation of the sponge. This function takes as input a list of `Unit` elements and mutates the `DuplexSponge` internal state.
 - `squeeze(self, length: int)` denotes the squeeze operation of the sponge. This function takes as input an integral `length` and squeezes a list of `Unit` elements of length `length`.
 
@@ -226,7 +230,7 @@ We describe a codec for the P256 curve.
     class P256Codec(ByteSchnorrCodec):
         GG = groups.GroupP256()
 
-# Duplex Sponge Interfaces
+# Duplex Interfaces
 
 ## SHAKE128
 
@@ -270,13 +274,13 @@ SHAKE128 is a variable-length hash function based on the Keccak sponge construct
 
     1. return self.hash_state.copy().digest(length)
 
-## Duplex Sponge
+## Duplex
 
-A duplex sponge in overwrite mode is based on a permutation function that operates on a state vector. It implements the `DuplexSpongeInterface` and maintains internal state to support incremental absorption and variable-length output generation.
+A duplex in overwrite mode is based on a permutation function that operates on a state vector. It implements the `DuplexSpongeInterface` and maintains internal state to support incremental absorption and variable-length output generation.
 
 ### Initialization
 
-This is the constructor for a duplex sponge object. It is initialized with a 32-byte initialization vector.
+This is the constructor for a duplex object. It is initialized with a 32-byte initialization vector.
 
     new(iv)
 
@@ -291,12 +295,12 @@ This is the constructor for a duplex sponge object. It is initialized with a 32-
 
 ### Absorb
 
-The absorb function incorporates data into the duplex sponge state using overwrite mode.
+The absorb function incorporates data into the duplex state using overwrite mode.
 
     absorb(self, input)
 
     Inputs:
-    - self, the current duplex sponge object
+    - self, the current duplex object
     - input, the input bytes to be absorbed
 
     Procedure:
@@ -318,7 +322,7 @@ The squeeze operation extracts output elements from the sponge state, which are 
     squeeze(self, length)
 
     Inputs:
-    - self, the current duplex sponge object
+    - self, the current duplex object
     - length, the number of bytes to be squeezed out of the sponge
 
     Outputs:
