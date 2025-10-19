@@ -51,12 +51,15 @@ This specification also defines codecs to securely serialize proof-specific data
 # Introduction
 
 The Fiat-Shamir transformation is a technique that uses a hash function to convert a public-coin interactive protocol between a prover and a verifier into a corresponding non-interactive protocol.
-It depends on:
+The term "public-coin" here refers to interactive protocols where all verifier messages are essentially random values sent in the clear.
+The transformation is often overlooked and rarely specified in papers, and in practice implicitely depends on a number of parameters as well as instantiation decisions:
 
-- An _initialization vector_ (IV) uniquely identifying the protocol, the session, and the statement being proven.
+<!-- I feel weird reusing "IV" here, I think we should reuse protocol lingo. Noise calls it "prologue", TLS and others might call it "session hash" or plainly "context" -->
+- An _initialization vector_ (IV) uniquely identifying the protocol, the session, and the statement being proven. 
 - An _interactive protocol_ supporting a family of statements to be proven.
-- A _hash function_ implementing the duplex interface, capable of absorbing inputs incrementally and squeezing variable-length unpredictable messages.
-- A _codec_, which securely remaps prover elements into the base alphabet, and outputs of the duplex into verifier messages (preserving the distribution).
+<!-- that language feels weird to me, I think "an instantiation of the duplex interface" is better as usually it's its own construction (I've never seen it based on a hash function) -->
+- A _hash function_ implementing the duplex interface, capable of alternating between absorbing prover messages and squeezing out challenges.
+- A _codec_, which canonically encodes prover messages for consumption by the duplex construction, and decodes outputs of the duplex constructions into verifier messages.
 
 # The Duplex Interface
 
