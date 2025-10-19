@@ -84,6 +84,7 @@ Where:
 <!-- maybe it would be good to give some intuitions as to why this is useful here? (e.g. sometimes the base type is a finite field, and care must be taken in order to canonicaly encode bytestrings to field elements and vice versa)-->
 
 A codec is a collection of:
+<!-- btw it's not clear at this point that there are two things that can be tweaked: what's the type used by the protocol (not always bytestrings!), what's the type used by the duplex (not always bytestrings!)-->
 - functions that encode prover messages into the duplex construction's domain
 - functions that decode duplex outputs into valid verifier messages
 
@@ -258,7 +259,7 @@ We describe a codec for the P256 curve.
 ## SHAKE128
 
 SHAKE128 is a variable-length hash function based on the Keccak sponge construction {{SHA3}}. It belongs to the SHA-3 family but offers a flexible output length, and provides 128 bits of security against collision attacks, regardless of the output length requested.
-
+<!-- I'm not sure I understand the point of this section, just say that you can use shake128 to instantiate the duplex, then give the two required encoding/decoding functions -->
 ### Initialization
 
     new(self, iv)
