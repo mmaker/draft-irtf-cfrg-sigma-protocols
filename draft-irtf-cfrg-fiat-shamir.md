@@ -40,7 +40,7 @@ This document describes how to construct a non-interactive proof via the Fiat–
 
 The duplex interface requires two methods: absorb and squeeze, which respectively allow one to write and read elements of a specified base type into and from the state. 
 From the point of view of the Fiat-Shamir transformation, absorb (resp. squeeze) can be mapped to a prover sending a message (resp. a verifier producing a challenge).
-The absorb operation incrementally updates the sponge's internal hash state, while the squeeze operation produces variable-length, unpredictable outputs. 
+The absorb operation incrementally updates the duplex's internal hash state, while the squeeze operation produces variable-length, unpredictable outputs. 
 <!-- david: usually you instantiate the sponge/duplex with a permutation or a transformation, not with a hash function -->
 This interface can be instantiated with various hash functions based on permutation or compression functions.
 
@@ -54,48 +54,53 @@ The Fiat-Shamir transformation is a technique that uses a hash function to conve
 The term "public-coin" here refers to interactive protocols where all verifier messages are essentially random values sent in the clear.
 The transformation is often overlooked and rarely specified in papers, and in practice implicitely depends on a number of parameters as well as instantiation decisions:
 
-<!-- I feel weird reusing "IV" here, I think we should reuse protocol lingo. Noise calls it "prologue", TLS and others might call it "session hash" or plainly "context" -->
+<!-- I feel weird reusing "IV" here, I think we should reuse protocol lingo. Noise calls it "prologue", TLS and others might call it "session hash" or plainly "context" (or "session ID" as used in the codec interface section) -->
 - An _initialization vector_ (IV) uniquely identifying the protocol, the session, and the statement being proven. 
 - An _interactive protocol_ supporting a family of statements to be proven.
 <!-- that language feels weird to me, I think "an instantiation of the duplex interface" is better as usually it's its own construction (I've never seen it based on a hash function) -->
 - A _hash function_ implementing the duplex interface, capable of alternating between absorbing prover messages and squeezing out challenges.
 - A _codec_, which canonically encodes prover messages for consumption by the duplex construction, and decodes outputs of the duplex constructions into verifier messages.
 
+<!-- david: I would recommend having a section that contains ALL constructions that need to be instantiated -->
 # The Duplex Interface
-
-The duplex interface defines the space (the `Unit`) where the hash function operates in, plus a function for absorbing and squeezing prover messages. It provides the following interface.
+<!-- david: why introduce the term "Unit", it seems unnecessary here. Just use "type", for example, "BaseType" -->
+The duplex interface defines the space (the `Unit`) where the hash function operates in, plus a function for absorbing prover messages and squeezing out verifier challenges. It provides the following interface.
 
     class DuplexSponge:
-      def new(iv: bytes) -> DuplexSponge
+    <!-- david: why is iv not list[Unit]? IMO it should be -->
+      def init(iv: bytes) -> DuplexSponge
       def absorb(self, x: list[Unit])
       def squeeze(self, length: int) -> list[Unit]
 
 Where:
 
+<!-- david: why limit it to 32-byte? -->
 - `init(iv: bytes) -> DuplexSponge` denotes the initialization function. This function takes as input a 32-byte initialization vector `iv` and initializes the state of the duplex.
-- `absorb(self, values: list[Unit])` denotes the absorb operation of the sponge. This function takes as input a list of `Unit` elements and mutates the `DuplexSponge` internal state.
-- `squeeze(self, length: int)` denotes the squeeze operation of the sponge. This function takes as input an integral `length` and squeezes a list of `Unit` elements of length `length`.
+- `absorb(self, values: list[Unit])` denotes the absorb operation of the duplex construction. This function takes as input a list of `Unit` elements and mutates the `DuplexDuplex construction` internal state.
+- `squeeze(self, length: int)` denotes the squeeze operation of the duplex construction. This function takes as input a number `length` and squeezes a list of `Unit` elements of length `length`.
 
+<!-- maybe it would be cleaner to specify a codec as a wrapper around the duplex, taking and producing bytes or whatever is the consumer type -->
 # The Codec interface
 
 A codec is a collection of:
-- functions that map prover messages into the hash function domain,
-- functions that map hash outputs into a message output by the verifier in the Sigma protocol
-In addition, the "init" function initializes the hash state with a session ID and an instance label.
-For byte-oriented codecs, this is just the concatenation of the two prefixed by their lengths.
+- functions that encode prover messages into the duplex construction's domain
+- functions that decode duplex outputs into valid verifier messages
 
 A codec provides the following interface.
 
     class Codec:
-        def init(session_id, instance_label) -> hash_state
-        def prover_message(self, hash_state, elements)
-        def verifier_challenge(self, hash_state) -> verifier_challenge
+        def init(session_id, instance_label) -> state
+        def prover_message(self, state, elements)
+        <!-- david: why not have a `length` as well and return a list here? -->
+        def verifier_challenge(self, state) -> verifier_challenge
 
 Where:
 
-- `init(session_id, instance_label) -> hash_state` denotes the initialization function. This function takes as input a session ID and an instance label, and returns the initial hash state.
-- `prover_message(self, hash_state, elements) -> self` denotes the absorb operation of the codec. This function takes as input the hash state, and elements with which to mutate the hash state.
-- `verifier_challenge(self, hash_state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the hash state to produce an unpredictable verifier challenge `verifier_challenge`.
+<!-- it would be nice to refer to a section on domain separation and best practice at this point, regarding context data -->
+- `init(session_id, instance_label) -> state` denotes the initialization function. This function takes as input a session ID and an instance label (for byte-oriented codecs, this is just the concatenation of the two prefixed by their lengths), and returns the initial hash state.
+- `prover_message(self, state, elements)` denotes the absorb operation of the codec. This function takes as input the hash state, and elements with which to mutate the hash state.
+<!-- david: I find it weird how "unpredictable verifier challenge" keeps being repeated here :D maybe just mention it once, it's not very important for the spec -->
+- `verifier_challenge(self, state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the hash state to produce an unpredictable verifier challenge `verifier_challenge`.
 
 # Generation of the Initialization Vector {#iv-generation}
 
@@ -320,13 +325,13 @@ The absorb function incorporates data into the duplex state using overwrite mode
 
 ### Squeeze
 
-The squeeze operation extracts output elements from the sponge state, which are uniformly distributed and can be used as a digest, key stream, or other cryptographic material.
+The squeeze operation extracts output elements from the duplex state, which are uniformly distributed and can be used as a digest, key stream, or other cryptographic material.
 
     squeeze(self, length)
 
     Inputs:
     - self, the current duplex object
-    - length, the number of bytes to be squeezed out of the sponge
+    - length, the number of bytes to be squeezed out of the duplex
 
     Outputs:
     - digest, a byte array of `length` elements uniformly distributed
