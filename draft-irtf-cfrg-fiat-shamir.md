@@ -107,18 +107,24 @@ Where:
 The initialization vector is a 32-bytes string that embeds:
 
 - A `protocol_id`: the unique identifier for the interactive protocol and the associated relation being proven.
+<!-- I think the spec should have two sections that dive in detail in "best practice for domain separation" and "best practice to avoid portability of proof", because each concepts might not be clear for developers -->
 - A `session_id`: the session identifier, for user-provided contextual information about the context where the proof is made (e.g. a URL, or a timestamp).
+<!-- IMO there's just too much metadata here, you might just want to make it a single argument, and then explain how you can include all three information in the creation of this string, or at least limit it to 2 -->
 - An `instance_label`: the instance identifier for the statement being proven.
 
 It is implemented as follows.
 
-    hash_state = DuplexSponge.init([0] * 32)
+    hash_state = DuplexSponge.init([0] * 32) <!-- why have the possibility to pass a bytestring here if you're just going to set it to zero? better remove the argument here then -->
+    <!-- first mention to I2OSP, define it here or refer to where it's defined -->
     hash_state.absorb(I2OSP(len(protocol_id), 4))
     hash_state.absorb(protocol_id)
     hash_state.absorb(I2OSP(len(session_id), 4))
+    <!-- looks like the instance_label is not used -->
     hash_state.absorb(session_id)
+    <!-- IMO the domain separation + context should be up to the protocol and not standardized, why? Because everyone does it differently + sometimes you want to optimize the number of permutation here -->
 
-This will be expanded in future versions of this specification.
+<!-- what does that mean? -->
+This will be expanded in future versions of this specification. 
 
 # Fiat-Shamir transformation for Sigma Protocols
 
