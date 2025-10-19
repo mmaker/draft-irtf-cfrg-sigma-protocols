@@ -365,6 +365,7 @@ The squeeze operation extracts output elements from the duplex state, which are 
     10.    length -= chunk_size
     11. return output
 
+<!-- isn't this a leaky abstraction? That should be part of the duplex construction which should be out of scope for this spec -->
 ### Keccak-f\[1600\] Implementation
 
 `Keccak-f` is the permutation function underlying {{SHA3}}.
@@ -451,5 +452,6 @@ Where the function `scalar_to_bytes` is defined in {{notation}}
 # Test Vectors
 {:numbered="false"}
 
+<!-- I will question the utility of having test vectors, because not having interop is a feature here :D you get domain separation by design -->
 Test vectors will be made available in future versions of this specification.
 They are currently developed in the [proof-of-concept implementation](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/tree/main/poc/vectors).
