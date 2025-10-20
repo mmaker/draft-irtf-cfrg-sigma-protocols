@@ -8,8 +8,8 @@
 <meta content="Michele Orrù" name="author">
 <meta content="Cathie Yun" name="author">
 <meta content="
-       A Sigma Protocol is an interactive zero-knowledge proof of knowledge that allows a prover to convince a verifier of the validity of a statement. It satisfies the properties of completeness, soudness, and zero-knowledge. 
-       This document describes Sigma Protocols for proving knowledge of pre-images of linear maps in prime-order elliptic-curve groups. Examples include zero-knowledge proofs for discrete logarithm relations, ElGamal encryptions, Pedersen commitments, and range proofs. 
+       A Sigma Protocol is an interactive zero-knowledge proof of knowledge that allows a prover to convince a verifier of the validity of a statement. It satisfies the properties of completeness, soundness, and zero-knowledge, as described in  . 
+       This document describes Sigma Protocols for proving knowledge of pre-images of linear maps in prime-order elliptic curve groups. Examples include zero-knowledge proofs for discrete logarithm relations, ElGamal encryptions, Pedersen commitments, and range proofs. 
     " name="description">
 <meta content="xml2rfc 3.31.0" name="generator">
 <meta content="zero-knowledge" name="keyword">
@@ -1087,8 +1087,8 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <h1 id="title">Interactive Sigma Proofs</h1>
 <section id="section-abstract">
       <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
-<p id="section-abstract-1">A Sigma Protocol is an interactive zero-knowledge proof of knowledge that allows a prover to convince a verifier of the validity of a statement. It satisfies the properties of completeness, soudness, and zero-knowledge.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
-<p id="section-abstract-2">This document describes Sigma Protocols for proving knowledge of pre-images of linear maps in prime-order elliptic-curve groups. Examples include zero-knowledge proofs for discrete logarithm relations, ElGamal encryptions, Pedersen commitments, and range proofs.<a href="#section-abstract-2" class="pilcrow">¶</a></p>
+<p id="section-abstract-1">A Sigma Protocol is an interactive zero-knowledge proof of knowledge that allows a prover to convince a verifier of the validity of a statement. It satisfies the properties of completeness, soundness, and zero-knowledge, as described in <a href="#security" class="auto internal xref">Section 3</a>.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-2">This document describes Sigma Protocols for proving knowledge of pre-images of linear maps in prime-order elliptic curve groups. Examples include zero-knowledge proofs for discrete logarithm relations, ElGamal encryptions, Pedersen commitments, and range proofs.<a href="#section-abstract-2" class="pilcrow">¶</a></p>
 </section>
 <section class="note rfcEditorRemove" id="section-note.1">
       <h2 id="name-about-this-document">
@@ -1840,7 +1840,7 @@ statement.append_equation(C, [(var_x, G), (var_r, H)])
 </div>
 </section>
 </div>
-<div id="security-considerations">
+<div id="security">
 <section id="section-3">
       <h2 id="name-security-considerations">
 <a href="#section-3" class="section-number selfRef">3. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
