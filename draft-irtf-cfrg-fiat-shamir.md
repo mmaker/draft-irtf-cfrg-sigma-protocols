@@ -65,7 +65,7 @@ The duplex sponge interface defines the space (the `Unit`) where the hash functi
 
 Where:
 
-- `init(iv: bytes) -> DuplexSponge` denotes the initialization function. This function takes as input a 32-byte initialization vector `iv` and initializes the state of the duplex sponge.
+- `init(iv: bytes) -> DuplexSponge` denotes the initialization function. This function takes as input a 64-byte initialization vector `iv` and initializes the state of the duplex sponge.
 - `absorb(self, values: list[Unit])` denotes the absorb operation of the sponge. This function takes as input a list of `Unit` elements and mutates the `DuplexSponge` internal state.
 - `squeeze(self, length: int)` denotes the squeeze operation of the sponge. This function takes as input an integral `length` and squeezes a list of `Unit` elements of length `length`.
 
@@ -90,9 +90,11 @@ Where:
 - `prover_message(self, hash_state, elements) -> self` denotes the absorb operation of the codec. This function takes as input the hash state, and elements with which to mutate the hash state.
 - `verifier_challenge(self, hash_state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the hash state to produce an unpredictable verifier challenge `verifier_challenge`.
 
+The `verifier_challenge` function must generate a challenge uniformly from the underlying scalar field, from the public inputs given to the verifier. The default way to generate the challenge is by sampling a random `(|log_2(p)| + 128)`-bit string, parsing it as a big integer, and reducing it modulo the prime order of the group `p`.
+
 # Generation of the Initialization Vector {#iv-generation}
 
-The initialization vector is a 32-bytes string that embeds:
+The initialization vector is a 64-byte string that embeds:
 
 - A `protocol_id`: the unique identifier for the interactive protocol and the associated relation being proven.
 - A `session_id`: the session identifier, for user-provided contextual information about the context where the proof is made (e.g. a URL, or a timestamp).
@@ -100,7 +102,7 @@ The initialization vector is a 32-bytes string that embeds:
 
 It is implemented as follows.
 
-    hash_state = DuplexSponge.init([0] * 32)
+    hash_state = DuplexSponge.init([0] * 64)
     hash_state.absorb(I2OSP(len(protocol_id), 4))
     hash_state.absorb(protocol_id)
     hash_state.absorb(I2OSP(len(session_id), 4))
@@ -183,6 +185,8 @@ Upon initialization, the protocol receives as input:
             self.codec.prover_message(self.hash_state, commitment)
             challenge = self.codec.verifier_challenge(self.hash_state)
             return self.sigma_protocol.verifier(commitment, challenge, response)
+
+Serialization and deserialization of scalars and group elements are defined by the ciphersuite chosen in the Sigma Protocol. In particular, `serialize_challenge`, `deserialize_challenge`, `serialize_response`, and `deserialize_response` call into the scalar `serialize` and `deserialize` functions. Likewise, `serialize_commitment` and `deserialize_commitment` call into the group element `serialize` and `deserialize` functions.
 
 ## NISigmaProtocol instances (ciphersuites)
 
@@ -276,12 +280,12 @@ A duplex sponge in overwrite mode is based on a permutation function that operat
 
 ### Initialization
 
-This is the constructor for a duplex sponge object. It is initialized with a 32-byte initialization vector.
+This is the constructor for a duplex sponge object. It is initialized with a 64-byte initialization vector.
 
     new(iv)
 
     Inputs:
-    - iv, a 32-byte initialization vector
+    - iv, a 64-byte initialization vector
 
     Procedure:
     1. self.absorb_index = 0
