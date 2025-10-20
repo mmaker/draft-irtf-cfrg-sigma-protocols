@@ -137,19 +137,21 @@ Table of Contents
    Shamir transformation, where they provide the following guarantees
    (in the random oracle model) for Non-interactive Sigma Protocols:
 
-   *  *Knowledge soundness*: If the proof is valid, the prover must have
-      knowledge of a secret witness satisfying the proof statement.
-      This property ensures that valid proofs cannot be generated
-      without possession of the corresponding witness.
+   *  *Knowledge soundness*: Non-interactive Sigma Protocols preserve
+      the knowledge soundness properties of Interactive Sigma Protocols.
+      If the proof is valid, the prover must have knowledge of a secret
+      witness satisfying the proof statement.  This property ensures
+      that valid proofs cannot be generated without possession of the
+      corresponding witness.
 
    *  *Zero-knowledge*: The proof string produced by the prove function
       does not reveal any information beyond what can be directly
       inferred from the statement itself.  This ensures that verifiers
       gain no knowledge about the witness.
 
-   *  *Completeness*: If the statement being proved is not true, the
-      prover cannot make a proof that convinces the verifier of the
-      statement's truth.
+   *  *Completeness*: If the statement being proved is true, an honest
+      verifier can be convinced of this fact by an honest prover via the
+      proof.
 
    While theoretical analysis demonstrates that both soundness and zero-
    knowledge properties are statistical in nature, practical security

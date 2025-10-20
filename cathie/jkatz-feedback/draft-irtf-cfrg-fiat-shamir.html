@@ -1285,13 +1285,13 @@ It depends on:<a href="#section-1-1" class="pilcrow">¶</a></p>
 <p id="section-2-1">We focus on the security guarantees of the non-interactive Fiat-Shamir transformation, where they provide the following guarantees (in the random oracle model) for Non-interactive Sigma Protocols:<a href="#section-2-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-2-2.1">
-          <p id="section-2-2.1.1"><strong>Knowledge soundness</strong>: If the proof is valid, the prover must have knowledge of a secret witness satisfying the proof statement. This property ensures that valid proofs cannot be generated without possession of the corresponding witness.<a href="#section-2-2.1.1" class="pilcrow">¶</a></p>
+          <p id="section-2-2.1.1"><strong>Knowledge soundness</strong>: Non-interactive Sigma Protocols preserve the knowledge soundness properties of Interactive Sigma Protocols. If the proof is valid, the prover must have knowledge of a secret witness satisfying the proof statement. This property ensures that valid proofs cannot be generated without possession of the corresponding witness.<a href="#section-2-2.1.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-2-2.2">
           <p id="section-2-2.2.1"><strong>Zero-knowledge</strong>: The proof string produced by the <code>prove</code> function does not reveal any information beyond what can be directly inferred from the statement itself. This ensures that verifiers gain no knowledge about the witness.<a href="#section-2-2.2.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-2-2.3">
-          <p id="section-2-2.3.1"><strong>Completeness</strong>: If the statement being proved is not true, the prover cannot make a proof that convinces the verifier of the statement's truth.<a href="#section-2-2.3.1" class="pilcrow">¶</a></p>
+          <p id="section-2-2.3.1"><strong>Completeness</strong>: If the statement being proved is true, an honest verifier can be convinced of this fact by an honest prover via the proof.<a href="#section-2-2.3.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
 <p id="section-2-3">While theoretical analysis demonstrates that both soundness and zero-knowledge properties are statistical in nature, practical security depends on the cryptographic strength of the underlying hash function, which is defined by the Fiat-Shamir transformation. It's important to note that the soundness of a zero-knowledge proof provides no guarantees regarding the computational hardness of the relation being proven. An assessment of the specific hardness properties for relations proven using these protocols falls outside the scope of this document.<a href="#section-2-3" class="pilcrow">¶</a></p>
