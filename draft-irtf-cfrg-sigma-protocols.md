@@ -79,6 +79,20 @@ informative:
     date: 1993
     author:
       - fullname: "Jacques Stern"
+  CramerDS94:
+    title: "Proofs of Partial Knowledge and Simplified Design of Witness Hiding Protocols"
+    target: https://ir.cwi.nl/pub/1456/1456D.pdf
+    date: 1994
+    author:
+      - fullname: "Ronald Cramer"
+      - fullname: "Ivan Damgaard"
+      - fullname: "Berry Schoenmakers"
+  Cramer97:
+    title: "Modular Design of Secure yet Practical Cryptographic Protocols"
+    target: https://ir.cwi.nl/pub/21438
+    date: 1997
+    author:
+      - fullname: "Ronald Cramer"
   CS97:
       title: "Proof Systems for General Statements about Discrete Logarithms"
       author:
@@ -94,7 +108,7 @@ This document describes interactive Sigma Protocols, a class of secure, general-
 
 # Introduction
 
-Any Sigma Protocol must define three objects: a *commitment* (computed by the prover), a *challenge* (computed by the verifier), and a *response* (computed by the prover).
+Any sigma protocol must define three objects: a *commitment* (computed by the prover), a *challenge* (computed by the verifier), and a *response* (computed by the prover). One of the advantages of sigma protocols is their composability which enables the construction of more complex protocols. A classic example is the OR composition {{CramerDS94}} where the prover seeks to convince the verifier that it knows a valid witness for at least one out of two relations. If there exists a sigma protocol for each relation individually, it is possible to build an OR proof. Also, this composed sigma protocols can be made non-interactive using the Fiat-Shamir transform {{Cramer97}}. However, such compositions must be handled carefully to preserve security properties as discussed in {{sec-cons}}.
 
 ## Core interface
 
@@ -450,7 +464,7 @@ This ciphersuite uses P-256 {{SP800}} for the Group.
 - `serialize(s)`: Relies on the Field-Element-to-Octet-String conversion according to {{SEC1}}; `Ns = 32`.
 - `deserialize(buf)`: Reads the byte array `buf` in chunks of 32 bytes using Octet-String-to-Field-Element from {{SEC1}}. This function can fail if the input does not represent a Scalar in the range `[0, G.Order() - 1]`.
 
-# Security Considerations
+# Security Considerations {#security-considerations}
 
 Sigma Protocols are special sound and honest-verifier zero-knowledge. These proofs are deniable (without transferable message authenticity).
 
