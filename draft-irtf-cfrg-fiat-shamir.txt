@@ -4,8 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                           19 October 2025
-Expires: 22 April 2026
+Intended status: Informational                           20 October 2025
+Expires: 23 April 2026
 
 
                        Fiat-Shamir Transformation
@@ -62,7 +62,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 22 April 2026.
+   This Internet-Draft will expire on 23 April 2026.
 
 Copyright Notice
 
@@ -186,6 +186,12 @@ Table of Contents
       the hash state to produce an unpredictable verifier challenge
       verifier_challenge.
 
+   The verifier_challenge function must generate a challenge uniformly
+   from the underlying scalar field, from the public inputs given to the
+   verifier.  The default way to generate the challenge is by sampling a
+   random (|log_2(p)| + 128)-bit string, parsing it as a big integer,
+   and reducing it modulo the prime order of the group p.
+
 4.  Generation of the Initialization Vector
 
    The initialization vector is a 64-byte string that embeds:
@@ -290,6 +296,14 @@ class NISigmaProtocol:
         self.codec.prover_message(self.hash_state, commitment)
         challenge = self.codec.verifier_challenge(self.hash_state)
         return self.sigma_protocol.verifier(commitment, challenge, response)
+
+   Serialization and deserialization of scalars and group elements are
+   defined by the ciphersuite chosen in the Sigma Protocol.  In
+   particular, serialize_challenge, deserialize_challenge,
+   serialize_response, and deserialize_response call into the scalar
+   serialize and deserialize functions.  Likewise, serialize_commitment
+   and deserialize_commitment call into the group element serialize and
+   deserialize functions.
 
 5.1.  NISigmaProtocol instances (ciphersuites)
 

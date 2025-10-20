@@ -1050,7 +1050,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù</td>
-<td class="center">Expires 22 April 2026</td>
+<td class="center">Expires 23 April 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1063,12 +1063,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-irtf-cfrg-fiat-shamir-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2025-10-19" class="published">19 October 2025</time>
+<time datetime="2025-10-20" class="published">20 October 2025</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-04-22">22 April 2026</time></dd>
+<dd class="expires"><time datetime="2026-04-23">23 April 2026</time></dd>
 <dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
@@ -1120,7 +1120,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 22 April 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 23 April 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1333,6 +1333,7 @@ class Codec:
           <p id="section-3-5.3.1"><code>verifier_challenge(self, hash_state) -&gt; verifier_challenge</code> denotes the squeeze operation of the codec. This function takes as input the hash state to produce an unpredictable verifier challenge <code>verifier_challenge</code>.<a href="#section-3-5.3.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
+<p id="section-3-6">The <code>verifier_challenge</code> function must generate a challenge uniformly from the underlying scalar field, from the public inputs given to the verifier. The default way to generate the challenge is by sampling a random <code>(|log_2(p)| + 128)</code>-bit string, parsing it as a big integer, and reducing it modulo the prime order of the group <code>p</code>.<a href="#section-3-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="iv-generation">
@@ -1452,6 +1453,7 @@ class NISigmaProtocol:
         return self.sigma_protocol.verifier(commitment, challenge, response)
 </pre><a href="#section-5-4" class="pilcrow">¶</a>
 </div>
+<p id="section-5-5">Serialization and deserialization of scalars and group elements are defined by the ciphersuite chosen in the Sigma Protocol. In particular, <code>serialize_challenge</code>, <code>deserialize_challenge</code>, <code>serialize_response</code>, and <code>deserialize_response</code> call into the scalar <code>serialize</code> and <code>deserialize</code> functions. Likewise, <code>serialize_commitment</code> and <code>deserialize_commitment</code> call into the group element <code>serialize</code> and <code>deserialize</code> functions.<a href="#section-5-5" class="pilcrow">¶</a></p>
 <div id="nisigmaprotocol-instances-ciphersuites">
 <section id="section-5.1">
         <h3 id="name-nisigmaprotocol-instances-c">
