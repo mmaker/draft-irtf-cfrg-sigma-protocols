@@ -88,7 +88,7 @@ informative:
 
 --- abstract
 
-A Sigma Protocol is an interactive zero-knowledge proof of knowledge that allows a prover to convince a verifier of the validity of a statement. By the zero-knowledge property, no information beyond the truth of the statement is revealed.
+A Sigma Protocol is an interactive zero-knowledge proof of knowledge that allows a prover to convince a verifier of the validity of a statement. It satisfies the properties of completeness, soudness, and zero-knowledge.
 
 This document describes Sigma Protocols for proving knowledge of pre-images of linear maps in prime-order elliptic-curve groups. Examples include zero-knowledge proofs for discrete logarithm relations, ElGamal encryptions, Pedersen commitments, and range proofs.
 
@@ -436,6 +436,8 @@ Given group elements `G`, `H` such that `C = x * G + r * H`, then the statement 
     statement.append_equation(C, [(var_x, G), (var_r, H)])
 
 ## Ciphersuites {#ciphersuites}
+
+We consider ciphersuites of prime-order elliptic curve groups.
 
 ### P-256 (secp256r1)
 
