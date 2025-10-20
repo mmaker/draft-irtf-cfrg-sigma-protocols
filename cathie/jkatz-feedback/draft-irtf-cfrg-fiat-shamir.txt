@@ -133,35 +133,25 @@ Table of Contents
 
 2.  Security Considerations
 
-   We focus on the security guarantees of the non-interactive Fiat-
-   Shamir transformation, where they provide the following guarantees
-   (in the random oracle model) for Non-interactive Sigma Protocols:
-
-   *  *Knowledge soundness*: Non-interactive Sigma Protocols preserve
-      the knowledge soundness properties of Interactive Sigma Protocols.
-      If the proof is valid, the prover must have knowledge of a secret
-      witness satisfying the proof statement.  This property ensures
-      that valid proofs cannot be generated without possession of the
-      corresponding witness.
-
-   *  *Zero-knowledge*: The proof string produced by the prove function
-      does not reveal any information beyond what can be directly
-      inferred from the statement itself.  This ensures that verifiers
-      gain no knowledge about the witness.
+   The Fiat-Shamir transformation of a honest-verifier zero-knowledge
+   proof of knowledge provides:
 
    *  *Completeness*: If the statement being proved is true, an honest
       verifier can be convinced of this fact by an honest prover via the
       proof.
 
-   While theoretical analysis demonstrates that both soundness and zero-
-   knowledge properties are statistical in nature, practical security
-   depends on the cryptographic strength of the underlying hash
-   function, which is defined by the Fiat-Shamir transformation.  It's
-   important to note that the soundness of a zero-knowledge proof
-   provides no guarantees regarding the computational hardness of the
-   relation being proven.  An assessment of the specific hardness
-   properties for relations proven using these protocols falls outside
-   the scope of this document.
+   *  *Soundness*: If The proof is valid, the prover must have knowledge
+      of a secret witness satisfying the proof statement.  This property
+      ensures that valid proofs cannot be generated without possession
+      of the corresponding witness.
+
+   *  *Zero-Knowledge*: the proof string produced by prove function does
+      not reveal any information beyond what can be directly inferred
+      from the statement being valid.  This ensures that verifiers gain
+      no knowledge about the witness.
+
+   In particular, the Fiat-Shamir transformation of Sigma Protocols is a
+   zero-knowledge and sound argument of knowledge.
 
    Note that non-interactive Sigma Protocols do not have deniability, as
    the non-interactive nature of the protocol implies transferable
