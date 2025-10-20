@@ -328,7 +328,6 @@ Group elements, being part of the instance, can later be set using the function 
     2. self.linear_map.append(linear_combination)
     3. self._image.append(lhs)
 
-
 ### Core protocol
 
 This defines the object `SchnorrProof`. The initialization function takes as input the statement, and pre-processes it.
