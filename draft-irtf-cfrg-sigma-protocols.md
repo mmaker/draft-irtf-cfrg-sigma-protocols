@@ -88,7 +88,9 @@ informative:
 
 --- abstract
 
-This document describes interactive Sigma Protocols, a class of secure, general-purpose zero-knowledge proofs of knowledge consisting of three moves: commitment, challenge, and response. Concretely, the protocol allows one to prove knowledge of a secret witness without revealing any information about it.
+A Sigma Protocol is an interactive zero-knowledge proof of knowledge that allows a prover to convince a verifier of the validity of a statement. It satisfies the properties of completeness, soundness, and zero-knowledge, as described in {{security}}.
+
+This document describes Sigma Protocols for proving knowledge of pre-images of linear maps in prime-order elliptic curve groups. Examples include zero-knowledge proofs for discrete logarithm relations, ElGamal encryptions, Pedersen commitments, and range proofs.
 
 --- middle
 
@@ -435,6 +437,8 @@ Given group elements `G`, `H` such that `C = x * G + r * H`, then the statement 
 
 ## Ciphersuites {#ciphersuites}
 
+We consider ciphersuites of prime-order elliptic curve groups.
+
 ### P-256 (secp256r1)
 
 This ciphersuite uses P-256 {{SP800}} for the Group.
@@ -450,7 +454,7 @@ This ciphersuite uses P-256 {{SP800}} for the Group.
 - `serialize(s)`: Relies on the Field-Element-to-Octet-String conversion according to {{SEC1}}; `Ns = 32`.
 - `deserialize(buf)`: Reads the byte array `buf` in chunks of 32 bytes using Octet-String-to-Field-Element from {{SEC1}}. This function can fail if the input does not represent a Scalar in the range `[0, G.Order() - 1]`.
 
-# Security Considerations
+# Security Considerations {#security}
 
 Sigma Protocols are special sound and honest-verifier zero-knowledge. These proofs are deniable (without transferable message authenticity).
 
