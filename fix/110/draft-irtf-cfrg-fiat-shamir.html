@@ -1291,7 +1291,7 @@ class DuplexSponge:
 <p id="section-2-3">Where:<a href="#section-2-3" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-2-4.1">
-          <p id="section-2-4.1.1"><code>init(iv: bytes) -&gt; DuplexSponge</code> denotes the initialization function. This function takes as input a 32-byte initialization vector <code>iv</code> and initializes the state of the duplex sponge.<a href="#section-2-4.1.1" class="pilcrow">¶</a></p>
+          <p id="section-2-4.1.1"><code>init(iv: bytes) -&gt; DuplexSponge</code> denotes the initialization function. This function takes as input a 64-byte initialization vector <code>iv</code> and initializes the state of the duplex sponge.<a href="#section-2-4.1.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-2-4.2">
           <p id="section-2-4.2.1"><code>absorb(self, values: list[Unit])</code> denotes the absorb operation of the sponge. This function takes as input a list of <code>Unit</code> elements and mutates the <code>DuplexSponge</code> internal state.<a href="#section-2-4.2.1" class="pilcrow">¶</a></p>
@@ -1333,6 +1333,7 @@ class Codec:
           <p id="section-3-5.3.1"><code>verifier_challenge(self, hash_state) -&gt; verifier_challenge</code> denotes the squeeze operation of the codec. This function takes as input the hash state to produce an unpredictable verifier challenge <code>verifier_challenge</code>.<a href="#section-3-5.3.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
+<p id="section-3-6">The <code>verifier_challenge</code> function must generate a challenge uniformly from the underlying scalar field, from the public inputs given to the verifier. The default way to generate the challenge is by sampling a random <code>(|log_2(p)| + 128)</code>-bit string, parsing it as a big integer, and reducing it modulo the prime order of the group <code>p</code>.<a href="#section-3-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="iv-generation">
@@ -1340,7 +1341,7 @@ class Codec:
       <h2 id="name-generation-of-the-initializ">
 <a href="#section-4" class="section-number selfRef">4. </a><a href="#name-generation-of-the-initializ" class="section-name selfRef">Generation of the Initialization Vector</a>
       </h2>
-<p id="section-4-1">The initialization vector is a 32-bytes string that embeds:<a href="#section-4-1" class="pilcrow">¶</a></p>
+<p id="section-4-1">The initialization vector is a 64-byte string that embeds:<a href="#section-4-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-4-2.1">
           <p id="section-4-2.1.1">A <code>protocol_id</code>: the unique identifier for the interactive protocol and the associated relation being proven.<a href="#section-4-2.1.1" class="pilcrow">¶</a></p>
@@ -1355,7 +1356,7 @@ class Codec:
 <p id="section-4-3">It is implemented as follows.<a href="#section-4-3" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4-4">
 <pre>
-hash_state = DuplexSponge.init([0] * 32)
+hash_state = DuplexSponge.init([0] * 64)
 hash_state.absorb(I2OSP(len(protocol_id), 4))
 hash_state.absorb(protocol_id)
 hash_state.absorb(I2OSP(len(session_id), 4))
@@ -1452,6 +1453,7 @@ class NISigmaProtocol:
         return self.sigma_protocol.verifier(commitment, challenge, response)
 </pre><a href="#section-5-4" class="pilcrow">¶</a>
 </div>
+<p id="section-5-5">Serialization and deserialization of scalars and group elements are defined by the ciphersuite chosen in the Sigma Protocol. In particular, <code>serialize_challenge</code>, <code>deserialize_challenge</code>, <code>serialize_response</code>, and <code>deserialize_response</code> call into the scalar <code>serialize</code> and <code>deserialize</code> functions. Likewise, <code>serialize_commitment</code> and <code>deserialize_commitment</code> call into the group element <code>serialize</code> and <code>deserialize</code> functions.<a href="#section-5-5" class="pilcrow">¶</a></p>
 <div id="nisigmaprotocol-instances-ciphersuites">
 <section id="section-5.1">
         <h3 id="name-nisigmaprotocol-instances-c">
@@ -1598,13 +1600,13 @@ Inputs:
           <h4 id="name-initialization-2">
 <a href="#section-7.2.1" class="section-number selfRef">7.2.1. </a><a href="#name-initialization-2" class="section-name selfRef">Initialization</a>
           </h4>
-<p id="section-7.2.1-1">This is the constructor for a duplex sponge object. It is initialized with a 32-byte initialization vector.<a href="#section-7.2.1-1" class="pilcrow">¶</a></p>
+<p id="section-7.2.1-1">This is the constructor for a duplex sponge object. It is initialized with a 64-byte initialization vector.<a href="#section-7.2.1-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-7.2.1-2">
 <pre>
 new(iv)
 
 Inputs:
-- iv, a 32-byte initialization vector
+- iv, a 64-byte initialization vector
 
 Procedure:
 1. self.absorb_index = 0
