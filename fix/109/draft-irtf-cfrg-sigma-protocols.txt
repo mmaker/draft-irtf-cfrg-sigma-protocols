@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 21 April 2026                                       Apple, Inc.
-                                                         18 October 2025
+Expires: 23 April 2026                                       Apple, Inc.
+                                                         20 October 2025
 
 
                         Interactive Sigma Proofs
@@ -16,8 +16,8 @@ Abstract
 
    A Sigma Protocol is an interactive zero-knowledge proof of knowledge
    that allows a prover to convince a verifier of the validity of a
-   statement.  By the zero-knowledge property, no information beyond the
-   truth of the statement is revealed.
+   statement.  It satisfies the properties of completeness, soudness,
+   and zero-knowledge.
 
    This document describes Sigma Protocols for proving knowledge of pre-
    images of linear maps in prime-order elliptic-curve groups.  Examples
@@ -57,7 +57,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 21 April 2026.
+   This Internet-Draft will expire on 23 April 2026.
 
 Copyright Notice
 
@@ -549,6 +549,8 @@ Procedure:
    statement.append_equation(C, [(var_x, G), (var_r, H)])
 
 2.3.  Ciphersuites
+
+   We consider ciphersuites of prime-order elliptic curve groups.
 
 2.3.1.  P-256 (secp256r1)
 
