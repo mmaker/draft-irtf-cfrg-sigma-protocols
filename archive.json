@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-10-21T01:16:28.051547+00:00",
+  "timestamp": "2025-11-04T01:17:24.297486+00:00",
   "repo": "mmaker/draft-irtf-cfrg-sigma-protocols",
   "labels": [
     {
@@ -5497,7 +5497,7 @@
       "labels": [],
       "body": "- Move non-interactive security considerations to the Fiat-Shamir spec\r\n- Expand on interactive security properties to include completeness, and give a longer definition of deniability\r\n\r\nOpen to feedback on the explanation of completeness and deniability.\r\n\r\nThis addresses points 1 and 2 of https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/70, and the last two points of https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/issues/66.",
       "createdAt": "2025-10-20T00:25:21Z",
-      "updatedAt": "2025-10-20T20:36:13Z",
+      "updatedAt": "2025-11-03T15:52:52Z",
       "baseRepository": "mmaker/draft-irtf-cfrg-sigma-protocols",
       "baseRefName": "main",
       "baseRefOid": "d34d05919028bf0f12ef40231869783957f17956",
@@ -5515,6 +5515,13 @@
           "body": "Without an approving review, I can't merge this in, in time for IETF124 submission. These definitions will have to be included in a future version instead.",
           "createdAt": "2025-10-20T20:36:13Z",
           "updatedAt": "2025-10-20T20:36:13Z"
+        },
+        {
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "body": "@cathieyun some minor notes and nitpicks:\r\n \r\n- the fiat-shamir transformation we are doing is never a proof, it can at best hope to be an argument, since it relies on the security of the hash function. \r\n- highlighted that the fiat-shamir transformation carries over properties from the interactive protocol. Suggested some changes, let me know if this is confusing for a reader.",
+          "createdAt": "2025-11-03T15:52:52Z",
+          "updatedAt": "2025-11-03T15:52:52Z"
         }
       ],
       "reviews": [
@@ -5615,6 +5622,38 @@
               "body": "How about: \r\n\r\n> The Fiat-Shamir transformation of a honest-verifier zero-knowledge proof of knowledge provides: \r\n> - Completeness:  If the statement being proved is true, an honest verifier can be convinced of this fact by an honest prover via the proof.\r\n> - Soundness: If The proof is valid, the prover must have knowledge of a secret witness satisfying the proof statement. This property ensures that valid proofs cannot be generated without possession of the corresponding witness.\r\n> - Zero-Knowledge:  the string produced by `prove` function does not reveal any information beyond what can be directly inferred from the statement being valid. This ensures that verifiers gain no knowledge about the witness.\r\n>\r\n> In particular, the Fiat-Shamir transformation of Sigma Protocols is a zero-knowledge and sound argument of knowledge. ",
               "createdAt": "2025-10-20T04:22:29Z",
               "updatedAt": "2025-10-20T04:22:33Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDONyiw_87LWfab",
+          "commit": {
+            "abbreviatedOid": "d8d331b"
+          },
+          "author": "mmaker",
+          "authorAssociation": "OWNER",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2025-11-03T15:47:45Z",
+          "updatedAt": "2025-11-03T15:51:01Z",
+          "comments": [
+            {
+              "originalPosition": 6,
+              "body": "```suggestion\nThe Fiat-Shamir transformation of a carries over the soundness and witness hiding properties of the interactive proof:\n```",
+              "createdAt": "2025-11-03T15:47:45Z",
+              "updatedAt": "2025-11-03T15:51:01Z"
+            },
+            {
+              "originalPosition": 10,
+              "body": "```suggestion\n- **Soundness**: If the interactive proof is sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without possession of the corresponding witness.\n```",
+              "createdAt": "2025-11-03T15:48:55Z",
+              "updatedAt": "2025-11-03T15:51:01Z"
+            },
+            {
+              "originalPosition": 12,
+              "body": "```suggestion\n- **Zero-Knowledge**: If the interactive proof is honest-verifier zero-knowledge, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid. This ensures that verifiers gain no knowledge about the witness.\n```",
+              "createdAt": "2025-11-03T15:50:49Z",
+              "updatedAt": "2025-11-03T15:51:01Z"
             }
           ]
         }
