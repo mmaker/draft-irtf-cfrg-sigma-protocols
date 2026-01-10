@@ -600,7 +600,7 @@ This composition retains soundness if **both** problems remain hard. AND composi
 
 As of now, it is responsibility of the user to pick a unique protocol identifier that identifies the proof system. This will be expanded in future versions of this specification.
 
-# 6. Generation of the instance identifier {#instance-id-generation}
+# Generation of the instance identifier {#instance-id-generation}
 
 As of now, it is responsibility of the user to pick a unique instance identifier that identifies the statement being proven.
 
