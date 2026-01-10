@@ -581,7 +581,7 @@ Specifically, these proofs can be used to protect privacy against post-quantum a
 - Post-quantum blindness
 - Protection against "harvest now, decrypt later" attacks.
 
-## 4.2. Soundness Considerations
+## Soundness Considerations
 
 While the proofs themselves offer privacy protections against quantum adversaries, the hardness of the relation being proven depends (at best) on the hardness of the discrete logarithm problem over the elliptic curves specified in {{ciphersuites}}.
 Since this problem is known to be efficiently solvable by quantum computers using Shor's algorithm, these proofs MUST NOT be relied upon for post-quantum soundness guarantees.
