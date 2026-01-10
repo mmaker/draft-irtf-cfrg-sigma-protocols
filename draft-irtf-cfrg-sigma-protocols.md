@@ -95,7 +95,7 @@ Being zero-knowledge, they ensure that no information about the witness is leake
 
 --- middle
 
-# 1. Introduction
+# Introduction
 
 A *Sigma protocol* is a three-move interactive proof system between two parties: a Prover, who holds a secret witness, and a Verifier, who wishes to be convinced that the Prover knows a valid witness for a given statement.
 The protocol proceeds through three sequential steps—commitment, challenge, and response—that together enable the Verifier to check the validity of the claim without learning anything about the witness itself.
@@ -127,7 +127,7 @@ The following figure illustrates the general message flow of a Sigma protocol, h
 ~~~
 Figure 1 — Message Flow of a Generic Sigma Protocol
 
-## 1.1. Terminology
+## Terminology
 
 The following terminology is used throughout this document:
 
@@ -149,7 +149,7 @@ The following terminology is used throughout this document:
 
 `msm` : Multi-scalar multiplication.
 
-## 1.2. Notation
+## Notation
 
 Throughout this document, the following mathematical notation and conventions are used:
 
@@ -161,7 +161,7 @@ Throughout this document, the following mathematical notation and conventions ar
 
 `*` : Scalar multiplication in the group (`a * X`).
 
-## 1.3. Core interface
+## Core interface
 
 The public interface exposes functions derived from an internal structure containing the definition of a sigma protocol.
 
@@ -209,7 +209,7 @@ The simulated transcript `(commitment, challenge, response)` must be indistingui
 
 The abstraction `SigmaProtocol` allows implementing different types of statements and combiners of those, such as OR statements, validity of t-out-of-n statements, and more.
 
-# 2. Sigma protocols over prime-order groups {#sigma-protocol-group}
+# Sigma protocols over prime-order groups {#sigma-protocol-group}
 
 The following sub-section presents concrete instantiations of sigma protocols over prime-order elliptic curve groups.
 It relies on a prime-order elliptic-curve group as described in {{group-abstraction}}.
@@ -228,7 +228,7 @@ Line 2 states that the private information (the **witness**) consists of the sca
 Finally, line 3 states that the linear relation that needs to be proven is
 `x * G  = X` and `x * H = Y`.
 
-## 2.1. Group abstraction {#group-abstraction}
+## Group abstraction {#group-abstraction}
 
 Because of their dominance, the presentation in the following focuses on proof goals over elliptic curves, therefore leveraging additive notation. For prime-order subgroups of residue classes, all notation needs to be changed to multiplicative, and references to elliptic curves (e.g., curve) need to be replaced by their respective counterparts over residue classes.
 
@@ -236,7 +236,7 @@ We detail the functions that can be invoked on these objects. Example choices ca
 
 This subsection is divided into two parts: the first specifies groups and their elements, and the second specifies the coefficient field (or the exponent field, in the case of a residue group) associated with the group.
 
-### 2.1.1. Group {#group}
+### Group {#group}
 
 A group is represented by an interface named `Group` and provides a set of functions and values associated with the underlying structure that implements it. Each group has an associated type `Scalar`, which MUST represent the elements of the coefficient field associated with the group. The properties of this field are detailed in the following section.
 
@@ -266,7 +266,7 @@ These methods ensure correct and interoperable serialization for communication a
 - `serialize(elements: [Group; N])`: serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
 - `deserialize(buffer)`: attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group (see Section [Serialization](#serialization)). This function can raise a `DeserializeError` if deserialization fails.
 
-### 2.1.2. Scalar {#scalar}
+### Scalar {#scalar}
 
 #### Properties and Constants
 
@@ -287,11 +287,11 @@ These methods ensure correct and interoperable serialization for communication a
 - `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
 - `deserialize(buffer)`: attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field (see Section [Serialization](#serialization)). This function can raise a `DeserializeError` if deserialization fails.
 
-### 2.1.3. Serialization {#serialization}
+### Serialization {#serialization}
 
 The serialization of group elements as well as scalars of the associated field MUST be canonical. In other words, each element has exactly one valid byte-string representation, called the canonical representation. Consequently, the `deserialize()` method MUST only convert the canonical representation of elements into group and field elements; otherwise, it MUST return an error. This uniqueness, also referred to as non-malleability of the encoding, provides a form of security for Sigma protocols.
 
-## 2.2. Proofs of preimage of a linear map
+## Proofs of preimage of a linear map
 
 ### Core protocol
 
@@ -532,7 +532,7 @@ Given group elements `G`, `H` such that `C = x * G + r * H`, then the statement 
     var_x, var_r = statement.allocate_scalars(2)
     statement.append_equation(C, [(var_x, G), (var_r, H)])
 
-## 2.3. Ciphersuites {#ciphersuites}
+## Ciphersuites {#ciphersuites}
 
 ### P-256 (secp256r1)
 
@@ -549,7 +549,7 @@ This ciphersuite uses P-256 {{SP800}} for the Group.
 - `serialize(s)`: Relies on the Field-Element-to-Octet-String conversion according to {{SEC1}}; `Ns = 32`.
 - `deserialize(buf)`: Reads the byte array `buf` in chunks of 32 bytes using Octet-String-to-Field-Element from {{SEC1}}. This function can fail if the input does not represent a Scalar in the range `[0, G.Order() - 1]`.
 
-# 3. Security Considerations
+# Security Considerations
 
 Interactive sigma proofs are special sound and honest-verifier zero-knowledge. These proofs are deniable (without transferable message authenticity).
 
@@ -561,16 +561,16 @@ We focus on the security guarantees of the non-interactive Fiat-Shamir transform
 
 While theoretical analysis demonstrates that both soundness and zero-knowledge properties are statistical in nature, practical security depends on the cryptographic strength of the underlying hash function, which is defined by the Fiat-Shamir transformation. It's important to note that the soundness of a zero-knowledge proof provides no guarantees regarding the computational hardness of the relation being proven. An assessment of the specific hardness properties for relations proven using these protocols falls outside the scope of this document.
 
-## 3.1. Privacy Considerations
+## Privacy Considerations
 
 Interactive sigma proofs are insecure against malicious verifiers and should not be used.
 The non-interactive Fiat-Shamir transformation leads to publicly verifiable (transferable) proofs that are statistically zero-knowledge.
 
-# 4. Post-Quantum Security Considerations
+# Post-Quantum Security Considerations
 
 The zero-knowledge proofs described in this document provide statistical zero-knowledge and statistical soundness properties when modeled in the random oracle model.
 
-## 4.1. Privacy Considerations
+## Privacy Considerations
 
 These proofs offer zero-knowledge guarantees, meaning they do not leak any information about the prover's witness beyond what can be inferred from the proven statement itself. This property holds even against quantum adversaries with unbounded computational power.
 
