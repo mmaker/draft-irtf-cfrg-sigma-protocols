@@ -177,7 +177,7 @@ The public interface exposes functions derived from an internal structure contai
        def deserialize_commitment(self, data: bytes) -> commitment
        def deserialize_response(self, data: bytes) -> response
 
-       # Simulator primitives (optional)
+       # Simulator (optional)
        def simulate_response(self, rng) -> response
        def simulate_commitment(self, response, challenge) -> commitment
 
