@@ -596,7 +596,7 @@ Implementations should consider the timeline for quantum computing advances when
 Implementers MAY adopt a hybrid approach during migration to post-quantum security by using AND composition of proofs. This approach enables gradual migration while maintaining security against classical adversaries.
 This composition retains soundness if **both** problems remain hard. AND composition of proofs is NOT described in this specification, but examples may be found in the proof-of-concept implementation and in {{BonehS23}}.
 
-# 5. Generation of the protocol identifier {#protocol-id-generation}
+# Generation of the protocol identifier {#protocol-id-generation}
 
 As of now, it is responsibility of the user to pick a unique protocol identifier that identifies the proof system. This will be expanded in future versions of this specification.
 
