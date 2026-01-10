@@ -157,7 +157,7 @@ Throughout this document, the following mathematical notation and conventions ar
 
 `a`, `b`, `x`, `r`, or `s` : Scalars in 𝔽ₚ (typically witnesses components, randomness, challenges, or responses).
 
-`X`, `Y`, `G` or `H` : Group elements (or points if elliptic curve) in 𝔾 (typically public parameters or commitments components).
+`X`, `Y`, `G`, or `H` : Group elements (or points if elliptic curve) in 𝔾 (typically public parameters or commitments components).
 
 `*` : Scalar multiplication in the group (`a * X`).
 
