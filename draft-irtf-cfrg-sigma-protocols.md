@@ -145,7 +145,7 @@ The following terminology is used throughout this document:
 
 `scalar` : An element of the finite field `𝔽ₚ` associated with the group, where p is the prime order of the group.
 
-`group element` (or `group point`) : An element of a prime-order (elliptic curve) group `𝔾`. Group operations are written additively.
+`group element` (or `group point`) : An element of the prime-order (elliptic curve) group. Group operations are written additively.
 
 `msm` : Multi-scalar multiplication.
 
@@ -153,11 +153,11 @@ The following terminology is used throughout this document:
 
 Throughout this document, the following mathematical notation and conventions are used:
 
-`p` : Prime order of the group 𝔾.
+`p` : Prime order of the group.
 
 `a`, `b`, `x`, `r`, or `s` : Scalars in 𝔽ₚ (typically witnesses components, randomness, challenges, or responses).
 
-`X`, `Y`, `G`, or `H` : Group elements (or points if elliptic curve) in 𝔾 (typically public parameters or commitments components).
+`X`, `Y`, `G`, or `H` : Group elements (or points if elliptic curve). Typically public parameters or commitments components.
 
 `*` : Scalar multiplication in the group (`a * X`).
 
