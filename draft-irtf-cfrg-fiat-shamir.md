@@ -56,13 +56,13 @@ It depends on:
 
 # Security Considerations
 
-The Fiat-Shamir transformation of a honest-verifier zero-knowledge proof of knowledge provides:
+The Fiat-Shamir transformation carries over the soundness and witness hiding properties of the interactive proof:
 
 - **Completeness**: If the statement being proved is true, an honest verifier can be convinced of this fact by an honest prover via the proof.
 
-- **Soundness**: If The proof is valid, the prover must have knowledge of a secret witness satisfying the proof statement. This property ensures that valid proofs cannot be generated without possession of the corresponding witness.
+- **Soundness**: If the interactive proof is sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without possession of the corresponding witness.
 
-- **Zero-Knowledge**: the proof string produced by prove function does not reveal any information beyond what can be directly inferred from the statement being valid. This ensures that verifiers gain no knowledge about the witness.
+- **Zero-Knowledge**: If the interactive proof is honest-verifier zero-knowledge, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid. This ensures that verifiers gain no knowledge about the witness.
 
 In particular, the Fiat-Shamir transformation of Sigma Protocols is a zero-knowledge and sound argument of knowledge.
 
