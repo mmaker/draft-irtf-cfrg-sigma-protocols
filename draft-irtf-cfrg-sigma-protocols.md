@@ -476,6 +476,10 @@ While theoretical analysis demonstrates that both soundness and zero-knowledge p
 Sigma Protocols are insecure against malicious verifiers and should not be used.
 The non-interactive Fiat-Shamir transformation leads to publicly verifiable (transferable) proofs that are statistically zero-knowledge.
 
+## Constant-Time Requirements
+
+To protect against timing attacks which may reveal private values, it is important that the implementation of underlying group and field operations are constant-time. Operations such as modular reduction, scalar multiplication, random value generation, and all other group and field operations are required to be constant-time especially when working with inputs which are private to prevent side-channel attacks which may reveal their values.
+
 # Post-Quantum Security Considerations
 
 The zero-knowledge proofs described in this document provide statistical zero-knowledge and statistical soundness properties when modeled in the random oracle model.
