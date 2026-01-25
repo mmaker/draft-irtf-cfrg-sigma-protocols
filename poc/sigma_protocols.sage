@@ -44,13 +44,13 @@ class SigmaProtocol(ABC):
     @abstractmethod
     def deserialize_response(self, data):
         raise NotImplementedError
-
+    
     # optional
-    def simulate_response(self, rng):
+    def compute_commitment_from_transcript(self, response, challenge):
         raise NotImplementedError
 
     # optional
-    def simulate_commitment(self, response, challenge):
+    def simulator(self, rng, challenge):
         raise NotImplementedError
 
 
@@ -107,14 +107,18 @@ class SchnorrProof(SigmaProtocol):
 
     def deserialize_response(self, data):
         return self.instance.Domain.deserialize(data)
-
-    def simulate_response(self, rng):
-        return [self.instance.Domain.random(rng) for i in range(self.instance.linear_map.num_scalars)]
-
-    def simulate_commitment(self, response, challenge):
+    
+    def compute_commitment_from_transcript(self, response, challenge):
+        # Compute image times the challenge
         h_c_values = [self.instance.image[i] * challenge for i in range(self.instance.linear_map.num_constraints)]
         # Generate what the correct commitment would be based on the random response and challenge.
         return [self.instance.linear_map(response)[i] - h_c_values[i] for i in range(self.instance.linear_map.num_constraints)]
+
+    def simulator(self, rng, challenge):
+        # Randomly generate the response
+        response = [self.instance.Domain.random(rng) for i in range(self.instance.linear_map.num_scalars)]
+        commitment = self.compute_commitment_from_transcript(response)
+        return (commitment, challenge, response)
 
     def get_instance_label(self):
         return self.instance.get_label()

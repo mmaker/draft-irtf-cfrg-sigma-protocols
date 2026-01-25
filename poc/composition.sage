@@ -123,12 +123,12 @@ class OrProof(SchnorrProof):
             else:
                 if not known_value_hit:
                     known_index += 1
+                # Pick a random value for the challenge
+                prover_challenge = protocol.instance.Domain.random(rng)
                 # We perform the simulator for the prover in order to generate valid commitments
                 # for the unknown witnesses, assuming the prover starts with a random response.
-                simulated_responses = protocol.simulate_response(rng)
-                # Also pick a random value for the challenge
-                prover_challenge = protocol.instance.Domain.random(rng)
-                simulated_commitments = protocol.simulate_commitment(simulated_responses, prover_challenge)
+                (simulated_responses, _challenge, simulated_commitments) = protocol.simulator(rng, prover_challenge)
+                assert(prover_challenge == _challenge)
                 commitments.append(simulated_commitments)
                 unknown_witness_prover_states.append((prover_challenge, simulated_responses))
         assert(not known_commitment is None)
