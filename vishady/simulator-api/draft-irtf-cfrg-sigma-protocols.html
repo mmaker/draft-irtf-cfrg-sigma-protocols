@@ -1053,7 +1053,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù &amp; Yun</td>
-<td class="center">Expires 29 July 2026</td>
+<td class="center">Expires 30 July 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1066,12 +1066,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-irtf-cfrg-sigma-protocols-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-01-25" class="published">25 January 2026</time>
+<time datetime="2026-01-26" class="published">26 January 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-07-29">29 July 2026</time></dd>
+<dd class="expires"><time datetime="2026-07-30">30 July 2026</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1126,7 +1126,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 29 July 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 30 July 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1849,17 +1849,21 @@ statement.append_equation(C, [(var_x, G), (var_r, H)])
       <h2 id="name-security-considerations">
 <a href="#section-3" class="section-number selfRef">3. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
       </h2>
-<p id="section-3-1">Sigma Protocols are special sound and honest-verifier zero-knowledge. These proofs are deniable (without transferable message authenticity).<a href="#section-3-1" class="pilcrow">¶</a></p>
-<p id="section-3-2">We focus on the security guarantees of the non-interactive Fiat-Shamir transformation, where they provide the following guarantees (in the random oracle model):<a href="#section-3-2" class="pilcrow">¶</a></p>
+<p id="section-3-1">Interactive Sigma Protocols have the following properties:<a href="#section-3-1" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-3-3.1">
-          <p id="section-3-3.1.1"><strong>Knowledge soundness</strong>: If the proof is valid, the prover must have knowledge of a secret witness satisfying the proof statement. This property ensures that valid proofs cannot be generated without possession of the corresponding witness.<a href="#section-3-3.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-3-2.1">
+          <p id="section-3-2.1.1"><strong>Knowledge soundness</strong>: If the proof is valid, the prover must have knowledge of a secret witness satisfying the proof statement. This property ensures that valid proofs cannot be generated without possession of the corresponding witness.<a href="#section-3-2.1.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-3-3.2">
-          <p id="section-3-3.2.1"><strong>Zero-knowledge</strong>: The proof string produced by the <code>prove</code> function does not reveal any information beyond what can be directly inferred from the statement itself. This ensures that verifiers gain no knowledge about the witness.<a href="#section-3-3.2.1" class="pilcrow">¶</a></p>
+        <li class="normal" id="section-3-2.2">
+          <p id="section-3-2.2.1"><strong>Honest verifier zero-knowledge</strong>: The proof string produced by the <code>prove</code> function does not reveal any information beyond what can be directly inferred from the statement itself. This ensures that honest verifiers gain no knowledge about the witness.<a href="#section-3-2.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-3-2.3">
+          <p id="section-3-2.3.1"><strong>Completeness</strong>: If the statement being proved is true, an honest verifier can be convinced of this fact by an honest prover via the proof.<a href="#section-3-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-3-2.4">
+          <p id="section-3-2.4.1"><strong>Deniable</strong>: Because Interactive Sigma Protocols don't have transferable message authenticity, a third party (not the prover or verifier) cannot be convinced that the prover made the proof. This means that the Sigma Protocol interaction is not transferable as evidence to a third party.<a href="#section-3-2.4.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
-<p id="section-3-4">While theoretical analysis demonstrates that both soundness and zero-knowledge properties are statistical in nature, practical security depends on the cryptographic strength of the underlying hash function, which is defined by the Fiat-Shamir transformation. It's important to note that the soundness of a zero-knowledge proof provides no guarantees regarding the computational hardness of the relation being proven. An assessment of the specific hardness properties for relations proven using these protocols falls outside the scope of this document.<a href="#section-3-4" class="pilcrow">¶</a></p>
 <div id="privacy-considerations">
 <section id="section-3.1">
         <h3 id="name-privacy-considerations">
