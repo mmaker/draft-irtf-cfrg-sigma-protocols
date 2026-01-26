@@ -46,7 +46,11 @@ class SigmaProtocol(ABC):
         raise NotImplementedError
     
     # optional
-    def compute_commitment_from_transcript(self, response, challenge):
+    def simulate_commitment(self, challenge, simulator_state):
+        raise NotImplementedError
+    
+    # optional
+    def simulate_response(self, rng):
         raise NotImplementedError
 
     # optional
@@ -59,6 +63,7 @@ class SchnorrProof(SigmaProtocol):
     A sigma protocol for simple linear relations.
     """
     ProverState = namedtuple("ProverState", ["witness", "nonces"])
+    SimulatorState = namedtuple("SimulatorState", ["responses"])
 
     def __init__(self, instance):
         self.instance = instance
@@ -108,16 +113,24 @@ class SchnorrProof(SigmaProtocol):
     def deserialize_response(self, data):
         return self.instance.Domain.deserialize(data)
     
-    def compute_commitment_from_transcript(self, response, challenge):
+    def simulate_response(self, rng):
+        # Randomly generate the response
+        response = [self.instance.Domain.random(rng) for i in range(self.instance.linear_map.num_scalars)]
+        simulator_state = self.SimulatorState(response)
+        return (response, simulator_state)
+    
+    def simulate_commitment(self, response, challenge, simulator_state: SimulatorState):
+        # Grab the response from the simulator state
+        response_from_state, = simulator_state
+        assert(response == response_from_state)
         # Compute image times the challenge
         h_c_values = [self.instance.image[i] * challenge for i in range(self.instance.linear_map.num_constraints)]
         # Generate what the correct commitment would be based on the random response and challenge.
         return [self.instance.linear_map(response)[i] - h_c_values[i] for i in range(self.instance.linear_map.num_constraints)]
 
     def simulator(self, rng, challenge):
-        # Randomly generate the response
-        response = [self.instance.Domain.random(rng) for i in range(self.instance.linear_map.num_scalars)]
-        commitment = self.compute_commitment_from_transcript(response)
+        response, simulator_state = self.simulate_response(rng)
+        commitment = self.simulate_commitment(response, challenge, simulator_state)
         return (commitment, challenge, response)
 
     def get_instance_label(self):
