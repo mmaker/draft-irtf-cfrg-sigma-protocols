@@ -54,6 +54,20 @@ It depends on:
 - A _hash function_ implementing the duplex sponge interface, capable of absorbing inputs incrementally and squeezing variable-length unpredictable messages.
 - A _codec_, which securely remaps prover elements into the base alphabet, and outputs of the duplex sponge into verifier messages (preserving the distribution).
 
+# Security Considerations
+
+The Fiat-Shamir transformation carries over the soundness and witness hiding properties of the interactive proof:
+
+- **Completeness**: If the statement being proved is true, an honest verifier can be convinced of this fact by an honest prover via the proof.
+
+- **Soundness**: If the interactive proof is sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without possession of the corresponding witness.
+
+- **Zero-Knowledge**: If the interactive proof is honest-verifier zero-knowledge, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid. This ensures that verifiers gain no knowledge about the witness.
+
+In particular, the Fiat-Shamir transformation of Sigma Protocols is a zero-knowledge and sound argument of knowledge.
+
+Note that non-interactive Sigma Protocols do not have deniability, as the non-interactive nature of the protocol implies transferable message authenticity.
+
 # The Duplex Sponge Interface
 
 The duplex sponge interface defines the space (the `Unit`) where the hash function operates in, plus a function for absorbing and squeezing prover messages. It provides the following interface.
