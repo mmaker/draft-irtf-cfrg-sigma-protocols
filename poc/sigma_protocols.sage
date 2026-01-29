@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from collections import namedtuple
 
 from sagelib import groups
+from sagelib.xof import XofShake128
 
 
 class SigmaProtocol(ABC):
@@ -18,7 +19,7 @@ class SigmaProtocol(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def prover_commit(self, witness, rng):
+    def prover_commit(self, witness, seed):
         raise NotImplementedError
 
     @abstractmethod
@@ -46,7 +47,7 @@ class SigmaProtocol(ABC):
         raise NotImplementedError
 
     # optional
-    def simulate_response(self, rng):
+    def simulate_response(self, seed):
         raise NotImplementedError
 
     # optional
@@ -63,8 +64,15 @@ class SchnorrProof(SigmaProtocol):
     def __init__(self, instance):
         self.instance = instance
 
-    def prover_commit(self, witness, rng):
-        nonces = [self.instance.Domain.random(rng) for _ in range(self.instance.linear_map.num_scalars)]
+    def prover_commit(self, witness, seed):
+        dst = "SigmaProof-nonce"
+        nonces = XofShake128.expand_into_vec(
+            seed,
+            dst,
+            self.instance.Domain.order,
+            self.instance.linear_map.num_scalars
+        )
+        nonces = [self.instance.Domain.field(n) for n in nonces]
         prover_state = self.ProverState(witness, nonces)
         commitment = self.instance.linear_map(nonces)
         return (prover_state, commitment)

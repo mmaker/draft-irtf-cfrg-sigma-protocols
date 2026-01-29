@@ -3,25 +3,34 @@
 
 from sagelib.ciphersuite import CIPHERSUITE
 from sagelib.sigma_protocols import LinearRelation
-from sagelib.test_drng import TestDRNG
+from sagelib.xof import XofShake128
+import hashlib
 
 import json
+
+
+def test_seed(test_name, counter=0):
+    """Generate a deterministic seed for test vectors."""
+    label = f"test-vector-{test_name}-{counter}".encode('utf-8')
+    shake = hashlib.shake_128()
+    shake.update(label)
+    return shake.digest(32)
 
 
 def test_vector(test_vector_function):
     def inner(vectors, suite):
         NISigmaProtocol = CIPHERSUITE[suite]
-        instance_witness_rng = TestDRNG(b"instance_witness_generation_seed")
-        proof_generation_rng = TestDRNG(b"proof_generation_seed")
+        instance_witness_seed = test_seed("instance_witness_generation", 0)
+        proof_generation_seed = test_seed("proof_generation", 0)
 
         test_vector_name = f"{test_vector_function.__name__}"
-        instance, witness = test_vector_function(instance_witness_rng, NISigmaProtocol.Codec.GG)
+        instance, witness = test_vector_function(instance_witness_seed, NISigmaProtocol.Codec.GG)
 
         session_id = test_vector_name.encode('utf-8')
-        batchable_narg_string = NISigmaProtocol(session_id, instance).prove_batchable(witness, proof_generation_rng)
+        batchable_narg_string = NISigmaProtocol(session_id, instance).prove_batchable(witness, proof_generation_seed)
         assert NISigmaProtocol(session_id, instance).verify_batchable(batchable_narg_string)
         hex_batchable_narg_string = batchable_narg_string.hex()
-        narg_string = NISigmaProtocol(session_id, instance).prove(witness, proof_generation_rng)
+        narg_string = NISigmaProtocol(session_id, instance).prove(witness, proof_generation_seed)
         assert NISigmaProtocol(session_id, instance).verify(narg_string)
         hex_narg_string = narg_string.hex()
         print(f"{test_vector_name} test vectors generated\n")
@@ -65,7 +74,7 @@ def write_group_vectors(fh, label, vector):
 
 
 @test_vector
-def discrete_logarithm(rng, group):
+def discrete_logarithm(seed, group):
     """
     Proves the following statement:
 
@@ -81,7 +90,7 @@ def discrete_logarithm(rng, group):
     G = group.generator()
     statement.set_elements([(var_G, G)])
 
-    x = group.ScalarField.random(rng)
+    x = group.ScalarField.random(seed, "test-scalar-0")
     X = G * x
     assert [X] == statement.linear_map([x])
 
@@ -90,7 +99,7 @@ def discrete_logarithm(rng, group):
 
 
 @test_vector
-def dleq(rng, group):
+def dleq(seed, group):
     """
     Proves the following statement:
 
@@ -98,8 +107,8 @@ def dleq(rng, group):
 
     """
     G = group.generator()
-    H = group.random(rng)
-    x = group.ScalarField.random(rng)
+    H = group.random(seed, "test-group-0")
+    x = group.ScalarField.random(seed, "test-scalar-1")
     X = G * x
     Y = H * x
 
@@ -115,7 +124,7 @@ def dleq(rng, group):
 
 
 @test_vector
-def pedersen_commitment(rng, group):
+def pedersen_commitment(seed, group):
     """
     Proves the following statement:
 
@@ -123,9 +132,9 @@ def pedersen_commitment(rng, group):
 
     """
     G = group.generator()
-    H = group.random(rng)
-    x = group.ScalarField.random(rng)
-    r = group.ScalarField.random(rng)
+    H = group.random(seed, "test-group-0")
+    x = group.ScalarField.random(seed, "test-scalar-1")
+    r = group.ScalarField.random(seed, "test-scalar-2")
     witness = [x, r]
 
     C = G * x + H * r
@@ -139,7 +148,7 @@ def pedersen_commitment(rng, group):
 
 
 @test_vector
-def pedersen_commitment_dleq(rng, group):
+def pedersen_commitment_dleq(seed, group):
     """
     Proves the following statement:
 
@@ -150,8 +159,8 @@ def pedersen_commitment_dleq(rng, group):
                 Y = x0 * G2 + x1 * G3
             }
     """
-    generators = [group.random(rng) for i in range(4)]
-    witness = [group.ScalarField.random(rng) for i in range(2)]
+    generators = [group.random(seed, f"test-group-{i}") for i in range(4)]
+    witness = [group.ScalarField.random(seed, f"test-scalar-{i}") for i in range(2)]
     X = group.msm(witness, generators[:2])
     Y = group.msm(witness, generators[2:4])
 
@@ -169,7 +178,7 @@ def pedersen_commitment_dleq(rng, group):
 
 
 @test_vector
-def bbs_blind_commitment_computation(rng, group):
+def bbs_blind_commitment_computation(seed, group):
     """
     This example test vector is meant to replace:
     https://www.ietf.org/archive/id/draft-kalos-bbs-blind-signatures-01.html#section-4.1.1
@@ -183,12 +192,12 @@ def bbs_blind_commitment_computation(rng, group):
     # length(committed_messages)
     M = 3
     # BBS.create_generators(M + 1, "BLIND_" || api_id)
-    (Q_2, J_1, J_2, J_3) = [group.random(rng) for i in range(M+1)]
+    (Q_2, J_1, J_2, J_3) = [group.random(seed, f"test-group-{i}") for i in range(M+1)]
     # BBS.messages_to_scalars(committed_messages,  api_id)
-    (msg_1, msg_2, msg_3) = [group.ScalarField.random(rng) for i in range(M)]
+    (msg_1, msg_2, msg_3) = [group.ScalarField.random(seed, f"test-scalar-{i}") for i in range(M)]
 
     # these are computed before the proof in the specification
-    secret_prover_blind = group.ScalarField.random(rng)
+    secret_prover_blind = group.ScalarField.random(seed, "test-scalar-blind")
     C = secret_prover_blind * Q_2 + msg_1 * J_1 + msg_2 * J_2 + msg_3 * J_3
 
     # This is the part that needs to be changed in the specification of blind bbs.

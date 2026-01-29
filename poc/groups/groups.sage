@@ -6,6 +6,7 @@ import struct
 from abc import ABC, abstractmethod
 
 from sagelib.hash_to_field import I2OSP, OS2IP, XMDExpander
+from sagelib.xof import XofShake128
 
 from sagelib.suite_p256 import p256_sswu_ro, p256_order, p256_p, p256_F, p256_A, p256_B
 from sagelib.suite_p384 import p384_sswu_ro, p384_order, p384_p, p384_F, p384_A, p384_B
@@ -28,8 +29,10 @@ class Scalar(ABC):
         return int(cls.field_bytes_length)
 
     @classmethod
-    def random(cls, rng):
-        return cls.field(rng.randint(1, cls.order - 1))
+    def random(cls, seed, dst):
+        """Generate a random scalar using XOF seed expansion"""
+        scalars = XofShake128.expand_into_vec(seed, dst, cls.order, 1)
+        return cls.field(scalars[0])
 
     @classmethod
     @abstractmethod
@@ -72,6 +75,12 @@ class Group(ABC):
     def identity(cls):
         raise NotImplementedError
 
+    @classmethod
+    def random(cls, seed, dst):
+        """Generate a random group element using XOF seed expansion"""
+        scalar = cls.ScalarField.random(seed, dst)
+        return cls.scalar_mult(scalar, cls.generator())
+
     @abstractmethod
     def _serialize(self, element):
         raise NotImplementedError
@@ -105,10 +114,6 @@ class Group(ABC):
             cls._deserialize(encoded[i: i + element_len])
             for i in range(0, encoded_len, element_len)
         ]
-
-    @classmethod
-    def random(cls, rng):
-        return cls.generator() * cls.ScalarField.random(rng)
 
     @classmethod
     def msm(cls, scalars, points):

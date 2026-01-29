@@ -92,6 +92,133 @@ Where:
 
 The `verifier_challenge` function must generate a challenge uniformly from the underlying scalar field, from the public inputs given to the verifier. The default way to generate the challenge is by sampling a random `(|log_2(p)| + 128)`-bit string, parsing it as a big integer, and reducing it modulo the prime order of the group `p`.
 
+# Seed Expansion via XOF {#xof}
+
+The Fiat-Shamir transformation requires randomness for generating the prover's commitment nonces during the `prover_commit` operation. Instead of requiring a stateful random number generator, this specification uses deterministic seed expansion via an eXtendable Output Function (XOF).
+
+An XOF takes a fixed-length seed and expands it into an arbitrary-length pseudorandom output stream. This approach provides several benefits: deterministic proof generation for testing, clear separation between entropy generation (seed creation) and randomness expansion (XOF operation), and built-in domain separation via domain separation tags.
+
+## XOF Interface {#xof-interface}
+
+Concrete XOFs implement a class `Xof` providing the following interface:
+
+* `SEED_SIZE: int` is the size (in bytes) of a seed. For XofShake128 (the recommended XOF), `SEED_SIZE = 32`.
+
+* `Xof(seed: bytes, dst: bytes)` constructs an instance of the XOF from the given seed and a domain separation tag. The seed MUST be generated securely using a cryptographically secure pseudorandom number generator (CSPRNG), or be the output of a previous XOF invocation. The domain separation tag `dst` is a UTF-8 encoded string that identifies the specific usage context.
+
+* `xof.next(length: int) -> bytes` returns the next `length` bytes from the XOF output stream.
+
+The following class methods are provided for all concrete XOFs:
+
+~~~ python
+def expand_into_vec(cls,
+                    seed: bytes,
+                    dst: bytes,
+                    scalar_field_order: int,
+                    count: int) -> list[int]:
+    """
+    Expand seed into count uniform scalars in [1, scalar_field_order - 1].
+
+    Uses rejection sampling to ensure uniform distribution over the
+    scalar field, excluding zero.
+
+    Pre-conditions:
+        - len(seed) == cls.SEED_SIZE
+        - scalar_field_order is prime
+        - count > 0
+    """
+    xof = cls(seed, dst)
+    scalars = []
+    scalar_bytes_len = (scalar_field_order.bit_length() + 7) // 8 + 16
+
+    while len(scalars) < count:
+        candidate_bytes = xof.next(scalar_bytes_len)
+        candidate = OS2IP(candidate_bytes) % scalar_field_order
+        if 1 <= candidate < scalar_field_order:
+            scalars.append(candidate)
+
+    return scalars
+~~~
+
+The rejection sampling approach ensures that the output scalars are uniformly distributed over the range `[1, scalar_field_order - 1]`, with negligible statistical bias. The additional 16 bytes (128 bits) in `scalar_bytes_len` ensures the bias is negligible.
+
+## XofShake128 {#xof-shake128}
+
+This section describes XofShake128, an XOF based on SHAKE128 {{SHA3}}. This XOF is RECOMMENDED for generating commitment nonces and other randomness in Sigma protocols.
+
+Pre-conditions:
+
+* The seed length MUST be 32 bytes.
+* The length of the domain separation string `dst` MUST NOT exceed 65535 bytes.
+
+~~~ python
+class XofShake128(Xof):
+    """XOF wrapper for SHAKE128."""
+
+    # Associated parameters
+    SEED_SIZE = 32
+
+    def __init__(self, seed: bytes, dst: bytes):
+        if len(seed) != self.SEED_SIZE:
+            raise ValueError("seed length must be SEED_SIZE")
+        if len(dst) > 65535:
+            raise ValueError("dst too long")
+
+        self.l = 0
+        # Encode: len(dst) || dst || seed
+        self.prefix = I2OSP(len(dst), 2) + dst + seed
+
+    def next(self, length: int) -> bytes:
+        # Compute SHAKE128(prefix || counter, length)
+        # where counter tracks how many bytes we've output
+        output = SHAKE128(self.prefix + I2OSP(self.l, 4), length)
+        self.l += length
+        return output
+~~~
+
+The domain separation tag is prepended with its length to ensure unambiguous parsing. A counter is appended to ensure that successive calls to `next()` produce independent output.
+
+## Domain Separation Tags {#dst-tags}
+
+Domain separation tags (DSTs) are UTF-8 encoded strings that identify the specific context in which an XOF is being used. This prevents cross-protocol and cross-context attacks where randomness generated for one purpose might be (maliciously or accidentally) used in another context.
+
+Standard domain separation tags for Sigma protocols:
+
+* `"SigmaProof-nonce"` - For generating commitment nonces in `prover_commit`
+* `"SigmaProof-simulator"` - For generating simulated responses in `simulate_response`
+* `"SigmaProof-scalar"` - For generating random scalars in `Scalar.random`
+* `"SigmaProof-group"` - For generating random group elements in `Group.random`
+
+Applications MAY define additional domain separation tags for application-specific randomness generation. Tags SHOULD be prefixed with an application identifier to avoid conflicts.
+
+## Security Requirements {#xof-security}
+
+**Seed Generation**: Seeds MUST be generated using a cryptographically secure pseudorandom number generator (CSPRNG):
+
+* Unix/Linux: Use `/dev/urandom` or the `getrandom()` system call
+* Windows: Use `BCryptGenRandom()` API
+* Python: Use `os.urandom(32)` or `secrets.token_bytes(32)`
+* Other languages: Use the platform-provided CSPRNG
+
+Seeds MUST have at least 256 bits (32 bytes) of entropy to provide 128-bit security.
+
+**Seed Uniqueness**: Seeds MUST be unique for each proof invocation. Reusing seeds across different proofs, even for the same statement and witness, completely breaks the zero-knowledge property and may enable witness extraction attacks.
+
+**Deterministic Proofs**: Given the same seed, witness, and statement, the proof generation is deterministic. This is useful for testing and debugging, but means that seed management is critical for security. Applications that require non-deterministic proofs should generate a fresh random seed for each proof.
+
+## Test Vector Generation {#xof-test-vectors}
+
+For test vector generation and reproducible testing, implementations MAY use deterministic seed derivation:
+
+~~~ python
+def test_seed(test_name: str, counter: int) -> bytes:
+    """Generate a deterministic seed for test vectors."""
+    label = f"test-vector-{test_name}-{counter}".encode('utf-8')
+    return SHAKE128(label, 32)
+~~~
+
+This allows test vectors to be reproducible across implementations while maintaining the same security properties as random seeds (since SHAKE128 output is indistinguishable from random).
+
 # Generation of the Initialization Vector {#iv-generation}
 
 The initialization vector is a 64-byte string that embeds:
@@ -132,18 +259,24 @@ Upon initialization, the protocol receives as input:
             self.hash_state = self.Codec(iv)
             self.ip = self.Protocol(instance)
 
-        def _prove(self, witness, rng):
+        def _prove(self, witness, seed):
             # Core proving logic that returns commitment, challenge, and response.
             # The challenge is generated via the hash function.
-            (prover_state, commitment) = self.sigma_protocol.prover_commit(witness, rng)
+            (prover_state, commitment) = self.sigma_protocol.prover_commit(witness, seed)
             self.codec.prover_message(self.hash_state, commitment)
             challenge = self.codec.verifier_challenge(self.hash_state)
             response = self.sigma_protocol.prover_response(prover_state, challenge)
             return (commitment, challenge, response)
 
-        def prove(self, witness, rng):
+        def prove(self, witness, seed):
             # Default proving method using challenge-response format.
-            (commitment, challenge, response) = self._prove(witness, rng)
+            #
+            # Inputs:
+            # - witness: secret witness for the statement
+            # - seed: 32-byte seed generated by a CSPRNG
+            #
+            # The seed MUST be unique for each proof invocation.
+            (commitment, challenge, response) = self._prove(witness, seed)
             assert self.sigma_protocol.verifier(commitment, challenge, response)
             assert self.sigma_protocol.verifier(commitment, challenge, response)
             return self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
@@ -163,10 +296,16 @@ Upon initialization, the protocol receives as input:
             commitment = self.sigma_protocol.simulate_commitment(response, challenge)
             return self.sigma_protocol.verifier(commitment, challenge, response)
 
-        def prove_batchable(self, witness, rng):
+        def prove_batchable(self, witness, seed):
             # Proving method using commitment-response format.
             # Allows for batching.
-            (commitment, challenge, response) = self._prove(witness, rng)
+            #
+            # Inputs:
+            # - witness: secret witness for the statement
+            # - seed: 32-byte seed generated by a CSPRNG
+            #
+            # The seed MUST be unique for each proof invocation.
+            (commitment, challenge, response) = self._prove(witness, seed)
             # running the verifier here is just a sanity check
             assert self.sigma_protocol.verifier(commitment, challenge, response)
             return self.sigma_protocol.serialize_commitment(commitment) + self.sigma_protocol.serialize_response(response)
