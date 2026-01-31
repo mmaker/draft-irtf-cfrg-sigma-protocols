@@ -193,14 +193,7 @@ Applications MAY define additional domain separation tags for application-specif
 
 ## Security Requirements {#xof-security}
 
-**Seed Generation**: Seeds MUST be generated using a cryptographically secure pseudorandom number generator (CSPRNG):
-
-* Unix/Linux: Use `/dev/urandom` or the `getrandom()` system call
-* Windows: Use `BCryptGenRandom()` API
-* Python: Use `os.urandom(32)` or `secrets.token_bytes(32)`
-* Other languages: Use the platform-provided CSPRNG
-
-Seeds MUST have at least 256 bits (32 bytes) of entropy to provide 128-bit security.
+**Seed Generation**: Seeds MUST be generated using a cryptographically secure pseudorandom number generator (CSPRNG). Seeds MUST have at least 256 bits (32 bytes) of entropy to provide 128-bit security.
 
 **Seed Uniqueness**: Seeds MUST be unique for each proof invocation. Reusing seeds across different proofs, even for the same statement and witness, completely breaks the zero-knowledge property and may enable witness extraction attacks.
 
