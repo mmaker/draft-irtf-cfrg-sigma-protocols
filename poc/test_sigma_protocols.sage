@@ -20,10 +20,10 @@ def test_seed(test_name, counter=0):
 def test_vector(test_vector_function):
     def inner(vectors, suite):
         NISigmaProtocol = CIPHERSUITE[suite]
-        instance_witness_seed = test_seed("instance_witness_generation", 0)
-        proof_generation_seed = test_seed("proof_generation", 0)
-
         test_vector_name = f"{test_vector_function.__name__}"
+        instance_witness_seed = test_seed(test_vector_name, 0)
+        proof_generation_seed = test_seed(test_vector_name, 1)
+
         instance, witness = test_vector_function(instance_witness_seed, NISigmaProtocol.Codec.GG)
 
         session_id = test_vector_name.encode('utf-8')
