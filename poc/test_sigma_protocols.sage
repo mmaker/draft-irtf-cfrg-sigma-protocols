@@ -82,7 +82,7 @@ def discrete_logarithm(rng, group):
     statement.set_elements([(var_G, G)])
 
     x = group.ScalarField.random(rng)
-    X = G * x
+    X = group.scalar_mult(x, G)
     assert [X] == statement.linear_map([x])
 
     statement.set_elements([(var_X, X)])
@@ -100,8 +100,8 @@ def dleq(rng, group):
     G = group.generator()
     H = group.random(rng)
     x = group.ScalarField.random(rng)
-    X = G * x
-    Y = H * x
+    X = group.scalar_mult(x, G)
+    Y = group.scalar_mult(x, H)
 
     statement = LinearRelation(group)
     [var_x] = statement.allocate_scalars(1)
@@ -128,7 +128,7 @@ def pedersen_commitment(rng, group):
     r = group.ScalarField.random(rng)
     witness = [x, r]
 
-    C = G * x + H * r
+    C = group.scalar_mult(x, G) + group.scalar_mult(r, H)
     statement = LinearRelation(group)
     [var_x, var_r] = statement.allocate_scalars(2)
     [var_G, var_H, var_C] = statement.allocate_elements(3)
@@ -189,7 +189,10 @@ def bbs_blind_commitment_computation(rng, group):
 
     # these are computed before the proof in the specification
     secret_prover_blind = group.ScalarField.random(rng)
-    C = secret_prover_blind * Q_2 + msg_1 * J_1 + msg_2 * J_2 + msg_3 * J_3
+    C = group.scalar_mult(secret_prover_blind, Q_2) + \
+        group.scalar_mult(msg_1, J_1) + \
+        group.scalar_mult(msg_2, J_2) + \
+        group.scalar_mult(msg_3, J_3)
 
     # This is the part that needs to be changed in the specification of blind bbs.
     statement = LinearRelation(group)
