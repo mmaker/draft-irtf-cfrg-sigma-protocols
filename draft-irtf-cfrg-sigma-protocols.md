@@ -478,7 +478,7 @@ The non-interactive Fiat-Shamir transformation leads to publicly verifiable (tra
 
 ## Constant-Time Requirements
 
-The prover's control flow and memory access patterns are typically influenced by the witness. 
+The prover's control flow and memory access patterns are typically influenced by the witness.
 To prevent side-channel leakage of witness information, which may reveal private values, it is important that the implementation of underlying group and field operations are constant-time. Operations such as modular reduction, scalar multiplication, random value generation, and all other group and field operations are required to be constant-time especially when working with inputs which are private to prevent side-channel attacks which may reveal their values. In some cases, such as keyed-verification credentials, also the verifier must be constant-time.
 
 # Post-Quantum Security Considerations
