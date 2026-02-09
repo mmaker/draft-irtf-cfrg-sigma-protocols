@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 18 July 2026                                        Apple, Inc.
-                                                         14 January 2026
+Expires: 13 August 2026                                      Apple, Inc.
+                                                         9 February 2026
 
 
                         Interactive Sigma Proofs
@@ -57,7 +57,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 18 July 2026.
+   This Internet-Draft will expire on 13 August 2026.
 
 Copyright Notice
 
@@ -628,13 +628,16 @@ Procedure:
 
 3.2.  Constant-Time Requirements
 
-   To protect against timing attacks which may reveal private values, it
-   is important that the implementation of underlying group and field
-   operations are constant-time.  Operations such as modular reduction,
-   scalar multiplication, random value generation, and all other group
-   and field operations are required to be constant-time especially when
+   The prover's control flow and memory access patterns are typically
+   influenced by the witness.  To prevent side-channel leakage of
+   witness information, which may reveal private values, it is important
+   that the implementation of underlying group and field operations are
+   constant-time.  Operations such as modular reduction, scalar
+   multiplication, random value generation, and all other group and
+   field operations are required to be constant-time especially when
    working with inputs which are private to prevent side-channel attacks
-   which may reveal their values.
+   which may reveal their values.  In some cases, such as keyed-
+   verification credentials, also the verifier must be constant-time.
 
 4.  Post-Quantum Security Considerations
 
