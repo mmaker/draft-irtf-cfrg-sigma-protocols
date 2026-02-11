@@ -85,6 +85,8 @@ informative:
         - fullname: "Jan Camenisch"
         - fullname: "Markus Stadler"
       target: https://crypto.ethz.ch/publications/files/CamSta97b.pdf
+  FIPS.186-5: DOI.10.6028/NIST.FIPS.186-5
+  FIPS-202: DOI.10.6028/NIST.FIPS.202
 
 --- abstract
 
@@ -174,7 +176,6 @@ We detail the functions that can be invoked on these objects. Example choices ca
 - `identity()`, returns the neutral element in the group.
 - `generator()`, returns the generator of the prime-order elliptic-curve subgroup used for cryptographic operations.
 - `order()`: returns the order of the group `p`.
-- `random()`: returns an element sampled uniformly at random from the group.
 - `serialize(elements: [Group; N])`, serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
 - `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a `DeserializeError` if deserialization fails.
 - `add(element: Group)`, implements elliptic curve addition for the two group elements.
@@ -188,11 +189,28 @@ In this spec, instead of `add` we will use `+` with infix notation; instead of `
 - `identity()`: outputs the (additive) identity element in the scalar field.
 - `add(scalar: Scalar)`: implements field addition for the elements in the field.
 - `mul(scalar: Scalar)`, implements field multiplication.
-- `random()`: returns an element sampled uniformly at random from the scalar field.
 - `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
 - `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a `DeserializeError` if deserialization fails.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `mul` we will use `*`. A similar behavior can be achieved using operator overloading.
+
+### Interface for Pseudo-Random Number Generator
+
+The generation of proofs involves randomized algorithms that take as
+input a source of randomness, denoted as `rng`.
+The functionality required in this document is a secure way to sample
+non-zero scalars uniformly at random.
+Algorithms access to this functionality through the following interface.
+
+    class CSRNG(ABC):
+        @abstractmethod
+        def random_scalar() -> Scalar:
+            pass
+
+Implementations MUST use a cryptographically secure pseudorandom number
+generator (CSPRNG) to sample non-zero scalars either by using rejection
+sampling methods or reducing a large bitstring modulo the group order.
+Refer to Section A.4 of {{FIPS.186-5}} for guidance about these methods.
 
 ## Proofs of preimage of a linear map
 
@@ -345,7 +363,7 @@ The prover of a Sigma Protocol is stateful and will send two messages, a "commit
     Inputs:
 
     - witness, an array of scalars
-    - rng, a random number generator
+    - rng, a cryptographically secure random number generator
 
     Outputs:
 
@@ -354,7 +372,7 @@ The prover of a Sigma Protocol is stateful and will send two messages, a "commit
 
     Procedure:
 
-    1. nonces = [self.instance.Domain.random(rng) for _ in range(self.instance.linear_map.num_scalars)]
+    1. nonces = [rng.random_scalar() for _ in range(self.instance.linear_map.num_scalars)]
     2. prover_state = self.ProverState(witness, nonces)
     3. commitment = self.instance.linear_map(nonces)
     4. return (prover_state, commitment)
@@ -514,15 +532,36 @@ As of now, it is responsibility of the user to pick a unique protocol identifier
 
 As of now, it is responsibility of the user to pick a unique instance identifier that identifies the statement being proven.
 
---- back
-
 # Acknowledgments
 {:numbered ="false"}
 
 The authors thank Jan Bobolz, Vishruti Ganesh, Stephan Krenn, Mary Maller, Ivan Visconti, Yuwen Zhang for reviewing a previous edition of this specification.
 
+--- back
+
 # Test Vectors
-{:numbered="false"}
 
 Test vectors will be made available in future versions of this specification.
 They are currently developed in the [proof-of-concept implementation](https://github.com/mmaker/draft-zkproof-sigma-protocols/tree/main/poc/vectors).
+
+## Seeded PRNG
+
+For interoperability, the random number generator used for test vectors
+is implemented with a SHAKE128 state {{FIPS-202}} absorbing a seed of
+at least 32 bytes. Its output is used to produce non-zero scalars by
+using a rejection sampling method.
+
+    import sys
+    from cryptography.hazmat.primitives.hashes import SHAKE128, XOFHash
+    class SeededPRNG:
+        def __init__(self, seed: bytes, order: int):
+            assert(len(seed) >= 32)
+            self.order = order
+            self.xof = XOFHash(SHAKE128(digest_size=sys.maxsize))
+            self.xof.update(seed)
+        def random_scalar() -> Scalar:
+            while True:
+                b = self.xof.squeeze(Ns)
+                scalar = OS2IP(b)
+                if 0 < scalar < self.order:
+                    return scalar
