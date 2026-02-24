@@ -4,6 +4,19 @@ from collections import namedtuple
 from sagelib import groups
 
 
+class CSRNG(ABC):
+    """
+    API of a random number generator that produces group scalars.
+
+    Proof generation methods are randomized algorithms that use
+    this API to sample scalars uniformly at random from a
+    cryptographically-secure random number generator.
+    """
+
+    @abstractmethod
+    def random_scalar(self) -> groups.Scalar:
+        raise NotImplementedError
+
 class SigmaProtocol(ABC):
     """
     This is the abstract API of a Sigma protocol.
@@ -18,7 +31,7 @@ class SigmaProtocol(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def prover_commit(self, witness, rng):
+    def prover_commit(self, witness, rng: CSRNG):
         raise NotImplementedError
 
     @abstractmethod
@@ -46,7 +59,7 @@ class SigmaProtocol(ABC):
         raise NotImplementedError
 
     # optional
-    def simulate_response(self, rng):
+    def simulate_response(self, rng: CSRNG):
         raise NotImplementedError
 
     # optional
@@ -63,8 +76,8 @@ class SchnorrProof(SigmaProtocol):
     def __init__(self, instance):
         self.instance = instance
 
-    def prover_commit(self, witness, rng):
-        nonces = [self.instance.Domain.random(rng) for _ in range(self.instance.linear_map.num_scalars)]
+    def prover_commit(self, witness, rng: CSRNG):
+        nonces = [rng.random_scalar() for _ in range(self.instance.linear_map.num_scalars)]
         prover_state = self.ProverState(witness, nonces)
         commitment = self.instance.linear_map(nonces)
         return (prover_state, commitment)
@@ -108,8 +121,8 @@ class SchnorrProof(SigmaProtocol):
     def deserialize_response(self, data):
         return self.instance.Domain.deserialize(data)
 
-    def simulate_response(self, rng):
-        return [self.instance.Domain.random(rng) for i in range(self.instance.linear_map.num_scalars)]
+    def simulate_response(self, rng: CSRNG):
+        return [rng.random_scalar() for i in range(self.instance.linear_map.num_scalars)]
 
     def simulate_commitment(self, response, challenge):
         h_c_values = [self.instance.image[i] * challenge for i in range(self.instance.linear_map.num_constraints)]

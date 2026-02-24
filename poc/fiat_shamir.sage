@@ -1,6 +1,6 @@
 from sagelib.codec import Codec
 from sagelib.groups import Group
-from sagelib.sigma_protocols import SigmaProtocol
+from sagelib.sigma_protocols import SigmaProtocol, CSRNG
 from sagelib.duplex_sponge import DuplexSpongeInterface
 
 
@@ -32,7 +32,7 @@ class NISigmaProtocol:
             self.hash_state = self.Hash(protocol_id)
             self.hash_state.absorb(self.codec.init(session_id, instance_label))
 
-    def _prove(self, witness, rng):
+    def _prove(self, witness, rng: CSRNG):
         """
         Core proving logic that returns commitment, challenge, and response.
         The challenge is generated via the hash function.
@@ -43,7 +43,7 @@ class NISigmaProtocol:
         response = self.sigma_protocol.prover_response(prover_state, challenge)
         return (commitment, challenge, response)
 
-    def prove(self, witness, rng):
+    def prove(self, witness, rng: CSRNG):
         """
         Proving method using challenge-response format.
         """
@@ -69,7 +69,7 @@ class NISigmaProtocol:
         commitment = self.sigma_protocol.simulate_commitment(response, challenge)
         return self.sigma_protocol.verifier(commitment, challenge, response)
 
-    def prove_batchable(self, witness, rng):
+    def prove_batchable(self, witness, rng: CSRNG):
         """
         Proving method using commitment-response format.
 
@@ -86,7 +86,7 @@ class NISigmaProtocol:
         assert len(proof) == self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len, f"Invalid proof length: {len(proof)} != {self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len}"
 
         # - proof deserialization successfully produces a valid commitment and a valid response
-        response_bytes, commitment_bytes = next(proof, self.sigma_protocol.instance.commit_bytes_len) 
+        response_bytes, commitment_bytes = next(proof, self.sigma_protocol.instance.commit_bytes_len)
         commitment = self.sigma_protocol.deserialize_commitment(commitment_bytes)
         response = self.sigma_protocol.deserialize_response(response_bytes)
 

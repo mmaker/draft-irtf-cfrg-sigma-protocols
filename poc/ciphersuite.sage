@@ -3,10 +3,10 @@ from sagelib.duplex_sponge import SHAKE128, KeccakDuplexSponge
 from sagelib.sigma_protocols import SchnorrProof
 from sagelib.codec import P256Codec, Bls12381Codec
 
-class NISchnorrProofShake128P256(NISigmaProtocol):
+class NISchnorrProofKeccakDuplexSpongeP256(NISigmaProtocol):
     Protocol = SchnorrProof
     Codec = P256Codec
-    Hash = SHAKE128
+    Hash = KeccakDuplexSponge
 
 
 class NISchnorrProofShake128Bls12381(NISigmaProtocol):
@@ -22,7 +22,7 @@ class NISchnorrProofKeccakDuplexSpongeBls12381(NISigmaProtocol):
 
 
 CIPHERSUITE = {
-    "sigma/Shake128+P256": NISchnorrProofShake128P256,
-    "sigma/Shake128+BLS12381": NISchnorrProofShake128Bls12381,
-    "sigma/OWKeccak1600+Bls12381": NISchnorrProofKeccakDuplexSpongeBls12381,
+    "Schnorr_KeccakDuplexSponge_P256": NISchnorrProofKeccakDuplexSpongeP256,
+    "Schnorr_Shake128_BLS12381": NISchnorrProofShake128Bls12381,
+    "Schnorr_KeccakDuplexSponge_Bls12381": NISchnorrProofKeccakDuplexSpongeBls12381,
 }
