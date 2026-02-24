@@ -244,7 +244,7 @@ class LinearRelation:
             # The target group element index for this constraint
             serialization_parts.append(target_element_idx.to_bytes(WORD_SIZE, 'little'))
             # Encode the dimension of the equation.
-            serialization_parts.append(len(linear_combination).to_bytes(WORD_SIZE, 'little'))
+            serialization_parts.append(len(linear_combination.scalar_indices).to_bytes(WORD_SIZE, 'little'))
 
             # Indices of scalars and group elements participating in this linear combination
             for (scalar_idx, element_idx) in linear_combination_idx:
