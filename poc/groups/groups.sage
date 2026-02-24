@@ -13,11 +13,14 @@ from sagelib.suite_p521 import p521_sswu_ro, p521_order, p521_p, p521_F, p521_A,
 from sagelib.common import sgn0
 from sagelib.ristretto_decaf import Ed25519Point, Ed448GoldilocksPoint
 
+def byte_length(x):
+    return (len(x.bits()) + 7) // 8
+
 class Scalar(ABC):
     def __new__(cls, order, *args, **kwargs):
         cls.field = GF(order)  # Delegate field operations to GF instance
         cls.order = order
-        cls.field_bytes_length = (order.bit_length() + 7) // 8
+        cls.field_bytes_length = byte_length(order)
         return cls
 
     def __getattr__(self, name):
@@ -108,7 +111,7 @@ class Group(ABC):
 
     @classmethod
     def random(cls, rng):
-        return cls.generator() * cls.ScalarField.random(rng)
+        return cls.scalar_mult(cls.ScalarField.random(rng), cls.generator())
 
     @classmethod
     def msm(cls, scalars, points):
@@ -219,7 +222,7 @@ class GroupNISTCurve(Group):
 
     @classmethod
     def scalar_mult(cls, x, y):
-        return x * y
+        return x.lift() * y
 
     def vec_scalar_mult(self, scalar, points):
         return [point * scalar for point in points]
@@ -496,8 +499,8 @@ class BLS12_381_G1(Group):
 
     @classmethod
     def element_byte_length(cls):
-        return (cls.Fq.order().bit_length() + 7) // 8
+        return byte_length(cls.Fq.order())
 
     @classmethod
     def scalar_mult(cls, x, y):
-        return y * x
+        return x.lift() * y

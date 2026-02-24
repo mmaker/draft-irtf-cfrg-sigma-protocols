@@ -155,7 +155,7 @@ class LinearMap:
     def __call__(self, scalars):
         image = []
         for linear_combination in self.linear_combinations:
-            coefficients = [scalars[i]
+            coefficients = [self.Group.ScalarField.field(scalars[i])
                             for i in linear_combination.scalar_indices]
             elements = [self.group_elements[i]
                         for i in linear_combination.element_indices]
