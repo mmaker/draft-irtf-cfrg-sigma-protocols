@@ -10,23 +10,30 @@ import json
 
 def test_vector(test_vector_function):
     def inner(vectors, suite):
+        INSTANCE_WITNESS_SEED = b"instance_witness_generation_seed"
+        SESSION_ID = b"session_identifier"
+        PROOF_CHAL_RESP_SEED = b"proving-method-challenge-response-format"
+        PROOF_COMM_RESP_SEED = b"proving-method-commitment-response-format"
+
+        test_vector_name = test_vector_function.__name__
+        name = bytes(test_vector_name, "utf-8")
+
         NISigmaProtocol = CIPHERSUITE[suite]
         G = NISigmaProtocol.Codec.GG
 
-        instance_witness_seed = b"instance_witness_generation_seed"
+        instance_witness_seed = INSTANCE_WITNESS_SEED + name
         instance_witness_rng = SeededPRNG(instance_witness_seed, G.ScalarField)
         instance, witness = test_vector_function(instance_witness_rng, G)
 
-        test_vector_name = f"{test_vector_function.__name__}"
-        session_id = b"session_identifier"
+        session_id = SESSION_ID + name
         hash_name = NISigmaProtocol(session_id, instance).hash_state.__class__.__name__
 
-        proof_chal_resp_seed = b"proving-method-challenge-response-format"
+        proof_chal_resp_seed = PROOF_CHAL_RESP_SEED + name
         proof_chal_resp_rng = SeededPRNG(proof_chal_resp_seed, G.ScalarField, tracing_enabled=True)
         proof_chal_resp = NISigmaProtocol(session_id, instance).prove(witness, proof_chal_resp_rng)
         assert NISigmaProtocol(session_id, instance).verify(proof_chal_resp)
 
-        proof_comm_resp_seed = b"proving-method-commitment-response-format"
+        proof_comm_resp_seed = PROOF_COMM_RESP_SEED + name
         proof_comm_resp_rng = SeededPRNG(proof_comm_resp_seed, G.ScalarField, tracing_enabled=True)
         proof_comm_resp = NISigmaProtocol(session_id, instance).prove_batchable(witness, proof_comm_resp_rng)
         assert NISigmaProtocol(session_id, instance).verify_batchable(proof_comm_resp)
