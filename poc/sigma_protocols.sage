@@ -94,7 +94,7 @@ class SchnorrProof(SigmaProtocol):
         assert len(response) == self.instance.linear_map.num_scalars
         expected = self.instance.linear_map(response)
         got = [
-            commitment[i] + self.instance.image[i] * challenge
+            commitment[i] + self.instance.Image.scalar_mult(challenge, self.instance.image[i])
             for i in range(self.instance.linear_map.num_constraints)
         ]
 
@@ -108,6 +108,9 @@ class SchnorrProof(SigmaProtocol):
     def serialize_challenge(self, challenge):
         return self.instance.Domain.serialize([challenge])
 
+    def challenge_length(self):
+        return self.instance.Domain.scalar_byte_length()
+
     def serialize_response(self, response):
         return self.instance.Domain.serialize(response)
 
@@ -115,8 +118,8 @@ class SchnorrProof(SigmaProtocol):
         return self.instance.Image.deserialize(data)
 
     def deserialize_challenge(self, data):
-        scalar_size = self.instance.Domain.scalar_byte_length()
-        return self.instance.Domain.deserialize(data[:scalar_size])[0]
+        challenge_length = self.challenge_length()
+        return self.instance.Domain.deserialize(data[:challenge_length])[0]
 
     def deserialize_response(self, data):
         return self.instance.Domain.deserialize(data)
@@ -125,7 +128,7 @@ class SchnorrProof(SigmaProtocol):
         return [rng.random_scalar() for i in range(self.instance.linear_map.num_scalars)]
 
     def simulate_commitment(self, response, challenge):
-        h_c_values = [self.instance.image[i] * challenge for i in range(self.instance.linear_map.num_constraints)]
+        h_c_values = [self.instance.Image.scalar_mult(challenge, self.instance.image[i]) for i in range(self.instance.linear_map.num_constraints)]
         # Generate what the correct commitment would be based on the random response and challenge.
         return [self.instance.linear_map(response)[i] - h_c_values[i] for i in range(self.instance.linear_map.num_constraints)]
 

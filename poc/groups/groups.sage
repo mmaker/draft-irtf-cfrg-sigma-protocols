@@ -164,7 +164,7 @@ class NISTCurveScalar(Scalar):
         decoded = OS2IP(encoded)
         if not (0 <= decoded < cls.order):
             raise ValueError(f"Invalid scalar encoding: {encoded}")
-        return decoded
+        return cls.field(decoded)
 
 
 class GroupNISTCurve(Group):
@@ -208,7 +208,7 @@ class GroupNISTCurve(Group):
         assert (pve or nve)
         assert (len(encoded) % 2 != 0)
         element_length = (len(encoded) - 1) / 2
-        x = cls.ScalarField._deserialize(encoded[1:])
+        x = OS2IP(encoded[1:])
         y2 = x^3 + cls.a*x + cls.b
         y = y2.sqrt()
         parity = 0 if pve else 1
@@ -337,7 +337,7 @@ class BLS12_381_Fr(Scalar):
         decoded = OS2IP(encoded)
         if not (0 <= decoded < cls.order):
             raise ValueError(f"Invalid scalar encoding: {encoded}")
-        return decoded
+        return cls.field(decoded)
 
 
 class BLS12_381_G1(Group):

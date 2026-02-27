@@ -1,5 +1,5 @@
-from sagelib.test_drng import TestDRNG
-from sagelib.sigma_protocols import LinearRelation, SigmaProtocol, SchnorrProof
+from sagelib.test_drng import SeededPRNG
+from sagelib.sigma_protocols import LinearRelation, SigmaProtocol, SchnorrProof, CSRNG
 from sagelib.fiat_shamir import NISigmaProtocol
 from sagelib.codec import P256Codec
 from sagelib.duplex_sponge import KeccakDuplexSponge
@@ -20,7 +20,7 @@ class AndProof(SchnorrProof):
     def response_bytes_len(self):
         return sum(protocol.instance.response_bytes_len for protocol in self.protocols)
 
-    def prover_commit(self, witnesses, rng):
+    def prover_commit(self, witnesses, rng: CSRNG):
         prover_states = []
         commitments = []
 
@@ -49,6 +49,21 @@ class AndProof(SchnorrProof):
     def serialize_commitment(self, commitments):
         return b''.join([protocol.serialize_commitment(commitment) for protocol, commitment in zip(self.protocols, commitments)])
 
+    def serialize_challenge(self, challenge):
+        return b''.join([protocol.serialize_challenge(challenge) for protocol in self.protocols])
+
+    def deserialize_challenge(self, data):
+        challenge = set()
+        for protocol in self.protocols:
+            challenge_len = protocol.challenge_length()
+            challenge.add(protocol.deserialize_challenge(data[:challenge_len]))
+            data = data[:challenge_len]
+        assert(len(challenge)==1)
+        return challenge.pop()
+
+    def challenge_length(self):
+        return sum([protocol.challenge_length() for protocol in self.protocols])
+
     def serialize_response(self, responses):
         return b''.join([protocol.serialize_response(response) for protocol, response in zip(self.protocols, responses)])
 
@@ -72,6 +87,14 @@ class AndProof(SchnorrProof):
             offset += response_len
         return responses
 
+    def simulate_response(self, rng: CSRNG):
+        return [protocol.simulate_response(rng) for protocol in self.protocols]
+
+    def simulate_commitment(self, responses, challenge):
+        return [protocol.simulate_commitment(response, challenge) for protocol, response in zip(self.protocols, responses)]
+
+    def get_label(self):
+        return b"_AND_".join([protocol.instance.get_label() for protocol in self.protocols])
 
 class P256AndCodec(P256Codec):
     def prover_message(self, hash_state, elements):
@@ -101,7 +124,7 @@ class OrProof(SchnorrProof):
         return (sum(protocol.instance.response_bytes_len for protocol in self.protocols) +
                 sum(protocol.instance.Domain.scalar_byte_length() for protocol in self.protocols[:-1]))
 
-    def prover_commit(self, witnesses, rng):
+    def prover_commit(self, witnesses, rng: CSRNG):
         assert witnesses.count(None) == len(self.protocols) - 1
 
         prover_states = []
@@ -127,7 +150,7 @@ class OrProof(SchnorrProof):
                 # for the unknown witnesses, assuming the prover starts with a random response.
                 simulated_responses = protocol.simulate_response(rng)
                 # Also pick a random value for the challenge
-                prover_challenge = protocol.instance.Domain.random(rng)
+                prover_challenge = rng.random_scalar()
                 simulated_commitments = protocol.simulate_commitment(simulated_responses, prover_challenge)
                 commitments.append(simulated_commitments)
                 unknown_witness_prover_states.append((prover_challenge, simulated_responses))
@@ -176,10 +199,23 @@ class OrProof(SchnorrProof):
     def serialize_commitment(self, commitments):
         return b''.join([protocol.serialize_commitment(commitment) for protocol, commitment in zip(self.protocols, commitments)])
 
-    def serialize_response(self, _response):
-        challenges, responses = _response
+    def serialize_challenge(self, challenge):
+        protocol = self.protocols[0]
+        return protocol.serialize_challenge(challenge)
+
+    def deserialize_challenge(self, data):
+        protocol = self.protocols[0]
+        challenge_len = protocol.challenge_length()
+        return protocol.deserialize_challenge(data[:challenge_len])
+
+    def challenge_length(self):
+        protocol = self.protocols[0]
+        return protocol.challenge_length()
+
+    def serialize_response(self, _responses):
+        challenges, responses = _responses
         return (b''.join([protocol.serialize_response(response) for protocol, response in zip(self.protocols, responses)]) +
-                b''.join([protocol.instance.Domain.serialize([challenge]) for (protocol, challenge) in zip(self.protocols[:-1], challenges)]))
+            b''.join([protocol.serialize_challenge(challenge) for protocol, challenge in zip(self.protocols[:-1], challenges)]))
 
     def deserialize_commitment(self, data):
         commitments = []
@@ -205,12 +241,23 @@ class OrProof(SchnorrProof):
 
         # Then deserialize the challenges (all but the last one)
         for protocol in self.protocols[:-1]:
-            challenge_len = protocol.instance.Domain.scalar_byte_length()
-            challenge = protocol.instance.Domain.deserialize(data[offset:offset + challenge_len])
-            challenges.append(challenge[0])
+            challenge_len = protocol.challenge_length()
+            challenge = protocol.deserialize_challenge(data[offset:offset + challenge_len])
+            challenges.append(challenge)
             offset += challenge_len
 
         return (challenges, responses)
+
+    def simulate_response(self, rng: CSRNG):
+        return [protocol.simulate_response(rng) for protocol in self.protocols]
+
+    def simulate_commitment(self, _responses, challenge):
+        challenges, responses = _responses
+        return [self.protocols[0].simulate_commitment(responses[0], sum(challenges)),
+                self.protocols[1].simulate_commitment(responses[1], challenge-sum(challenges)), ]
+
+    def get_label(self):
+        return b"_OR_".join([protocol.instance.get_label() for protocol in self.protocols])
 
 
 class P256OrCodec(P256Codec):
@@ -230,8 +277,9 @@ class NIOrProof(NISigmaProtocol):
 
 def test_and_composition():
     CONTEXT_STRING = b'yellow submarine' * 2
-    rng = TestDRNG("test vector seed".encode('utf-8'))
     group = P256Codec.GG
+    seed = b"test vector seed for AND composition"
+    rng = SeededPRNG(seed, group.ScalarField)
 
     statement_1 = LinearRelation(group)
     [var_x] = statement_1.allocate_scalars(1)
@@ -239,8 +287,8 @@ def test_and_composition():
     statement_1.append_equation(var_X, [(var_x, var_G)])
     G = group.generator()
     statement_1.set_elements([(var_G, G)])
-    x = group.ScalarField.random(rng)
-    X = G * x
+    x = rng.random_scalar()
+    X = group.scalar_mult(x, G)
     assert [X] == statement_1.linear_map([x])
     statement_1.set_elements([(var_X, X)])
     witness_1 = [x]
@@ -251,8 +299,8 @@ def test_and_composition():
     statement_2.append_equation(var_Y, [(var_y, var_H)])
     H = group.generator()
     statement_2.set_elements([(var_H, H)])
-    y = group.ScalarField.random(rng)
-    Y = H * y
+    y = rng.random_scalar()
+    Y = group.scalar_mult(y, H)
     assert [Y] == statement_2.linear_map([y])
     statement_2.set_elements([(var_Y, Y)])
     witness_2 = [y]
@@ -268,8 +316,9 @@ def test_and_composition():
 def test_or_composition():
     CONTEXT_STRING = b'yellow submarine' * 2
 
-    rng = TestDRNG("test vector seed".encode('utf-8'))
     group = P256Codec.GG
+    seed = b"test vector seed for OR composition"
+    rng = SeededPRNG(seed, group.ScalarField)
 
     statement_1 = LinearRelation(group)
     [var_x] = statement_1.allocate_scalars(1)
@@ -277,8 +326,8 @@ def test_or_composition():
     statement_1.append_equation(var_X, [(var_x, var_G)])
     G = group.generator()
     statement_1.set_elements([(var_G, G)])
-    x = group.ScalarField.random(rng)
-    X = G * x
+    x = rng.random_scalar()
+    X = group.scalar_mult(x, G)
     assert [X] == statement_1.linear_map([x])
     statement_1.set_elements([(var_X, X)])
     witness_1 = [x]
@@ -289,8 +338,8 @@ def test_or_composition():
     statement_2.append_equation(var_Y, [(var_y, var_H)])
     H = group.generator()
     statement_2.set_elements([(var_H, H)])
-    y = group.ScalarField.random(rng)
-    Y = H * y
+    y = rng.random_scalar()
+    Y = group.scalar_mult(y, H)
     assert [Y] == statement_2.linear_map([y])
     statement_2.set_elements([(var_Y, Y)])
     witness_2 = None

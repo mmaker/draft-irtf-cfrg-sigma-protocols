@@ -44,7 +44,7 @@ class ByteSchnorrCodec(Codec):
             self.GG.ScalarField.scalar_byte_length() + 16
         )
         scalar = OS2IP(uniform_bytes) % self.GG.ScalarField.order
-        return scalar
+        return self.GG.ScalarField.field(scalar)
 
 
 class Bls12381Codec(ByteSchnorrCodec):

@@ -58,7 +58,7 @@ class NISigmaProtocol:
         """
         # Before running the sigma protocol verifier, one must also check that:
         # - the proof length is exactly challenge_bytes_len + response_bytes_len
-        challenge_bytes_len = self.sigma_protocol.instance.Domain.scalar_byte_length()
+        challenge_bytes_len = self.sigma_protocol.challenge_length()
         assert len(proof) == challenge_bytes_len + self.sigma_protocol.instance.response_bytes_len, f"Invalid proof length: {len(proof)} != {challenge_bytes_len + self.sigma_protocol.instance.response_bytes_len}"
 
         # - proof deserialization successfully produces a valid challenge and a valid response
