@@ -201,7 +201,8 @@ class GroupNISTCurve(Group):
         assert (len(encoded) % 2 != 0)
         element_length = (len(encoded) - 1) / 2
         x = OS2IP(encoded[1:])
-        y2 = x^3 + cls.a*x + cls.b
+        assert (0 <= x < cls.F.order())
+        y2 = cls.F(x^3 + cls.a*x + cls.b)
         y = y2.sqrt()
         parity = 0 if pve else 1
         if sgn0(y) != parity:
