@@ -31,10 +31,6 @@ class Scalar(ABC):
         return int(cls.field_bytes_length)
 
     @classmethod
-    def random(cls, rng):
-        return cls.field(rng.randint(1, cls.order - 1))
-
-    @classmethod
     @abstractmethod
     def _serialize(cls, scalar):
         raise NotImplementedError
@@ -108,10 +104,6 @@ class Group(ABC):
             cls._deserialize(encoded[i: i + element_len])
             for i in range(0, encoded_len, element_len)
         ]
-
-    @classmethod
-    def random(cls, rng):
-        return cls.scalar_mult(cls.ScalarField.random(rng), cls.generator())
 
     @classmethod
     def msm(cls, scalars, points):
