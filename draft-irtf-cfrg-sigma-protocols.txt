@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 30 August 2026                                      Apple, Inc.
-                                                        26 February 2026
+Expires: 31 August 2026                                      Apple, Inc.
+                                                        27 February 2026
 
 
                         Interactive Sigma Proofs
@@ -57,7 +57,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 30 August 2026.
+   This Internet-Draft will expire on 31 August 2026.
 
 Copyright Notice
 
@@ -78,6 +78,7 @@ Table of Contents
      2.1.  Group abstraction
        2.1.1.  Group
        2.1.2.  Scalar
+       2.1.3.  Interface for Pseudo-Random Number Generator
      2.2.  Proofs of preimage of a linear map
        2.2.1.  Witness representation
        2.2.2.  Linear map
@@ -97,11 +98,12 @@ Table of Contents
      4.2.  Soundness Considerations
    5.  Generation of the protocol identifier
    6.  Generation of the instance identifier
-   7.  References
-     7.1.  Normative References
-     7.2.  Informative References
-   Appendix A.  Acknowledgments
-   Test Vectors
+   7.  Acknowledgments
+   8.  References
+     8.1.  Normative References
+     8.2.  Informative References
+   Appendix A.  Test Vectors
+     A.1.  Seeded PRNG
    Authors' Addresses
 
 1.  Introduction
@@ -238,9 +240,6 @@ Table of Contents
 
    *  order(): returns the order of the group p.
 
-   *  random(): returns an element sampled uniformly at random from the
-      group.
-
    *  serialize(elements: [Group; N]), serializes a list of group
       elements and returns a canonical byte array buf of fixed length Ne
       * N.
@@ -274,9 +273,6 @@ Table of Contents
 
    *  mul(scalar: Scalar), implements field multiplication.
 
-   *  random(): returns an element sampled uniformly at random from the
-      scalar field.
-
    *  serialize(scalars: list[Scalar; N]): serializes a list of scalars
       and returns their canonical representation of fixed length Ns * N.
 
@@ -289,6 +285,25 @@ Table of Contents
    In this spec, instead of add we will use + with infix notation;
    instead of equal we will use ==, and instead of mul we will use *. A
    similar behavior can be achieved using operator overloading.
+
+2.1.3.  Interface for Pseudo-Random Number Generator
+
+   The generation of proofs involves randomized algorithms that take as
+   input a source of randomness, denoted as rng.  The functionality
+   required in this document is a secure way to sample non-zero scalars
+   uniformly at random.  Algorithms access to this functionality through
+   the following interface.
+
+   class CSRNG(ABC):
+       @abstractmethod
+       def random_scalar() -> Scalar:
+           pass
+
+   Implementations MUST use a cryptographically secure pseudorandom
+   number generator (CSPRNG) to sample non-zero scalars either by using
+   rejection sampling methods or reducing a large bitstring modulo the
+   group order.  Refer to Section A.4 of [FIPS.186-5] for guidance about
+   these methods.
 
 2.2.  Proofs of preimage of a linear map
 
@@ -454,7 +469,7 @@ prover_commit(self, witness, rng)
 Inputs:
 
 - witness, an array of scalars
-- rng, a random number generator
+- rng, a cryptographically secure random number generator
 
 Outputs:
 
@@ -463,7 +478,7 @@ Outputs:
 
 Procedure:
 
-1. nonces = [self.instance.Domain.random(rng) for _ in range(self.instance.linear_map.num_scalars)]
+1. nonces = [rng.random_scalar() for _ in range(self.instance.linear_map.num_scalars)]
 2. prover_state = self.ProverState(witness, nonces)
 3. commitment = self.instance.linear_map(nonces)
 4. return (prover_state, commitment)
@@ -683,9 +698,15 @@ Procedure:
    As of now, it is responsibility of the user to pick a unique instance
    identifier that identifies the statement being proven.
 
-7.  References
+7.  Acknowledgments
 
-7.1.  Normative References
+   The authors thank Jan Bobolz, Vishruti Ganesh, Stephan Krenn, Mary
+   Maller, Ivan Visconti, Yuwen Zhang for reviewing a previous edition
+   of this specification.
+
+8.  References
+
+8.1.  Normative References
 
    [KEYAGREEMENT]
               Barker, E., Chen, L., Roginsky, A., Vassilev, A., and R.
@@ -695,7 +716,7 @@ Procedure:
               DOI 10.6028/nist.sp.800-56ar3, April 2018,
               <https://doi.org/10.6028/nist.sp.800-56ar3>.
 
-7.2.  Informative References
+8.2.  Informative References
 
    [AttemaCK21]
               Attema, T., Cramer, R., and L. Kohl, "A Compressed Sigma-
@@ -713,6 +734,17 @@ Procedure:
               "draft-irtf-cfrg-fiat-shamir",
               <https://mmaker.github.io/spfs/draft-irtf-cfrg-fiat-
               shamir.html>.
+
+   [FIPS-202] "SHA-3 standard :: permutation-based hash and extendable-
+              output functions", National Institute of Standards and
+              Technology (U.S.), DOI 10.6028/nist.fips.202, 2015,
+              <https://doi.org/10.6028/nist.fips.202>.
+
+   [FIPS.186-5]
+              "Digital Signature Standard (DSS)", National Institute of
+              Standards and Technology (U.S.),
+              DOI 10.6028/nist.fips.186-5, February 2023,
+              <https://doi.org/10.6028/nist.fips.186-5>.
 
    [GiacomelliMO16]
               Giacomelli, I., Madsen, J., and C. Orlandi, "ZKBoo: Faster
@@ -732,18 +764,34 @@ Procedure:
               Decoding", 1993, <https://link.springer.com/
               chapter/10.1007/3-540-48329-2_2>.
 
-Appendix A.  Acknowledgments
-
-   The authors thank Jan Bobolz, Vishruti Ganesh, Stephan Krenn, Mary
-   Maller, Ivan Visconti, Yuwen Zhang for reviewing a previous edition
-   of this specification.
-
-Test Vectors
+Appendix A.  Test Vectors
 
    Test vectors will be made available in future versions of this
    specification.  They are currently developed in the proof-of-concept
    implementation (https://github.com/mmaker/draft-zkproof-sigma-
    protocols/tree/main/poc/vectors).
+
+A.1.  Seeded PRNG
+
+   For interoperability, the random number generator used for test
+   vectors is implemented with a SHAKE128 state [FIPS-202] absorbing a
+   seed of at least 32 bytes.  Its output is used to produce non-zero
+   scalars by using a rejection sampling method.
+
+   import sys
+   from cryptography.hazmat.primitives.hashes import SHAKE128, XOFHash
+   class SeededPRNG:
+       def __init__(self, seed: bytes, order: int):
+           assert(len(seed) >= 32)
+           self.order = order
+           self.xof = XOFHash(SHAKE128(digest_size=sys.maxsize))
+           self.xof.update(seed)
+       def random_scalar() -> Scalar:
+           while True:
+               b = self.xof.squeeze(Ns)
+               scalar = OS2IP(b)
+               if 0 < scalar < self.order:
+                   return scalar
 
 Authors' Addresses
 
