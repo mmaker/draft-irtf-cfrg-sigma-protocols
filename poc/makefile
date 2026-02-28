@@ -28,6 +28,7 @@ setup:
 	cp h2c/poc/*.sage .
 
 test: pyfiles
+	sage test_tampering.sage
 	sage test_duplex_sponge.sage
 	sage test_sigma_protocols.sage
 
@@ -36,6 +37,7 @@ vectors: pyfiles
 	@rm -rf vectors
 	@echo "Creating vectors folder"
 	@mkdir -p vectors
+	sage test_tampering.sage
 	sage test_duplex_sponge.sage
 	sage test_sigma_protocols.sage
 
