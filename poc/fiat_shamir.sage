@@ -67,6 +67,18 @@ class NISigmaProtocol:
         response = self.sigma_protocol.deserialize_response(response_bytes)
 
         commitment = self.sigma_protocol.simulate_commitment(response, challenge)
+        # SECURITY FIX: Recompute the expected challenge for this commitment
+        # and current statement. This binds the proof to the statement and detects tampering.
+        # The hash_state was initialized with the current instance_label in __init__.
+        self.codec.prover_message(self.hash_state, commitment)
+        expected_challenge = self.codec.verifier_challenge(self.hash_state)
+
+        # Verify the challenge from the proof matches the expected challenge
+        # If the statement was tampered with, the simulated commitment will differ from
+        # the prover's real commitment, causing the expected_challenge to mismatch.
+        if challenge != expected_challenge:
+            return False
+
         return self.sigma_protocol.verifier(commitment, challenge, response)
 
     def prove_batchable(self, witness, rng):
