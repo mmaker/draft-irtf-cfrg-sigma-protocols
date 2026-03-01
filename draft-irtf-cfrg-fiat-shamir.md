@@ -387,10 +387,10 @@ The following functions and notation are used throughout the document.
 
       Constants:
 
-      Ns, the number of bytes to represent an element in the coordinate field, equal to `ceil(log2(field.order())/8)`.
+      Ng, the number of bytes to represent an element in the coordinate field, equal to `ceil(log2(field.order())/8)`.
 
       1. byte = 2 if sgn0(element.y) == 0 else 3
-      2. return I2OSP(byte, 1) + I2OSP(x, Ns)
+      2. return I2OSP(byte, 1) + I2OSP(x, Ng)
 
 ### Absorb scalars
 
