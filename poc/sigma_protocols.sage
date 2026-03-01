@@ -1,3 +1,14 @@
+"""
+Proof-of-concept implementation for the CFRG Internet-Draft
+`draft-irtf-cfrg-sigma-protocols`.
+
+This code is an example implementation for specification discussion and test
+vector generation; it is not intended for production deployment.
+Side-channel security is not provided in this PoC (including constant-time
+execution and secure deletion of sensitive data).
+See `draft-irtf-cfrg-sigma-protocols`, Section "Security Considerations", for more information.
+"""
+
 from abc import ABC, abstractmethod
 from collections import namedtuple
 
@@ -85,6 +96,12 @@ class SchnorrProof(SigmaProtocol):
         self.instance = instance
 
     def prover_commit(self, witness, rng: CSRNG):
+        # "nonces" here refers to the random scalars constituting the DL of the commitment message.
+        # Alternate names in the literature include:
+        # - "nonce_commitment" (RFC 9591, FROST)
+        # - "random_scalars" (draft-irtf-cfrg-bbs-signatures)
+        # - "v" (RFC 8235)
+        # - "nonce" (BIP340)
         nonces = [rng.random_scalar() for _ in range(self.instance.linear_map.num_scalars)]
         prover_state = self.ProverState(witness, nonces)
         commitment = self.instance.linear_map(nonces)
