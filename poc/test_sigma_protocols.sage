@@ -12,7 +12,7 @@ def test_vector(test_vector_function):
     def inner(vectors, suite):
         NISigmaProtocol = CIPHERSUITE[suite]
         instance_witness_rng = TestDRNG(b"instance_witness_generation_seed")
-        proof_generation_rng = TestDRNG(b"proof_generation_seed")
+        proof_generation_rng = TestDRNG(b"proof_generation_seed".ljust(32, b"\x00"))
 
         test_vector_name = f"{test_vector_function.__name__}"
         instance, witness = test_vector_function(instance_witness_rng, NISigmaProtocol.Codec.GG)
