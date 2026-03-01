@@ -547,7 +547,7 @@ They are currently developed in the [proof-of-concept implementation](https://gi
 ## Seeded PRNG
 
 For interoperability, the random number generator used for test vectors
-is implemented using the SHAKE128 instantiation in {{fiat-shamir}},
+is implemented using the duplex sponge SHAKE128 instantiation in Section 8.1 of {{fiat-shamir}},
 absorbing a seed of 32 bytes.
 The Seeded PRNG is for reproducible test vectors; production implementations MUST use a CSPRNG.
 
@@ -557,7 +557,7 @@ Random scalars are generated squeezing `Ns + 16` bytes, seen as a big-endian pos
         def __init__(self, seed: bytes, order: int):
             assert(len(seed) == 32)
             self.order = order
-            self.hash_state = SHAKE128.new(b"\x00" * 64)
+            self.hash_state = SHAKE128(b"sigma-proofs/TestDRNG/SHAKE128".ljust(64, b"\x00"))
             self.hash_state.absorb(seed)
         def random_scalar() -> Scalar:
             Ns = (self.order.bit_length() + 7) // 8
