@@ -373,10 +373,8 @@ For an elliptic curve, we consider two fields, the coordinate fields, which indi
 The following functions and notation are used throughout the document.
 
 - `concat(x0, ..., xN)`: Concatenation of byte strings.
-- `bytes_to_int` and `scalar_to_bytes`: Convert a byte string to and from a non-negative integer.
-  `bytes_to_int` and `scalar_to_bytes` are implemented as `OS2IP` and `I2OSP` as described in
-  {{!RFC8017}}, respectively. Note that these functions operate on byte strings
-  in big-endian byte order.
+- `OS2IP` and `I2OSP`: Convert a byte string to and from a non-negative integer, as described in
+  {{!RFC8017}}. Note that these functions operate on byte strings in big-endian byte order.
 - The function `ecpoint_to_bytes` converts an elliptic curve point in affine-form into an array string of length `ceil(ceil(log2(coordinate_field_order))/ 8) + 1` using `int_to_bytes` prepended by one byte. This is defined as
 
       ecpoint_to_bytes(element)
@@ -389,10 +387,10 @@ The following functions and notation are used throughout the document.
 
       Constants:
 
-      field_bytes_length, the number of bytes to represent an element in the coordinate field, equal to `ceil(log2(field.order())/8)`.
+      Ns, the number of bytes to represent an element in the coordinate field, equal to `ceil(log2(field.order())/8)`.
 
       1. byte = 2 if sgn0(element.y) == 0 else 3
-      2. return I2OSP(byte, 1) + I2OSP(x, field_bytes_length)
+      2. return I2OSP(byte, 1) + I2OSP(x, Ns)
 
 ### Absorb scalars
 
@@ -408,9 +406,7 @@ The following functions and notation are used throughout the document.
     - Ns, the number of bytes to represent a scalar element, equal to `ceil(log2(p)/8)`.
 
     1. for scalar in scalars:
-    2.     hash_state.absorb(scalar_to_bytes(scalar))
-
-Where the function `scalar_to_bytes` is defined in {{notation}}
+    2.     hash_state.absorb(I2OSP(scalar, Ns))
 
 ### Absorb elements
 
