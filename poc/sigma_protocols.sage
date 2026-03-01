@@ -62,6 +62,10 @@ class SigmaProtocol(ABC):
     def deserialize_response(self, data):
         raise NotImplementedError
 
+    @staticmethod
+    def get_protocol_id() -> bytes:
+        raise NotImplementedError
+
     # optional
     def simulate_response(self, rng: CSRNG):
         raise NotImplementedError
@@ -141,10 +145,7 @@ class SchnorrProof(SigmaProtocol):
 
     @staticmethod
     def get_protocol_id() -> bytes:
-        """
-        Returns a 64-bytes unique identifier for this protocol.
-        """
-        return b'ietf sigma proof linear relation' + b'\0' * 32
+        raise NotImplementedError
 
 
 class LinearMap:

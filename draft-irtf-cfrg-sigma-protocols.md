@@ -122,7 +122,7 @@ Where:
 
 - `new(instance) -> SigmaProtocol`, denoting the initialization function. This function takes as input an instance generated via a `LinearRelation`, the public information shared between prover and verifier.
 
-- `prover_commit(self, witness: Witness, rng) -> (commitment, prover_state)`, denoting the **commitment phase**, that is, the computation of the first message sent by the prover in a Sigma Protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator `rng`. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while `prover_state` must be kept secret.
+- `prover_commit(self, witness: Witness, rng) -> (commitment, prover_state)`, denoting the **commitment phase**, that is, the computation of the first message sent by the prover in a Sigma Protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator `rng` as defined in {{rng-definition}}. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while `prover_state` must be kept secret.
 
 - `prover_response(self, prover_state, challenge) -> response`, denoting the **response phase**, that is, the computation of the second message sent by the prover, depending on the witness, the statement, the challenge received from the verifier, and the internal state `prover_state`. The return value response is a public value and is transmitted to the verifier.
 
@@ -145,6 +145,26 @@ The final two algorithms describe the **zero-knowledge simulator**. In particula
 The simulated transcript `(commitment, challenge, response)` must be indistinguishable from the one generated using the prover algorithms.
 
 The abstraction `SigmaProtocol` allows implementing different types of statements and combiners of those, such as OR statements, validity of t-out-of-n statements, and more.
+
+
+
+### Randomized algorithms {#rng-definition}
+
+The generation of proofs involves randomized algorithms that take as
+input a source of randomness, denoted as `rng`.
+The functionality required in this document is a secure way to sample
+non-zero scalars uniformly at random.
+Algorithms access to this functionality through the following interface.
+
+    class CSRNG(ABC):
+        def getrandom(length: int) -> bytes:
+            pass
+
+
+Implementations MUST use a cryptographically secure pseudorandom number
+generator (CSPRNG) to sample non-zero scalars either by using rejection
+sampling methods or reducing a large bitstring modulo the group order.
+Refer to Section A.4 of {{FIPS.186-5}} for guidance about these methods.
 
 # Sigma Protocols over prime-order groups {#sigma-protocol-group}
 
@@ -195,27 +215,6 @@ In this spec, instead of `add` we will use `+` with infix notation; instead of `
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `mul` we will use `*`. A similar behavior can be achieved using operator overloading.
 
-### Interface for Pseudo-Random Number Generator
-
-The generation of proofs involves randomized algorithms that take as
-input a source of randomness, denoted as `rng`.
-The functionality required in this document is a secure way to sample
-non-zero scalars uniformly at random.
-Algorithms access to this functionality through the following interface.
-
-    class CSRNG(ABC):
-        @abstractmethod
-        def getrandom(length: int) -> bytes:
-            pass
-
-        @abstractmethod
-        def random_scalar() -> Scalar:
-            pass
-
-Implementations MUST use a cryptographically secure pseudorandom number
-generator (CSPRNG) to sample non-zero scalars either by using rejection
-sampling methods or reducing a large bitstring modulo the group order.
-Refer to Section A.4 of {{FIPS.186-5}} for guidance about these methods.
 
 ## Proofs of preimage of a linear map
 

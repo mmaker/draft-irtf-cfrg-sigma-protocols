@@ -32,7 +32,7 @@ class Scalar(ABC):
 
     @classmethod
     def random(cls, rng):
-        return cls.field(rng.randint(1, cls.order))
+        return cls.field(rng.randint(0, cls.order - 1))
 
     @classmethod
     @abstractmethod

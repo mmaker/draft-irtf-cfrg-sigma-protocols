@@ -17,7 +17,7 @@ class NISigmaProtocol:
     Hash: DuplexSpongeInterface = None
 
     def __init__(self, session_id, instance):
-        protocol_id = self.Protocol.get_protocol_id()
+        protocol_id = self.get_protocol_id()
         assert len(protocol_id) == 64, f"Invalid protocol ID length: {len(protocol_id)} for {protocol_id}"
 
         self.sigma_protocol = self.Protocol(instance)

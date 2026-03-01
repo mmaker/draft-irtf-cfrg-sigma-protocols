@@ -29,8 +29,6 @@ def test_vector(test_vector_function):
 
         # Serialize the entire witness list at once
         witness_bytes = NISigmaProtocol.Codec.GG.ScalarField.serialize(witness)
-        protocol_id = NISigmaProtocol.Protocol.get_protocol_id()
-        instance_label = NISigmaProtocol.Protocol(instance).get_instance_label()
 
         vectors[test_vector_name] = {
             "Ciphersuite": suite,
