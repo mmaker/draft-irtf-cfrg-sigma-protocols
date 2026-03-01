@@ -1,3 +1,13 @@
+"""
+Proof-of-concept implementation for the CFRG Internet-Draft
+`draft-irtf-cfrg-sigma-protocols`.
+
+This code is an example implementation for specification discussion and test
+vector generation; it is not intended for production deployment.
+No guarantees are provided for constant-time behavior, side-channel resistance,
+or secure cleanup/erasure of sensitive intermediate data.
+"""
+
 from abc import ABC, abstractmethod
 from collections import namedtuple
 
@@ -256,4 +266,3 @@ class LinearRelation:
 
         # Return the canonical description without hashing
         return b''.join(serialization_parts)
-
