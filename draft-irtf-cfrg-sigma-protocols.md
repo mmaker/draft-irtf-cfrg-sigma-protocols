@@ -104,7 +104,7 @@ informative:
 
 --- abstract
 
-A Sigma Protocol is an interactive zero-knowledge proof of knowledge that allows a prover to convince a verifier of the validity of a statement. It satisfies the properties of completeness, soundness, and zero-knowledge, as described in {{security}}.
+A Sigma Protocol is an interactive zero-knowledge proof of knowledge that allows a prover to convince a verifier of the validity of a statement. It satisfies the properties of completeness, soundness, and zero-knowledge, as described in {{security-considerations}}.
 
 This document describes Sigma Protocols for proving knowledge of pre-images of linear maps in prime-order elliptic curve groups. Examples include zero-knowledge proofs for discrete logarithm relations, ElGamal encryptions, Pedersen commitments, and range proofs.
 
@@ -112,7 +112,7 @@ This document describes Sigma Protocols for proving knowledge of pre-images of l
 
 # Introduction
 
-Any Sigma Protocol must define a *commitment* (computed by the prover), a *challenge* (randomly sampled from a specific distribution), and a *response* (computed by the prover). One of the advantages of Sigma Protocols is their composability, which enables the construction of more complex protocols. A classic example is the OR composition {{CramerDS94}}. Given a Sigma Protocol for N relations, it is possible to prove knowledge of one of of N witnesses for those relations . The composed sigma protocols can be made non-interactive using the Fiat-Shamir transformation {{Cramer97}}. However, such compositions must be handled carefully to preserve security properties as discussed in {{sec-cons}}.
+Any Sigma Protocol must define a *commitment* (computed by the prover), a *challenge* (randomly sampled from a specific distribution), and a *response* (computed by the prover). One of the advantages of Sigma Protocols is their composability, which enables the construction of more complex protocols. A classic example is the OR composition {{CramerDS94}}. Given a Sigma Protocol for N relations, it is possible to prove knowledge of one of of N witnesses for those relations . The composed sigma protocols can be made non-interactive using the Fiat-Shamir transformation {{Cramer97}}. However, such compositions must be handled carefully to preserve security properties as discussed in {{security-considerations}}.
 
 ## Core interface
 
