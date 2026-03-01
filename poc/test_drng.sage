@@ -8,7 +8,7 @@ from sagelib.hash_to_field import OS2IP
 class TestDRNG(object):
     def __init__(self, seed):
         assert len(seed) == 32
-        self.hash_state = SHAKE128(b"\x00" * 64)
+        self.hash_state = SHAKE128(b"sigma-proofs/TestDRNG/SHAKE128".ljust(64, b"\x00"))
         self.hash_state.absorb(seed)
         self.squeeze_offset = 0
 
