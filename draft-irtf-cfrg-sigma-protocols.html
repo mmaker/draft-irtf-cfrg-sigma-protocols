@@ -1226,6 +1226,9 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
                 <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-privacy-considerations" class="internal xref">Privacy Considerations</a></p>
 </li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2">
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="auto internal xref">3.2</a>.  <a href="#name-constant-time-requirements" class="internal xref">Constant-Time Requirements</a></p>
+</li>
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
@@ -1898,6 +1901,15 @@ statement.append_equation(C, [(var_x, G), (var_r, H)])
         </h3>
 <p id="section-3.1-1">Sigma Protocols are insecure against malicious verifiers and should not be used.
 The non-interactive Fiat-Shamir transformation leads to publicly verifiable (transferable) proofs that are statistically zero-knowledge.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="constant-time-requirements">
+<section id="section-3.2">
+        <h3 id="name-constant-time-requirements">
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-constant-time-requirements" class="section-name selfRef">Constant-Time Requirements</a>
+        </h3>
+<p id="section-3.2-1">The prover's control flow and memory access patterns are typically influenced by the witness.
+To prevent side-channel leakage of witness information, which may reveal private values, it is important that the implementation of underlying group and field operations are constant-time. Operations such as modular reduction, scalar multiplication, random value generation, and all other group and field operations are required to be constant-time especially when working with inputs which are private to prevent side-channel attacks which may reveal their values. In some cases, such as keyed-verification credentials, also the verifier must be constant-time.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>

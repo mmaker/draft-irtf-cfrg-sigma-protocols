@@ -93,6 +93,7 @@ Table of Contents
        2.3.1.  P-256 (secp256r1)
    3.  Security Considerations
      3.1.  Privacy Considerations
+     3.2.  Constant-Time Requirements
    4.  Post-Quantum Security Considerations
      4.1.  Privacy Considerations
      4.2.  Soundness Considerations
@@ -633,6 +634,19 @@ Procedure:
    not be used.  The non-interactive Fiat-Shamir transformation leads to
    publicly verifiable (transferable) proofs that are statistically
    zero-knowledge.
+
+3.2.  Constant-Time Requirements
+
+   The prover's control flow and memory access patterns are typically
+   influenced by the witness.  To prevent side-channel leakage of
+   witness information, which may reveal private values, it is important
+   that the implementation of underlying group and field operations are
+   constant-time.  Operations such as modular reduction, scalar
+   multiplication, random value generation, and all other group and
+   field operations are required to be constant-time especially when
+   working with inputs which are private to prevent side-channel attacks
+   which may reveal their values.  In some cases, such as keyed-
+   verification credentials, also the verifier must be constant-time.
 
 4.  Post-Quantum Security Considerations
 
