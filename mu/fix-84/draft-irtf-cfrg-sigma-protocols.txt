@@ -657,7 +657,7 @@ Procedure:
    verification credentials, also the verifier must be constant-time.
    Implementations MUST securely delete prover state as soon as it is no
    longer needed, and SHOULD minimize the lifetime of sensitive material
-   (witness and instance), explicitly zeroizing temporary buffers after
+   (witness and instance), explicitly zeroize temporary buffers after
    proof generation, use secure de-allocation mechanisms when available,
    and reduce exposure in crash dumps, swap/page files, and diagnostic
    logging.
