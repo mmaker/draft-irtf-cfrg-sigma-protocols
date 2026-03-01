@@ -189,7 +189,7 @@ In this spec, instead of `add` we will use `+` with infix notation; instead of `
 - `identity()`: outputs the (additive) identity element in the scalar field.
 - `add(scalar: Scalar)`: implements field addition for the elements in the field.
 - `mul(scalar: Scalar)`, implements field multiplication.
-- `random(rng)`: samples a non-zero scalar using the decoding method in Section 9.1.4 of {{fiat-shamir}}.
+- `random(rng)`: samples a scalar from the RNG. Securely decoding random bytes into a random scalar is described in Section 9.1.4 of {{fiat-shamir}}.
 - `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
 - `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a `DeserializeError` if deserialization fails.
 
@@ -204,6 +204,10 @@ non-zero scalars uniformly at random.
 Algorithms access to this functionality through the following interface.
 
     class CSRNG(ABC):
+        @abstractmethod
+        def getrandom(length: int) -> bytes:
+            pass
+
         @abstractmethod
         def random_scalar() -> Scalar:
             pass

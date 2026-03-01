@@ -28,8 +28,7 @@ class NISchnorrProofKeccakDuplexSpongeBls12381(NISigmaProtocol):
 
 
 CIPHERSUITE = {
-    "Schnorr_Shake128_P256": NISchnorrProofShake128P256,
-    "Schnorr_KeccakDuplexSponge_P256": NISchnorrProofKeccakDuplexSpongeP256,
-    "Schnorr_Shake128_BLS12381": NISchnorrProofShake128Bls12381,
-    "Schnorr_KeccakDuplexSponge_Bls12381": NISchnorrProofKeccakDuplexSpongeBls12381,
+    "sigma-proofs_Shake128_P256": NISchnorrProofShake128P256,
+    "sigma-proofs_Shake128_BLS12381": NISchnorrProofShake128Bls12381,
+    "sigma-proofs_OWKeccak1600_Bls12381": NISchnorrProofKeccakDuplexSpongeBls12381,
 }

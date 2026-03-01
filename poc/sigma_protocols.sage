@@ -14,6 +14,10 @@ class CSRNG(ABC):
     """
 
     @abstractmethod
+    def getrandom(self, length: int) -> bytes:
+        raise NotImplementedError
+
+    @abstractmethod
     def random_scalar(self) -> groups.Scalar:
         raise NotImplementedError
 
@@ -272,4 +276,3 @@ class LinearRelation:
 
         # Return the canonical description without hashing
         return b''.join(serialization_parts)
-

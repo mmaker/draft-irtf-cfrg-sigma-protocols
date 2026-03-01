@@ -23,9 +23,12 @@ class TestDRNG(CSRNG):
         self.squeeze_offset = end
         return out
 
+    def getrandom(self, length: int) -> bytes:
+        return self._squeeze(length)
+
     def random_scalar(self) -> groups.Scalar:
         Ns = int(self.scalar_cls.field_bytes_length)
-        scalar_bytes = self._squeeze(Ns + 16)
+        scalar_bytes = self.getrandom(Ns + 16)
         scalar = self.scalar_cls.field(OS2IP(scalar_bytes) % self.scalar_cls.order)
         if self.tracing_enabled:
             self.sampled_scalars.append(scalar)
@@ -35,5 +38,5 @@ class TestDRNG(CSRNG):
         assert l < h
         rand_range = h - l
         Ns = (int(rand_range).bit_length() + 7) // 8
-        random_int = OS2IP(self._squeeze(Ns + 16)) % rand_range
+        random_int = OS2IP(self.getrandom(Ns + 16)) % rand_range
         return l + random_int
