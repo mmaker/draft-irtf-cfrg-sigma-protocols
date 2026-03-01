@@ -547,21 +547,19 @@ They are currently developed in the [proof-of-concept implementation](https://gi
 ## Seeded PRNG
 
 For interoperability, the random number generator used for test vectors
-is implemented with a SHAKE128 state {{FIPS-202}} absorbing a seed of
-at least 32 bytes. Its output is used to produce non-zero scalars by
-using a rejection sampling method.
+is implemented using the SHAKE128 instantiation in {{fiat-shamir}},
+absorbing a seed of 32 bytes.
+The Seeded PRNG is for reproducible test vectors; production implementations MUST use a CSPRNG.
 
-    import sys
-    from cryptography.hazmat.primitives.hashes import SHAKE128, XOFHash
+Random scalars are generated squeezing `Ns + 16` bytes, seen as an integer and reduced modulo `p`, as in Section 9.1.4 of {{fiat-shamir}}.
+
     class SeededPRNG:
         def __init__(self, seed: bytes, order: int):
-            assert(len(seed) >= 32)
+            assert(len(seed) == 32)
             self.order = order
-            self.xof = XOFHash(SHAKE128(digest_size=sys.maxsize))
-            self.xof.update(seed)
+            self.hash_state = SHAKE128.new(b"\x00" * 64)
+            self.hash_state.absorb(seed)
         def random_scalar() -> Scalar:
-            while True:
-                b = self.xof.squeeze(Ns)
-                scalar = OS2IP(b)
-                if 0 < scalar < self.order:
-                    return scalar
+            Ns = (self.order.bit_length() + 7) // 8
+            random_integer  = OS2IP(self.hash_state.squeeze(Ns + 16))
+            return Scalar(random_integer % self.order)
