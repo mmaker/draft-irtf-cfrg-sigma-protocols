@@ -79,6 +79,20 @@ informative:
     date: 1993
     author:
       - fullname: "Jacques Stern"
+  CramerDS94:
+    title: "Proofs of Partial Knowledge and Simplified Design of Witness Hiding Protocols"
+    target: https://ir.cwi.nl/pub/1456/1456D.pdf
+    date: 1994
+    author:
+      - fullname: "Ronald Cramer"
+      - fullname: "Ivan Damgaard"
+      - fullname: "Berry Schoenmakers"
+  Cramer97:
+    title: "Modular Design of Secure yet Practical Cryptographic Protocols"
+    target: https://ir.cwi.nl/pub/21438
+    date: 1997
+    author:
+      - fullname: "Ronald Cramer"
   CS97:
       title: "Proof Systems for General Statements about Discrete Logarithms"
       author:
@@ -90,7 +104,7 @@ informative:
 
 --- abstract
 
-A Sigma Protocol is an interactive zero-knowledge proof of knowledge that allows a prover to convince a verifier of the validity of a statement. It satisfies the properties of completeness, soundness, and zero-knowledge, as described in {{security}}.
+A Sigma Protocol is an interactive zero-knowledge proof of knowledge that allows a prover to convince a verifier of the validity of a statement. It satisfies the properties of completeness, soundness, and zero-knowledge, as described in {{security-considerations}}.
 
 This document describes Sigma Protocols for proving knowledge of pre-images of linear maps in prime-order elliptic curve groups. Examples include zero-knowledge proofs for discrete logarithm relations, ElGamal encryptions, Pedersen commitments, and range proofs.
 
@@ -98,7 +112,7 @@ This document describes Sigma Protocols for proving knowledge of pre-images of l
 
 # Introduction
 
-Any Sigma Protocol must define three objects: a *commitment* (computed by the prover), a *challenge* (computed by the verifier), and a *response* (computed by the prover).
+Any Sigma Protocol must define a *commitment* (computed by the prover), a *challenge* (randomly sampled from a specific distribution), and a *response* (computed by the prover). One of the advantages of Sigma Protocols is their composability, which enables the construction of more complex protocols. A classic example is the OR composition {{CramerDS94}}. Given a Sigma Protocol for N relations, it is possible to prove knowledge of one of of N witnesses for those relations . The composed sigma protocols can be made non-interactive using the Fiat-Shamir transformation {{Cramer97}}. However, such compositions must be handled carefully to preserve security properties as discussed in {{security-considerations}}.
 
 ## Core interface
 
@@ -477,7 +491,7 @@ This ciphersuite uses P-256 {{SP800}} for the Group.
 - `serialize(s)`: Relies on the Field-Element-to-Octet-String conversion according to {{SEC1}}; `Ns = 32`.
 - `deserialize(buf)`: Reads the byte array `buf` in chunks of 32 bytes using Octet-String-to-Field-Element from {{SEC1}}. This function can fail if the input does not represent a Scalar in the range `[0, G.Order() - 1]`.
 
-# Security Considerations {#security}
+# Security Considerations {#security-considerations}
 
 Interactive Sigma Protocols have the following properties:
 
