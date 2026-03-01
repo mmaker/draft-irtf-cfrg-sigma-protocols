@@ -214,9 +214,10 @@ Table of Contents
       the hash state to produce an unpredictable verifier challenge
       verifier_challenge.
 
-   The verifier_challenge function must generate a challenge uniformly
-   from the underlying scalar field, from the public inputs given to the
-   verifier.
+   The verifier_challenge function must generate a challenge from the
+   underlying scalar field that is statistically close to uniform, from
+   the public inputs given to the verifier, as described in
+   Section 9.1.4.
 
 5.  Generation of the Initialization Vector
 
