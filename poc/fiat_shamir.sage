@@ -67,9 +67,7 @@ class NISigmaProtocol:
         response = self.sigma_protocol.deserialize_response(response_bytes)
         commitment = self.sigma_protocol.simulate_commitment(response, challenge)
 
-        # - the expected challenge, recomputed from simulated commitment and
-        # current statement, is equivalent to the challenge in the proof.
-        # This binds the proof to the statement and detects tampering.
+        # - the re-computed challenge equals the serialized challenge.
         self.codec.prover_message(self.hash_state, commitment)
         expected_challenge = self.codec.verifier_challenge(self.hash_state)
         if challenge != expected_challenge:
