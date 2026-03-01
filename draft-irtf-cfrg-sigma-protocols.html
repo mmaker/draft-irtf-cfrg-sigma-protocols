@@ -1158,6 +1158,11 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.1">
                 <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="auto internal xref">1.1</a>.  <a href="#name-core-interface" class="internal xref">Core interface</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.1.2.1">
+                    <p id="section-toc.1-1.1.2.1.2.1.1" class="keepWithNext"><a href="#section-1.1.1" class="auto internal xref">1.1.1</a>.  <a href="#name-randomized-algorithms" class="internal xref">Randomized algorithms</a></p>
+</li>
+                </ul>
 </li>
             </ul>
 </li>
@@ -1168,13 +1173,10 @@ svg :is([fill="white"], [fill^="#fff"]) {
                 <p id="section-toc.1-1.2.2.1.1"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-group-abstraction" class="internal xref">Group abstraction</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1.2.1">
-                    <p id="section-toc.1-1.2.2.1.2.1.1" class="keepWithNext"><a href="#section-2.1.1" class="auto internal xref">2.1.1</a>.  <a href="#name-group" class="internal xref">Group</a></p>
+                    <p id="section-toc.1-1.2.2.1.2.1.1"><a href="#section-2.1.1" class="auto internal xref">2.1.1</a>.  <a href="#name-group" class="internal xref">Group</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1.2.2">
                     <p id="section-toc.1-1.2.2.1.2.2.1"><a href="#section-2.1.2" class="auto internal xref">2.1.2</a>.  <a href="#name-scalar" class="internal xref">Scalar</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1.2.3">
-                    <p id="section-toc.1-1.2.2.1.2.3.1"><a href="#section-2.1.3" class="auto internal xref">2.1.3</a>.  <a href="#name-interface-for-pseudo-random" class="internal xref">Interface for Pseudo-Random Number Generator</a></p>
 </li>
                 </ul>
 </li>
@@ -1312,7 +1314,7 @@ class SigmaProtocol:
             <p id="section-1.1-4.1.1"><code>new(instance) -&gt; SigmaProtocol</code>, denoting the initialization function. This function takes as input an instance generated via a <code>LinearRelation</code>, the public information shared between prover and verifier.<a href="#section-1.1-4.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-1.1-4.2">
-            <p id="section-1.1-4.2.1"><code>prover_commit(self, witness: Witness, rng) -&gt; (commitment, prover_state)</code>, denoting the <strong>commitment phase</strong>, that is, the computation of the first message sent by the prover in a Sigma Protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator <code>rng</code>. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while <code>prover_state</code> must be kept secret.<a href="#section-1.1-4.2.1" class="pilcrow">¶</a></p>
+            <p id="section-1.1-4.2.1"><code>prover_commit(self, witness: Witness, rng) -&gt; (commitment, prover_state)</code>, denoting the <strong>commitment phase</strong>, that is, the computation of the first message sent by the prover in a Sigma Protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator <code>rng</code> as defined in <a href="#rng-definition" class="auto internal xref">Section 1.1.1</a>. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while <code>prover_state</code> must be kept secret.<a href="#section-1.1-4.2.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-1.1-4.3">
             <p id="section-1.1-4.3.1"><code>prover_response(self, prover_state, challenge) -&gt; response</code>, denoting the <strong>response phase</strong>, that is, the computation of the second message sent by the prover, depending on the witness, the statement, the challenge received from the verifier, and the internal state <code>prover_state</code>. The return value response is a public value and is transmitted to the verifier.<a href="#section-1.1-4.3.1" class="pilcrow">¶</a></p>
@@ -1344,6 +1346,29 @@ class SigmaProtocol:
         </ul>
 <p id="section-1.1-7">The simulated transcript <code>(commitment, challenge, response)</code> must be indistinguishable from the one generated using the prover algorithms.<a href="#section-1.1-7" class="pilcrow">¶</a></p>
 <p id="section-1.1-8">The abstraction <code>SigmaProtocol</code> allows implementing different types of statements and combiners of those, such as OR statements, validity of t-out-of-n statements, and more.<a href="#section-1.1-8" class="pilcrow">¶</a></p>
+<div id="rng-definition">
+<section id="section-1.1.1">
+          <h4 id="name-randomized-algorithms">
+<a href="#section-1.1.1" class="section-number selfRef">1.1.1. </a><a href="#name-randomized-algorithms" class="section-name selfRef">Randomized algorithms</a>
+          </h4>
+<p id="section-1.1.1-1">The generation of proofs involves randomized algorithms that take as
+input a source of randomness, denoted as <code>rng</code>.
+The functionality required in this document is a secure way to sample
+non-zero scalars uniformly at random.
+Algorithms access to this functionality through the following interface.<a href="#section-1.1.1-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-1.1.1-2">
+<pre>
+class CSRNG(ABC):
+    def getrandom(length: int) -&gt; bytes:
+        pass
+</pre><a href="#section-1.1.1-2" class="pilcrow">¶</a>
+</div>
+<p id="section-1.1.1-3">Implementations MUST use a cryptographically secure pseudorandom number
+generator (CSPRNG) to sample non-zero scalars either by using rejection
+sampling methods or reducing a large bitstring modulo the group order.
+Refer to Section A.4 of <span>[<a href="#FIPS.186-5" class="cite xref">FIPS.186-5</a>]</span> for guidance about these methods.<a href="#section-1.1.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
 </section>
 </div>
 </section>
@@ -1426,37 +1451,16 @@ Finally, line 3 states that the linear relation that needs to be proven is
               <p id="section-2.1.2-1.3.1"><code>mul(scalar: Scalar)</code>, implements field multiplication.<a href="#section-2.1.2-1.3.1" class="pilcrow">¶</a></p>
 </li>
             <li class="normal" id="section-2.1.2-1.4">
-              <p id="section-2.1.2-1.4.1"><code>serialize(scalars: list[Scalar; N])</code>: serializes a list of scalars and returns their canonical representation of fixed length <code>Ns * N</code>.<a href="#section-2.1.2-1.4.1" class="pilcrow">¶</a></p>
+              <p id="section-2.1.2-1.4.1"><code>random(rng)</code>: samples a scalar from the RNG. Securely decoding random bytes into a random scalar is described in Section 9.1.4 of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>.<a href="#section-2.1.2-1.4.1" class="pilcrow">¶</a></p>
 </li>
             <li class="normal" id="section-2.1.2-1.5">
-              <p id="section-2.1.2-1.5.1"><code>deserialize(buffer)</code>, attempts to map a byte array <code>buffer</code> of size <code>Ns * N</code> into <code>[Scalar; N]</code>, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a <code>DeserializeError</code> if deserialization fails.<a href="#section-2.1.2-1.5.1" class="pilcrow">¶</a></p>
+              <p id="section-2.1.2-1.5.1"><code>serialize(scalars: list[Scalar; N])</code>: serializes a list of scalars and returns their canonical representation of fixed length <code>Ns * N</code>.<a href="#section-2.1.2-1.5.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-2.1.2-1.6">
+              <p id="section-2.1.2-1.6.1"><code>deserialize(buffer)</code>, attempts to map a byte array <code>buffer</code> of size <code>Ns * N</code> into <code>[Scalar; N]</code>, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a <code>DeserializeError</code> if deserialization fails.<a href="#section-2.1.2-1.6.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
 <p id="section-2.1.2-2">In this spec, instead of <code>add</code> we will use <code>+</code> with infix notation; instead of <code>equal</code> we will use <code>==</code>, and instead of <code>mul</code> we will use <code>*</code>. A similar behavior can be achieved using operator overloading.<a href="#section-2.1.2-2" class="pilcrow">¶</a></p>
-</section>
-</div>
-<div id="interface-for-pseudo-random-number-generator">
-<section id="section-2.1.3">
-          <h4 id="name-interface-for-pseudo-random">
-<a href="#section-2.1.3" class="section-number selfRef">2.1.3. </a><a href="#name-interface-for-pseudo-random" class="section-name selfRef">Interface for Pseudo-Random Number Generator</a>
-          </h4>
-<p id="section-2.1.3-1">The generation of proofs involves randomized algorithms that take as
-input a source of randomness, denoted as <code>rng</code>.
-The functionality required in this document is a secure way to sample
-non-zero scalars uniformly at random.
-Algorithms access to this functionality through the following interface.<a href="#section-2.1.3-1" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-2.1.3-2">
-<pre>
-class CSRNG(ABC):
-    @abstractmethod
-    def random_scalar() -&gt; Scalar:
-        pass
-</pre><a href="#section-2.1.3-2" class="pilcrow">¶</a>
-</div>
-<p id="section-2.1.3-3">Implementations MUST use a cryptographically secure pseudorandom number
-generator (CSPRNG) to sample non-zero scalars either by using rejection
-sampling methods or reducing a large bitstring modulo the group order.
-Refer to Section A.4 of <span>[<a href="#FIPS.186-5" class="cite xref">FIPS.186-5</a>]</span> for guidance about these methods.<a href="#section-2.1.3-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>

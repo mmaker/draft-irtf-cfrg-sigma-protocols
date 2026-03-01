@@ -74,11 +74,11 @@ Table of Contents
 
    1.  Introduction
      1.1.  Core interface
+       1.1.1.  Randomized algorithms
    2.  Sigma Protocols over prime-order groups
      2.1.  Group abstraction
        2.1.1.  Group
        2.1.2.  Scalar
-       2.1.3.  Interface for Pseudo-Random Number Generator
      2.2.  Proofs of preimage of a linear map
        2.2.1.  Witness representation
        2.2.2.  Linear map
@@ -153,11 +153,11 @@ Table of Contents
       Protocol.  This method outputs a new commitment together with its
       associated prover state, depending on the witness known to the
       prover, the statement to be proven, and a random number generator
-      rng.  This step generally requires access to a high-quality
-      entropy source to perform the commitment.  Leakage of even just a
-      few bits of the commitment could allow for the complete recovery
-      of the witness.  The commitment is meant to be shared, while
-      prover_state must be kept secret.
+      rng as defined in Section 1.1.1.  This step generally requires
+      access to a high-quality entropy source to perform the commitment.
+      Leakage of even just a few bits of the commitment could allow for
+      the complete recovery of the witness.  The commitment is meant to
+      be shared, while prover_state must be kept secret.
 
    *  prover_response(self, prover_state, challenge) -> response,
       denoting the *response phase*, that is, the computation of the
@@ -204,6 +204,24 @@ Table of Contents
    The abstraction SigmaProtocol allows implementing different types of
    statements and combiners of those, such as OR statements, validity of
    t-out-of-n statements, and more.
+
+1.1.1.  Randomized algorithms
+
+   The generation of proofs involves randomized algorithms that take as
+   input a source of randomness, denoted as rng.  The functionality
+   required in this document is a secure way to sample non-zero scalars
+   uniformly at random.  Algorithms access to this functionality through
+   the following interface.
+
+   class CSRNG(ABC):
+       def getrandom(length: int) -> bytes:
+           pass
+
+   Implementations MUST use a cryptographically secure pseudorandom
+   number generator (CSPRNG) to sample non-zero scalars either by using
+   rejection sampling methods or reducing a large bitstring modulo the
+   group order.  Refer to Section A.4 of [FIPS.186-5] for guidance about
+   these methods.
 
 2.  Sigma Protocols over prime-order groups
 
@@ -282,6 +300,10 @@ Table of Contents
 
    *  mul(scalar: Scalar), implements field multiplication.
 
+   *  random(rng): samples a scalar from the RNG.  Securely decoding
+      random bytes into a random scalar is described in Section 9.1.4 of
+      [fiat-shamir].
+
    *  serialize(scalars: list[Scalar; N]): serializes a list of scalars
       and returns their canonical representation of fixed length Ns * N.
 
@@ -294,25 +316,6 @@ Table of Contents
    In this spec, instead of add we will use + with infix notation;
    instead of equal we will use ==, and instead of mul we will use *. A
    similar behavior can be achieved using operator overloading.
-
-2.1.3.  Interface for Pseudo-Random Number Generator
-
-   The generation of proofs involves randomized algorithms that take as
-   input a source of randomness, denoted as rng.  The functionality
-   required in this document is a secure way to sample non-zero scalars
-   uniformly at random.  Algorithms access to this functionality through
-   the following interface.
-
-   class CSRNG(ABC):
-       @abstractmethod
-       def random_scalar() -> Scalar:
-           pass
-
-   Implementations MUST use a cryptographically secure pseudorandom
-   number generator (CSPRNG) to sample non-zero scalars either by using
-   rejection sampling methods or reducing a large bitstring modulo the
-   group order.  Refer to Section A.4 of [FIPS.186-5] for guidance about
-   these methods.
 
 2.2.  Proofs of preimage of a linear map
 
