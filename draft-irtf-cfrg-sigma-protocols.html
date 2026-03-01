@@ -1050,11 +1050,11 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <thead><tr>
 <td class="left">Internet-Draft</td>
 <td class="center">Interactive Sigma Proofs</td>
-<td class="right">February 2026</td>
+<td class="right">March 2026</td>
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù &amp; Yun</td>
-<td class="center">Expires 31 August 2026</td>
+<td class="center">Expires 2 September 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1067,12 +1067,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-irtf-cfrg-sigma-protocols-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-02-27" class="published">27 February 2026</time>
+<time datetime="2026-03-01" class="published">1 March 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-08-31">31 August 2026</time></dd>
+<dd class="expires"><time datetime="2026-09-02">2 September 2026</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1127,7 +1127,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 31 August 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 2 September 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -2063,26 +2063,23 @@ They are currently developed in the <a href="https://github.com/mmaker/draft-zkp
 <a href="#appendix-A.1" class="section-number selfRef">A.1. </a><a href="#name-seeded-prng" class="section-name selfRef">Seeded PRNG</a>
         </h3>
 <p id="appendix-A.1-1">For interoperability, the random number generator used for test vectors
-is implemented with a SHAKE128 state <span>[<a href="#FIPS-202" class="cite xref">FIPS-202</a>]</span> absorbing a seed of
-at least 32 bytes. Its output is used to produce non-zero scalars by
-using a rejection sampling method.<a href="#appendix-A.1-1" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="appendix-A.1-2">
+is implemented using the duplex sponge SHAKE128 instantiation in Section 8.1 of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>,
+absorbing a seed of 32 bytes.
+The Seeded PRNG is for reproducible test vectors; production implementations MUST use a CSPRNG.<a href="#appendix-A.1-1" class="pilcrow">¶</a></p>
+<p id="appendix-A.1-2">Random scalars are generated squeezing <code>Ns + 16</code> bytes, seen as a big-endian positive integer and reduced modulo <code>p</code>, as in Section 9.1.4 of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>.<a href="#appendix-A.1-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="appendix-A.1-3">
 <pre>
-import sys
-from cryptography.hazmat.primitives.hashes import SHAKE128, XOFHash
 class SeededPRNG:
     def __init__(self, seed: bytes, order: int):
-        assert(len(seed) &gt;= 32)
+        assert(len(seed) == 32)
         self.order = order
-        self.xof = XOFHash(SHAKE128(digest_size=sys.maxsize))
-        self.xof.update(seed)
+        self.hash_state = SHAKE128(b"sigma-proofs/TestDRNG/SHAKE128".ljust(64, b"\x00"))
+        self.hash_state.absorb(seed)
     def random_scalar() -&gt; Scalar:
-        while True:
-            b = self.xof.squeeze(Ns)
-            scalar = OS2IP(b)
-            if 0 &lt; scalar &lt; self.order:
-                return scalar
-</pre><a href="#appendix-A.1-2" class="pilcrow">¶</a>
+        Ns = (self.order.bit_length() + 7) // 8
+        random_integer  = OS2IP(self.hash_state.squeeze(Ns + 16))
+        return Scalar(random_integer % self.order)
+</pre><a href="#appendix-A.1-3" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
