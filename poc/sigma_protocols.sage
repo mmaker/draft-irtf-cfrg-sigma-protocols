@@ -1,3 +1,14 @@
+"""
+Proof-of-concept implementation for the CFRG Internet-Draft
+`draft-irtf-cfrg-sigma-protocols`.
+
+This code is an example implementation for specification discussion and test
+vector generation; it is not intended for production deployment.
+Side-channel security is not provided in this PoC (including constant-time
+execution and secure deletion of sensitive data).
+See `draft-irtf-cfrg-sigma-protocols`, Section "Security Considerations", for more information.
+"""
+
 from abc import ABC, abstractmethod
 from collections import namedtuple
 
