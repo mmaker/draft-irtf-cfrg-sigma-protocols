@@ -4,8 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                          28 February 2026
-Expires: 1 September 2026
+Intended status: Informational                              1 March 2026
+Expires: 2 September 2026
 
 
                        Fiat-Shamir Transformation
@@ -62,7 +62,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 1 September 2026.
+   This Internet-Draft will expire on 2 September 2026.
 
 Copyright Notice
 
@@ -298,8 +298,16 @@ class NISigmaProtocol:
         response_bytes = proof[challenge_bytes_len:]
         challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
         response = self.sigma_protocol.deserialize_response(response_bytes)
-
         commitment = self.sigma_protocol.simulate_commitment(response, challenge)
+
+        # - the expected challenge, recomputed from the simulated commitment and
+        # the current statement, is equivalent to the challenge in the proof.
+        # This binds the proof to the statement and detects tampering.
+        self.codec.prover_message(self.hash_state, commitment)
+        expected_challenge = self.codec.verifier_challenge(self.hash_state)
+        if challenge != expected_challenge:
+            return False
+
         return self.sigma_protocol.verifier(commitment, challenge, response)
 
     def prove_batchable(self, witness, rng):
