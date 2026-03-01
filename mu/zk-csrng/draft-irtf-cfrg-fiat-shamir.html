@@ -1837,7 +1837,7 @@ Constants:
 
 1. for i in range(length):
 2.     scalar_bytes = hash_state.squeeze(Ns + 16)
-3.     scalars.append(bytes_to_scalar_mod_order(scalar_bytes))
+3.     scalars.append(OS2IP(scalar_bytes) % p)
 </pre><a href="#section-9.1.4-2" class="pilcrow">¶</a>
 </div>
 </section>
