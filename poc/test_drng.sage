@@ -8,11 +8,9 @@ from sagelib import groups
 
 
 class TestDRNG(CSRNG):
-    def __init__(self, seed: bytes, scalar_cls: type[groups.Scalar], /, tracing_enabled=False):
+    def __init__(self, seed: bytes, scalar_cls: type[groups.Scalar], /):
         assert len(seed) == 32, "seed must be exactly 32 bytes"
         self.scalar_cls = scalar_cls
-        self.tracing_enabled = tracing_enabled
-        self.sampled_scalars = []
         self.hash_state = SHAKE128(b"sigma-proofs/TestDRNG/SHAKE128".ljust(64, b"\x00"))
         self.hash_state.absorb(seed)
         self.squeeze_offset = 0
@@ -30,8 +28,6 @@ class TestDRNG(CSRNG):
         Ns = int(self.scalar_cls.field_bytes_length)
         scalar_bytes = self.getrandom(Ns + 16)
         scalar = self.scalar_cls.field(OS2IP(scalar_bytes) % self.scalar_cls.order)
-        if self.tracing_enabled:
-            self.sampled_scalars.append(scalar)
         return scalar
 
     def randint(self, l: int, h: int) -> int:
