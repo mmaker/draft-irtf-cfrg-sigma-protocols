@@ -551,7 +551,7 @@ is implemented using the SHAKE128 instantiation in {{fiat-shamir}},
 absorbing a seed of 32 bytes.
 The Seeded PRNG is for reproducible test vectors; production implementations MUST use a CSPRNG.
 
-Random scalars are generated squeezing `Ns + 16` bytes, seen as an integer and reduced modulo `p`, as in Section 9.1.4 of {{fiat-shamir}}.
+Random scalars are generated squeezing `Ns + 16` bytes, seen as a big-endian positive integer and reduced modulo `p`, as in Section 9.1.4 of {{fiat-shamir}}.
 
     class SeededPRNG:
         def __init__(self, seed: bytes, order: int):
