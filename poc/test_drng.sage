@@ -1,34 +1,28 @@
 #!/usr/bin/sage
 # vim: syntax=python
 
-import random
-import hashlib
+from sagelib.duplex_sponge import SHAKE128
+from sagelib.hash_to_field import OS2IP
 
 
 class TestDRNG(object):
     def __init__(self, seed):
-        self.seed = hashlib.sha256(seed).digest()
+        assert len(seed) == 32
+        self.hash_state = SHAKE128(b"\x00" * 64)
+        self.hash_state.absorb(seed)
+        self.squeeze_offset = 0
 
-    def next_u32(self):
-        val = int.from_bytes([self.seed[0], self.seed[1], self.seed[2], self.seed[3]], byteorder = 'big')
-        self.seed = hashlib.sha256(val.to_bytes(4, 'big')).digest()
-        return val
+    def _squeeze(self, length):
+        end = self.squeeze_offset + length
+        out = self.hash_state.squeeze(end)[self.squeeze_offset:end]
+        self.squeeze_offset = end
+        return out
+
+    def random_scalar(self, order):
+        Ns = (int(order).bit_length() + 7) // 8
+        scalar_bytes = self._squeeze(Ns + 16)
+        return OS2IP(scalar_bytes) % order
 
     def randint(self, l, h):
-        rand_range = h - l
-        num_bits = len(bin(rand_range)) - 2
-        num_bytes = (num_bits + 7) // 8
-        while True:
-            i = 0 
-            ret_bytes = []
-            while i < num_bytes:
-                rand = self.next_u32()
-                for b in rand.to_bytes(4, 'big'):
-                    if i < num_bytes:
-                        ret_bytes.append(b)
-                        i += 1
-                    else:
-                        break
-            potential_res = int.from_bytes(ret_bytes, byteorder = 'big')
-            if (len(bin(potential_res)) - 2) <= num_bits:
-                return l + (potential_res % rand_range)
+        assert l < h
+        return l + self.random_scalar(h - l)
