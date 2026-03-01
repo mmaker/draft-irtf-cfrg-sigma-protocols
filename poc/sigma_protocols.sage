@@ -155,7 +155,7 @@ class LinearMap:
     def __call__(self, scalars):
         image = []
         for linear_combination in self.linear_combinations:
-            coefficients = [scalars[i]
+            coefficients = [self.Group.ScalarField.field(scalars[i])
                             for i in linear_combination.scalar_indices]
             elements = [self.group_elements[i]
                         for i in linear_combination.element_indices]
@@ -244,7 +244,7 @@ class LinearRelation:
             # The target group element index for this constraint
             serialization_parts.append(target_element_idx.to_bytes(WORD_SIZE, 'little'))
             # Encode the dimension of the equation.
-            serialization_parts.append(len(linear_combination).to_bytes(WORD_SIZE, 'little'))
+            serialization_parts.append(len(linear_combination_idx).to_bytes(WORD_SIZE, 'little'))
 
             # Indices of scalars and group elements participating in this linear combination
             for (scalar_idx, element_idx) in linear_combination_idx:

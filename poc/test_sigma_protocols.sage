@@ -10,23 +10,26 @@ import json
 
 def test_vector(test_vector_function):
     def inner(vectors, suite):
-        NIZK = CIPHERSUITE[suite]
+        NISigmaProtocol = CIPHERSUITE[suite]
         instance_witness_rng = TestDRNG(b"instance_witness_generation_seed")
-        proof_generation_rng = TestDRNG(b"proof_generation_seed")
+        proof_generation_rng = TestDRNG(b"proof_generation_seed".ljust(32, b"\x00"))
 
         test_vector_name = f"{test_vector_function.__name__}"
-        instance, witness = test_vector_function(instance_witness_rng, NIZK.Codec.GG)
+        instance, witness = test_vector_function(instance_witness_rng, NISigmaProtocol.Codec.GG)
 
         session_id = test_vector_name.encode('utf-8')
-        narg_string = NIZK(session_id, instance).prove(witness, proof_generation_rng)
-        assert NIZK(session_id, instance).verify(narg_string)
+        batchable_narg_string = NISigmaProtocol(session_id, instance).prove_batchable(witness, proof_generation_rng)
+        assert NISigmaProtocol(session_id, instance).verify_batchable(batchable_narg_string)
+        hex_batchable_narg_string = batchable_narg_string.hex()
+        narg_string = NISigmaProtocol(session_id, instance).prove(witness, proof_generation_rng)
+        assert NISigmaProtocol(session_id, instance).verify(narg_string)
         hex_narg_string = narg_string.hex()
-        print(f"{test_vector_name} test vector generated\n")
+        print(f"{test_vector_name} test vectors generated\n")
 
         # Serialize the entire witness list at once
-        witness_bytes = NIZK.Codec.GG.ScalarField.serialize(witness)
-        protocol_id = NIZK.Protocol.get_protocol_id()
-        instance_label = NIZK.Protocol(instance).get_instance_label()
+        witness_bytes = NISigmaProtocol.Codec.GG.ScalarField.serialize(witness)
+        protocol_id = NISigmaProtocol.Protocol.get_protocol_id()
+        instance_label = NISigmaProtocol.Protocol(instance).get_instance_label()
 
         vectors[test_vector_name] = {
             "Ciphersuite": suite,
@@ -34,6 +37,7 @@ def test_vector(test_vector_function):
             "Statement": instance.get_label().hex(),
             "Witness": witness_bytes.hex(),
             "Proof": hex_narg_string,
+            "Batchable Proof": hex_batchable_narg_string,
         }
 
     return inner
@@ -78,7 +82,7 @@ def discrete_logarithm(rng, group):
     statement.set_elements([(var_G, G)])
 
     x = group.ScalarField.random(rng)
-    X = G * x
+    X = group.scalar_mult(x, G)
     assert [X] == statement.linear_map([x])
 
     statement.set_elements([(var_X, X)])
@@ -96,8 +100,8 @@ def dleq(rng, group):
     G = group.generator()
     H = group.random(rng)
     x = group.ScalarField.random(rng)
-    X = G * x
-    Y = H * x
+    X = group.scalar_mult(x, G)
+    Y = group.scalar_mult(x, H)
 
     statement = LinearRelation(group)
     [var_x] = statement.allocate_scalars(1)
@@ -124,7 +128,7 @@ def pedersen_commitment(rng, group):
     r = group.ScalarField.random(rng)
     witness = [x, r]
 
-    C = G * x + H * r
+    C = group.scalar_mult(x, G) + group.scalar_mult(r, H)
     statement = LinearRelation(group)
     [var_x, var_r] = statement.allocate_scalars(2)
     [var_G, var_H, var_C] = statement.allocate_elements(3)
@@ -185,7 +189,10 @@ def bbs_blind_commitment_computation(rng, group):
 
     # these are computed before the proof in the specification
     secret_prover_blind = group.ScalarField.random(rng)
-    C = secret_prover_blind * Q_2 + msg_1 * J_1 + msg_2 * J_2 + msg_3 * J_3
+    C = group.scalar_mult(secret_prover_blind, Q_2) + \
+        group.scalar_mult(msg_1, J_1) + \
+        group.scalar_mult(msg_2, J_2) + \
+        group.scalar_mult(msg_3, J_3)
 
     # This is the part that needs to be changed in the specification of blind bbs.
     statement = LinearRelation(group)
@@ -238,7 +245,7 @@ def main(path="vectors"):
         for proof_type in vectors:
             write_group_vectors(f, proof_type, vectors[proof_type])
 
-    print(f"Test vectors written to {path}/allVectors.json")
+    print(f"Test vectors written to {path}/testSigmaProtocols.json")
 
 
 if __name__ == "__main__":

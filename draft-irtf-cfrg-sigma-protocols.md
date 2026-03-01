@@ -9,8 +9,7 @@ date:
 v: 3
 area: "IRTF"
 workgroup: "Crypto Forum"
-keyword:
- - zero-knowledge
+keyword: ["zero-knowledge", "sigma protocols", "cryptography", "proofs of knowledge"]
 venue:
   group: "Crypto Forum"
   type: "Research Group"
@@ -20,14 +19,12 @@ venue:
   latest: "https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-sigma-protocols.html"
 
 author:
- -
-    fullname: "Michele Orrù"
+  - fullname: "Michele Orrù"
     organization: CNRS
     email: "m@orru.net"
- -
-    fullname: "Cathie Yun"
+  - fullname: "Cathie Yun"
     organization: Apple, Inc.
-    email: cathieyun@gmail.com
+    email: "cathieyun@gmail.com"
 
 normative:
 
@@ -82,20 +79,30 @@ informative:
     date: 1993
     author:
       - fullname: "Jacques Stern"
+  CS97:
+      title: "Proof Systems for General Statements about Discrete Logarithms"
+      author:
+        - fullname: "Jan Camenisch"
+        - fullname: "Markus Stadler"
+      target: https://crypto.ethz.ch/publications/files/CamSta97b.pdf
+  FIPS.186-5: DOI.10.6028/NIST.FIPS.186-5
+  FIPS-202: DOI.10.6028/NIST.FIPS.202
 
 --- abstract
 
-This document describes interactive sigma protocols, a class of secure, general-purpose zero-knowledge proofs of knowledge consisting of three moves: commitment, challenge, and response. Concretely, the protocol allows one to prove knowledge of a secret witness without revealing any information about it.
+A Sigma Protocol is an interactive zero-knowledge proof of knowledge that allows a prover to convince a verifier of the validity of a statement. It satisfies the properties of completeness, soundness, and zero-knowledge, as described in {{security}}.
+
+This document describes Sigma Protocols for proving knowledge of pre-images of linear maps in prime-order elliptic curve groups. Examples include zero-knowledge proofs for discrete logarithm relations, ElGamal encryptions, Pedersen commitments, and range proofs.
 
 --- middle
 
 # Introduction
 
-Any sigma protocol must define three objects: a *commitment* (computed by the prover), a *challenge* (computed by the verifier), and a *response* (computed by the prover).
+Any Sigma Protocol must define three objects: a *commitment* (computed by the prover), a *challenge* (computed by the verifier), and a *response* (computed by the prover).
 
 ## Core interface
 
-The public functions are obtained relying on an internal structure containing the definition of a sigma protocol.
+The public functions are obtained relying on an internal structure containing the definition of a Sigma Protocol.
 
     class SigmaProtocol:
        def new(instance) -> SigmaProtocol
@@ -113,9 +120,9 @@ The public functions are obtained relying on an internal structure containing th
 
 Where:
 
-- `new(instance) -> SigmaProtocol`, denoting the initialization function. This function takes as input an instance generated via the `LinearRelation`, the public information shared between prover and verifier.
+- `new(instance) -> SigmaProtocol`, denoting the initialization function. This function takes as input an instance generated via a `LinearRelation`, the public information shared between prover and verifier.
 
-- `prover_commit(self, witness: Witness, rng) -> (commitment, prover_state)`, denoting the **commitment phase**, that is, the computation of the first message sent by the prover in a Sigma protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator `rng`. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just of a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while `prover_state` must be kept secret.
+- `prover_commit(self, witness: Witness, rng) -> (commitment, prover_state)`, denoting the **commitment phase**, that is, the computation of the first message sent by the prover in a Sigma Protocol. This method outputs a new commitment together with its associated prover state, depending on the witness known to the prover, the statement to be proven, and a random number generator `rng`. This step generally requires access to a high-quality entropy source to perform the commitment. Leakage of even just a few bits of the commitment could allow for the complete recovery of the witness. The commitment is meant to be shared, while `prover_state` must be kept secret.
 
 - `prover_response(self, prover_state, challenge) -> response`, denoting the **response phase**, that is, the computation of the second message sent by the prover, depending on the witness, the statement, the challenge received from the verifier, and the internal state `prover_state`. The return value response is a public value and is transmitted to the verifier.
 
@@ -131,22 +138,22 @@ Where:
 
 The final two algorithms describe the **zero-knowledge simulator**. In particular, they may be used for proof composition (e.g. OR-composition). The function `simulate_commitment` is also used when verifying short proofs. We have:
 
-- `simulate_response(self, rng) -> response`, denoting the first stage of the simulator. It is an algorithm drawing a random response given a specified cryptographically secure RNG that follows the same output distribution of the algorithm `prover_response`.
+- `simulate_response(self, rng) -> response`, denoting the first stage of the simulator.
 
 - `simulate_commitment(self, response, challenge) -> commitment`, returning a simulated commitment -- the second phase of the zero-knowledge simulator.
 
-Together, these zero-knowledge simulators provide a transcript that should be computationally indistinguishable from the transcript generated by running the original sigma protocol.
+The simulated transcript `(commitment, challenge, response)` must be indistinguishable from the one generated using the prover algorithms.
 
 The abstraction `SigmaProtocol` allows implementing different types of statements and combiners of those, such as OR statements, validity of t-out-of-n statements, and more.
 
-# Sigma protocols over prime-order groups {#sigma-protocol-group}
+# Sigma Protocols over prime-order groups {#sigma-protocol-group}
 
-The following sub-section presents concrete instantiations of sigma protocols over prime-order elliptic curve groups.
+The following sub-section presents concrete instantiations of Sigma Protocols over prime-order elliptic curve groups.
 It relies on a prime-order elliptic-curve group as described in {{group-abstraction}}.
 
 Valid choices of elliptic curves can be found in {{ciphersuites}}.
 
-Traditionally, sigma protocols are defined in Camenisch-Stadler notation as (for example):
+Traditionally, Sigma Protocols are defined in Camenisch-Stadler {{CS97}} notation as (for example):
 
     1. DLEQ(G, H, X, Y) = PoK{
     2.   (x):        // Secret variables
@@ -155,7 +162,7 @@ Traditionally, sigma protocols are defined in Camenisch-Stadler notation as (for
 
 In the above, line 1 declares that the proof name is "DLEQ", the public information (the **instance**) consists of the group elements `(G, X, H, Y)` denoted in upper-case.
 Line 2 states that the private information (the **witness**) consists of the scalar `x`.
-Finally, line 3 states that the linear relation that need to be proven is
+Finally, line 3 states that the linear relation that needs to be proven is
 `x * G  = X` and `x * H = Y`.
 
 ## Group abstraction {#group-abstraction}
@@ -168,12 +175,11 @@ We detail the functions that can be invoked on these objects. Example choices ca
 
 - `identity()`, returns the neutral element in the group.
 - `generator()`, returns the generator of the prime-order elliptic-curve subgroup used for cryptographic operations.
-- `order()`: Outputs the order of the group `p`.
-- `random()`: outputs a random element in the group.
+- `order()`: returns the order of the group `p`.
 - `serialize(elements: [Group; N])`, serializes a list of group elements and returns a canonical byte array `buf` of fixed length `Ne * N`.
 - `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ne * N` into `[Group; N]`, fails if the input is not the valid canonical byte representation of an array of elements of the group. This function can raise a `DeserializeError` if deserialization fails.
 - `add(element: Group)`, implements elliptic curve addition for the two group elements.
-- `equal(element: Group)`, returns `true` if the two elements are the same and false` otherwise.
+- `equal(element: Group)`, returns `true` if the two elements are the same and `false` otherwise.
 - `scalar_mul(scalar: Scalar)`, implements scalar multiplication for a group element by an element in its respective scalar field.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `scalar_mul` we will use `*`. A similar behavior can be achieved using operator overloading.
@@ -183,92 +189,44 @@ In this spec, instead of `add` we will use `+` with infix notation; instead of `
 - `identity()`: outputs the (additive) identity element in the scalar field.
 - `add(scalar: Scalar)`: implements field addition for the elements in the field.
 - `mul(scalar: Scalar)`, implements field multiplication.
-- `random()`: outputs a random scalar field element.
 - `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
 - `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a `DeserializeError` if deserialization fails.
 
 In this spec, instead of `add` we will use `+` with infix notation; instead of `equal` we will use `==`, and instead of `mul` we will use `*`. A similar behavior can be achieved using operator overloading.
 
+### Interface for Pseudo-Random Number Generator
+
+The generation of proofs involves randomized algorithms that take as
+input a source of randomness, denoted as `rng`.
+The functionality required in this document is a secure way to sample
+non-zero scalars uniformly at random.
+Algorithms access to this functionality through the following interface.
+
+    class CSRNG(ABC):
+        @abstractmethod
+        def random_scalar() -> Scalar:
+            pass
+
+Implementations MUST use a cryptographically secure pseudorandom number
+generator (CSPRNG) to sample non-zero scalars either by using rejection
+sampling methods or reducing a large bitstring modulo the group order.
+Refer to Section A.4 of {{FIPS.186-5}} for guidance about these methods.
+
 ## Proofs of preimage of a linear map
-
-### Core protocol
-
-This defines the object `SchnorrProof`. The initialization function takes as input the statement, and pre-processes it.
-
-### Prover procedures
-
-The prover of a sigma protocol is stateful and will send two messages, a "commitment" and a "response" message, described below.
-
-#### Prover commitment
-
-    prover_commit(self, witness, rng)
-
-    Inputs:
-
-    - witness, an array of scalars
-    - rng, a random number generator
-
-    Outputs:
-
-    - A (private) prover state, holding the information of the interactive prover necessary for producing the protocol response
-    - A (public) commitment message, an element of the linear map image, that is, a vector of group elements.
-
-    Procedure:
-
-    1. nonces = [self.instance.Domain.random(rng) for _ in range(self.instance.linear_map.num_scalars)]
-    2. prover_state = self.ProverState(witness, nonces)
-    3. commitment = self.instance.linear_map(nonces)
-    4. return (prover_state, commitment)
-
-#### Prover response
-
-    prover_response(self, prover_state, challenge)
-
-    Inputs:
-
-        - prover_state, the current state of the prover
-        - challenge, the verifier challenge scalar
-
-    Outputs:
-
-        - An array of scalar elements composing the response
-
-    Procedure:
-
-    1. witness, nonces = prover_state
-    2. return [nonces[i] + witness[i] * challenge for i in range(self.instance.linear_map.num_scalars)]
-
-### Verifier
-
-    verify(self, commitment, challenge, response)
-
-    Inputs:
-
-    - self, the current state of the SigmaProtocol
-    - commitment, the commitment generated by the prover
-    - challenge, the challenge generated by the verifier
-    - response, the response generated by the prover
-
-    Outputs:
-
-    - A boolean indicating whether the verification succeeded
-
-    Procedure:
-
-    1. assert len(commitment) == self.instance.linear_map.num_constraints and len(response) == self.instance.linear_map.num_scalars
-    2. expected = self.instance.linear_map(response)
-    3. got = [commitment[i] + self.instance.image[i] * challenge for i in range(self.instance.linear_map.num_constraints)]
-    4. return got == expected
 
 ### Witness representation {#witness}
 
-A witness is simply a list of `num_scalars` elements.
+A witness is an array of scalar elements. The length of the array is denoted `num_scalars`.
 
     Witness = [Scalar; num_scalars]
 
 ### Linear map {#linear-map}
 
-A `LinearMap` represents a function (a _linear map_ from the scalar field to the elliptic curve group) that, given as input an array of `Scalar` elements, outputs an array of `Group` elements. This can be represented as matrix-vector (scalar) product using group multi-scalar multiplication. However, since the matrix is oftentimes sparse, it is often more convenient to store the matrix in Yale sparse matrix format.
+A _linear map_ takes a `Witness` (an array of `num_scalars` in the scalar field) and maps it to an array of group elements. The length of the image is denoted `num_elements`.
+
+Linear maps can be represented as matrix-vector multiplications, where the multiplication is the elliptic curve scalar multiplication defined in {{group-abstraction}}.
+
+Since the matrix is oftentimes sparse, it is stored in Yale sparse matrix format.
 
 Here is an example:
 
@@ -285,7 +243,7 @@ The linear map can then be presented as:
         num_scalars: int
         num_elements: int
 
-        def map(self, scalars: list[Group.ScalarField]) -> Group
+        def map(self, scalars: list[Group.ScalarField; num_scalars]) -> list[Group; num_elements]
 
 #### Initialization
 
@@ -300,7 +258,7 @@ The linear map `LinearMap` is initialized with
 
 A witness can be mapped to a list of group elements called the image via:
 
-    map(self, scalars: [Scalar; num_scalars])
+    map(self, scalars: [Scalar; num_scalars]) -> list[Group; num_elements]
 
     Inputs:
 
@@ -324,9 +282,10 @@ The two aforementioned linear combination might also be called **constraints** a
 
 ### Statements for linear relations
 
-The object `LinearRelation` has two attributes: a linear map `linear_map`, which will be defined in {{linear-map}}, and `image`, the linear map image of which the prover wants to show the pre-image of.
+A `LinearRelation` encodes a proof statement of the form `linear_map(witness) = image`, and is used to prove knowledge of a witness that produces `image` under linear map.
+It internally stores `linear_map` (cf. {{linear-map}}) and an `image` (an array of `num_elements` Group elements).
 
-class LinearRelation:
+    class LinearRelation:
         Domain = group.ScalarField
         Image = group.Group
 
@@ -397,6 +356,75 @@ Group elements, being part of the instance, can later be set using the function 
     2. self.linear_map.append(linear_combination)
     3. self._image.append(lhs)
 
+### Core protocol
+
+This defines the object `SchnorrProof`. The initialization function takes as input the statement, and pre-processes it.
+
+### Prover procedures
+
+The prover of a Sigma Protocol is stateful and will send two messages, a "commitment" and a "response" message, described below.
+
+#### Prover commitment
+
+    prover_commit(self, witness, rng)
+
+    Inputs:
+
+    - witness, an array of scalars
+    - rng, a cryptographically secure random number generator
+
+    Outputs:
+
+    - A (private) prover state, holding the information of the interactive prover necessary for producing the protocol response
+    - A (public) commitment message, an element of the linear map image, that is, a vector of group elements.
+
+    Procedure:
+
+    1. nonces = [rng.random_scalar() for _ in range(self.instance.linear_map.num_scalars)]
+    2. prover_state = self.ProverState(witness, nonces)
+    3. commitment = self.instance.linear_map(nonces)
+    4. return (prover_state, commitment)
+
+#### Prover response
+
+    prover_response(self, prover_state, challenge)
+
+    Inputs:
+
+        - prover_state, the current state of the prover
+        - challenge, the verifier challenge scalar
+
+    Outputs:
+
+        - An array of scalar elements composing the response
+
+    Procedure:
+
+    1. witness, nonces = prover_state
+    2. return [nonces[i] + witness[i] * challenge for i in range(self.instance.linear_map.num_scalars)]
+
+### Verifier
+
+    verify(self, commitment, challenge, response)
+
+    Inputs:
+
+    - self, the current state of the SigmaProtocol
+    - commitment, the commitment generated by the prover
+    - challenge, the challenge generated by the verifier
+    - response, the response generated by the prover
+
+    Outputs:
+
+    - A boolean indicating whether the verification succeeded
+
+    Procedure:
+
+    1. assert len(commitment) == self.instance.linear_map.num_constraints and len(response) == self.instance.linear_map.num_scalars
+    2. expected = self.instance.linear_map(response)
+    3. got = [commitment[i] + self.instance.image[i] * challenge for i in range(self.instance.linear_map.num_constraints)]
+    4. return got == expected
+
 ### Example: Schnorr proofs
 
 The statement represented in {{sigma-protocol-group}} can be written as:
@@ -440,6 +468,8 @@ Given group elements `G`, `H` such that `C = x * G + r * H`, then the statement 
 
 ## Ciphersuites {#ciphersuites}
 
+We consider ciphersuites of prime-order elliptic curve groups.
+
 ### P-256 (secp256r1)
 
 This ciphersuite uses P-256 {{SP800}} for the Group.
@@ -455,22 +485,27 @@ This ciphersuite uses P-256 {{SP800}} for the Group.
 - `serialize(s)`: Relies on the Field-Element-to-Octet-String conversion according to {{SEC1}}; `Ns = 32`.
 - `deserialize(buf)`: Reads the byte array `buf` in chunks of 32 bytes using Octet-String-to-Field-Element from {{SEC1}}. This function can fail if the input does not represent a Scalar in the range `[0, G.Order() - 1]`.
 
-# Security Considerations
+# Security Considerations {#security}
 
-Interactive sigma proofs are special sound and honest-verifier zero-knowledge. These proofs are deniable (without transferable message authenticity).
-
-We focus on the security guarantees of the non-interactive Fiat-Shamir transformation, where they provide the following guarantees (in the random oracle model):
+Interactive Sigma Protocols have the following properties:
 
 - **Knowledge soundness**: If the proof is valid, the prover must have knowledge of a secret witness satisfying the proof statement. This property ensures that valid proofs cannot be generated without possession of the corresponding witness.
 
-- **Zero-knowledge**: The proof string produced by the `prove` function does not reveal any information beyond what can be directly inferred from the statement itself. This ensures that verifiers gain no knowledge about the witness.
+- **Honest verifier zero-knowledge**: The proof string produced by the `prove` function does not reveal any information beyond what can be directly inferred from the statement itself. This ensures that honest verifiers gain no knowledge about the witness.
 
-While theoretical analysis demonstrates that both soundness and zero-knowledge properties are statistical in nature, practical security depends on the cryptographic strength of the underlying hash function, which is defined by the Fiat-Shamir transformation. It's important to note that the soundness of a zero-knowledge proof provides no guarantees regarding the computational hardness of the relation being proven. An assessment of the specific hardness properties for relations proven using these protocols falls outside the scope of this document.
+- **Completeness**: If the statement being proved is true, an honest verifier can be convinced of this fact by an honest prover via the proof.
+
+- **Deniable**: Because Interactive Sigma Protocols don't have transferable message authenticity, a third party (not the prover or verifier) cannot be convinced that the prover made the proof. This means that the Sigma Protocol interaction is not transferable as evidence to a third party.
 
 ## Privacy Considerations
 
-Interactive sigma proofs are insecure against malicious verifiers and should not be used.
+Sigma Protocols are insecure against malicious verifiers and should not be used.
 The non-interactive Fiat-Shamir transformation leads to publicly verifiable (transferable) proofs that are statistically zero-knowledge.
+
+## Constant-Time Requirements
+
+The prover's control flow and memory access patterns are typically influenced by the witness.
+To prevent side-channel leakage of witness information, which may reveal private values, it is important that the implementation of underlying group and field operations are constant-time. Operations such as modular reduction, scalar multiplication, random value generation, and all other group and field operations are required to be constant-time especially when working with inputs which are private to prevent side-channel attacks which may reveal their values. In some cases, such as keyed-verification credentials, also the verifier must be constant-time.
 
 # Post-Quantum Security Considerations
 
@@ -510,15 +545,34 @@ As of now, it is responsibility of the user to pick a unique protocol identifier
 
 As of now, it is responsibility of the user to pick a unique instance identifier that identifies the statement being proven.
 
---- back
-
 # Acknowledgments
 {:numbered ="false"}
 
-The authors thank Jan Bobolz, Stephan Krenn, Mary Maller, Ivan Visconti, Yuwen Zhang for reviewing a previous edition of this specification.
+The authors thank Jan Bobolz, Vishruti Ganesh, Stephan Krenn, Mary Maller, Ivan Visconti, Yuwen Zhang for reviewing a previous edition of this specification.
+
+--- back
 
 # Test Vectors
-{:numbered="false"}
 
 Test vectors will be made available in future versions of this specification.
 They are currently developed in the [proof-of-concept implementation](https://github.com/mmaker/draft-zkproof-sigma-protocols/tree/main/poc/vectors).
+
+## Seeded PRNG
+
+For interoperability, the random number generator used for test vectors
+is implemented using the duplex sponge SHAKE128 instantiation in Section 8.1 of {{fiat-shamir}},
+absorbing a seed of 32 bytes.
+The Seeded PRNG is for reproducible test vectors; production implementations MUST use a CSPRNG.
+
+Random scalars are generated squeezing `Ns + 16` bytes, seen as a big-endian positive integer and reduced modulo `p`, as in Section 9.1.4 of {{fiat-shamir}}.
+
+    class SeededPRNG:
+        def __init__(self, seed: bytes, order: int):
+            assert(len(seed) == 32)
+            self.order = order
+            self.hash_state = SHAKE128(b"sigma-proofs/TestDRNG/SHAKE128".ljust(64, b"\x00"))
+            self.hash_state.absorb(seed)
+        def random_scalar() -> Scalar:
+            Ns = (self.order.bit_length() + 7) // 8
+            random_integer  = OS2IP(self.hash_state.squeeze(Ns + 16))
+            return Scalar(random_integer % self.order)
