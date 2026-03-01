@@ -438,7 +438,7 @@ Decode the bytes as a big integer, then reduce it modulo `p`.
 
     Constants:
 
-    - Ns, the number of bytes to represent a scalar element, equal to `ceil(log2(p)/8)`.
+    - Ns, the number of bytes to represent a scalar, equal to `ceil(log2(p)/8)`.
 
     1. for i in range(length):
     2.     scalar_bytes = hash_state.squeeze(Ns + 16)
