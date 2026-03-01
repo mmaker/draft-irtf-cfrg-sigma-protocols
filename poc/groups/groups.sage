@@ -110,10 +110,6 @@ class Group(ABC):
         ]
 
     @classmethod
-    def random(cls, rng):
-        return cls.scalar_mult(cls.ScalarField.random(rng), cls.generator())
-
-    @classmethod
     def msm(cls, scalars, points):
         return sum(cls.scalar_mult(scalars[i], points[i]) for i in range(len(scalars)))
 
