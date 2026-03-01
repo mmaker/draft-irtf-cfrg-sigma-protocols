@@ -104,7 +104,7 @@ Where:
 - `prover_message(self, hash_state, elements) -> self` denotes the absorb operation of the codec. This function takes as input the hash state, and elements with which to mutate the hash state.
 - `verifier_challenge(self, hash_state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the hash state to produce an unpredictable verifier challenge `verifier_challenge`.
 
-The `verifier_challenge` function must generate a challenge uniformly from the underlying scalar field, from the public inputs given to the verifier. The default way to generate the challenge is by sampling a random `(|log_2(p)| + 128)`-bit string, parsing it as a big integer, and reducing it modulo the prime order of the group `p`.
+The `verifier_challenge` function must generate a challenge from the underlying scalar field that is statistically close to uniform, from the public inputs given to the verifier, as described in {{decode-random-bytes-scalars}}.
 
 # Generation of the Initialization Vector {#iv-generation}
 
@@ -164,17 +164,25 @@ Upon initialization, the protocol receives as input:
 
         def verify(self, proof):
             # Before running the sigma protocol verifier, one must also check that:
-            # - the proof length is exactly challenge_bytes_len + response_bytes_len
-            challenge_bytes_len = self.sigma_protocol.instance.Domain.scalar_byte_length()
-            assert len(proof) == challenge_bytes_len + self.sigma_protocol.instance.response_bytes_len
+            # - the proof length is exactly Nc + response_bytes_len
+            Nc = self.sigma_protocol.instance.Domain.scalar_byte_length()
+            assert len(proof) == Nc + self.sigma_protocol.instance.response_bytes_len
 
             # - proof deserialization successfully produces a valid challenge and a valid response
-            challenge_bytes = proof[:challenge_bytes_len]
-            response_bytes = proof[challenge_bytes_len:]
+            challenge_bytes = proof[:Nc]
+            response_bytes = proof[Nc:]
             challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
             response = self.sigma_protocol.deserialize_response(response_bytes)
-
             commitment = self.sigma_protocol.simulate_commitment(response, challenge)
+
+            # - the expected challenge, recomputed from the simulated commitment and
+            # the current statement, is equivalent to the challenge in the proof.
+            # This binds the proof to the statement and detects tampering.
+            self.codec.prover_message(self.hash_state, commitment)
+            expected_challenge = self.codec.verifier_challenge(self.hash_state)
+            if challenge != expected_challenge:
+                return False
+
             return self.sigma_protocol.verifier(commitment, challenge, response)
 
         def prove_batchable(self, witness, rng):
@@ -233,8 +241,9 @@ We describe a codec for Schnorr proofs over groups of prime order `p` where `Uni
 
         def verifier_challenge(self, hash_state):
             # see https://eprint.iacr.org/2025/536.pdf, Appendix C.
+            Ns = self.GG.ScalarField.scalar_byte_length()
             uniform_bytes = hash_state.squeeze(
-                self.GG.ScalarField.scalar_byte_length() + 16
+                Ns + 16
             )
             scalar = OS2IP(uniform_bytes) % self.GG.ScalarField.order
             return scalar
@@ -372,10 +381,8 @@ For an elliptic curve, we consider two fields, the coordinate fields, which indi
 The following functions and notation are used throughout the document.
 
 - `concat(x0, ..., xN)`: Concatenation of byte strings.
-- `bytes_to_int` and `scalar_to_bytes`: Convert a byte string to and from a non-negative integer.
-  `bytes_to_int` and `scalar_to_bytes` are implemented as `OS2IP` and `I2OSP` as described in
-  {{!RFC8017}}, respectively. Note that these functions operate on byte strings
-  in big-endian byte order.
+- `OS2IP` and `I2OSP`: Convert a byte string to and from a non-negative integer, as described in
+  {{!RFC8017}}. Note that these functions operate on byte strings in big-endian byte order.
 - The function `ecpoint_to_bytes` converts an elliptic curve point in affine-form into an array string of length `ceil(ceil(log2(coordinate_field_order))/ 8) + 1` using `int_to_bytes` prepended by one byte. This is defined as
 
       ecpoint_to_bytes(element)
@@ -388,10 +395,10 @@ The following functions and notation are used throughout the document.
 
       Constants:
 
-      field_bytes_length, the number of bytes to represent the scalar element, equal to `ceil(log2(field.order()))`.
+      Ng, the number of bytes to represent an element in the coordinate field, equal to `ceil(log2(field.order())/8)`.
 
       1. byte = 2 if sgn0(element.y) == 0 else 3
-      2. return I2OSP(byte, 1) + I2OSP(x, field_bytes_length)
+      2. return I2OSP(byte, 1) + I2OSP(x, Ng)
 
 ### Absorb scalars
 
@@ -404,12 +411,10 @@ The following functions and notation are used throughout the document.
 
     Constants:
 
-    - scalar_byte_length = ceil(384/8)
+    - Ns, the number of bytes to represent a scalar element, equal to `ceil(log2(p)/8)`.
 
     1. for scalar in scalars:
-    2.     hash_state.absorb(scalar_to_bytes(scalar))
-
-Where the function `scalar_to_bytes` is defined in {{notation}}
+    2.     hash_state.absorb(I2OSP(scalar, Ns))
 
 ### Absorb elements
 
@@ -423,18 +428,25 @@ Where the function `scalar_to_bytes` is defined in {{notation}}
     1. for element in elements:
     2.     hash_state.absorb(ecpoint_to_bytes(element))
 
-### Squeeze scalars
+### Decoding random bytes as scalars {#decode-random-bytes-scalars}
+
+Given `Ns + 16` bytes, it is possible to generate a scalar modulo `p` that is statistically close to uniform.
+Interpret the bytes as a big-endian integer, then reduce it modulo `p`, where `p` is the order of the group.
 
     squeeze_scalars(hash_state, length)
 
     Inputs:
 
     - hash_state, the hash state
-    - length, an unsigned integer of 64 bits determining the output length.
+    - length, an unsigned integer of 64 bits determining the number of scalars to output.
+
+    Constants:
+
+    - Ns, the number of bytes to represent a scalar, equal to `ceil(log2(p)/8)`.
 
     1. for i in range(length):
-    2.     scalar_bytes = hash_state.squeeze(field_bytes_length + 16)
-    3.     scalars.append(bytes_to_scalar_mod_order(scalar_bytes))
+    2.     scalar_bytes = hash_state.squeeze(Ns + 16)
+    3.     scalars.append(OS2IP(scalar_bytes) % p)
 
 --- back
 

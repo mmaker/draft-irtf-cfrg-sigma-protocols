@@ -189,6 +189,7 @@ In this spec, instead of `add` we will use `+` with infix notation; instead of `
 - `identity()`: outputs the (additive) identity element in the scalar field.
 - `add(scalar: Scalar)`: implements field addition for the elements in the field.
 - `mul(scalar: Scalar)`, implements field multiplication.
+- `random(rng)`: samples a non-zero scalar using the decoding method in Section 9.1.4 of {{fiat-shamir}}.
 - `serialize(scalars: list[Scalar; N])`: serializes a list of scalars and returns their canonical representation of fixed length `Ns * N`.
 - `deserialize(buffer)`, attempts to map a byte array `buffer` of size `Ns * N` into `[Scalar; N]`, and fails if the input is not the valid canonical byte representation of an array of elements of the scalar field. This function can raise a `DeserializeError` if deserialization fails.
 
@@ -547,21 +548,19 @@ They are currently developed in the [proof-of-concept implementation](https://gi
 ## Seeded PRNG
 
 For interoperability, the random number generator used for test vectors
-is implemented with a SHAKE128 state {{FIPS-202}} absorbing a seed of
-at least 32 bytes. Its output is used to produce non-zero scalars by
-using a rejection sampling method.
+is implemented using the duplex sponge SHAKE128 instantiation in Section 8.1 of {{fiat-shamir}},
+absorbing a seed of 32 bytes.
+The Seeded PRNG is for reproducible test vectors; production implementations MUST use a CSPRNG.
 
-    import sys
-    from cryptography.hazmat.primitives.hashes import SHAKE128, XOFHash
+Random scalars are generated squeezing `Ns + 16` bytes, seen as a big-endian positive integer and reduced modulo `p`, as in Section 9.1.4 of {{fiat-shamir}}.
+
     class SeededPRNG:
         def __init__(self, seed: bytes, order: int):
-            assert(len(seed) >= 32)
+            assert(len(seed) == 32)
             self.order = order
-            self.xof = XOFHash(SHAKE128(digest_size=sys.maxsize))
-            self.xof.update(seed)
+            self.hash_state = SHAKE128(b"sigma-proofs/TestDRNG/SHAKE128".ljust(64, b"\x00"))
+            self.hash_state.absorb(seed)
         def random_scalar() -> Scalar:
-            while True:
-                b = self.xof.squeeze(Ns)
-                scalar = OS2IP(b)
-                if 0 < scalar < self.order:
-                    return scalar
+            Ns = (self.order.bit_length() + 7) // 8
+            random_integer  = OS2IP(self.hash_state.squeeze(Ns + 16))
+            return Scalar(random_integer % self.order)

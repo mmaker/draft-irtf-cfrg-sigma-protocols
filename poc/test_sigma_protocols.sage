@@ -3,56 +3,43 @@
 
 from sagelib.ciphersuite import CIPHERSUITE
 from sagelib.sigma_protocols import LinearRelation, CSRNG
-from sagelib.test_drng import SeededPRNG
+from sagelib.test_drng import TestDRNG
 
 import json
 
 
 def test_vector(test_vector_function):
     def inner(vectors, suite):
-        INSTANCE_WITNESS_SEED = b"instance_witness_generation_seed"
-        SESSION_ID = b"session_identifier"
-        PROOF_CHAL_RESP_SEED = b"proving-method-challenge-response-format"
-        PROOF_COMM_RESP_SEED = b"proving-method-commitment-response-format"
-
-        test_vector_name = test_vector_function.__name__
-        name = bytes(test_vector_name, "utf-8")
-
         NISigmaProtocol = CIPHERSUITE[suite]
-        G = NISigmaProtocol.Codec.GG
+        scalar_cls = NISigmaProtocol.Codec.GG.ScalarField
+        instance_witness_rng = TestDRNG(b"instance_witness_generation_seed".ljust(32, b"\x00"), scalar_cls)
+        proof_generation_rng = TestDRNG(b"proof_generation_seed".ljust(32, b"\x00"), scalar_cls)
 
-        instance_witness_seed = INSTANCE_WITNESS_SEED + name
-        instance_witness_rng = SeededPRNG(instance_witness_seed, G.ScalarField)
-        instance, witness = test_vector_function(instance_witness_rng, G)
+        test_vector_name = f"{test_vector_function.__name__}"
+        instance, witness = test_vector_function(instance_witness_rng, NISigmaProtocol.Codec.GG)
 
-        session_id = SESSION_ID + name
-        hash_name = NISigmaProtocol(session_id, instance).hash_state.__class__.__name__
-
-        proof_chal_resp_seed = PROOF_CHAL_RESP_SEED + name
-        proof_chal_resp_rng = SeededPRNG(proof_chal_resp_seed, G.ScalarField, tracing_enabled=True)
-        proof_chal_resp = NISigmaProtocol(session_id, instance).prove(witness, proof_chal_resp_rng)
-        assert NISigmaProtocol(session_id, instance).verify(proof_chal_resp)
-
-        proof_comm_resp_seed = PROOF_COMM_RESP_SEED + name
-        proof_comm_resp_rng = SeededPRNG(proof_comm_resp_seed, G.ScalarField, tracing_enabled=True)
-        proof_comm_resp = NISigmaProtocol(session_id, instance).prove_batchable(witness, proof_comm_resp_rng)
-        assert NISigmaProtocol(session_id, instance).verify_batchable(proof_comm_resp)
-
+        session_id = test_vector_name.encode('utf-8')
+        batchable_narg_string = NISigmaProtocol(session_id, instance).prove_batchable(witness, proof_generation_rng)
+        assert NISigmaProtocol(session_id, instance).verify_batchable(batchable_narg_string)
+        hex_batchable_narg_string = batchable_narg_string.hex()
+        narg_string = NISigmaProtocol(session_id, instance).prove(witness, proof_generation_rng)
+        assert NISigmaProtocol(session_id, instance).verify(narg_string)
+        hex_narg_string = narg_string.hex()
         print(f"{test_vector_name} test vectors generated\n")
 
-        scalars_to_hex = lambda v: list(map(lambda x: G.ScalarField._serialize(x).hex(), v))
-        vectors.append({
-            "protocol": test_vector_name,
-            "ciphersuite": suite,
-            "hash": hash_name,
-            "session_id": session_id.hex(),
-            "statement": instance.get_label().hex(),
-            "witness": scalars_to_hex(witness),
-            "randomness_chal_resp": scalars_to_hex(proof_chal_resp_rng.sampled_scalars),
-            "proof_chal_resp": proof_chal_resp.hex(),
-            "randomness_comm_resp": scalars_to_hex(proof_comm_resp_rng.sampled_scalars),
-            "proof_comm_resp": proof_comm_resp.hex(),
-        })
+        # Serialize the entire witness list at once
+        witness_bytes = NISigmaProtocol.Codec.GG.ScalarField.serialize(witness)
+        protocol_id = NISigmaProtocol.Protocol.get_protocol_id()
+        instance_label = NISigmaProtocol.Protocol(instance).get_instance_label()
+
+        vectors[test_vector_name] = {
+            "Ciphersuite": suite,
+            "SessionId": session_id.hex(),
+            "Statement": instance.get_label().hex(),
+            "Witness": witness_bytes.hex(),
+            "Proof": hex_narg_string,
+            "Batchable Proof": hex_batchable_narg_string,
+        }
 
     return inner
 
@@ -73,12 +60,8 @@ def write_value(fh, name, value):
 def write_group_vectors(fh, label, vector):
     print("## ", label, file=fh)
     print("~~~", file=fh)
-    for key, value in vector.items():
-        if isinstance(value, list):
-            for i, vi in enumerate(value):
-                write_value(fh, f"{key}_{i}", vi)
-        else:
-            write_value(fh, key, value)
+    for key in vector:
+        write_value(fh, key, vector[key])
     print("~~~", file=fh, end="\n\n")
 
 
@@ -99,7 +82,7 @@ def discrete_logarithm(rng: CSRNG, group):
     G = group.generator()
     statement.set_elements([(var_G, G)])
 
-    x = rng.random_scalar()
+    x = group.ScalarField.random(rng)
     X = group.scalar_mult(x, G)
     assert [X] == statement.linear_map([x])
 
@@ -116,8 +99,8 @@ def dleq(rng: CSRNG, group):
 
     """
     G = group.generator()
-    H = group.scalar_mult(rng.random_scalar(), G)
-    x = rng.random_scalar()
+    H = group.scalar_mult(group.ScalarField.random(rng), G)
+    x = group.ScalarField.random(rng)
     X = group.scalar_mult(x, G)
     Y = group.scalar_mult(x, H)
 
@@ -141,9 +124,9 @@ def pedersen_commitment(rng: CSRNG, group):
 
     """
     G = group.generator()
-    H = group.scalar_mult(rng.random_scalar(), G)
-    x = rng.random_scalar()
-    r = rng.random_scalar()
+    H = group.scalar_mult(group.ScalarField.random(rng), G)
+    x = group.ScalarField.random(rng)
+    r = group.ScalarField.random(rng)
     witness = [x, r]
 
     C = group.scalar_mult(x, G) + group.scalar_mult(r, H)
@@ -169,8 +152,8 @@ def pedersen_commitment_dleq(rng: CSRNG, group):
             }
     """
     G = group.generator()
-    generators = [group.scalar_mult(rng.random_scalar(), G) for i in range(4)]
-    witness = [rng.random_scalar() for i in range(2)]
+    generators = [group.scalar_mult(group.ScalarField.random(rng), G) for i in range(4)]
+    witness = [group.ScalarField.random(rng) for i in range(2)]
     X = group.msm(witness, generators[:2])
     Y = group.msm(witness, generators[2:4])
 
@@ -203,12 +186,12 @@ def bbs_blind_commitment_computation(rng: CSRNG, group):
     # length(committed_messages)
     M = 3
     # BBS.create_generators(M + 1, "BLIND_" || api_id)
-    (Q_2, J_1, J_2, J_3) = [group.scalar_mult(rng.random_scalar(), G) for i in range(M+1)]
+    (Q_2, J_1, J_2, J_3) = [group.scalar_mult(group.ScalarField.random(rng), G) for i in range(M+1)]
     # BBS.messages_to_scalars(committed_messages,  api_id)
-    (msg_1, msg_2, msg_3) = [rng.random_scalar() for i in range(M)]
+    (msg_1, msg_2, msg_3) = [group.ScalarField.random(rng) for i in range(M)]
 
     # these are computed before the proof in the specification
-    secret_prover_blind = rng.random_scalar()
+    secret_prover_blind = group.ScalarField.random(rng)
     C = group.scalar_mult(secret_prover_blind, Q_2) + \
         group.scalar_mult(msg_1, J_1) + \
         group.scalar_mult(msg_2, J_2) + \
@@ -243,6 +226,7 @@ def bbs_blind_commitment_computation(rng: CSRNG, group):
 def main(path="vectors"):
     # Run the short proof serialization test first
 
+    vectors = {}
     test_vectors = [
         discrete_logarithm,
         dleq,
@@ -254,19 +238,18 @@ def main(path="vectors"):
     print("Generating sigma protocol test vectors...\n")
 
     for suite in CIPHERSUITE:
-        vectors = []
         for test_vector in test_vectors:
             test_vector(vectors, suite)
 
-        filename = f"{path}/{suite}"
-        with open(f"{filename}.json", 'wt') as f:
-            json.dump(vectors, f, sort_keys=False, indent=2)
-        print(f"Test vectors written to {filename}.json")
+    with open(path + "/testSigmaProtocols.json", 'wt') as f:
+        json.dump(vectors, f, sort_keys=True, indent=2)
 
-        with open(f"{filename}.txt", 'wt') as f:
-            for v in vectors:
-                write_group_vectors(f, v["protocol"], v)
-        print(f"Test vectors written to {filename}.txt")
+    with open(path + "/testSigmaProtocols.txt", 'wt') as f:
+        for proof_type in vectors:
+            write_group_vectors(f, proof_type, vectors[proof_type])
+
+    print(f"Test vectors written to {path}/testSigmaProtocols.json")
+
 
 if __name__ == "__main__":
     main()
