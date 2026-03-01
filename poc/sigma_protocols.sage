@@ -64,6 +64,12 @@ class SchnorrProof(SigmaProtocol):
         self.instance = instance
 
     def prover_commit(self, witness, rng):
+        # "nonces" here refers to the random scalars constituting the DL of the commitment message.
+        # Alternate names in the literature include:
+        # - "nonce_commitment" (RFC 9591, FROST)
+        # - "random_scalars" (draft-irtf-cfrg-bbs-signatures)
+        # - "v" (RFC 8235)
+        # - "nonce" (BIP340)
         nonces = [self.instance.Domain.random(rng) for _ in range(self.instance.linear_map.num_scalars)]
         prover_state = self.ProverState(witness, nonces)
         commitment = self.instance.linear_map(nonces)
@@ -256,4 +262,3 @@ class LinearRelation:
 
         # Return the canonical description without hashing
         return b''.join(serialization_parts)
-
