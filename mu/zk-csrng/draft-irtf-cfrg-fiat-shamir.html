@@ -1821,7 +1821,7 @@ Inputs:
 <a href="#section-9.1.4" class="section-number selfRef">9.1.4. </a><a href="#name-decoding-random-bytes-as-sc" class="section-name selfRef">Decoding random bytes as scalars</a>
           </h4>
 <p id="section-9.1.4-1">Given <code>Ns + 16</code> bytes, it is possible to generate a scalar modulo <code>p</code> that is statistically close to uniform.
-Decode the bytes as a big integer, then reduce it modulo <code>p</code>.<a href="#section-9.1.4-1" class="pilcrow">¶</a></p>
+Interpret the bytes as a big-endian integer, then reduce it modulo <code>p</code>, where <code>p</code> is the order of the group.<a href="#section-9.1.4-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-9.1.4-2">
 <pre>
 squeeze_scalars(hash_state, length)
