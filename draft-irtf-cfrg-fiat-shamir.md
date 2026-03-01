@@ -442,7 +442,7 @@ Interpret the bytes as a big-endian integer, then reduce it modulo `p`, where `p
 
     1. for i in range(length):
     2.     scalar_bytes = hash_state.squeeze(Ns + 16)
-    3.     scalars.append(bytes_to_scalar_mod_order(scalar_bytes))
+    3.     scalars.append(OS2IP(scalar_bytes) % p)
 
 --- back
 
