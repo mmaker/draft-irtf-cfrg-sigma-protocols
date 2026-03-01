@@ -65,8 +65,14 @@ class NISigmaProtocol:
         response_bytes, challenge_bytes = next(proof, challenge_bytes_len)
         challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
         response = self.sigma_protocol.deserialize_response(response_bytes)
-
         commitment = self.sigma_protocol.simulate_commitment(response, challenge)
+
+        # - the re-computed challenge equals the serialized challenge.
+        self.codec.prover_message(self.hash_state, commitment)
+        expected_challenge = self.codec.verifier_challenge(self.hash_state)
+        if challenge != expected_challenge:
+            return False
+
         return self.sigma_protocol.verifier(commitment, challenge, response)
 
     def prove_batchable(self, witness, rng):
