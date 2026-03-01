@@ -109,9 +109,17 @@ Table of Contents
 
 1.  Introduction
 
-   Any Sigma Protocol must define three objects: a _commitment_
-   (computed by the prover), a _challenge_ (computed by the verifier),
-   and a _response_ (computed by the prover).
+   Any Sigma Protocol must define a _commitment_ (computed by the
+   prover), a _challenge_ (randomly sampled from a specific
+   distribution), and a _response_ (computed by the prover).  One of the
+   advantages of Sigma Protocols is their composability, which enables
+   the construction of more complex protocols.  A classic example is the
+   OR composition [CramerDS94].  Given a Sigma Protocol for N relations,
+   it is possible to prove knowledge of one of of N witnesses for those
+   relations . The composed sigma protocols can be made non-interactive
+   using the Fiat-Shamir transformation [Cramer97].  However, such
+   compositions must be handled carefully to preserve security
+   properties as discussed in Section 3.
 
 1.1.  Core interface
 
@@ -739,6 +747,15 @@ Procedure:
 
    [BonehS23] Boneh, D. and V. Schoup, "A Graduate Course in Applied
               Cryptography", n.d., <https://toc.cryptobook.us/>.
+
+   [Cramer97] Cramer, R., "Modular Design of Secure yet Practical
+              Cryptographic Protocols", 1997,
+              <https://ir.cwi.nl/pub/21438>.
+
+   [CramerDS94]
+              Cramer, R., Damgaard, I., and B. Schoenmakers, "Proofs of
+              Partial Knowledge and Simplified Design of Witness Hiding
+              Protocols", 1994, <https://ir.cwi.nl/pub/1456/1456D.pdf>.
 
    [CS97]     Camenisch, J. and M. Stadler, "Proof Systems for General
               Statements about Discrete Logarithms", n.d.,
