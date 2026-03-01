@@ -3,26 +3,36 @@
 
 from sagelib.duplex_sponge import SHAKE128
 from sagelib.hash_to_field import OS2IP
+from sagelib.sigma_protocols import CSRNG
+from sagelib import groups
 
 
-class TestDRNG(object):
-    def __init__(self, seed):
-        assert len(seed) == 32
+class TestDRNG(CSRNG):
+    def __init__(self, seed: bytes, scalar_cls: type[groups.Scalar], /):
+        assert len(seed) == 32, "seed must be exactly 32 bytes"
+        self.scalar_cls = scalar_cls
         self.hash_state = SHAKE128(b"sigma-proofs/TestDRNG/SHAKE128".ljust(64, b"\x00"))
         self.hash_state.absorb(seed)
         self.squeeze_offset = 0
 
-    def _squeeze(self, length):
+    def _squeeze(self, length: int) -> bytes:
         end = self.squeeze_offset + length
         out = self.hash_state.squeeze(end)[self.squeeze_offset:end]
         self.squeeze_offset = end
         return out
 
-    def random_scalar(self, order):
-        Ns = (int(order).bit_length() + 7) // 8
-        scalar_bytes = self._squeeze(Ns + 16)
-        return OS2IP(scalar_bytes) % order
+    def getrandom(self, length: int) -> bytes:
+        return self._squeeze(length)
 
-    def randint(self, l, h):
+    def random_scalar(self) -> groups.Scalar:
+        Ns = int(self.scalar_cls.field_bytes_length)
+        scalar_bytes = self.getrandom(Ns + 16)
+        scalar = self.scalar_cls.field(OS2IP(scalar_bytes) % self.scalar_cls.order)
+        return scalar
+
+    def randint(self, l: int, h: int) -> int:
         assert l < h
-        return l + self.random_scalar(h - l)
+        rand_range = h - l
+        Ns = (int(rand_range).bit_length() + 7) // 8
+        random_int = OS2IP(self.getrandom(Ns + 16)) % rand_range
+        return l + random_int

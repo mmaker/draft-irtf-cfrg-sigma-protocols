@@ -15,6 +15,23 @@ from collections import namedtuple
 from sagelib import groups
 
 
+class CSRNG(ABC):
+    """
+    API of a random number generator that produces group scalars.
+
+    Proof generation methods are randomized algorithms that use
+    this API to sample scalars uniformly at random from a
+    cryptographically-secure random number generator.
+    """
+
+    @abstractmethod
+    def getrandom(self, length: int) -> bytes:
+        raise NotImplementedError
+
+    @abstractmethod
+    def random_scalar(self) -> groups.Scalar:
+        raise NotImplementedError
+
 class SigmaProtocol(ABC):
     """
     This is the abstract API of a Sigma protocol.
@@ -29,7 +46,7 @@ class SigmaProtocol(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def prover_commit(self, witness, rng):
+    def prover_commit(self, witness, rng: CSRNG):
         raise NotImplementedError
 
     @abstractmethod
@@ -56,8 +73,12 @@ class SigmaProtocol(ABC):
     def deserialize_response(self, data):
         raise NotImplementedError
 
+    @staticmethod
+    def get_protocol_id() -> bytes:
+        raise NotImplementedError
+
     # optional
-    def simulate_response(self, rng):
+    def simulate_response(self, rng: CSRNG):
         raise NotImplementedError
 
     # optional
@@ -74,14 +95,14 @@ class SchnorrProof(SigmaProtocol):
     def __init__(self, instance):
         self.instance = instance
 
-    def prover_commit(self, witness, rng):
+    def prover_commit(self, witness, rng: CSRNG):
         # "nonces" here refers to the random scalars constituting the DL of the commitment message.
         # Alternate names in the literature include:
         # - "nonce_commitment" (RFC 9591, FROST)
         # - "random_scalars" (draft-irtf-cfrg-bbs-signatures)
         # - "v" (RFC 8235)
         # - "nonce" (BIP340)
-        nonces = [self.instance.Domain.random(rng) for _ in range(self.instance.linear_map.num_scalars)]
+        nonces = [rng.random_scalar() for _ in range(self.instance.linear_map.num_scalars)]
         prover_state = self.ProverState(witness, nonces)
         commitment = self.instance.linear_map(nonces)
         return (prover_state, commitment)
@@ -98,7 +119,7 @@ class SchnorrProof(SigmaProtocol):
         assert len(response) == self.instance.linear_map.num_scalars
         expected = self.instance.linear_map(response)
         got = [
-            commitment[i] + self.instance.image[i] * challenge
+            commitment[i] + self.instance.Image.scalar_mult(challenge, self.instance.image[i])
             for i in range(self.instance.linear_map.num_constraints)
         ]
 
@@ -112,6 +133,9 @@ class SchnorrProof(SigmaProtocol):
     def serialize_challenge(self, challenge):
         return self.instance.Domain.serialize([challenge])
 
+    def challenge_length(self):
+        return self.instance.Domain.scalar_byte_length()
+
     def serialize_response(self, response):
         return self.instance.Domain.serialize(response)
 
@@ -119,17 +143,17 @@ class SchnorrProof(SigmaProtocol):
         return self.instance.Image.deserialize(data)
 
     def deserialize_challenge(self, data):
-        scalar_size = self.instance.Domain.scalar_byte_length()
-        return self.instance.Domain.deserialize(data[:scalar_size])[0]
+        challenge_length = self.challenge_length()
+        return self.instance.Domain.deserialize(data[:challenge_length])[0]
 
     def deserialize_response(self, data):
         return self.instance.Domain.deserialize(data)
 
-    def simulate_response(self, rng):
-        return [self.instance.Domain.random(rng) for i in range(self.instance.linear_map.num_scalars)]
+    def simulate_response(self, rng: CSRNG):
+        return [rng.random_scalar() for i in range(self.instance.linear_map.num_scalars)]
 
     def simulate_commitment(self, response, challenge):
-        h_c_values = [self.instance.image[i] * challenge for i in range(self.instance.linear_map.num_constraints)]
+        h_c_values = [self.instance.Image.scalar_mult(challenge, self.instance.image[i]) for i in range(self.instance.linear_map.num_constraints)]
         # Generate what the correct commitment would be based on the random response and challenge.
         return [self.instance.linear_map(response)[i] - h_c_values[i] for i in range(self.instance.linear_map.num_constraints)]
 
@@ -138,10 +162,7 @@ class SchnorrProof(SigmaProtocol):
 
     @staticmethod
     def get_protocol_id() -> bytes:
-        """
-        Returns a 64-bytes unique identifier for this protocol.
-        """
-        return b'ietf sigma proof linear relation' + b'\0' * 32
+        raise NotImplementedError
 
 
 class LinearMap:

@@ -4,6 +4,7 @@ PYFILES := $(addprefix sagelib/, $(addsuffix .py,$(SAGEFILES)))
 
 .PHONY: pyfiles
 pyfiles: sagelib/__init__.py $(PYFILES) sagelib/hash_to_field.py
+	@mkdir -p vectors
 
 sagelib/__init__.py:
 	mkdir -p sagelib
@@ -32,10 +33,8 @@ test: pyfiles
 	sage test_sigma_protocols.sage
 
 vectors: pyfiles
-	@echo "Removing vectors folder, if present"
-	@rm -rf vectors
-	@echo "Creating vectors folder"
-	@mkdir -p vectors
+	@echo "Removing files in vectors folder, if present"
+	@rm -rf vectors/*
 	sage test_duplex_sponge.sage
 	sage test_sigma_protocols.sage
 
