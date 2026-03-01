@@ -2063,7 +2063,7 @@ They are currently developed in the <a href="https://github.com/mmaker/draft-zkp
 <a href="#appendix-A.1" class="section-number selfRef">A.1. </a><a href="#name-seeded-prng" class="section-name selfRef">Seeded PRNG</a>
         </h3>
 <p id="appendix-A.1-1">For interoperability, the random number generator used for test vectors
-is implemented using the SHAKE128 instantiation in <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>,
+is implemented using the duplex sponge SHAKE128 instantiation in Section 8.1 of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>,
 absorbing a seed of 32 bytes.
 The Seeded PRNG is for reproducible test vectors; production implementations MUST use a CSPRNG.<a href="#appendix-A.1-1" class="pilcrow">¶</a></p>
 <p id="appendix-A.1-2">Random scalars are generated squeezing <code>Ns + 16</code> bytes, seen as a big-endian positive integer and reduced modulo <code>p</code>, as in Section 9.1.4 of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>.<a href="#appendix-A.1-2" class="pilcrow">¶</a></p>
@@ -2073,7 +2073,7 @@ class SeededPRNG:
     def __init__(self, seed: bytes, order: int):
         assert(len(seed) == 32)
         self.order = order
-        self.hash_state = SHAKE128.new(b"\x00" * 64)
+        self.hash_state = SHAKE128(b"sigma-proofs/TestDRNG/SHAKE128".ljust(64, b"\x00"))
         self.hash_state.absorb(seed)
     def random_scalar() -&gt; Scalar:
         Ns = (self.order.bit_length() + 7) // 8
