@@ -173,8 +173,16 @@ Upon initialization, the protocol receives as input:
             response_bytes = proof[challenge_bytes_len:]
             challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
             response = self.sigma_protocol.deserialize_response(response_bytes)
-
             commitment = self.sigma_protocol.simulate_commitment(response, challenge)
+
+            # - the expected challenge, recomputed from the simulated commitment and
+            # the current statement, is equivalent to the challenge in the proof.
+            # This binds the proof to the statement and detects tampering.
+            self.codec.prover_message(self.hash_state, commitment)
+            expected_challenge = self.codec.verifier_challenge(self.hash_state)
+            if challenge != expected_challenge:
+                return False
+
             return self.sigma_protocol.verifier(commitment, challenge, response)
 
         def prove_batchable(self, witness, rng):

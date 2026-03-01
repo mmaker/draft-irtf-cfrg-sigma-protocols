@@ -65,17 +65,13 @@ class NISigmaProtocol:
         response_bytes, challenge_bytes = next(proof, challenge_bytes_len)
         challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
         response = self.sigma_protocol.deserialize_response(response_bytes)
-
         commitment = self.sigma_protocol.simulate_commitment(response, challenge)
-        # SECURITY FIX: Recompute the expected challenge for this commitment
-        # and current statement. This binds the proof to the statement and detects tampering.
-        # The hash_state was initialized with the current instance_label in __init__.
+
+        # - the expected challenge, recomputed from simulated commitment and
+        # current statement, is equivalent to the challenge in the proof.
+        # This binds the proof to the statement and detects tampering.
         self.codec.prover_message(self.hash_state, commitment)
         expected_challenge = self.codec.verifier_challenge(self.hash_state)
-
-        # Verify the challenge from the proof matches the expected challenge
-        # If the statement was tampered with, the simulated commitment will differ from
-        # the prover's real commitment, causing the expected_challenge to mismatch.
         if challenge != expected_challenge:
             return False
 

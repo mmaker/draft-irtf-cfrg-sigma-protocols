@@ -5,41 +5,22 @@
 Negative test to demonstrate the challenge-response format vulnerability.
 This test creates a proof, tampers with public statement elements, and checks
 if the tampered proof incorrectly verifies.
-
-USAGE: Must be run from sigma/poc directory after building Python files:
-  cd /path/to/draft-arc/poc/sigma/poc
-  make pyfiles
-  sage test_tampering_negative.sage
 """
 
 import sys
 import os
 
-# Ensure we're in the right directory
-if not os.path.exists('sagelib'):
-    print("ERROR: sagelib directory not found!")
-    print("Please run from the sigma/poc directory after building:")
-    print("  cd /path/to/draft-arc/poc/sigma/poc")
-    print("  make pyfiles")
-    print("  sage test_tampering_negative.sage")
-    sys.exit(1)
+from sagelib.ciphersuite import NISchnorrProofShake128P256
+from sagelib.sigma_protocols import LinearRelation
+from sagelib.test_drng import TestDRNG
 
-try:
-    from sagelib.ciphersuite import NISchnorrProofShake128P256
-    from sagelib.sigma_protocols import LinearRelation
-    from sagelib.test_drng import SeededPRNG
-except ImportError as e:
-    print(f"ERROR: Failed to import sigma protocol modules: {e}")
-    print("\nPlease ensure you've built the Python files:")
-    print("  make pyfiles")
-    sys.exit(1)
 
 def test_tampered_statement_challenge_response():
     """
     Test that tampering with public statement elements causes verification to fail.
 
-    This is a NEGATIVE test - with the vulnerability, the test will FAIL because
-    tampered proofs incorrectly verify. After fixing, the test should PASS.
+    This is a NEGATIVE test - with the tampering vulnerability, the test will FAIL
+    because tampered proofs incorrectly verify. With it fixed, the test will PASS.
     """
     print("Test: Tampered statement with challenge-response format...")
 
@@ -60,7 +41,7 @@ def test_tampered_statement_challenge_response():
 
     # Generate proof with original statement
     session_id = b"test_tampering"
-    rng = SeededPRNG(b"test_seed" + b"\x00" * 23, G_group.ScalarField)
+    rng = TestDRNG(b"test_seed" + b"\x00" * 23)
     prover = NISchnorrProofShake128P256(session_id, statement)
     witness = [secret_x]
     proof = prover.prove(witness, rng)
@@ -107,7 +88,6 @@ def test_tampered_statement_challenge_response():
 def test_tampered_statement_batchable():
     """
     Test that batchable format correctly rejects tampered statements.
-    This should always pass (batchable format is already secure).
     """
     print("\nTest: Tampered statement with batchable format (control)...")
 
@@ -126,7 +106,7 @@ def test_tampered_statement_batchable():
 
     # Generate proof with original statement
     session_id = b"test_batchable"
-    rng = SeededPRNG(b"test_seed_batch" + b"\x00" * 17, G_group.ScalarField)
+    rng = TestDRNG(b"test_seed_batch" + b"\x00" * 17)
     prover = NISchnorrProofShake128P256(session_id, statement)
     witness = [secret_x]
     proof = prover.prove_batchable(witness, rng)
