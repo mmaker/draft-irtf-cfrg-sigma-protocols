@@ -427,7 +427,7 @@ Where the function `scalar_to_bytes` is defined in {{notation}}
 ### Decoding random bytes as scalars {#decode-random-bytes-scalars}
 
 Given `Ns + 16` bytes, it is possible to generate a scalar modulo `p` that is statistically close to uniform.
-Decode the bytes as a big integer, then reduce it modulo `p`.
+Interpret the bytes as a big-endian integer, then reduce it modulo `p`, where `p` is the order of the group.
 
     squeeze_scalars(hash_state, length)
 
