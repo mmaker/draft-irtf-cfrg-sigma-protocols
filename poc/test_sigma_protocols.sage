@@ -97,6 +97,7 @@ def dleq(rng: CSRNG, group):
 
     """
     G = group.generator()
+    # Test-only: this scalar-multiplication sampling is for vector generation/tracing and MUST NOT be used in production.
     H = group.scalar_mult(group.ScalarField.random(rng), G)
     x = group.ScalarField.random(rng)
     X = group.scalar_mult(x, G)
@@ -122,6 +123,7 @@ def pedersen_commitment(rng: CSRNG, group):
 
     """
     G = group.generator()
+    # Test-only: this scalar-multiplication sampling is for vector generation/tracing and MUST NOT be used in production.
     H = group.scalar_mult(group.ScalarField.random(rng), G)
     x = group.ScalarField.random(rng)
     r = group.ScalarField.random(rng)
@@ -150,6 +152,7 @@ def pedersen_commitment_dleq(rng: CSRNG, group):
             }
     """
     G = group.generator()
+    # Test-only: this scalar-multiplication sampling is for vector generation/tracing and MUST NOT be used in production.
     generators = [group.scalar_mult(group.ScalarField.random(rng), G) for i in range(4)]
     witness = [group.ScalarField.random(rng) for i in range(2)]
     X = group.msm(witness, generators[:2])
@@ -183,6 +186,7 @@ def bbs_blind_commitment_computation(rng: CSRNG, group):
     G = group.generator()
     # length(committed_messages)
     M = 3
+    # Test-only: this scalar-multiplication sampling is for vector generation/tracing and MUST NOT be used in production.
     # BBS.create_generators(M + 1, "BLIND_" || api_id)
     (Q_2, J_1, J_2, J_3) = [group.scalar_mult(group.ScalarField.random(rng), G) for i in range(M+1)]
     # BBS.messages_to_scalars(committed_messages,  api_id)
