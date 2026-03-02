@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 import struct
 import hashlib
 from keccak import Keccak
-from sagelib.hash_to_field import I2OSP
 
 
 class DuplexSpongeInterface(ABC):
@@ -24,16 +23,6 @@ class DuplexSpongeInterface(ABC):
     @abstractmethod
     def squeeze(self, length: int):
         raise NotImplementedError
-
-    @classmethod
-    def get_iv_from_identifiers(cls, protocol_id: bytes, session_id: bytes) -> bytes:
-        assert len(protocol_id) == 64, f"Invalid protocol ID length: {len(protocol_id)}"
-        state = cls(b'\0' * 64)
-        state.absorb(I2OSP(len(protocol_id), 4))
-        state.absorb(protocol_id)
-        state.absorb(I2OSP(len(session_id), 4))
-        state.absorb(session_id)
-        return state.squeeze(64)
 
 
 class SHAKE128(DuplexSpongeInterface):
