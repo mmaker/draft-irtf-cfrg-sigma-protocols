@@ -99,10 +99,10 @@ Table of Contents
      4.2.  Soundness Considerations
    5.  Generation of the protocol identifier
    6.  Generation of the instance identifier
-   7.  Acknowledgments
-   8.  References
-     8.1.  Normative References
-     8.2.  Informative References
+   Acknowledgments
+   References
+     Normative References
+     Informative References
    Appendix A.  Test Vectors
      A.1.  Seeded PRNG
      A.2.  discrete_logarithm
@@ -120,7 +120,7 @@ Table of Contents
    advantages of Sigma Protocols is their composability, which enables
    the construction of more complex protocols.  A classic example is the
    OR composition [CramerDS94].  Given a Sigma Protocol for N relations,
-   it is possible to prove knowledge of one of of N witnesses for those
+   it is possible to prove knowledge of one of N witnesses for those
    relations . The composed sigma protocols can be made non-interactive
    using the Fiat-Shamir transformation [Cramer97].  However, such
    compositions must be handled carefully to preserve security
@@ -215,7 +215,7 @@ Table of Contents
    The generation of proofs involves randomized algorithms that take as
    input a source of randomness, denoted as rng.  The functionality
    required in this document is a secure way to sample non-zero scalars
-   uniformly at random.  Algorithms access to this functionality through
+   uniformly at random.  Algorithms access this functionality through
    the following interface.
 
    class CSRNG(ABC):
@@ -431,9 +431,17 @@ Procedure:
 
 allocate_elements(self, n)
 
-1. linear_combination = LinearMap.LinearCombination(scalar_indices=[x[0] for x in rhs], element_indices=[x[1] for x in rhs])
-2. self.linear_map.append(linear_combination)
-3. self._image.append(lhs)
+Inputs:
+    - self, the current state of the LinearRelation
+    - n, the number of elements to allocate
+Outputs:
+    - indices, a list of integers each pointing to the new allocated elements
+
+Procedure:
+
+1. indices = range(self.num_elements, self.num_elements + n)
+2. self.num_elements += n
+3. return indices
 
    Group elements, being part of the instance, can later be set using
    the function set_elements
@@ -734,15 +742,15 @@ Procedure:
    As of now, it is responsibility of the user to pick a unique instance
    identifier that identifies the statement being proven.
 
-7.  Acknowledgments
+Acknowledgments
 
    The authors thank Jan Bobolz, Vishruti Ganesh, Stephan Krenn, Mary
    Maller, Ivan Visconti, Yuwen Zhang for reviewing a previous edition
    of this specification.
 
-8.  References
+References
 
-8.1.  Normative References
+Normative References
 
    [KEYAGREEMENT]
               Barker, E., Chen, L., Roginsky, A., Vassilev, A., and R.
@@ -752,14 +760,14 @@ Procedure:
               DOI 10.6028/nist.sp.800-56ar3, April 2018,
               <https://doi.org/10.6028/nist.sp.800-56ar3>.
 
-8.2.  Informative References
+Informative References
 
    [AttemaCK21]
               Attema, T., Cramer, R., and L. Kohl, "A Compressed Sigma-
               Protocol Theory for Lattices",
               <https://dl.acm.org/doi/10.1007/978-3-030-84245-1_19>.
 
-   [BonehS23] Boneh, D. and V. Schoup, "A Graduate Course in Applied
+   [BonehS23] Boneh, D. and V. Shoup, "A Graduate Course in Applied
               Cryptography", n.d., <https://toc.cryptobook.us/>.
 
    [Cramer97] Cramer, R., "Modular Design of Secure yet Practical
