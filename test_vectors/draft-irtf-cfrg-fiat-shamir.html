@@ -1247,7 +1247,36 @@ svg :is([fill="white"], [fill^="#fff"]) {
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
-            <p id="section-toc.1-1.11.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-test-vectors" class="internal xref">Test Vectors</a></p>
+            <p id="section-toc.1-1.11.1"><a href="#appendix-A" class="auto internal xref">Appendix A</a>.  <a href="#name-test-vectors" class="internal xref">Test Vectors</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.1">
+                <p id="section-toc.1-1.11.2.1.1"><a href="#appendix-A.1" class="auto internal xref">A.1</a>.  <a href="#name-test_keccak_duplex_sponge_s" class="internal xref">test_keccak_duplex_sponge_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.2">
+                <p id="section-toc.1-1.11.2.2.1"><a href="#appendix-A.2" class="auto internal xref">A.2</a>.  <a href="#name-test_absorb_empty_before_do" class="internal xref">test_absorb_empty_before_does_not_break_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.3">
+                <p id="section-toc.1-1.11.2.3.1"><a href="#appendix-A.3" class="auto internal xref">A.3</a>.  <a href="#name-test_absorb_empty_after_doe" class="internal xref">test_absorb_empty_after_does_not_break_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.4">
+                <p id="section-toc.1-1.11.2.4.1"><a href="#appendix-A.4" class="auto internal xref">A.4</a>.  <a href="#name-test_squeeze_zero_behavior_" class="internal xref">test_squeeze_zero_behavior_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.5">
+                <p id="section-toc.1-1.11.2.5.1"><a href="#appendix-A.5" class="auto internal xref">A.5</a>.  <a href="#name-test_squeeze_zero_after_beh" class="internal xref">test_squeeze_zero_after_behavior_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.6">
+                <p id="section-toc.1-1.11.2.6.1"><a href="#appendix-A.6" class="auto internal xref">A.6</a>.  <a href="#name-test_absorb_squeeze_absorb_" class="internal xref">test_absorb_squeeze_absorb_consistency_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.7">
+                <p id="section-toc.1-1.11.2.7.1"><a href="#appendix-A.7" class="auto internal xref">A.7</a>.  <a href="#name-test_associativity_of_absor" class="internal xref">test_associativity_of_absorb_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.8">
+                <p id="section-toc.1-1.11.2.8.1"><a href="#appendix-A.8" class="auto internal xref">A.8</a>.  <a href="#name-test_iv_affects_output_shak" class="internal xref">test_iv_affects_output_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.9">
+                <p id="section-toc.1-1.11.2.9.1"><a href="#appendix-A.9" class="auto internal xref">A.9</a>.  <a href="#name-test_multiple_blocks_absorb" class="internal xref">test_multiple_blocks_absorb_squeeze_SHAKE128</a></p>
+</li>
+            </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12">
             <p id="section-toc.1-1.12.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-authors-address" class="internal xref">Author's Address</a></p>
@@ -1891,10 +1920,216 @@ Constants:
 <div id="test-vectors">
 <section id="appendix-A">
       <h2 id="name-test-vectors">
-<a href="#name-test-vectors" class="section-name selfRef">Test Vectors</a>
+<a href="#appendix-A" class="section-number selfRef">Appendix A. </a><a href="#name-test-vectors" class="section-name selfRef">Test Vectors</a>
       </h2>
-<p id="appendix-A-1">Test vectors will be made available in future versions of this specification.
-They are currently developed in the <a href="https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/tree/main/poc/vectors">proof-of-concept implementation</a>.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
+<p id="appendix-A-1">This section contains test vectors for the duplex sponge interface specified in this document.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
+<div id="testkeccakduplexspongeshake128">
+<section id="appendix-A.1">
+        <h3 id="name-test_keccak_duplex_sponge_s">
+<a href="#appendix-A.1" class="section-number selfRef">A.1. </a><a href="#name-test_keccak_duplex_sponge_s" class="section-name selfRef">test_keccak_duplex_sponge_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.1-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = absorb:6261736963206475706c65782073706f6e67652074657374
+Operation2 = squeeze:64
+Expected = f845c3ef4231a4d6e09c29b1eea0055842246fd57558fd7d93e1302f7
+799dd9593d2e4d06eda72d5252ca5b2feff4b8cb324ec96673a7417cf70fa77b1898
+991
+</pre><a href="#appendix-A.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testabsorbemptybeforedoesnotbreakshake128">
+<section id="appendix-A.2">
+        <h3 id="name-test_absorb_empty_before_do">
+<a href="#appendix-A.2" class="section-number selfRef">A.2. </a><a href="#name-test_absorb_empty_before_do" class="section-name selfRef">test_absorb_empty_before_does_not_break_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.2-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = absorb:656d707479206d657373616765206166746572
+Operation2 = absorb:
+Operation3 = squeeze:64
+Expected = 3953e577d9e5d4dc7b86d1a62e881f2d1eb750ea3550fcae315854d16
+6136ae816ca922a4c7e54d711b8721c8969598449922122768c50313f47eef35020b
+73c
+</pre><a href="#appendix-A.2-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testabsorbemptyafterdoesnotbreakshake128">
+<section id="appendix-A.3">
+        <h3 id="name-test_absorb_empty_after_doe">
+<a href="#appendix-A.3" class="section-number selfRef">A.3. </a><a href="#name-test_absorb_empty_after_doe" class="section-name selfRef">test_absorb_empty_after_does_not_break_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.3-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = absorb:
+Operation2 = absorb:656d707479206d657373616765206265666f7265
+Operation3 = squeeze:64
+Expected = 6e475edd3c400bec314d5891af570841a547c95d1a651adff9a8bfb70
+719a79b5afde316386da13fa83525662df3c5b2367d987bf3dc4199efdb9d0612572
+785
+</pre><a href="#appendix-A.3-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testsqueezezerobehaviorshake128">
+<section id="appendix-A.4">
+        <h3 id="name-test_squeeze_zero_behavior_">
+<a href="#appendix-A.4" class="section-number selfRef">A.4. </a><a href="#name-test_squeeze_zero_behavior_" class="section-name selfRef">test_squeeze_zero_behavior_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.4-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = squeeze:0
+Operation2 = absorb:7a65726f2073717565657a652074657374
+Operation3 = squeeze:0
+Operation4 = squeeze:64
+Expected = 4cf7f008057b63cb615547a143f42cf793b86b239f404d2f28b3f0919
+7d850eb029df3024ad468be5aceb2fa60e9fb7add98436236be69ddb34314ce7a905
+f23
+</pre><a href="#appendix-A.4-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testsqueezezeroafterbehaviorshake128">
+<section id="appendix-A.5">
+        <h3 id="name-test_squeeze_zero_after_beh">
+<a href="#appendix-A.5" class="section-number selfRef">A.5. </a><a href="#name-test_squeeze_zero_after_beh" class="section-name selfRef">test_squeeze_zero_after_behavior_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.5-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = squeeze:0
+Operation2 = absorb:7a65726f2073717565657a65206166746572
+Operation3 = squeeze:64
+Expected = bd9278e6f65cb854935b3f6b2c51ab158be8ea09744509519b8f06f0c
+501d07c429e37f232b6f0955b620ff6226d9d02e4817b1447e7309023a3a14f73587
+6ec
+</pre><a href="#appendix-A.5-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testabsorbsqueezeabsorbconsistencyshake128">
+<section id="appendix-A.6">
+        <h3 id="name-test_absorb_squeeze_absorb_">
+<a href="#appendix-A.6" class="section-number selfRef">A.6. </a><a href="#name-test_absorb_squeeze_absorb_" class="section-name selfRef">test_absorb_squeeze_absorb_consistency_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.6-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 656467652d636173652d746573742d646f6d61696e2d6162736f72620000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = absorb:696e7465726c65617665206669727374
+Operation2 = squeeze:32
+Operation3 = absorb:696e7465726c65617665207365636f6e64
+Operation4 = squeeze:32
+Expected = 4d31a75f29851f9f15cd54fa6f2335cbe07b947b9d3c28092c1ba7315
+e295921
+</pre><a href="#appendix-A.6-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testassociativityofabsorbshake128">
+<section id="appendix-A.7">
+        <h3 id="name-test_associativity_of_absor">
+<a href="#appendix-A.7" class="section-number selfRef">A.7. </a><a href="#name-test_associativity_of_absor" class="section-name selfRef">test_associativity_of_absorb_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.7-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 6162736f72622d6173736f6369617469766974792d646f6d61696e000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = absorb:6173736f63696174697669747920746573742066756c6c
+Operation2 = squeeze:32
+Expected = c0faa351141d60678dceff4f3a5760381bb335ad113958b70edf7b242
+df01c8a
+</pre><a href="#appendix-A.7-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testivaffectsoutputshake128">
+<section id="appendix-A.8">
+        <h3 id="name-test_iv_affects_output_shak">
+<a href="#appendix-A.8" class="section-number selfRef">A.8. </a><a href="#name-test_iv_affects_output_shak" class="section-name selfRef">test_iv_affects_output_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.8-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 646f6d61696e2d6f6e652d646966666572732d6865726500000000000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = absorb:697620646966666572656e63652074657374
+Operation2 = squeeze:32
+Expected = 7650642267cc544abf0e01ce28e2595aec4c2f5b5e5e3720ab5514496
+37b35f2
+</pre><a href="#appendix-A.8-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testmultipleblocksabsorbsqueezeshake128">
+<section id="appendix-A.9">
+        <h3 id="name-test_multiple_blocks_absorb">
+<a href="#appendix-A.9" class="section-number selfRef">A.9. </a><a href="#name-test_multiple_blocks_absorb" class="section-name selfRef">test_multiple_blocks_absorb_squeeze_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.9-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 6d756c74692d626c6f636b2d6162736f72622d7465737400000000000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = absorb:abababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababab
+Operation2 = squeeze:600
+Expected = 526d4f6cfca230e0654bf8749bddc0f4416a8a164c50f3c1b0bc1d527
+2a88b9a524e73cafad76691a29c0e03a5255fd8fb9d778ef5a0c8c9e11e003011d25
+6bf92dd36233e4c6c360baca0f8ac305d459adb1231a801742669efa051396e96417
+814448b5328336d028a62dbddf24d1bb68496d27f1944eb24d4b2812d9ad4eae6c26
+0b720c44ed2be8bfeeed3acc2640edbab987674f2cef8ceacda1e04f254170aba424
+1dabc6364ed5afc09b58205682d5e8413bf5f9d97e9c799b97876ccd1c48d86759ad
+e5871acc4c5d41d37f2b1843c8b6f9e0bade78342d56f9b1e8232d4c7553674d889e
+69fe24dea31f42f0b02b70161876ceb12cc0b36868c262cbebb5e815a1eceaee97ae
+d3402a518287c32f2f469c3a38a17afd0f0d82433acf695ae143ded9412b4e6b6144
+bd6d4be6bb7de33c05f560480c63aa89336954f1cf5992399e6ed59d406adb4497bb
+88aa897fd3d65646cf86e796da4f193c418a74d662f57e0e0c775386abdace02157e
+519ba54495555145016c550ff32004981d0e34f0abe7d814ac4fe25260473ffa8746
+0a736f20954e8d3b9f16140e79451953fe6cfc222cba6ad4f85a2e2efd6ff8f5fef6
+5d8480e6af40baab298c4de57f30d08a5e1b4c10d123a5af7702ff26ba9a84a6fe92
+f48391b23a7e8e8cb06deda74d1b10870611995f6bfe4df60320a0b7f2c891cad5a5
+645ecec80868ed568591a74dafb35cabb42dae1a1085269b655db1ebf09929f63d5a
+f775a24e43759f673b83aeefef382bc2b7bf175bb9d90e77911466ffb3b230754776
+5cd5adc30a6b07881a88fd1511e5f8d2dcc4347c076e6c79676d8df
+</pre><a href="#appendix-A.9-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
 </section>
 </div>
 <div id="authors-addresses">
