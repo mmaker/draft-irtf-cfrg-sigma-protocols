@@ -16,7 +16,7 @@ class NISigmaProtocol:
     Codec: Codec = None
     DuplexSponge: DuplexSpongeInterface = None
 
-    def __init__(self, session_id, instance):
+    def __init__(self, session, instance):
         protocol_id = self.get_protocol_id()
         assert len(protocol_id) == 64, f"Invalid protocol ID length: {len(protocol_id)} for {protocol_id}"
 
@@ -25,8 +25,17 @@ class NISigmaProtocol:
         instance_label = self.sigma_protocol.get_instance_label()
 
         duplex_sponge_cls = self.DuplexSponge
+        # Build a fixed-size session identifier from an arbitrary-length session string.
+        session_hash_state = duplex_sponge_cls(b"fiat-shamir/session-id".ljust(64, b"\x00"))
+        session_hash_state.absorb(session)
+        session_id = b"\0" * 32 + session_hash_state.squeeze(32)
+        assert len(session_id) == 64
+
         self.sponge_state = duplex_sponge_cls(protocol_id)
-        self.sponge_state.absorb(self.codec.init(session_id, instance_label))
+        self.sponge_state.absorb(session_id)
+        # The instance label is absorbed without a length prefix.
+        # Its encoding must therefore be prefix-free.
+        self.sponge_state.absorb(instance_label)
 
     def _prove(self, witness, rng: CSRNG):
         """
