@@ -2,7 +2,7 @@
 # vim: syntax=python
 
 from sagelib.ciphersuite import CIPHERSUITE
-from sagelib.sigma_protocols import LinearRelation
+from sagelib.sigma_protocols import LinearRelation, CSRNG
 from sagelib.test_drng import TestDRNG
 
 import json
@@ -11,8 +11,9 @@ import json
 def test_vector(test_vector_function):
     def inner(vectors, suite):
         NISigmaProtocol = CIPHERSUITE[suite]
-        instance_witness_rng = TestDRNG(b"instance_witness_generation_seed")
-        proof_generation_rng = TestDRNG(b"proof_generation_seed")
+        scalar_cls = NISigmaProtocol.Codec.GG.ScalarField
+        instance_witness_rng = TestDRNG(b"instance_witness_generation_seed".ljust(32, b"\x00"), scalar_cls)
+        proof_generation_rng = TestDRNG(b"proof_generation_seed".ljust(32, b"\x00"), scalar_cls)
 
         test_vector_name = f"{test_vector_function.__name__}"
         instance, witness = test_vector_function(instance_witness_rng, NISigmaProtocol.Codec.GG)
@@ -28,8 +29,6 @@ def test_vector(test_vector_function):
 
         # Serialize the entire witness list at once
         witness_bytes = NISigmaProtocol.Codec.GG.ScalarField.serialize(witness)
-        protocol_id = NISigmaProtocol.Protocol.get_protocol_id()
-        instance_label = NISigmaProtocol.Protocol(instance).get_instance_label()
 
         vectors[test_vector_name] = {
             "Ciphersuite": suite,
@@ -65,7 +64,7 @@ def write_group_vectors(fh, label, vector):
 
 
 @test_vector
-def discrete_logarithm(rng, group):
+def discrete_logarithm(rng: CSRNG, group):
     """
     Proves the following statement:
 
@@ -82,7 +81,7 @@ def discrete_logarithm(rng, group):
     statement.set_elements([(var_G, G)])
 
     x = group.ScalarField.random(rng)
-    X = G * x
+    X = group.scalar_mult(x, G)
     assert [X] == statement.linear_map([x])
 
     statement.set_elements([(var_X, X)])
@@ -90,7 +89,7 @@ def discrete_logarithm(rng, group):
 
 
 @test_vector
-def dleq(rng, group):
+def dleq(rng: CSRNG, group):
     """
     Proves the following statement:
 
@@ -98,10 +97,11 @@ def dleq(rng, group):
 
     """
     G = group.generator()
-    H = group.random(rng)
+    # Test-only: this scalar-multiplication sampling is for vector generation/tracing and MUST NOT be used in production.
+    H = group.scalar_mult(group.ScalarField.random(rng), G)
     x = group.ScalarField.random(rng)
-    X = G * x
-    Y = H * x
+    X = group.scalar_mult(x, G)
+    Y = group.scalar_mult(x, H)
 
     statement = LinearRelation(group)
     [var_x] = statement.allocate_scalars(1)
@@ -115,7 +115,7 @@ def dleq(rng, group):
 
 
 @test_vector
-def pedersen_commitment(rng, group):
+def pedersen_commitment(rng: CSRNG, group):
     """
     Proves the following statement:
 
@@ -123,12 +123,13 @@ def pedersen_commitment(rng, group):
 
     """
     G = group.generator()
-    H = group.random(rng)
+    # Test-only: this scalar-multiplication sampling is for vector generation/tracing and MUST NOT be used in production.
+    H = group.scalar_mult(group.ScalarField.random(rng), G)
     x = group.ScalarField.random(rng)
     r = group.ScalarField.random(rng)
     witness = [x, r]
 
-    C = G * x + H * r
+    C = group.scalar_mult(x, G) + group.scalar_mult(r, H)
     statement = LinearRelation(group)
     [var_x, var_r] = statement.allocate_scalars(2)
     [var_G, var_H, var_C] = statement.allocate_elements(3)
@@ -139,7 +140,7 @@ def pedersen_commitment(rng, group):
 
 
 @test_vector
-def pedersen_commitment_dleq(rng, group):
+def pedersen_commitment_dleq(rng: CSRNG, group):
     """
     Proves the following statement:
 
@@ -150,7 +151,9 @@ def pedersen_commitment_dleq(rng, group):
                 Y = x0 * G2 + x1 * G3
             }
     """
-    generators = [group.random(rng) for i in range(4)]
+    G = group.generator()
+    # Test-only: this scalar-multiplication sampling is for vector generation/tracing and MUST NOT be used in production.
+    generators = [group.scalar_mult(group.ScalarField.random(rng), G) for i in range(4)]
     witness = [group.ScalarField.random(rng) for i in range(2)]
     X = group.msm(witness, generators[:2])
     Y = group.msm(witness, generators[2:4])
@@ -169,7 +172,7 @@ def pedersen_commitment_dleq(rng, group):
 
 
 @test_vector
-def bbs_blind_commitment_computation(rng, group):
+def bbs_blind_commitment_computation(rng: CSRNG, group):
     """
     This example test vector is meant to replace:
     https://www.ietf.org/archive/id/draft-kalos-bbs-blind-signatures-01.html#section-4.1.1
@@ -180,16 +183,21 @@ def bbs_blind_commitment_computation(rng, group):
             C = secret_prover_blind * Q_2 + msg_1 * J_1 + ... + msg_M * J_M
         }
     """
+    G = group.generator()
     # length(committed_messages)
     M = 3
+    # Test-only: this scalar-multiplication sampling is for vector generation/tracing and MUST NOT be used in production.
     # BBS.create_generators(M + 1, "BLIND_" || api_id)
-    (Q_2, J_1, J_2, J_3) = [group.random(rng) for i in range(M+1)]
+    (Q_2, J_1, J_2, J_3) = [group.scalar_mult(group.ScalarField.random(rng), G) for i in range(M+1)]
     # BBS.messages_to_scalars(committed_messages,  api_id)
     (msg_1, msg_2, msg_3) = [group.ScalarField.random(rng) for i in range(M)]
 
     # these are computed before the proof in the specification
     secret_prover_blind = group.ScalarField.random(rng)
-    C = secret_prover_blind * Q_2 + msg_1 * J_1 + msg_2 * J_2 + msg_3 * J_3
+    C = group.scalar_mult(secret_prover_blind, Q_2) + \
+        group.scalar_mult(msg_1, J_1) + \
+        group.scalar_mult(msg_2, J_2) + \
+        group.scalar_mult(msg_3, J_3)
 
     # This is the part that needs to be changed in the specification of blind bbs.
     statement = LinearRelation(group)

@@ -1,34 +1,38 @@
 #!/usr/bin/sage
 # vim: syntax=python
 
-import random
-import hashlib
+from sagelib.duplex_sponge import SHAKE128
+from sagelib.hash_to_field import OS2IP
+from sagelib.sigma_protocols import CSRNG
+from sagelib import groups
 
 
-class TestDRNG(object):
-    def __init__(self, seed):
-        self.seed = hashlib.sha256(seed).digest()
+class TestDRNG(CSRNG):
+    def __init__(self, seed: bytes, scalar_cls: type[groups.Scalar], /):
+        assert len(seed) == 32, "seed must be exactly 32 bytes"
+        self.scalar_cls = scalar_cls
+        self.hash_state = SHAKE128(b"sigma-proofs/TestDRNG/SHAKE128".ljust(64, b"\x00"))
+        self.hash_state.absorb(seed)
+        self.squeeze_offset = 0
 
-    def next_u32(self):
-        val = int.from_bytes([self.seed[0], self.seed[1], self.seed[2], self.seed[3]], byteorder = 'big')
-        self.seed = hashlib.sha256(val.to_bytes(4, 'big')).digest()
-        return val
+    def _squeeze(self, length: int) -> bytes:
+        end = self.squeeze_offset + length
+        out = self.hash_state.squeeze(end)[self.squeeze_offset:end]
+        self.squeeze_offset = end
+        return out
 
-    def randint(self, l, h):
+    def getrandom(self, length: int) -> bytes:
+        return self._squeeze(length)
+
+    def random_scalar(self) -> groups.Scalar:
+        Ns = int(self.scalar_cls.field_bytes_length)
+        scalar_bytes = self.getrandom(Ns + 16)
+        scalar = self.scalar_cls.field(OS2IP(scalar_bytes) % self.scalar_cls.order)
+        return scalar
+
+    def randint(self, l: int, h: int) -> int:
+        assert l < h
         rand_range = h - l
-        num_bits = len(bin(rand_range)) - 2
-        num_bytes = (num_bits + 7) // 8
-        while True:
-            i = 0 
-            ret_bytes = []
-            while i < num_bytes:
-                rand = self.next_u32()
-                for b in rand.to_bytes(4, 'big'):
-                    if i < num_bytes:
-                        ret_bytes.append(b)
-                        i += 1
-                    else:
-                        break
-            potential_res = int.from_bytes(ret_bytes, byteorder = 'big')
-            if (len(bin(potential_res)) - 2) <= num_bits:
-                return l + (potential_res % rand_range)
+        Ns = (int(rand_range).bit_length() + 7) // 8
+        random_int = OS2IP(self.getrandom(Ns + 16)) % rand_range
+        return l + random_int

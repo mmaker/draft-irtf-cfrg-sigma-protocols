@@ -1,6 +1,6 @@
 from sagelib.codec import Codec
 from sagelib.groups import Group
-from sagelib.sigma_protocols import SigmaProtocol
+from sagelib.sigma_protocols import SigmaProtocol, CSRNG
 from sagelib.duplex_sponge import DuplexSpongeInterface
 
 
@@ -17,7 +17,7 @@ class NISigmaProtocol:
     Hash: DuplexSpongeInterface = None
 
     def __init__(self, session_id, instance):
-        protocol_id = self.Protocol.get_protocol_id()
+        protocol_id = self.get_protocol_id()
         assert len(protocol_id) == 64, f"Invalid protocol ID length: {len(protocol_id)} for {protocol_id}"
 
         self.sigma_protocol = self.Protocol(instance)
@@ -32,7 +32,7 @@ class NISigmaProtocol:
             self.hash_state = self.Hash(protocol_id)
             self.hash_state.absorb(self.codec.init(session_id, instance_label))
 
-    def _prove(self, witness, rng):
+    def _prove(self, witness, rng: CSRNG):
         """
         Core proving logic that returns commitment, challenge, and response.
         The challenge is generated via the hash function.
@@ -43,7 +43,7 @@ class NISigmaProtocol:
         response = self.sigma_protocol.prover_response(prover_state, challenge)
         return (commitment, challenge, response)
 
-    def prove(self, witness, rng):
+    def prove(self, witness, rng: CSRNG):
         """
         Proving method using challenge-response format.
         """
@@ -58,18 +58,24 @@ class NISigmaProtocol:
         """
         # Before running the sigma protocol verifier, one must also check that:
         # - the proof length is exactly challenge_bytes_len + response_bytes_len
-        challenge_bytes_len = self.sigma_protocol.instance.Domain.scalar_byte_length()
+        challenge_bytes_len = self.sigma_protocol.challenge_length()
         assert len(proof) == challenge_bytes_len + self.sigma_protocol.instance.response_bytes_len, f"Invalid proof length: {len(proof)} != {challenge_bytes_len + self.sigma_protocol.instance.response_bytes_len}"
 
         # - proof deserialization successfully produces a valid challenge and a valid response
         response_bytes, challenge_bytes = next(proof, challenge_bytes_len)
         challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
         response = self.sigma_protocol.deserialize_response(response_bytes)
-
         commitment = self.sigma_protocol.simulate_commitment(response, challenge)
+
+        # - the re-computed challenge equals the serialized challenge.
+        self.codec.prover_message(self.hash_state, commitment)
+        expected_challenge = self.codec.verifier_challenge(self.hash_state)
+        if challenge != expected_challenge:
+            return False
+
         return self.sigma_protocol.verifier(commitment, challenge, response)
 
-    def prove_batchable(self, witness, rng):
+    def prove_batchable(self, witness, rng: CSRNG):
         """
         Proving method using commitment-response format.
 
@@ -86,7 +92,7 @@ class NISigmaProtocol:
         assert len(proof) == self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len, f"Invalid proof length: {len(proof)} != {self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len}"
 
         # - proof deserialization successfully produces a valid commitment and a valid response
-        response_bytes, commitment_bytes = next(proof, self.sigma_protocol.instance.commit_bytes_len) 
+        response_bytes, commitment_bytes = next(proof, self.sigma_protocol.instance.commit_bytes_len)
         commitment = self.sigma_protocol.deserialize_commitment(commitment_bytes)
         response = self.sigma_protocol.deserialize_response(response_bytes)
 

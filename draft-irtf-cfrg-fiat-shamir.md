@@ -38,9 +38,9 @@ informative:
 
 This document describes how to construct a non-interactive proof via the Fiat–Shamir transformation, using a generic procedure that compiles an interactive proof into a non-interactive one by relying on a stateful hash object that provides a duplex interface.
 
-The duplex interface requires two methods: absorb and squeeze, which respectively allow one to write and read elements of a specified base type into and from the state. 
+The duplex interface requires two methods: absorb and squeeze, which respectively allow one to write and read elements of a specified base type into and from the state.
 From the point of view of the Fiat-Shamir transformation, absorb (resp. squeeze) can be mapped to a prover sending a message (resp. a verifier producing a challenge).
-The absorb operation incrementally updates the duplex's internal hash state, while the squeeze operation produces variable-length, unpredictable outputs. 
+The absorb operation incrementally updates the duplex's internal hash state, while the squeeze operation produces variable-length, unpredictable outputs.
 <!-- david: usually you instantiate the sponge/duplex with a permutation or a transformation, not with a hash function -->
 This interface can be instantiated with various hash functions based on permutation or compression functions.
 
@@ -55,16 +55,30 @@ The term "public-coin" here refers to interactive protocols where all verifier m
 The transformation is often overlooked and rarely specified in papers, and in practice implicitely depends on a number of parameters as well as instantiation decisions:
 
 <!-- I feel weird reusing "IV" here, I think we should reuse protocol lingo. Noise calls it "prologue", TLS and others might call it "session hash" or plainly "context" (or "session ID" as used in the codec interface section) -->
-- An _initialization vector_ (IV) uniquely identifying the protocol, the session, and the statement being proven. 
+- An _initialization vector_ (IV) uniquely identifying the protocol, the session, and the statement being proven.
 - An _interactive protocol_ supporting a family of statements to be proven.
 <!-- that language feels weird to me, I think "an instantiation of the duplex interface" is better as usually it's its own construction (I've never seen it based on a hash function) -->
 - A _hash function_ implementing the duplex interface, capable of alternating between absorbing prover messages and squeezing out challenges.
 - A _codec_, which canonically encodes prover messages for consumption by the duplex construction, and decodes outputs of the duplex constructions into verifier messages.
 
-<!-- david: I would recommend having a section that contains ALL constructions that need to be instantiated -->
-# The Duplex Interface
-<!-- david: why introduce the term "Unit", it seems unnecessary here. Just use "type", for example, "BaseType" -->
-The duplex interface defines the space (the `Unit`) where the hash function operates in, plus a function for absorbing prover messages and squeezing out verifier challenges. It provides the following interface.
+
+# Security Considerations
+
+The Fiat-Shamir transformation carries over the soundness and witness hiding properties of the interactive proof:
+
+- **Completeness**: If the statement being proved is true, an honest verifier can be convinced of this fact by an honest prover via the proof.
+
+- **Soundness**: If the interactive proof is sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without possession of the corresponding witness.
+
+- **Zero-Knowledge**: If the interactive proof is honest-verifier zero-knowledge, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid. This ensures that verifiers gain no knowledge about the witness.
+
+In particular, the Fiat-Shamir transformation of Sigma Protocols is a zero-knowledge and sound argument of knowledge.
+
+Note that non-interactive Sigma Protocols do not have deniability, as the non-interactive nature of the protocol implies transferable message authenticity.
+
+# The Duplex Sponge Interface
+
+The duplex sponge interface defines the space (the `Unit`) where the hash function operates in, plus a function for absorbing and squeezing prover messages. It provides the following interface.
 
     class DuplexSponge:
     <!-- david: why is iv not list[Unit]? IMO it should be -->
@@ -74,10 +88,9 @@ The duplex interface defines the space (the `Unit`) where the hash function oper
 
 Where:
 
-<!-- david: why limit it to 32-byte? -->
-- `init(iv: bytes) -> DuplexSponge` denotes the initialization function. This function takes as input a 32-byte initialization vector `iv` and initializes the state of the duplex.
-- `absorb(self, values: list[Unit])` denotes the absorb operation of the duplex construction. This function takes as input a list of `Unit` elements and mutates the `DuplexDuplex construction` internal state.
-- `squeeze(self, length: int)` denotes the squeeze operation of the duplex construction. This function takes as input a number `length` and squeezes a list of `Unit` elements of length `length`.
+- `init(iv: bytes) -> DuplexSponge` denotes the initialization function. This function takes as input a 64-byte initialization vector `iv` and initializes the state of the duplex sponge.
+- `absorb(self, values: list[Unit])` denotes the absorb operation of the duplex sponge. This function takes as input a list of `Unit` elements and mutates the `DuplexSponge` internal state.
+- `squeeze(self, length: int)` denotes the squeeze operation of the sponge. This function takes as input an integral `length` and squeezes a list of `Unit` elements of length `length`.
 
 <!-- maybe it would be cleaner to specify a codec as a wrapper around the duplex, taking and producing bytes or whatever is the consumer type -->
 # The Codec interface
@@ -93,7 +106,6 @@ A codec provides the following interface.
     class Codec:
         def init(session_id, instance_label) -> state
         def prover_message(self, state, elements)
-        <!-- david: why not have a `length` as well and return a list here? -->
         def verifier_challenge(self, state) -> verifier_challenge
 
 Where:
@@ -104,9 +116,11 @@ Where:
 <!-- david: I find it weird how "unpredictable verifier challenge" keeps being repeated here :D maybe just mention it once, it's not very important for the spec -->
 - `verifier_challenge(self, state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the hash state to produce an unpredictable verifier challenge `verifier_challenge`.
 
+The `verifier_challenge` function must generate a challenge from the underlying scalar field that is statistically close to uniform, from the public inputs given to the verifier, as described in {{decode-random-bytes-scalars}}.
+
 # Generation of the Initialization Vector {#iv-generation}
 
-The initialization vector is a 32-bytes string that embeds:
+The initialization vector is a 64-byte string that embeds:
 
 - A `protocol_id`: the unique identifier for the interactive protocol and the associated relation being proven.
 <!-- I think the spec should have two sections that dive in detail in "best practice for domain separation" and "best practice to avoid portability of proof", because each concepts might not be clear for developers -->
@@ -116,8 +130,7 @@ The initialization vector is a 32-bytes string that embeds:
 
 It is implemented as follows.
 
-    hash_state = DuplexSponge.init([0] * 32) <!-- why have the possibility to pass a bytestring here if you're just going to set it to zero? better remove the argument here then -->
-    <!-- first mention to I2OSP, define it here or refer to where it's defined -->
+    hash_state = DuplexSponge.init([0] * 64)
     hash_state.absorb(I2OSP(len(protocol_id), 4))
     hash_state.absorb(protocol_id)
     hash_state.absorb(I2OSP(len(session_id), 4))
@@ -126,7 +139,7 @@ It is implemented as follows.
     <!-- IMO the domain separation + context should be up to the protocol and not standardized, why? Because everyone does it differently + sometimes you want to optimize the number of permutation here -->
 
 <!-- what does that mean? -->
-This will be expanded in future versions of this specification. 
+This will be expanded in future versions of this specification.
 
 # Fiat-Shamir transformation for Sigma Protocols
 
@@ -169,17 +182,25 @@ Upon initialization, the protocol receives as input:
 
         def verify(self, proof):
             # Before running the sigma protocol verifier, one must also check that:
-            # - the proof length is exactly challenge_bytes_len + response_bytes_len
-            challenge_bytes_len = self.sigma_protocol.instance.Domain.scalar_byte_length()
-            assert len(proof) == challenge_bytes_len + self.sigma_protocol.instance.response_bytes_len
+            # - the proof length is exactly Nc + response_bytes_len
+            Nc = self.sigma_protocol.instance.Domain.scalar_byte_length()
+            assert len(proof) == Nc + self.sigma_protocol.instance.response_bytes_len
 
             # - proof deserialization successfully produces a valid challenge and a valid response
-            challenge_bytes = proof[:challenge_bytes_len]
-            response_bytes = proof[challenge_bytes_len:]
+            challenge_bytes = proof[:Nc]
+            response_bytes = proof[Nc:]
             challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
             response = self.sigma_protocol.deserialize_response(response_bytes)
-
             commitment = self.sigma_protocol.simulate_commitment(response, challenge)
+
+            # - the expected challenge, recomputed from the simulated commitment and
+            # the current statement, is equivalent to the challenge in the proof.
+            # This binds the proof to the statement and detects tampering.
+            self.codec.prover_message(self.hash_state, commitment)
+            expected_challenge = self.codec.verifier_challenge(self.hash_state)
+            if challenge != expected_challenge:
+                return False
+
             return self.sigma_protocol.verifier(commitment, challenge, response)
 
         def prove_batchable(self, witness, rng):
@@ -204,6 +225,8 @@ Upon initialization, the protocol receives as input:
             self.codec.prover_message(self.hash_state, commitment)
             challenge = self.codec.verifier_challenge(self.hash_state)
             return self.sigma_protocol.verifier(commitment, challenge, response)
+
+Serialization and deserialization of scalars and group elements are defined by the ciphersuite chosen in the Sigma Protocol. In particular, `serialize_challenge`, `deserialize_challenge`, `serialize_response`, and `deserialize_response` call into the scalar `serialize` and `deserialize` functions. Likewise, `serialize_commitment` and `deserialize_commitment` call into the group element `serialize` and `deserialize` functions.
 
 ## NISigmaProtocol instances (ciphersuites)
 
@@ -236,8 +259,9 @@ We describe a codec for Schnorr proofs over groups of prime order `p` where `Uni
 
         def verifier_challenge(self, hash_state):
             # see https://eprint.iacr.org/2025/536.pdf, Appendix C.
+            Ns = self.GG.ScalarField.scalar_byte_length()
             uniform_bytes = hash_state.squeeze(
-                self.GG.ScalarField.scalar_byte_length() + 16
+                Ns + 16
             )
             scalar = OS2IP(uniform_bytes) % self.GG.ScalarField.order
             return scalar
@@ -304,12 +328,12 @@ A duplex in overwrite mode is based on a permutation function that operates on a
 
 ### Initialization
 
-This is the constructor for a duplex object. It is initialized with a 32-byte initialization vector.
+This is the constructor for a duplex sponge object. It is initialized with a 64-byte initialization vector.
 
     new(iv)
 
     Inputs:
-    - iv, a 32-byte initialization vector
+    - iv, a 64-byte initialization vector
 
     Procedure:
     1. self.absorb_index = 0
@@ -383,10 +407,8 @@ For an elliptic curve, we consider two fields, the coordinate fields, which indi
 The following functions and notation are used throughout the document.
 
 - `concat(x0, ..., xN)`: Concatenation of byte strings.
-- `bytes_to_int` and `scalar_to_bytes`: Convert a byte string to and from a non-negative integer.
-  `bytes_to_int` and `scalar_to_bytes` are implemented as `OS2IP` and `I2OSP` as described in
-  {{!RFC8017}}, respectively. Note that these functions operate on byte strings
-  in big-endian byte order.
+- `OS2IP` and `I2OSP`: Convert a byte string to and from a non-negative integer, as described in
+  {{!RFC8017}}. Note that these functions operate on byte strings in big-endian byte order.
 - The function `ecpoint_to_bytes` converts an elliptic curve point in affine-form into an array string of length `ceil(ceil(log2(coordinate_field_order))/ 8) + 1` using `int_to_bytes` prepended by one byte. This is defined as
 
       ecpoint_to_bytes(element)
@@ -399,10 +421,10 @@ The following functions and notation are used throughout the document.
 
       Constants:
 
-      field_bytes_length, the number of bytes to represent the scalar element, equal to `ceil(log2(field.order()))`.
+      Ng, the number of bytes to represent an element in the coordinate field, equal to `ceil(log2(field.order())/8)`.
 
       1. byte = 2 if sgn0(element.y) == 0 else 3
-      2. return I2OSP(byte, 1) + I2OSP(x, field_bytes_length)
+      2. return I2OSP(byte, 1) + I2OSP(x, Ng)
 
 ### Absorb scalars
 
@@ -415,12 +437,10 @@ The following functions and notation are used throughout the document.
 
     Constants:
 
-    - scalar_byte_length = ceil(384/8)
+    - Ns, the number of bytes to represent a scalar element, equal to `ceil(log2(p)/8)`.
 
     1. for scalar in scalars:
-    2.     hash_state.absorb(scalar_to_bytes(scalar))
-
-Where the function `scalar_to_bytes` is defined in {{notation}}
+    2.     hash_state.absorb(I2OSP(scalar, Ns))
 
 ### Absorb elements
 
@@ -434,18 +454,25 @@ Where the function `scalar_to_bytes` is defined in {{notation}}
     1. for element in elements:
     2.     hash_state.absorb(ecpoint_to_bytes(element))
 
-### Squeeze scalars
+### Decoding random bytes as scalars {#decode-random-bytes-scalars}
+
+Given `Ns + 16` bytes, it is possible to generate a scalar modulo `p` that is statistically close to uniform.
+Interpret the bytes as a big-endian integer, then reduce it modulo `p`, where `p` is the order of the group.
 
     squeeze_scalars(hash_state, length)
 
     Inputs:
 
     - hash_state, the hash state
-    - length, an unsigned integer of 64 bits determining the output length.
+    - length, an unsigned integer of 64 bits determining the number of scalars to output.
+
+    Constants:
+
+    - Ns, the number of bytes to represent a scalar, equal to `ceil(log2(p)/8)`.
 
     1. for i in range(length):
-    2.     scalar_bytes = hash_state.squeeze(field_bytes_length + 16)
-    3.     scalars.append(bytes_to_scalar_mod_order(scalar_bytes))
+    2.     scalar_bytes = hash_state.squeeze(Ns + 16)
+    3.     scalars.append(OS2IP(scalar_bytes) % p)
 
 --- back
 
