@@ -565,10 +565,6 @@ The authors thank Jan Bobolz, Vishruti Ganesh, Stephan Krenn, Mary Maller, Ivan 
 
 # Test Vectors
 
-This section contains test vectors for the Sigma Protocols specified in this document.
-
-{::include ./poc/vectors/testSigmaProtocols.txt}
-
 ## Seeded PRNG
 
 For interoperability, the random number generator used for test vectors
@@ -588,3 +584,7 @@ Random scalars are generated squeezing `Ns + 16` bytes, seen as a big-endian pos
             Ns = (self.order.bit_length() + 7) // 8
             random_integer  = OS2IP(self.hash_state.squeeze(Ns + 16))
             return Scalar(random_integer % self.order)
+
+The following sections contain test vectors for the Sigma Protocols specified in this document.
+
+{::include ./poc/vectors/testSigmaProtocols.txt}

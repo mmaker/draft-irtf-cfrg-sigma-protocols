@@ -124,7 +124,7 @@ Therefore, the encoding used to produce `instance_label` MUST be prefix-free.
 # Fiat-Shamir transformation for Sigma Protocols
 
 We describe how to construct non-interactive proofs for sigma protocols.
-The Fiat-Shamir transformation is parametrized by:
+The Fiat-Shamir transformation is parameterized by:
 
 - a `SigmaProtocol`, which specifies an interactive 3-message protocol as defined in {{Section 2 of !SIGMA=I-D.draft-irtf-cfrg-sigma-protocols-00}};
 - a `Codec`, which specifies how to absorb prover messages and how to squeeze verifier challenges;
@@ -164,7 +164,6 @@ Upon initialization, the protocol receives as input:
         def prove(self, witness, rng):
             # Default proving method using challenge-response format.
             (commitment, challenge, response) = self._prove(witness, rng)
-            assert self.sigma_protocol.verifier(commitment, challenge, response)
             assert self.sigma_protocol.verifier(commitment, challenge, response)
             return self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
 
