@@ -219,6 +219,9 @@ Table of Contents
    the following interface.
 
    class CSRNG(ABC):
+       def getrandom(self, length: int) -> bytes:
+           pass
+
        def random_scalar(self) -> groups.Scalar:
            pass
 
@@ -788,8 +791,8 @@ Informative References
               <https://crypto.ethz.ch/publications/files/CamSta97b.pdf>.
 
    [fiat-shamir]
-              "draft-irtf-cfrg-fiat-shamir",
-              <https://mmaker.github.io/spfs/draft-irtf-cfrg-fiat-
+              "draft-irtf-cfrg-fiat-shamir", <https://mmaker.github.io/
+              draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-fiat-
               shamir.html>.
 
    [FIPS-202] "SHA-3 standard :: permutation-based hash and extendable-

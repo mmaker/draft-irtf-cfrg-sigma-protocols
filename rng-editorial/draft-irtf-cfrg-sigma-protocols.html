@@ -1374,6 +1374,9 @@ Algorithms access this functionality through the following interface.<a href="#s
 <div class="alignLeft art-text artwork" id="section-1.1.1-2">
 <pre>
 class CSRNG(ABC):
+    def getrandom(self, length: int) -&gt; bytes:
+        pass
+
     def random_scalar(self) -&gt; groups.Scalar:
         pass
 </pre><a href="#section-1.1.1-2" class="pilcrow">¶</a>
@@ -2071,7 +2074,7 @@ This composition retains soundness if <strong>both</strong> problems remain hard
 <dd class="break"></dd>
 <dt id="fiat-shamir">[fiat-shamir]</dt>
         <dd>
-<span class="refTitle">"draft-irtf-cfrg-fiat-shamir"</span>, <span>&lt;<a href="https://mmaker.github.io/spfs/draft-irtf-cfrg-fiat-shamir.html">https://mmaker.github.io/spfs/draft-irtf-cfrg-fiat-shamir.html</a>&gt;</span>. </dd>
+<span class="refTitle">"draft-irtf-cfrg-fiat-shamir"</span>, <span>&lt;<a href="https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-fiat-shamir.html">https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-fiat-shamir.html</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="FIPS-202">[FIPS-202]</dt>
         <dd>
