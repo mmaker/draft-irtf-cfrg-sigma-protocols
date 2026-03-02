@@ -164,20 +164,18 @@ Upon initialization, the protocol receives as input:
 
         def verify(self, proof):
             # Before running the sigma protocol verifier, one must also check that:
-            # - the proof length is exactly Nc + response_bytes_len
+            # - the proof length is exactly Nc + response_bytes_len,
             Nc = self.sigma_protocol.instance.Domain.scalar_byte_length()
             assert len(proof) == Nc + self.sigma_protocol.instance.response_bytes_len
 
-            # - proof deserialization successfully produces a valid challenge and a valid response
+            # - proof deserialization successfully produces a valid challenge and a valid response,
             challenge_bytes = proof[:Nc]
             response_bytes = proof[Nc:]
             challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
             response = self.sigma_protocol.deserialize_response(response_bytes)
             commitment = self.sigma_protocol.simulate_commitment(response, challenge)
 
-            # - the expected challenge, recomputed from the simulated commitment and
-            # the current statement, is equivalent to the challenge in the proof.
-            # This binds the proof to the statement and detects tampering.
+            # - the re-computed challenge equals the serialized challenge.
             self.codec.prover_message(self.hash_state, commitment)
             expected_challenge = self.codec.verifier_challenge(self.hash_state)
             if challenge != expected_challenge:
