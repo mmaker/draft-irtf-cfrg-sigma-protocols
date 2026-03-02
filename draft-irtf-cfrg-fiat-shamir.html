@@ -1341,7 +1341,7 @@ It depends on:<a href="#section-1-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3-2">
 <pre>
 class DuplexSponge:
-  def new(iv: bytes) -&gt; DuplexSponge
+  def init(iv: bytes) -&gt; DuplexSponge
   def absorb(self, x: list[Unit])
   def squeeze(self, length: int) -&gt; list[Unit]
 </pre><a href="#section-3-2" class="pilcrow">¶</a>
@@ -1379,7 +1379,7 @@ class Codec:
 <p id="section-4-4">Where:<a href="#section-4-4" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-4-5.1">
-          <p id="section-4-5.1.1"><code>prover_message(self, state, elements) -&gt; self</code> denotes the absorb operation of the codec. This function takes as input the duplex sponge, and elements with which to mutate the duplex sponge.<a href="#section-4-5.1.1" class="pilcrow">¶</a></p>
+          <p id="section-4-5.1.1"><code>prover_message(self, state, elements)</code> denotes the absorb operation of the codec. This function takes as input the duplex sponge, and elements with which to mutate the duplex sponge.<a href="#section-4-5.1.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-4-5.2">
           <p id="section-4-5.2.1"><code>verifier_challenge(self, state) -&gt; verifier_challenge</code> denotes the squeeze operation of the codec. This function takes as input the duplex sponge to produce an unpredictable verifier challenge <code>verifier_challenge</code>.<a href="#section-4-5.2.1" class="pilcrow">¶</a></p>
@@ -1423,7 +1423,7 @@ Therefore, the encoding used to produce <code>instance_label</code> MUST be pref
 <a href="#section-6" class="section-number selfRef">6. </a><a href="#name-fiat-shamir-transformation-" class="section-name selfRef">Fiat-Shamir transformation for Sigma Protocols</a>
       </h2>
 <p id="section-6-1">We describe how to construct non-interactive proofs for sigma protocols.
-The Fiat-Shamir transformation is parametrized by:<a href="#section-6-1" class="pilcrow">¶</a></p>
+The Fiat-Shamir transformation is parameterized by:<a href="#section-6-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-6-2.1">
           <p id="section-6-2.1.1">a <code>SigmaProtocol</code>, which specifies an interactive 3-message protocol as defined in <span><a href="https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-sigma-protocols-00#section-2" class="relref">Section 2</a> of [<a href="#SIGMA" class="cite xref">SIGMA</a>]</span>;<a href="#section-6-2.1.1" class="pilcrow">¶</a></p>
@@ -1470,7 +1470,6 @@ class NISigmaProtocol:
     def prove(self, witness, rng):
         # Default proving method using challenge-response format.
         (commitment, challenge, response) = self._prove(witness, rng)
-        assert self.sigma_protocol.verifier(commitment, challenge, response)
         assert self.sigma_protocol.verifier(commitment, challenge, response)
         return self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
 

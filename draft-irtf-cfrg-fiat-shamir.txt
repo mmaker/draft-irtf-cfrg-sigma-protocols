@@ -178,7 +178,7 @@ Table of Contents
    prover messages.  It provides the following interface.
 
    class DuplexSponge:
-     def new(iv: bytes) -> DuplexSponge
+     def init(iv: bytes) -> DuplexSponge
      def absorb(self, x: list[Unit])
      def squeeze(self, length: int) -> list[Unit]
 
@@ -210,9 +210,9 @@ Table of Contents
 
    Where:
 
-   *  prover_message(self, state, elements) -> self denotes the absorb
-      operation of the codec.  This function takes as input the duplex
-      sponge, and elements with which to mutate the duplex sponge.
+   *  prover_message(self, state, elements) denotes the absorb operation
+      of the codec.  This function takes as input the duplex sponge, and
+      elements with which to mutate the duplex sponge.
 
    *  verifier_challenge(self, state) -> verifier_challenge denotes the
       squeeze operation of the codec.  This function takes as input the
@@ -254,7 +254,7 @@ Table of Contents
 6.  Fiat-Shamir transformation for Sigma Protocols
 
    We describe how to construct non-interactive proofs for sigma
-   protocols.  The Fiat-Shamir transformation is parametrized by:
+   protocols.  The Fiat-Shamir transformation is parameterized by:
 
    *  a SigmaProtocol, which specifies an interactive 3-message protocol
       as defined in Section 2 of [SIGMA];
@@ -299,7 +299,6 @@ class NISigmaProtocol:
     def prove(self, witness, rng):
         # Default proving method using challenge-response format.
         (commitment, challenge, response) = self._prove(witness, rng)
-        assert self.sigma_protocol.verifier(commitment, challenge, response)
         assert self.sigma_protocol.verifier(commitment, challenge, response)
         return self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
 
