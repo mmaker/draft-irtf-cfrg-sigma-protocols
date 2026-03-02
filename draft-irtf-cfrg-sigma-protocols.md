@@ -171,7 +171,7 @@ non-zero scalars uniformly at random.
 Algorithms access this functionality through the following interface.
 
     class CSRNG(ABC):
-        def getrandom(length: int) -> bytes:
+        def random_scalar(self) -> groups.Scalar:
             pass
 
 
