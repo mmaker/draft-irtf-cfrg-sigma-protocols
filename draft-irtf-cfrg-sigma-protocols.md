@@ -469,8 +469,10 @@ Given group elements `G`, `H` and `X`, `Y` such that `x * G = X` and `x * H = Y`
 
     1. statement = LinearRelation()
     2. [var_x] = statement.allocate_scalars(1)
-    3. statement.append_equation(X, [(var_x, G)])
-    4. statement.append_equation(Y, [(var_x, H)])
+    3. [var_G, var_X, var_H, var_Y] = statement.allocate_elements(4)
+    4. statement.set_elements([(var_G, G), (var_H, H), (var_X, X), (var_Y, Y)])
+    5. statement.append_equation(X, [(var_x, G)])
+    6. statement.append_equation(Y, [(var_x, H)])
 
 ### Example: Pedersen commitments
 
@@ -480,9 +482,11 @@ A representation proof proves a statement
 
 Given group elements `G`, `H` such that `C = x * G + r * H`, then the statement is generated as:
 
-    statement = LinearRelation()
-    var_x, var_r = statement.allocate_scalars(2)
-    statement.append_equation(C, [(var_x, G), (var_r, H)])
+    1. statement = LinearRelation()
+    2. var_x, var_r = statement.allocate_scalars(2)
+    3. [var_G, var_H, var_C] = statement.allocate_elements(3)
+    4. statement.set_elements([(var_G, G), (var_H, H), (var_C, C)])
+    5. statement.append_equation(C, [(var_x, G), (var_r, H)])
 
 ## Ciphersuites {#ciphersuites}
 
@@ -588,7 +592,8 @@ Random scalars are generated squeezing `Ns + 16` bytes, seen as a big-endian pos
             self.order = order
             self.hash_state = SHAKE128(b"sigma-proofs/TestDRNG/SHAKE128".ljust(64, b"\x00"))
             self.hash_state.absorb(seed)
-        def random_scalar() -> Scalar:
+
+        def random_scalar(self) -> Scalar:
             Ns = (self.order.bit_length() + 7) // 8
             random_integer  = OS2IP(self.hash_state.squeeze(Ns + 16))
             return Scalar(random_integer % self.order)
