@@ -452,7 +452,6 @@ Interpret the bytes as a big-endian integer, then reduce it modulo `p`, where `p
 --- back
 
 # Test Vectors
-{:numbered="false"}
 
-Test vectors will be made available in future versions of this specification.
-They are currently developed in the [proof-of-concept implementation](https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols/tree/main/poc/vectors).
+
+{::include ./poc/vectors/duplexSpongeVectors.txt}

@@ -565,8 +565,9 @@ The authors thank Jan Bobolz, Vishruti Ganesh, Stephan Krenn, Mary Maller, Ivan 
 
 # Test Vectors
 
-Test vectors will be made available in future versions of this specification.
-They are currently developed in the [proof-of-concept implementation](https://github.com/mmaker/draft-zkproof-sigma-protocols/tree/main/poc/vectors).
+This section contains test vectors for the Sigma Protocols specified in this document.
+
+{::include ./poc/vectors/testSigmaProtocols.txt}
 
 ## Seeded PRNG
 

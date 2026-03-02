@@ -1,8 +1,28 @@
 #!/usr/bin/sage
 # vim: syntax=python
 
-from sagelib.duplex_sponge import KeccakDuplexSponge, SHAKE128
+from sagelib.duplex_sponge import SHAKE128
 import json
+
+def wrap_write(fh, *args):
+    assert args
+    line_length = 68
+    string = " ".join(args)
+    for hunk in (string[0+i:line_length+i] for i in range(0, len(string), line_length)):
+        if hunk and len(hunk.strip()) > 0:
+            fh.write(hunk + "\n")
+
+
+def write_value(fh, name, value):
+    wrap_write(fh, name + ' = ' + value)
+
+
+def write_group_vectors(fh, label, vector):
+    print("## ", label, file=fh)
+    print("~~~", file=fh)
+    for key in vector:
+        write_value(fh, key, vector[key])
+    print("~~~", file=fh, end="\n\n")
 
 def run_operations(iv, operations, duplex_sponge_cls):
     """Execute a sequence of operations on a sponge and return the final output"""
@@ -19,18 +39,17 @@ def run_operations(iv, operations, duplex_sponge_cls):
     return output
 
 def test_vector(test_vector_function):
-    def inner(vectors, duplex_sponge_name, duplex_sponge_cls):
-        # Create unique test vector name based on function name and sponge type.
-        hash_suffix = "Keccak" if "Keccak" in duplex_sponge_name else "SHAKE128"
-        test_vector_name = f"{test_vector_function.__name__}_{hash_suffix}"
+    def inner(vectors, name, duplex_sponge_cls):
+        # Create unique test vector name based on function name and duplex sponge
+        test_vector_name = f"{test_vector_function.__name__}_{name}"
 
-        # Create a run_operations function bound to this specific duplex sponge.
+        # Create a run_operations function bound to this specific duplex sponge class
         def bound_run_operations(iv, operations):
             return run_operations(iv, operations, duplex_sponge_cls)
 
         # Pass the bound function to the test
         test_data = test_vector_function(bound_run_operations)
-        test_data["DuplexSponge"] = duplex_sponge_name
+        test_data["DuplexSponge"] = name
         vectors[test_vector_name] = test_data
         print(f"{test_vector_name} test vector generated\n")
     return inner
@@ -218,19 +237,31 @@ def main(path="vectors"):
         test_multiple_blocks_absorb_squeeze,
     ]
 
-    duplex_sponge_classes = {
-        "Keccak-f[1600] overwrite mode": KeccakDuplexSponge,
-        "SHAKE128": SHAKE128,
-    }
+    duplex_sponges = {"SHAKE128": SHAKE128}
 
     print("Generating duplex sponge test vectors...\n")
 
-    for duplex_sponge_name, duplex_sponge_cls in duplex_sponge_classes.items():
+    for name, duplex_sponge_cls in duplex_sponges.items():
         for test_fn in test_vectors:
-            test_fn(vectors, duplex_sponge_name, duplex_sponge_cls)
+            test_fn(vectors, name, duplex_sponge_cls)
 
     with open(path + "/duplexSpongeVectors.json", 'wt') as f:
         json.dump(vectors, f, sort_keys=True, indent=2)
+
+    with open(path + "/duplexSpongeVectors.txt", 'wt') as f:
+        for vector_name in vectors:
+            vector = {
+                "DuplexSponge": vectors[vector_name]["DuplexSponge"],
+                "IV": vectors[vector_name]["IV"],
+            }
+            for i, operation in enumerate(vectors[vector_name]["Operations"]):
+                if operation["type"] == "absorb":
+                    operation_value = "absorb:" + operation["data"]
+                else:
+                    operation_value = "squeeze:" + str(operation["length"])
+                vector["Operation" + str(i + 1)] = operation_value
+            vector["Expected"] = vectors[vector_name]["Expected"]
+            write_group_vectors(f, vector_name, vector)
 
     print(f"Test vectors written to {path}/duplexSpongeVectors.json")
 

@@ -23,3 +23,5 @@ draft-irtf-cfrg-sigma-protocols.xml
 package-lock.json
 report.xml
 !requirements.txt
+!poc/vectors/testSigmaProtocols.txt
+!poc/vectors/duplexSpongeVectors.txt
