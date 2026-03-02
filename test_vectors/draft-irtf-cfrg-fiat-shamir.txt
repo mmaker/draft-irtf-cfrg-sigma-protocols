@@ -639,9 +639,6 @@ Constants:
 
 Appendix A.  Test Vectors
 
-   This section contains test vectors for the duplex sponge interface
-   specified in this document.
-
 A.1.  test_keccak_duplex_sponge_SHAKE128
 
    DuplexSponge = SHAKE128
