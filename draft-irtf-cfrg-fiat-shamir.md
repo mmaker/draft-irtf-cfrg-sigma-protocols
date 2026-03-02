@@ -36,9 +36,9 @@ informative:
 
 --- abstract
 
-This document describes how to construct a non-interactive proof via the Fiat–Shamir transformation, using a generic procedure that compiles an interactive proof into a non-interactive one by relying on a stateful hash object that provides a duplex sponge interface.
+This document describes how to construct a non-interactive proof via the Fiat–Shamir transformation, using a generic procedure that compiles an interactive proof into a non-interactive one by relying on a stateful duplex sponge object.
 
-The duplex sponge interface requires two methods: absorb and squeeze, which respectively read and write elements of a specified base type. The absorb operation incrementally updates the duplex sponge's internal state, while the squeeze operation produces variable-length, unpredictable outputs. This interface can be instantiated with various hash functions based on permutation or compression functions.
+The duplex sponge interface requires two methods: absorb and squeeze, which respectively read and write elements of a specified base type. The absorb operation incrementally updates the duplex sponge's internal state, while the squeeze operation produces variable-length, unpredictable outputs. This interface can be instantiated with different constructions based on permutation or compression functions.
 
 This specification also defines codecs to securely map prover messages into the duplex sponge domain, from the duplex sponge domain into verifier messages.
 It also establishes how the non-interactive argument string should be serialized.
@@ -47,7 +47,7 @@ It also establishes how the non-interactive argument string should be serialized
 
 # Introduction
 
-The Fiat-Shamir transformation is a technique that uses a hash function to convert a public-coin interactive protocol between a prover and a verifier into a corresponding non-interactive protocol.
+The Fiat-Shamir transformation is a technique that uses a duplex sponge to convert a public-coin interactive protocol between a prover and a verifier into a corresponding non-interactive argument.
 The term "public-coin" here refers to interactive protocols where all verifier messages are essentially random values sent in the clear.
 It depends on:
 
@@ -72,7 +72,7 @@ Note that non-interactive Sigma Protocols do not have deniability, as the non-in
 
 # The Duplex Sponge Interface
 
-The duplex sponge interface defines the space (the `Unit`) where the hash function operates in, plus a function for absorbing and squeezing prover messages. It provides the following interface.
+The duplex sponge interface defines the space (the `Unit`) where the duplex sponge operates, plus a function for absorbing and squeezing prover messages. It provides the following interface.
 
     class DuplexSponge:
       def new(iv: bytes) -> DuplexSponge
@@ -133,7 +133,7 @@ The Fiat-Shamir transformation is parametrized by:
 
 - a `SigmaProtocol`, which specifies an interactive 3-message protocol as defined in {{Section 2 of !SIGMA=I-D.draft-irtf-cfrg-sigma-protocols-00}};
 - a `Codec`, which specifies how to absorb prover messages and how to squeeze verifier challenges;
-- a `DuplexSpongeInterface`, which specifies a hash function for computing challenges.
+- a `DuplexSpongeInterface`, which specifies a duplex sponge for computing challenges.
 
 Upon initialization, the protocol receives as input:
 - `session_id`, which identifies the session being proven
@@ -142,7 +142,7 @@ Upon initialization, the protocol receives as input:
     class NISigmaProtocol:
         Protocol: SigmaProtocol = None
         Codec: Codec = None
-        Hash: DuplexSpongeInterface = None
+        DuplexSponge: DuplexSpongeInterface = None
 
         def __init__(self, session_id, instance):
             self.state = self.Codec(iv)
@@ -150,7 +150,7 @@ Upon initialization, the protocol receives as input:
 
         def _prove(self, witness, rng):
             # Core proving logic that returns commitment, challenge, and response.
-            # The challenge is generated via the hash function.
+            # The challenge is generated via the duplex sponge.
             (prover_state, commitment) = self.sigma_protocol.prover_commit(witness, rng)
             self.codec.prover_message(self.state, commitment)
             challenge = self.codec.verifier_challenge(self.state)
@@ -212,22 +212,22 @@ Serialization and deserialization of scalars and group elements are defined by t
 
 ## NISigmaProtocol instances (ciphersuites)
 
-We describe noninteractive sigma protocol instances for combinations of protocols (SigmaProtocol), codec (Codec), and hash fuction (DuplexSpongeInterface). Descriptions of codecs and hash functions are in the following sections.
+We describe noninteractive sigma protocol instances for combinations of protocols (SigmaProtocol), codec (Codec), and duplex sponge (DuplexSpongeInterface). Descriptions of codecs and duplex sponge interfaces are in the following sections.
 
     class NISchnorrProofShake128P256(NISigmaProtocol):
         Protocol = SchnorrProof
         Codec = P256Codec
-        Hash = SHAKE128
+        DuplexSponge = SHAKE128
 
     class NISchnorrProofShake128Bls12381(NISigmaProtocol):
         Protocol = SchnorrProof
         Codec = Bls12381Codec
-        Hash = SHAKE128
+        DuplexSponge = SHAKE128
 
     class NISchnorrProofKeccakDuplexSpongeBls12381(NISigmaProtocol):
         Protocol = SchnorrProof
         Codec = Bls12381Codec
-        Hash = KeccakDuplexSponge
+        DuplexSponge = KeccakDuplexSponge
 
 # Codec for Schnorr proofs {#group-prove}
 
@@ -257,7 +257,8 @@ We describe a codec for the P256 curve.
 
 ## SHAKE128
 
-SHAKE128 is a variable-length hash function based on the Keccak sponge construction {{SHA3}}. It belongs to the SHA-3 family but offers a flexible output length, and provides 128 bits of security against collision attacks, regardless of the output length requested.
+SHAKE128 is a variable-length extendable-output function based on the Keccak sponge construction {{SHA3}}.
+It belongs to the SHA-3 family and is used here to provide a duplex sponge interface.
 
 ### Initialization
 

@@ -10,11 +10,11 @@ class NISigmaProtocol:
     Puts together 3 components:
     - a Sigma protocol that implements `SigmaProtocol`;
     - a codec that implements `Codec`;
-    - a hash function that implements `DuplexSpongeInterface`.
+    - a duplex sponge that implements `DuplexSpongeInterface`.
     """
     Protocol: SigmaProtocol = None
     Codec: Codec = None
-    Hash: DuplexSpongeInterface = None
+    DuplexSponge: DuplexSpongeInterface = None
 
     def __init__(self, session_id, instance):
         protocol_id = self.get_protocol_id()
@@ -24,22 +24,18 @@ class NISigmaProtocol:
         self.codec = self.Codec()
         instance_label = self.sigma_protocol.get_instance_label()
 
-        # Use the appropriate initialization based on hash function type
-        if hasattr(self.Hash, 'get_iv_from_identifiers'):
-            iv = self.Hash.get_iv_from_identifiers(protocol_id, session_id, instance_label)
-            self.hash_state = self.Hash(iv)
-        else:
-            self.hash_state = self.Hash(protocol_id)
-            self.hash_state.absorb(self.codec.init(session_id, instance_label))
+        duplex_sponge_cls = self.DuplexSponge
+        self.sponge_state = duplex_sponge_cls(protocol_id)
+        self.sponge_state.absorb(self.codec.init(session_id, instance_label))
 
     def _prove(self, witness, rng: CSRNG):
         """
         Core proving logic that returns commitment, challenge, and response.
-        The challenge is generated via the hash function.
+        The challenge is generated via the duplex sponge.
         """
         (prover_state, commitment) = self.sigma_protocol.prover_commit(witness, rng)
-        self.codec.prover_message(self.hash_state, commitment)
-        challenge = self.codec.verifier_challenge(self.hash_state)
+        self.codec.prover_message(self.sponge_state, commitment)
+        challenge = self.codec.verifier_challenge(self.sponge_state)
         response = self.sigma_protocol.prover_response(prover_state, challenge)
         return (commitment, challenge, response)
 
@@ -68,8 +64,8 @@ class NISigmaProtocol:
         commitment = self.sigma_protocol.simulate_commitment(response, challenge)
 
         # - the re-computed challenge equals the serialized challenge.
-        self.codec.prover_message(self.hash_state, commitment)
-        expected_challenge = self.codec.verifier_challenge(self.hash_state)
+        self.codec.prover_message(self.sponge_state, commitment)
+        expected_challenge = self.codec.verifier_challenge(self.sponge_state)
         if challenge != expected_challenge:
             return False
 
@@ -96,8 +92,8 @@ class NISigmaProtocol:
         commitment = self.sigma_protocol.deserialize_commitment(commitment_bytes)
         response = self.sigma_protocol.deserialize_response(response_bytes)
 
-        self.codec.prover_message(self.hash_state, commitment)
-        challenge = self.codec.verifier_challenge(self.hash_state)
+        self.codec.prover_message(self.sponge_state, commitment)
+        challenge = self.codec.verifier_challenge(self.sponge_state)
         return self.sigma_protocol.verifier(commitment, challenge, response)
 
 def next(b, l):
