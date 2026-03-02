@@ -90,41 +90,36 @@ Where:
 A codec is a collection of:
 - functions that map prover messages into `Unit`s,
 - functions that map `Unit`s into verifier messages, preserving the uniform distribution
-In addition, the "init" function initializes the duplex sponge with a session ID and an instance label.
-For byte-oriented codecs, this is just the concatenation of the two prefixed by their lengths.
 
 A codec provides the following interface.
 
     class Codec:
-        def init(session_id, instance_label) -> state
         def prover_message(self, state, elements)
         def verifier_challenge(self, state) -> verifier_challenge
 
 Where:
 
-- `init(session_id, instance_label) -> state` denotes the initialization function. This function takes as input a session ID and an instance label, and returns the initial duplex sponge state.
 - `prover_message(self, state, elements) -> self` denotes the absorb operation of the codec. This function takes as input the duplex sponge, and elements with which to mutate the duplex sponge.
 - `verifier_challenge(self, state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the duplex sponge to produce an unpredictable verifier challenge `verifier_challenge`.
 
 The `verifier_challenge` function must generate a challenge from the underlying scalar field that is statistically close to uniform, from the public inputs given to the verifier, as described in {{decode-random-bytes-scalars}}.
 
-# Generation of the Initialization Vector {#iv-generation}
+# Initialization of the Duplex Sponge State
 
-The initialization vector is a 64-byte string that embeds:
+The duplex sponge state is initialized by sequentially absorbing:
 
-- A `protocol_id`: the unique identifier for the interactive protocol and the associated relation being proven.
-- A `session_id`: the session identifier, for user-provided contextual information about the context where the proof is made (e.g. a URL, or a timestamp).
+- A `protocol_id`: the unique identifier for the interactive protocol and the associated relation being proven. This identifier MUST be 64 bytes.
+- A `session_id`: the session identifier, for user-provided contextual information about the context where the proof is made (e.g. a URL, or a timestamp). This identifier is currently generated as 32 zero-bytes concatenated with a 32-byte digest derived using the duplex sponge.
 - An `instance_label`: the instance identifier for the statement being proven.
 
-It is implemented as follows.
+The `session_id` is computed as:
 
-    state = DuplexSponge.init([0] * 64)
-    state.absorb(I2OSP(len(protocol_id), 4))
-    state.absorb(protocol_id)
-    state.absorb(I2OSP(len(session_id), 4))
-    state.absorb(session_id)
+    state = DuplexSponge.init(b"fiat-shamir/session-id".ljust(64, b"\x00"))
+    state.absorb(session)
+    session_id = [0] * 32 || state.squeeze(32)
 
-This will be expanded in future versions of this specification.
+The protocol instance label is absorbed without an explicit length prefix.
+Therefore, the encoding used to produce `instance_label` MUST be prefix-free.
 
 # Fiat-Shamir transformation for Sigma Protocols
 
@@ -136,7 +131,7 @@ The Fiat-Shamir transformation is parametrized by:
 - a `DuplexSpongeInterface`, which specifies a duplex sponge for computing challenges.
 
 Upon initialization, the protocol receives as input:
-- `session_id`, which identifies the session being proven
+- `session`, which identifies the session being proven
 - `instance`, the sigma protocol instance for proving or verifying
 
     class NISigmaProtocol:
@@ -144,9 +139,18 @@ Upon initialization, the protocol receives as input:
         Codec: Codec = None
         DuplexSponge: DuplexSpongeInterface = None
 
-        def __init__(self, session_id, instance):
-            self.state = self.Codec(iv)
-            self.ip = self.Protocol(instance)
+        def __init__(self, session, instance):
+            protocol_id = self.get_protocol_id()
+            assert len(protocol_id) == 64
+            self.sigma_protocol = self.Protocol(instance)
+            self.codec = self.Codec()
+            instance_label = self.sigma_protocol.get_instance_label()
+            session_state = self.DuplexSponge(b"fiat-shamir/session-id".ljust(64, b"\x00"))
+            session_state.absorb(session)
+            session_id = [0] * 32 || session_state.squeeze(32)
+            self.state = self.DuplexSponge(protocol_id)
+            self.state.absorb(session_id)
+            self.state.absorb(instance_label)
 
         def _prove(self, witness, rng):
             # Core proving logic that returns commitment, challenge, and response.
