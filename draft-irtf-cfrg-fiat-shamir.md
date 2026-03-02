@@ -38,20 +38,22 @@ informative:
 
 This document describes how to construct a non-interactive proof via the Fiat–Shamir transformation, using a generic procedure that compiles an interactive proof into a non-interactive one by relying on a stateful hash object that provides a duplex sponge interface.
 
-The duplex sponge interface requires two methods: absorb and squeeze, which respectively read and write elements of a specified base type. The absorb operation incrementally updates the sponge's internal hash state, while the squeeze operation produces variable-length, unpredictable outputs. This interface can be instantiated with various hash functions based on permutation or compression functions.
+The duplex sponge interface requires two methods: absorb and squeeze, which respectively read and write elements of a specified base type. The absorb operation incrementally updates the duplex sponge's internal state, while the squeeze operation produces variable-length, unpredictable outputs. This interface can be instantiated with various hash functions based on permutation or compression functions.
 
-This specification also defines codecs to securely map elements from the prover into the duplex sponge domain, and from the duplex sponge domain into verifier messages.
+This specification also defines codecs to securely map prover messages into the duplex sponge domain, from the duplex sponge domain into verifier messages.
+It also establishes how the non-interactive argument string should be serialized.
 
 --- middle
 
 # Introduction
 
 The Fiat-Shamir transformation is a technique that uses a hash function to convert a public-coin interactive protocol between a prover and a verifier into a corresponding non-interactive protocol.
+The term "public-coin" here refers to interactive protocols where all verifier messages are essentially random values sent in the clear.
 It depends on:
 
 - An _initialization vector_ (IV) uniquely identifying the protocol, the session, and the statement being proven.
 - An _interactive protocol_ supporting a family of statements to be proven.
-- A _hash function_ implementing the duplex sponge interface, capable of absorbing inputs incrementally and squeezing variable-length unpredictable messages.
+- A _duplex sponge instantiation_ capable of absorbing inputs incrementally and squeezing variable-length unpredictable messages.
 - A _codec_, which securely remaps prover elements into the base alphabet, and outputs of the duplex sponge into verifier messages (preserving the distribution).
 
 # Security Considerations
@@ -80,29 +82,29 @@ The duplex sponge interface defines the space (the `Unit`) where the hash functi
 Where:
 
 - `init(iv: bytes) -> DuplexSponge` denotes the initialization function. This function takes as input a 64-byte initialization vector `iv` and initializes the state of the duplex sponge.
-- `absorb(self, values: list[Unit])` denotes the absorb operation of the sponge. This function takes as input a list of `Unit` elements and mutates the `DuplexSponge` internal state.
-- `squeeze(self, length: int)` denotes the squeeze operation of the sponge. This function takes as input an integral `length` and squeezes a list of `Unit` elements of length `length`.
+- `absorb(self, values: list[Unit])` denotes the absorb operation of the duplex sponge. This function takes as input a list of `Unit` elements and mutates the `DuplexSponge` internal state.
+- `squeeze(self, length: int)` denotes the squeeze operation of the duplex sponge. This function takes as input an integral `length` and squeezes a list of `Unit` elements of length `length`.
 
 # The Codec interface
 
 A codec is a collection of:
-- functions that map prover messages into the hash function domain,
-- functions that map hash outputs into a message output by the verifier in the Sigma protocol
-In addition, the "init" function initializes the hash state with a session ID and an instance label.
+- functions that map prover messages into `Unit`s,
+- functions that map `Unit`s into verifier messages, preserving the uniform distribution
+In addition, the "init" function initializes the duplex sponge with a session ID and an instance label.
 For byte-oriented codecs, this is just the concatenation of the two prefixed by their lengths.
 
 A codec provides the following interface.
 
     class Codec:
-        def init(session_id, instance_label) -> hash_state
-        def prover_message(self, hash_state, elements)
-        def verifier_challenge(self, hash_state) -> verifier_challenge
+        def init(session_id, instance_label) -> state
+        def prover_message(self, state, elements)
+        def verifier_challenge(self, state) -> verifier_challenge
 
 Where:
 
-- `init(session_id, instance_label) -> hash_state` denotes the initialization function. This function takes as input a session ID and an instance label, and returns the initial hash state.
-- `prover_message(self, hash_state, elements) -> self` denotes the absorb operation of the codec. This function takes as input the hash state, and elements with which to mutate the hash state.
-- `verifier_challenge(self, hash_state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the hash state to produce an unpredictable verifier challenge `verifier_challenge`.
+- `init(session_id, instance_label) -> state` denotes the initialization function. This function takes as input a session ID and an instance label, and returns the initial duplex sponge state.
+- `prover_message(self, state, elements) -> self` denotes the absorb operation of the codec. This function takes as input the duplex sponge, and elements with which to mutate the duplex sponge.
+- `verifier_challenge(self, state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the duplex sponge to produce an unpredictable verifier challenge `verifier_challenge`.
 
 The `verifier_challenge` function must generate a challenge from the underlying scalar field that is statistically close to uniform, from the public inputs given to the verifier, as described in {{decode-random-bytes-scalars}}.
 
@@ -116,11 +118,11 @@ The initialization vector is a 64-byte string that embeds:
 
 It is implemented as follows.
 
-    hash_state = DuplexSponge.init([0] * 64)
-    hash_state.absorb(I2OSP(len(protocol_id), 4))
-    hash_state.absorb(protocol_id)
-    hash_state.absorb(I2OSP(len(session_id), 4))
-    hash_state.absorb(session_id)
+    state = DuplexSponge.init([0] * 64)
+    state.absorb(I2OSP(len(protocol_id), 4))
+    state.absorb(protocol_id)
+    state.absorb(I2OSP(len(session_id), 4))
+    state.absorb(session_id)
 
 This will be expanded in future versions of this specification.
 
@@ -143,15 +145,15 @@ Upon initialization, the protocol receives as input:
         Hash: DuplexSpongeInterface = None
 
         def __init__(self, session_id, instance):
-            self.hash_state = self.Codec(iv)
+            self.state = self.Codec(iv)
             self.ip = self.Protocol(instance)
 
         def _prove(self, witness, rng):
             # Core proving logic that returns commitment, challenge, and response.
             # The challenge is generated via the hash function.
             (prover_state, commitment) = self.sigma_protocol.prover_commit(witness, rng)
-            self.codec.prover_message(self.hash_state, commitment)
-            challenge = self.codec.verifier_challenge(self.hash_state)
+            self.codec.prover_message(self.state, commitment)
+            challenge = self.codec.verifier_challenge(self.state)
             response = self.sigma_protocol.prover_response(prover_state, challenge)
             return (commitment, challenge, response)
 
@@ -176,8 +178,8 @@ Upon initialization, the protocol receives as input:
             commitment = self.sigma_protocol.simulate_commitment(response, challenge)
 
             # - the re-computed challenge equals the serialized challenge.
-            self.codec.prover_message(self.hash_state, commitment)
-            expected_challenge = self.codec.verifier_challenge(self.hash_state)
+            self.codec.prover_message(self.state, commitment)
+            expected_challenge = self.codec.verifier_challenge(self.state)
             if challenge != expected_challenge:
                 return False
 
@@ -202,8 +204,8 @@ Upon initialization, the protocol receives as input:
             commitment = self.sigma_protocol.deserialize_commitment(commitment_bytes)
             response = self.sigma_protocol.deserialize_response(response_bytes)
 
-            self.codec.prover_message(self.hash_state, commitment)
-            challenge = self.codec.verifier_challenge(self.hash_state)
+            self.codec.prover_message(self.state, commitment)
+            challenge = self.codec.verifier_challenge(self.state)
             return self.sigma_protocol.verifier(commitment, challenge, response)
 
 Serialization and deserialization of scalars and group elements are defined by the ciphersuite chosen in the Sigma Protocol. In particular, `serialize_challenge`, `deserialize_challenge`, `serialize_response`, and `deserialize_response` call into the scalar `serialize` and `deserialize` functions. Likewise, `serialize_commitment` and `deserialize_commitment` call into the group element `serialize` and `deserialize` functions.
@@ -235,12 +237,12 @@ We describe a codec for Schnorr proofs over groups of prime order `p` where `Uni
         GG: groups.Group = None
 
         def prover_message(self, elements: list):
-            hash_state.absorb(self.GG.serialize(elements))
+            state.absorb(self.GG.serialize(elements))
 
-        def verifier_challenge(self, hash_state):
+        def verifier_challenge(self, state):
             # see https://eprint.iacr.org/2025/536.pdf, Appendix C.
             Ns = self.GG.ScalarField.scalar_byte_length()
-            uniform_bytes = hash_state.squeeze(
+            uniform_bytes = state.squeeze(
                 Ns + 16
             )
             scalar = OS2IP(uniform_bytes) % self.GG.ScalarField.order
@@ -267,33 +269,33 @@ SHAKE128 is a variable-length hash function based on the Keccak sponge construct
 
     Outputs:
 
-    -  a hash state interface
+    -  a duplex sponge instance
 
     1. initial_block = iv + b'\00' * 104  # len(iv) + 104 == SHAKE128 rate
-    2. self.hash_state = hashlib.shake_128()
-    3. self.hash_state.update(initial_block)
+    2. self.state = hashlib.shake_128()
+    3. self.state.update(initial_block)
 
 ### SHAKE128 Absorb
 
-    absorb(hash_state, x)
+    absorb(state, x)
 
     Inputs:
 
-    - hash_state, a hash state
+    - state, a duplex sponge state
     - x, a byte array
 
     1. h.update(x)
 
 ### SHAKE128 Squeeze
 
-    squeeze(hash_state, length)
+    squeeze(state, length)
 
     Inputs:
 
-    - hash_state, the hash state
+    - state, the duplex sponge state
     - length, the number of elements to be squeezed
 
-    1. return self.hash_state.copy().digest(length)
+    1. return self.state.copy().digest(length)
 
 ## Duplex Sponge
 
@@ -400,11 +402,11 @@ The following functions and notation are used throughout the document.
 
 ### Absorb scalars
 
-    absorb_scalars(hash_state, scalars)
+    absorb_scalars(state, scalars)
 
     Inputs:
 
-    - hash_state, the hash state
+    - state, the duplex sponge
     - scalars, a list of elements of the elliptic curve's scalar field
 
     Constants:
@@ -412,30 +414,30 @@ The following functions and notation are used throughout the document.
     - Ns, the number of bytes to represent a scalar element, equal to `ceil(log2(p)/8)`.
 
     1. for scalar in scalars:
-    2.     hash_state.absorb(I2OSP(scalar, Ns))
+    2.     state.absorb(I2OSP(scalar, Ns))
 
 ### Absorb elements
 
-    absorb_elements(hash_state, elements)
+    absorb_elements(state, elements)
 
     Inputs:
 
-    - hash_state, the hash state
+    - state, the duplex sponge
     - elements, a list of group elements
 
     1. for element in elements:
-    2.     hash_state.absorb(ecpoint_to_bytes(element))
+    2.     state.absorb(ecpoint_to_bytes(element))
 
 ### Decoding random bytes as scalars {#decode-random-bytes-scalars}
 
 Given `Ns + 16` bytes, it is possible to generate a scalar modulo `p` that is statistically close to uniform.
 Interpret the bytes as a big-endian integer, then reduce it modulo `p`, where `p` is the order of the group.
 
-    squeeze_scalars(hash_state, length)
+    squeeze_scalars(state, length)
 
     Inputs:
 
-    - hash_state, the hash state
+    - state, the duplex sponge
     - length, an unsigned integer of 64 bits determining the number of scalars to output.
 
     Constants:
@@ -443,7 +445,7 @@ Interpret the bytes as a big-endian integer, then reduce it modulo `p`, where `p
     - Ns, the number of bytes to represent a scalar, equal to `ceil(log2(p)/8)`.
 
     1. for i in range(length):
-    2.     scalar_bytes = hash_state.squeeze(Ns + 16)
+    2.     scalar_bytes = state.squeeze(Ns + 16)
     3.     scalars.append(OS2IP(scalar_bytes) % p)
 
 --- back
