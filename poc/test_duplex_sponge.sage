@@ -4,9 +4,9 @@
 from sagelib.duplex_sponge import KeccakDuplexSponge, SHAKE128
 import json
 
-def run_operations(iv, operations, DuplexSponge):
+def run_operations(iv, operations, duplex_sponge_cls):
     """Execute a sequence of operations on a sponge and return the final output"""
-    sponge = DuplexSponge(iv)
+    sponge = duplex_sponge_cls(iv)
     output = None
 
     for op in operations:
@@ -19,18 +19,18 @@ def run_operations(iv, operations, DuplexSponge):
     return output
 
 def test_vector(test_vector_function):
-    def inner(vectors, hash_function, DuplexSponge):
-        # Create unique test vector name based on function name and hash function
-        hash_suffix = "Keccak" if "Keccak" in hash_function else "SHAKE128"
+    def inner(vectors, duplex_sponge_name, duplex_sponge_cls):
+        # Create unique test vector name based on function name and sponge type.
+        hash_suffix = "Keccak" if "Keccak" in duplex_sponge_name else "SHAKE128"
         test_vector_name = f"{test_vector_function.__name__}_{hash_suffix}"
-        
-        # Create a run_operations function bound to this specific DuplexSponge
+
+        # Create a run_operations function bound to this specific duplex sponge.
         def bound_run_operations(iv, operations):
-            return run_operations(iv, operations, DuplexSponge)
-        
+            return run_operations(iv, operations, duplex_sponge_cls)
+
         # Pass the bound function to the test
         test_data = test_vector_function(bound_run_operations)
-        test_data["HashFunction"] = hash_function
+        test_data["DuplexSponge"] = duplex_sponge_name
         vectors[test_vector_name] = test_data
         print(f"{test_vector_name} test vector generated\n")
     return inner
@@ -218,16 +218,16 @@ def main(path="vectors"):
         test_multiple_blocks_absorb_squeeze,
     ]
 
-    hash_functions = {
+    duplex_sponge_classes = {
         "Keccak-f[1600] overwrite mode": KeccakDuplexSponge,
-        "SHAKE128": SHAKE128
+        "SHAKE128": SHAKE128,
     }
 
     print("Generating duplex sponge test vectors...\n")
 
-    for hash_function, DuplexSponge in hash_functions.items():
+    for duplex_sponge_name, duplex_sponge_cls in duplex_sponge_classes.items():
         for test_fn in test_vectors:
-            test_fn(vectors, hash_function, DuplexSponge)
+            test_fn(vectors, duplex_sponge_name, duplex_sponge_cls)
 
     with open(path + "/duplexSpongeVectors.json", 'wt') as f:
         json.dump(vectors, f, sort_keys=True, indent=2)
