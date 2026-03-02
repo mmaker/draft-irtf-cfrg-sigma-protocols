@@ -210,9 +210,9 @@ Table of Contents
 
    Where:
 
-   *  prover_message(self, state, elements) -> self denotes the absorb
-      operation of the codec.  This function takes as input the duplex
-      sponge, and elements with which to mutate the duplex sponge.
+   *  prover_message(self, state, elements) denotes the absorb operation
+      of the codec.  This function takes as input the duplex sponge, and
+      elements with which to mutate the duplex sponge.
 
    *  verifier_challenge(self, state) -> verifier_challenge denotes the
       squeeze operation of the codec.  This function takes as input the
