@@ -109,7 +109,16 @@ Table of Contents
    10. References
      10.1.  Normative References
      10.2.  Informative References
-   Test Vectors
+   Appendix A.  Test Vectors
+     A.1.  test_keccak_duplex_sponge_SHAKE128
+     A.2.  test_absorb_empty_before_does_not_break_SHAKE128
+     A.3.  test_absorb_empty_after_does_not_break_SHAKE128
+     A.4.  test_squeeze_zero_behavior_SHAKE128
+     A.5.  test_squeeze_zero_after_behavior_SHAKE128
+     A.6.  test_absorb_squeeze_absorb_consistency_SHAKE128
+     A.7.  test_associativity_of_absorb_SHAKE128
+     A.8.  test_iv_affects_output_SHAKE128
+     A.9.  test_multiple_blocks_absorb_squeeze_SHAKE128
    Author's Address
 
 1.  Introduction
@@ -628,12 +637,142 @@ Constants:
               <https://nvlpubs.nist.gov/nistpubs/FIPS/
               NIST.FIPS.202.pdf>.
 
-Test Vectors
+Appendix A.  Test Vectors
 
-   Test vectors will be made available in future versions of this
-   specification.  They are currently developed in the proof-of-concept
-   implementation (https://github.com/mmaker/draft-irtf-cfrg-sigma-
-   protocols/tree/main/poc/vectors).
+A.1.  test_keccak_duplex_sponge_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = absorb:6261736963206475706c65782073706f6e67652074657374
+   Operation2 = squeeze:64
+   Expected = f845c3ef4231a4d6e09c29b1eea0055842246fd57558fd7d93e1302f7
+   799dd9593d2e4d06eda72d5252ca5b2feff4b8cb324ec96673a7417cf70fa77b1898
+   991
+
+A.2.  test_absorb_empty_before_does_not_break_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = absorb:656d707479206d657373616765206166746572
+   Operation2 = absorb:
+   Operation3 = squeeze:64
+   Expected = 3953e577d9e5d4dc7b86d1a62e881f2d1eb750ea3550fcae315854d16
+   6136ae816ca922a4c7e54d711b8721c8969598449922122768c50313f47eef35020b
+   73c
+
+A.3.  test_absorb_empty_after_does_not_break_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = absorb:
+   Operation2 = absorb:656d707479206d657373616765206265666f7265
+   Operation3 = squeeze:64
+   Expected = 6e475edd3c400bec314d5891af570841a547c95d1a651adff9a8bfb70
+   719a79b5afde316386da13fa83525662df3c5b2367d987bf3dc4199efdb9d0612572
+   785
+
+A.4.  test_squeeze_zero_behavior_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = squeeze:0
+   Operation2 = absorb:7a65726f2073717565657a652074657374
+   Operation3 = squeeze:0
+   Operation4 = squeeze:64
+   Expected = 4cf7f008057b63cb615547a143f42cf793b86b239f404d2f28b3f0919
+   7d850eb029df3024ad468be5aceb2fa60e9fb7add98436236be69ddb34314ce7a905
+   f23
+
+A.5.  test_squeeze_zero_after_behavior_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = squeeze:0
+   Operation2 = absorb:7a65726f2073717565657a65206166746572
+   Operation3 = squeeze:64
+   Expected = bd9278e6f65cb854935b3f6b2c51ab158be8ea09744509519b8f06f0c
+   501d07c429e37f232b6f0955b620ff6226d9d02e4817b1447e7309023a3a14f73587
+   6ec
+
+A.6.  test_absorb_squeeze_absorb_consistency_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 656467652d636173652d746573742d646f6d61696e2d6162736f72620000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = absorb:696e7465726c65617665206669727374
+   Operation2 = squeeze:32
+   Operation3 = absorb:696e7465726c65617665207365636f6e64
+   Operation4 = squeeze:32
+   Expected = 4d31a75f29851f9f15cd54fa6f2335cbe07b947b9d3c28092c1ba7315
+   e295921
+
+A.7.  test_associativity_of_absorb_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 6162736f72622d6173736f6369617469766974792d646f6d61696e000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = absorb:6173736f63696174697669747920746573742066756c6c
+   Operation2 = squeeze:32
+   Expected = c0faa351141d60678dceff4f3a5760381bb335ad113958b70edf7b242
+   df01c8a
+
+A.8.  test_iv_affects_output_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 646f6d61696e2d6f6e652d646966666572732d6865726500000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = absorb:697620646966666572656e63652074657374
+   Operation2 = squeeze:32
+   Expected = 7650642267cc544abf0e01ce28e2595aec4c2f5b5e5e3720ab5514496
+   37b35f2
+
+A.9.  test_multiple_blocks_absorb_squeeze_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 6d756c74692d626c6f636b2d6162736f72622d7465737400000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = absorb:abababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababab
+   Operation2 = squeeze:600
+   Expected = 526d4f6cfca230e0654bf8749bddc0f4416a8a164c50f3c1b0bc1d527
+   2a88b9a524e73cafad76691a29c0e03a5255fd8fb9d778ef5a0c8c9e11e003011d25
+   6bf92dd36233e4c6c360baca0f8ac305d459adb1231a801742669efa051396e96417
+   814448b5328336d028a62dbddf24d1bb68496d27f1944eb24d4b2812d9ad4eae6c26
+   0b720c44ed2be8bfeeed3acc2640edbab987674f2cef8ceacda1e04f254170aba424
+   1dabc6364ed5afc09b58205682d5e8413bf5f9d97e9c799b97876ccd1c48d86759ad
+   e5871acc4c5d41d37f2b1843c8b6f9e0bade78342d56f9b1e8232d4c7553674d889e
+   69fe24dea31f42f0b02b70161876ceb12cc0b36868c262cbebb5e815a1eceaee97ae
+   d3402a518287c32f2f469c3a38a17afd0f0d82433acf695ae143ded9412b4e6b6144
+   bd6d4be6bb7de33c05f560480c63aa89336954f1cf5992399e6ed59d406adb4497bb
+   88aa897fd3d65646cf86e796da4f193c418a74d662f57e0e0c775386abdace02157e
+   519ba54495555145016c550ff32004981d0e34f0abe7d814ac4fe25260473ffa8746
+   0a736f20954e8d3b9f16140e79451953fe6cfc222cba6ad4f85a2e2efd6ff8f5fef6
+   5d8480e6af40baab298c4de57f30d08a5e1b4c10d123a5af7702ff26ba9a84a6fe92
+   f48391b23a7e8e8cb06deda74d1b10870611995f6bfe4df60320a0b7f2c891cad5a5
+   645ecec80868ed568591a74dafb35cabb42dae1a1085269b655db1ebf09929f63d5a
+   f775a24e43759f673b83aeefef382bc2b7bf175bb9d90e77911466ffb3b230754776
+   5cd5adc30a6b07881a88fd1511e5f8d2dcc4347c076e6c79676d8df
 
 Author's Address
 
