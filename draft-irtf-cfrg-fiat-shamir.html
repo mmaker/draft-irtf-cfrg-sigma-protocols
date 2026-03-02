@@ -1166,7 +1166,7 @@ It also establishes how the non-interactive argument string should be serialized
             <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-the-codec-interface" class="internal xref">The Codec interface</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
-            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-generation-of-the-initializ" class="internal xref">Generation of the Initialization Vector</a></p>
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-initialization-of-the-duple" class="internal xref">Initialization of the Duplex Sponge State</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
             <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-fiat-shamir-transformation-" class="internal xref">Fiat-Shamir transformation for Sigma Protocols</a></p>
@@ -1367,14 +1367,11 @@ class DuplexSponge:
       </h2>
 <p id="section-4-1">A codec is a collection of:
 - functions that map prover messages into <code>Unit</code>s,
-- functions that map <code>Unit</code>s into verifier messages, preserving the uniform distribution
-In addition, the "init" function initializes the duplex sponge with a session ID and an instance label.
-For byte-oriented codecs, this is just the concatenation of the two prefixed by their lengths.<a href="#section-4-1" class="pilcrow">¶</a></p>
+- functions that map <code>Unit</code>s into verifier messages, preserving the uniform distribution<a href="#section-4-1" class="pilcrow">¶</a></p>
 <p id="section-4-2">A codec provides the following interface.<a href="#section-4-2" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4-3">
 <pre>
 class Codec:
-    def init(session_id, instance_label) -&gt; state
     def prover_message(self, state, elements)
     def verifier_challenge(self, state) -&gt; verifier_challenge
 </pre><a href="#section-4-3" class="pilcrow">¶</a>
@@ -1382,46 +1379,42 @@ class Codec:
 <p id="section-4-4">Where:<a href="#section-4-4" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-4-5.1">
-          <p id="section-4-5.1.1"><code>init(session_id, instance_label) -&gt; state</code> denotes the initialization function. This function takes as input a session ID and an instance label, and returns the initial duplex sponge state.<a href="#section-4-5.1.1" class="pilcrow">¶</a></p>
+          <p id="section-4-5.1.1"><code>prover_message(self, state, elements) -&gt; self</code> denotes the absorb operation of the codec. This function takes as input the duplex sponge, and elements with which to mutate the duplex sponge.<a href="#section-4-5.1.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-4-5.2">
-          <p id="section-4-5.2.1"><code>prover_message(self, state, elements) -&gt; self</code> denotes the absorb operation of the codec. This function takes as input the duplex sponge, and elements with which to mutate the duplex sponge.<a href="#section-4-5.2.1" class="pilcrow">¶</a></p>
-</li>
-        <li class="normal" id="section-4-5.3">
-          <p id="section-4-5.3.1"><code>verifier_challenge(self, state) -&gt; verifier_challenge</code> denotes the squeeze operation of the codec. This function takes as input the duplex sponge to produce an unpredictable verifier challenge <code>verifier_challenge</code>.<a href="#section-4-5.3.1" class="pilcrow">¶</a></p>
+          <p id="section-4-5.2.1"><code>verifier_challenge(self, state) -&gt; verifier_challenge</code> denotes the squeeze operation of the codec. This function takes as input the duplex sponge to produce an unpredictable verifier challenge <code>verifier_challenge</code>.<a href="#section-4-5.2.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
 <p id="section-4-6">The <code>verifier_challenge</code> function must generate a challenge from the underlying scalar field that is statistically close to uniform, from the public inputs given to the verifier, as described in <a href="#decode-random-bytes-scalars" class="auto internal xref">Section 9.1.4</a>.<a href="#section-4-6" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="iv-generation">
+<div id="initialization-of-the-duplex-sponge-state">
 <section id="section-5">
-      <h2 id="name-generation-of-the-initializ">
-<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-generation-of-the-initializ" class="section-name selfRef">Generation of the Initialization Vector</a>
+      <h2 id="name-initialization-of-the-duple">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-initialization-of-the-duple" class="section-name selfRef">Initialization of the Duplex Sponge State</a>
       </h2>
-<p id="section-5-1">The initialization vector is a 64-byte string that embeds:<a href="#section-5-1" class="pilcrow">¶</a></p>
+<p id="section-5-1">The duplex sponge state is initialized by sequentially absorbing:<a href="#section-5-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5-2.1">
-          <p id="section-5-2.1.1">A <code>protocol_id</code>: the unique identifier for the interactive protocol and the associated relation being proven.<a href="#section-5-2.1.1" class="pilcrow">¶</a></p>
+          <p id="section-5-2.1.1">A <code>protocol_id</code>: the unique identifier for the interactive protocol and the associated relation being proven. This identifier MUST be 64 bytes.<a href="#section-5-2.1.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-5-2.2">
-          <p id="section-5-2.2.1">A <code>session_id</code>: the session identifier, for user-provided contextual information about the context where the proof is made (e.g. a URL, or a timestamp).<a href="#section-5-2.2.1" class="pilcrow">¶</a></p>
+          <p id="section-5-2.2.1">A <code>session_id</code>: the session identifier, for user-provided contextual information about the context where the proof is made (e.g. a URL, or a timestamp). This identifier is currently generated as 32 zero-bytes concatenated with a 32-byte digest derived using the duplex sponge.<a href="#section-5-2.2.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-5-2.3">
           <p id="section-5-2.3.1">An <code>instance_label</code>: the instance identifier for the statement being proven.<a href="#section-5-2.3.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
-<p id="section-5-3">It is implemented as follows.<a href="#section-5-3" class="pilcrow">¶</a></p>
+<p id="section-5-3">The <code>session_id</code> is computed as:<a href="#section-5-3" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-5-4">
 <pre>
-state = DuplexSponge.init([0] * 64)
-state.absorb(I2OSP(len(protocol_id), 4))
-state.absorb(protocol_id)
-state.absorb(I2OSP(len(session_id), 4))
-state.absorb(session_id)
+state = DuplexSponge.init(b"fiat-shamir/session-id".ljust(64, b"\x00"))
+state.absorb(session)
+session_id = [0] * 32 || state.squeeze(32)
 </pre><a href="#section-5-4" class="pilcrow">¶</a>
 </div>
-<p id="section-5-5">This will be expanded in future versions of this specification.<a href="#section-5-5" class="pilcrow">¶</a></p>
+<p id="section-5-5">The protocol instance label is absorbed without an explicit length prefix.
+Therefore, the encoding used to produce <code>instance_label</code> MUST be prefix-free.<a href="#section-5-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="fiat-shamir-transformation-for-sigma-protocols">
@@ -1443,7 +1436,7 @@ The Fiat-Shamir transformation is parametrized by:<a href="#section-6-1" class="
 </li>
       </ul>
 <p id="section-6-3">Upon initialization, the protocol receives as input:
-- <code>session_id</code>, which identifies the session being proven
+- <code>session</code>, which identifies the session being proven
 - <code>instance</code>, the sigma protocol instance for proving or verifying<a href="#section-6-3" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-6-4">
 <pre>
@@ -1452,9 +1445,18 @@ class NISigmaProtocol:
     Codec: Codec = None
     DuplexSponge: DuplexSpongeInterface = None
 
-    def __init__(self, session_id, instance):
-        self.state = self.Codec(iv)
-        self.ip = self.Protocol(instance)
+    def __init__(self, session, instance):
+        protocol_id = self.get_protocol_id()
+        assert len(protocol_id) == 64
+        self.sigma_protocol = self.Protocol(instance)
+        self.codec = self.Codec()
+        instance_label = self.sigma_protocol.get_instance_label()
+        session_state = self.DuplexSponge(b"fiat-shamir/session-id".ljust(64, b"\x00"))
+        session_state.absorb(session)
+        session_id = [0] * 32 || session_state.squeeze(32)
+        self.state = self.DuplexSponge(protocol_id)
+        self.state.absorb(session_id)
+        self.state.absorb(instance_label)
 
     def _prove(self, witness, rng):
         # Core proving logic that returns commitment, challenge, and response.
