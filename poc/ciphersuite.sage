@@ -6,7 +6,7 @@ from sagelib.codec import P256Codec, Bls12381Codec
 class NISchnorrProofShake128P256(NISigmaProtocol):
     Protocol = SchnorrProof
     Codec = P256Codec
-    Hash = SHAKE128
+    DuplexSponge = SHAKE128
 
     @staticmethod
     def get_protocol_id() -> bytes:
@@ -16,7 +16,7 @@ class NISchnorrProofShake128P256(NISigmaProtocol):
 class NISchnorrProofShake128Bls12381(NISigmaProtocol):
     Protocol = SchnorrProof
     Codec = Bls12381Codec
-    Hash = SHAKE128
+    DuplexSponge = SHAKE128
 
     @staticmethod
     def get_protocol_id() -> bytes:
@@ -26,7 +26,7 @@ class NISchnorrProofShake128Bls12381(NISigmaProtocol):
 class NISchnorrProofKeccakDuplexSpongeBls12381(NISigmaProtocol):
     Protocol = SchnorrProof
     Codec = Bls12381Codec
-    Hash = KeccakDuplexSponge
+    DuplexSponge = KeccakDuplexSponge
 
     @staticmethod
     def get_protocol_id() -> bytes:

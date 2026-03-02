@@ -24,7 +24,6 @@ def write_group_vectors(fh, label, vector):
         write_value(fh, key, vector[key])
     print("~~~", file=fh, end="\n\n")
 
-
 def run_operations(iv, operations, duplex_sponge_cls):
     """Execute a sequence of operations on a sponge and return the final output"""
     sponge = duplex_sponge_cls(iv)
