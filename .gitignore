@@ -24,3 +24,4 @@ package-lock.json
 report.xml
 !requirements.txt
 !poc/vectors/testSigmaProtocols.txt
+!poc/vectors/duplexSpongeVectors.txt
