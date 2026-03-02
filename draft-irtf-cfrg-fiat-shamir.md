@@ -75,7 +75,7 @@ Note that non-interactive Sigma Protocols do not have deniability, as the non-in
 The duplex sponge interface defines the space (the `Unit`) where the duplex sponge operates, plus a function for absorbing and squeezing prover messages. It provides the following interface.
 
     class DuplexSponge:
-      def new(iv: bytes) -> DuplexSponge
+      def init(iv: bytes) -> DuplexSponge
       def absorb(self, x: list[Unit])
       def squeeze(self, length: int) -> list[Unit]
 
@@ -99,7 +99,7 @@ A codec provides the following interface.
 
 Where:
 
-- `prover_message(self, state, elements) -> self` denotes the absorb operation of the codec. This function takes as input the duplex sponge, and elements with which to mutate the duplex sponge.
+- `prover_message(self, state, elements)` denotes the absorb operation of the codec. This function takes as input the duplex sponge, and elements with which to mutate the duplex sponge.
 - `verifier_challenge(self, state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the duplex sponge to produce an unpredictable verifier challenge `verifier_challenge`.
 
 The `verifier_challenge` function must generate a challenge from the underlying scalar field that is statistically close to uniform, from the public inputs given to the verifier, as described in {{decode-random-bytes-scalars}}.
@@ -124,7 +124,7 @@ Therefore, the encoding used to produce `instance_label` MUST be prefix-free.
 # Fiat-Shamir transformation for Sigma Protocols
 
 We describe how to construct non-interactive proofs for sigma protocols.
-The Fiat-Shamir transformation is parametrized by:
+The Fiat-Shamir transformation is parameterized by:
 
 - a `SigmaProtocol`, which specifies an interactive 3-message protocol as defined in {{Section 2 of !SIGMA=I-D.draft-irtf-cfrg-sigma-protocols-00}};
 - a `Codec`, which specifies how to absorb prover messages and how to squeeze verifier challenges;
@@ -164,7 +164,6 @@ Upon initialization, the protocol receives as input:
         def prove(self, witness, rng):
             # Default proving method using challenge-response format.
             (commitment, challenge, response) = self._prove(witness, rng)
-            assert self.sigma_protocol.verifier(commitment, challenge, response)
             assert self.sigma_protocol.verifier(commitment, challenge, response)
             return self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
 
