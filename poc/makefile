@@ -31,6 +31,7 @@ setup:
 test: pyfiles
 	sage test_duplex_sponge.sage
 	sage test_sigma_protocols.sage
+	sage test_tampering.sage
 
 vectors: pyfiles
 	@echo "Removing files in vectors folder, if present"
