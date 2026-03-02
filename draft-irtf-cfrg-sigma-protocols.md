@@ -72,7 +72,7 @@ informative:
       -
         fullname: Dan Boneh
       -
-        fullname: Victor Schoup
+        fullname: Victor Shoup
   Stern93:
     title: "A New Identification Scheme Based on Syndrome Decoding"
     target: https://link.springer.com/chapter/10.1007/3-540-48329-2_2
@@ -112,7 +112,7 @@ This document describes Sigma Protocols for proving knowledge of pre-images of l
 
 # Introduction
 
-Any Sigma Protocol must define a *commitment* (computed by the prover), a *challenge* (randomly sampled from a specific distribution), and a *response* (computed by the prover). One of the advantages of Sigma Protocols is their composability, which enables the construction of more complex protocols. A classic example is the OR composition {{CramerDS94}}. Given a Sigma Protocol for N relations, it is possible to prove knowledge of one of of N witnesses for those relations . The composed sigma protocols can be made non-interactive using the Fiat-Shamir transformation {{Cramer97}}. However, such compositions must be handled carefully to preserve security properties as discussed in {{security-considerations}}.
+Any Sigma Protocol must define a *commitment* (computed by the prover), a *challenge* (randomly sampled from a specific distribution), and a *response* (computed by the prover). One of the advantages of Sigma Protocols is their composability, which enables the construction of more complex protocols. A classic example is the OR composition {{CramerDS94}}. Given a Sigma Protocol for N relations, it is possible to prove knowledge of one of N witnesses for those relations . The composed sigma protocols can be made non-interactive using the Fiat-Shamir transformation {{Cramer97}}. However, such compositions must be handled carefully to preserve security properties as discussed in {{security-considerations}}.
 
 ## Core interface
 
@@ -168,7 +168,7 @@ The generation of proofs involves randomized algorithms that take as
 input a source of randomness, denoted as `rng`.
 The functionality required in this document is a secure way to sample
 non-zero scalars uniformly at random.
-Algorithms access to this functionality through the following interface.
+Algorithms access this functionality through the following interface.
 
     class CSRNG(ABC):
         def getrandom(length: int) -> bytes:
@@ -329,9 +329,17 @@ and below the allocation of group elements
 
     allocate_elements(self, n)
 
-    1. linear_combination = LinearMap.LinearCombination(scalar_indices=[x[0] for x in rhs], element_indices=[x[1] for x in rhs])
-    2. self.linear_map.append(linear_combination)
-    3. self._image.append(lhs)
+    Inputs:
+        - self, the current state of the LinearRelation
+        - n, the number of elements to allocate
+    Outputs:
+        - indices, a list of integers each pointing to the new allocated elements
+
+    Procedure:
+
+    1. indices = range(self.num_elements, self.num_elements + n)
+    2. self.num_elements += n
+    3. return indices
 
 Group elements, being part of the instance, can later be set using the function `set_elements`
 
@@ -557,7 +565,7 @@ As of now, it is responsibility of the user to pick a unique protocol identifier
 As of now, it is responsibility of the user to pick a unique instance identifier that identifies the statement being proven.
 
 # Acknowledgments
-{:numbered ="false"}
+{:numbered="false"}
 
 The authors thank Jan Bobolz, Vishruti Ganesh, Stephan Krenn, Mary Maller, Ivan Visconti, Yuwen Zhang for reviewing a previous edition of this specification.
 

@@ -75,7 +75,7 @@ Note that non-interactive Sigma Protocols do not have deniability, as the non-in
 The duplex sponge interface defines the space (the `Unit`) where the duplex sponge operates, plus a function for absorbing and squeezing prover messages. It provides the following interface.
 
     class DuplexSponge:
-      def new(iv: bytes) -> DuplexSponge
+      def init(iv: bytes) -> DuplexSponge
       def absorb(self, x: list[Unit])
       def squeeze(self, length: int) -> list[Unit]
 
