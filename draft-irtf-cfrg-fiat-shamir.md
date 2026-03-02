@@ -453,6 +453,5 @@ Interpret the bytes as a big-endian integer, then reduce it modulo `p`, where `p
 
 # Test Vectors
 
-This section contains test vectors for the duplex sponge interface specified in this document.
 
 {::include ./poc/vectors/duplexSpongeVectors.txt}
