@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 3 September 2026                                    Apple, Inc.
-                                                            2 March 2026
+Expires: 4 September 2026                                    Apple, Inc.
+                                                            3 March 2026
 
 
                         Interactive Sigma Proofs
@@ -57,7 +57,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 3 September 2026.
+   This Internet-Draft will expire on 4 September 2026.
 
 Copyright Notice
 
@@ -219,7 +219,10 @@ Table of Contents
    the following interface.
 
    class CSRNG(ABC):
-       def getrandom(length: int) -> bytes:
+       def getrandom(self, length: int) -> bytes:
+           pass
+
+       def random_scalar(self) -> groups.Scalar:
            pass
 
    Implementations MUST use a cryptographically secure pseudorandom
@@ -788,8 +791,8 @@ Informative References
               <https://crypto.ethz.ch/publications/files/CamSta97b.pdf>.
 
    [fiat-shamir]
-              "draft-irtf-cfrg-fiat-shamir",
-              <https://mmaker.github.io/spfs/draft-irtf-cfrg-fiat-
+              "draft-irtf-cfrg-fiat-shamir", <https://mmaker.github.io/
+              draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-fiat-
               shamir.html>.
 
    [FIPS-202] "SHA-3 standard :: permutation-based hash and extendable-
