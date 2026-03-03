@@ -32,7 +32,7 @@ informative:
   fiat-shamir:
     title: "draft-irtf-cfrg-fiat-shamir"
     date: false
-    target: https://mmaker.github.io/spfs/draft-irtf-cfrg-fiat-shamir.html
+    target: https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-fiat-shamir.html
   SP800:
     title: "Recommendations for Discrete Logarithm-based Cryptography"
     target: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-186.pdf
@@ -171,9 +171,11 @@ non-zero scalars uniformly at random.
 Algorithms access this functionality through the following interface.
 
     class CSRNG(ABC):
-        def getrandom(length: int) -> bytes:
+        def getrandom(self, length: int) -> bytes:
             pass
 
+        def random_scalar(self) -> groups.Scalar:
+            pass
 
 Implementations MUST use a cryptographically secure pseudorandom number
 generator (CSPRNG) to sample non-zero scalars either by using rejection
