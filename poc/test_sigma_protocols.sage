@@ -30,14 +30,15 @@ def test_vector(test_vector_function):
         # Serialize the entire witness list at once
         witness_bytes = NISigmaProtocol.Codec.GG.ScalarField.serialize(witness)
 
-        vectors[test_vector_name] = {
+        vectors.append({
+            "Protocol": test_vector_name,
             "Ciphersuite": suite,
             "SessionId": session_id.hex(),
             "Statement": instance.get_label().hex(),
             "Witness": witness_bytes.hex(),
             "Proof": hex_narg_string,
             "Batchable Proof": hex_batchable_narg_string,
-        }
+        })
 
     return inner
 
@@ -228,7 +229,6 @@ def bbs_blind_commitment_computation(rng: CSRNG, group):
 def main(path="vectors"):
     # Run the short proof serialization test first
 
-    vectors = {}
     test_vectors = [
         discrete_logarithm,
         dleq,
@@ -240,18 +240,19 @@ def main(path="vectors"):
     print("Generating sigma protocol test vectors...\n")
 
     for suite in CIPHERSUITE:
+        vectors = []
         for test_vector in test_vectors:
             test_vector(vectors, suite)
 
-    with open(path + "/testSigmaProtocols.json", 'wt') as f:
-        json.dump(vectors, f, sort_keys=True, indent=2)
+        filename = f"{path}/{suite}"
+        with open(f"{filename}.json", 'wt') as f:
+            json.dump(vectors, f, sort_keys=False, indent=2)
+        print(f"Test vectors written to {filename}.json")
 
-    with open(path + "/testSigmaProtocols.txt", 'wt') as f:
-        for proof_type in vectors:
-            write_group_vectors(f, proof_type, vectors[proof_type])
-
-    print(f"Test vectors written to {path}/testSigmaProtocols.json")
-
+        with open(f"{filename}.txt", 'wt') as f:
+            for v in vectors:
+                write_group_vectors(f, v["Protocol"], v)
+        print(f"Test vectors written to {filename}.txt")
 
 if __name__ == "__main__":
     main()
