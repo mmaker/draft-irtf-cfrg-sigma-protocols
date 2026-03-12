@@ -1,6 +1,6 @@
 ##  discrete_logarithm
 ~~~
-Protocol = discrete_logarithm
+Relation = discrete_logarithm
 Ciphersuite = sigma-proofs_Shake128_P256
 SessionId = 64697363726574655f6c6f6761726974686d
 Statement = 0100000001000000010000000000000000000000036b17d1f2e12c42
@@ -17,7 +17,7 @@ b445ed1b9c8e
 
 ##  dleq
 ~~~
-Protocol = dleq
+Relation = dleq
 Ciphersuite = sigma-proofs_Shake128_P256
 SessionId = 646c6571
 Statement = 02000000010000000100000000000000000000000300000001000000
@@ -38,7 +38,7 @@ d376aa6836
 
 ##  pedersen_commitment
 ~~~
-Protocol = pedersen_commitment
+Relation = pedersen_commitment
 Ciphersuite = sigma-proofs_Shake128_P256
 SessionId = 706564657273656e5f636f6d6d69746d656e74
 Statement = 01000000020000000200000000000000000000000100000001000000
@@ -59,7 +59,7 @@ Batchable Proof = 03777ae6d50cca648269f7d2ace923005a66fcecd50bf85e7c
 
 ##  pedersen_commitment_dleq
 ~~~
-Protocol = pedersen_commitment_dleq
+Relation = pedersen_commitment_dleq
 Ciphersuite = sigma-proofs_Shake128_P256
 SessionId = 706564657273656e5f636f6d6d69746d656e745f646c6571
 Statement = 02000000020000000200000000000000000000000100000001000000
@@ -85,7 +85,7 @@ ae29f9
 
 ##  bbs_blind_commitment_computation
 ~~~
-Protocol = bbs_blind_commitment_computation
+Relation = bbs_blind_commitment_computation
 Ciphersuite = sigma-proofs_Shake128_P256
 SessionId = 6262735f626c696e645f636f6d6d69746d656e745f636f6d70757461
 74696f6e

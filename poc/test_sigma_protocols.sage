@@ -31,7 +31,7 @@ def test_vector(test_vector_function):
         witness_bytes = NISigmaProtocol.Codec.GG.ScalarField.serialize(witness)
 
         vectors.append({
-            "Protocol": test_vector_name,
+            "Relation": test_vector_name,
             "Ciphersuite": suite,
             "SessionId": session_id.hex(),
             "Statement": instance.get_label().hex(),
@@ -251,7 +251,7 @@ def main(path="vectors"):
 
         with open(f"{filename}.txt", 'wt') as f:
             for v in vectors:
-                write_group_vectors(f, v["Protocol"], v)
+                write_group_vectors(f, v["Relation"], v)
         print(f"Test vectors written to {filename}.txt")
 
 if __name__ == "__main__":
