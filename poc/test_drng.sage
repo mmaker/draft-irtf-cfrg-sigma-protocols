@@ -2,6 +2,7 @@
 # vim: syntax=python
 
 from sagelib.duplex_sponge import SHAKE128
+from sagelib.codec import decode_scalar
 from sagelib.hash_to_field import OS2IP
 from sagelib.sigma_protocols import CSRNG
 from sagelib import groups
@@ -25,14 +26,12 @@ class TestDRNG(CSRNG):
         return self._squeeze(length)
 
     def random_scalar(self) -> groups.Scalar:
-        Ns = int(self.scalar_cls.field_bytes_length)
-        scalar_bytes = self.getrandom(Ns + 16)
-        scalar = self.scalar_cls.field(OS2IP(scalar_bytes) % self.scalar_cls.order)
-        return scalar
+        uniform_bytes = self.getrandom(self.scalar_cls.scalar_byte_length() + 32)
+        return decode_scalar(self.scalar_cls, uniform_bytes)
 
     def randint(self, l: int, h: int) -> int:
         assert l < h
         rand_range = h - l
         Ns = (int(rand_range).bit_length() + 7) // 8
-        random_int = OS2IP(self.getrandom(Ns + 16)) % rand_range
+        random_int = OS2IP(self.getrandom(Ns + 32)) % rand_range
         return l + random_int

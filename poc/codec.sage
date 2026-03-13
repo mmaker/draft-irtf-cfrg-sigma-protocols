@@ -22,6 +22,16 @@ class Codec(ABC):
         raise NotImplementedError
 
 
+def decode_scalar(scalar_cls: type[groups.Scalar], uniform_bytes: bytes):
+    scalar = OS2IP(uniform_bytes) % scalar_cls.order
+    return scalar_cls.field(scalar)
+
+
+def decode_scalar_from_hash(hash_state, scalar_cls: type[groups.Scalar]):
+    uniform_bytes = hash_state.squeeze(scalar_cls.scalar_byte_length() + 32)
+    return decode_scalar(scalar_cls, uniform_bytes)
+
+
 class ByteSchnorrCodec(Codec):
     GG: groups.Group = None
 
@@ -30,11 +40,7 @@ class ByteSchnorrCodec(Codec):
 
     def verifier_challenge(self, hash_state):
         # see https://eprint.iacr.org/2025/536.pdf, Appendix C.
-        uniform_bytes = hash_state.squeeze(
-            self.GG.ScalarField.scalar_byte_length() + 16
-        )
-        scalar = OS2IP(uniform_bytes) % self.GG.ScalarField.order
-        return self.GG.ScalarField.field(scalar)
+        return decode_scalar_from_hash(hash_state, self.GG.ScalarField)
 
 
 class Bls12381Codec(ByteSchnorrCodec):
