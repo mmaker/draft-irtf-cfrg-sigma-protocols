@@ -602,4 +602,20 @@ Random scalars are generated squeezing `Ns + 16` bytes, seen as a big-endian pos
 
 The following sections contain test vectors for the Sigma Protocols specified in this document.
 
-{::include ./poc/vectors/testSigmaProtocols.txt}
+The test vectors are grouped by ciphersuite. Each vector includes a `Relation`
+field naming the relation being proved and a `Ciphersuite` field identifying
+the non-interactive instantiation used to generate the proof bytes.
+
+## sigma-proofs(P-256, SHAKE128)
+
+This section contains vectors for the ciphersuite identified as
+`sigma-proofs_Shake128_P256`.
+
+{::include ./poc/vectors/sigma-proofs_Shake128_P256.txt}
+
+## sigma-proofs(BLS12-381, SHAKE128)
+
+This section contains vectors for the ciphersuite identified as
+`sigma-proofs_Shake128_BLS12381`.
+
+{::include ./poc/vectors/sigma-proofs_Shake128_BLS12381.txt}
