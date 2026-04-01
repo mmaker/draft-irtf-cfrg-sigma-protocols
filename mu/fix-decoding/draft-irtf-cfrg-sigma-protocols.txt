@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 14 September 2026                                   Apple, Inc.
-                                                           13 March 2026
+Expires: 3 October 2026                                      Apple, Inc.
+                                                            1 April 2026
 
 
                         Interactive Sigma Proofs
@@ -57,7 +57,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 14 September 2026.
+   This Internet-Draft will expire on 3 October 2026.
 
 Copyright Notice
 
@@ -617,8 +617,8 @@ Procedure:
 
 2.3.1.1.  Elliptic curve group of P-256 (secp256r1) [SP800]
 
-   *  order(): Return the integer 11579208921035624876269744694940757352
-      9996955224135760342422259061068512044369.
+   *  order(): Return the integer
+      115792089210356248762697446949407573529996955224135760342422259061068512044369.
 
    *  serialize([A]): Implemented using the compressed Elliptic-Curve-
       Point-to-Octet-String method according to [SEC1]; Ne = 33.
@@ -841,7 +841,7 @@ A.1.  Seeded PRNG
    Seeded PRNG is for reproducible test vectors; production
    implementations MUST use a CSPRNG.
 
-   Random scalars are generated squeezing Ns + 16 bytes, seen as a big-
+   Random scalars are generated squeezing Ns + 32 bytes, seen as a big-
    endian positive integer and reduced modulo p, as in Section 9.1.4 of
    [fiat-shamir].
 
@@ -854,7 +854,7 @@ class SeededPRNG:
 
     def random_scalar(self) -> Scalar:
         Ns = (self.order.bit_length() + 7) // 8
-        random_integer  = OS2IP(self.hash_state.squeeze(Ns + 16))
+        random_integer  = OS2IP(self.hash_state.squeeze(Ns + 32))
         return Scalar(random_integer % self.order)
 
    The following sections contain test vectors for the Sigma Protocols
