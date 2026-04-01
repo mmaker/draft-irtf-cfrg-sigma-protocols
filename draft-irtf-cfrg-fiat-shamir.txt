@@ -4,8 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                             13 March 2026
-Expires: 14 September 2026
+Intended status: Informational                              1 April 2026
+Expires: 3 October 2026
 
 
                        Fiat-Shamir Transformation
@@ -64,7 +64,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 14 September 2026.
+   This Internet-Draft will expire on 3 October 2026.
 
 Copyright Notice
 
@@ -391,7 +391,7 @@ class NISigmaProtocol:
            # see https://eprint.iacr.org/2025/536.pdf, Appendix C.
            Ns = self.GG.ScalarField.scalar_byte_length()
            uniform_bytes = state.squeeze(
-               Ns + 16
+               Ns + 32
            )
            scalar = OS2IP(uniform_bytes) % self.GG.ScalarField.order
            return scalar
@@ -598,7 +598,7 @@ Constants:
 
 9.1.4.  Decoding random bytes as scalars
 
-   Given Ns + 16 bytes, it is possible to generate a scalar modulo p
+   Given Ns + 32 bytes, it is possible to generate a scalar modulo p
    that is statistically close to uniform.  Interpret the bytes as a
    big-endian integer, then reduce it modulo p, where p is the order of
    the group.
@@ -615,7 +615,7 @@ Constants:
 - Ns, the number of bytes to represent a scalar, equal to `ceil(log2(p)/8)`.
 
 1. for i in range(length):
-2.     scalar_bytes = state.squeeze(Ns + 16)
+2.     scalar_bytes = state.squeeze(Ns + 32)
 3.     scalars.append(OS2IP(scalar_bytes) % p)
 
 10.  References
