@@ -586,7 +586,7 @@ is implemented using the duplex sponge SHAKE128 instantiation in Section 8.1 of 
 absorbing a seed of 32 bytes.
 The Seeded PRNG is for reproducible test vectors; production implementations MUST use a CSPRNG.
 
-Random scalars are generated squeezing `Ns + 16` bytes, seen as a big-endian positive integer and reduced modulo `p`, as in Section 9.1.4 of {{fiat-shamir}}.
+Random scalars are generated squeezing `Ns + 32` bytes, seen as a big-endian positive integer and reduced modulo `p`, as in Section 9.1.4 of {{fiat-shamir}}.
 
     class SeededPRNG:
         def __init__(self, seed: bytes, order: int):
@@ -597,7 +597,7 @@ Random scalars are generated squeezing `Ns + 16` bytes, seen as a big-endian pos
 
         def random_scalar(self) -> Scalar:
             Ns = (self.order.bit_length() + 7) // 8
-            random_integer  = OS2IP(self.hash_state.squeeze(Ns + 16))
+            random_integer  = OS2IP(self.hash_state.squeeze(Ns + 32))
             return Scalar(random_integer % self.order)
 
 The following sections contain test vectors for the Sigma Protocols specified in this document.

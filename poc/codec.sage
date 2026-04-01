@@ -31,7 +31,7 @@ class ByteSchnorrCodec(Codec):
     def verifier_challenge(self, hash_state):
         # see https://eprint.iacr.org/2025/536.pdf, Appendix C.
         uniform_bytes = hash_state.squeeze(
-            self.GG.ScalarField.scalar_byte_length() + 16
+            self.GG.ScalarField.scalar_byte_length() + 32
         )
         scalar = OS2IP(uniform_bytes) % self.GG.ScalarField.order
         return self.GG.ScalarField.field(scalar)

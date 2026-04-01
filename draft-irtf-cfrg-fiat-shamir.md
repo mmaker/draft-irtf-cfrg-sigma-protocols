@@ -246,7 +246,7 @@ We describe a codec for Schnorr proofs over groups of prime order `p` where `Uni
             # see https://eprint.iacr.org/2025/536.pdf, Appendix C.
             Ns = self.GG.ScalarField.scalar_byte_length()
             uniform_bytes = state.squeeze(
-                Ns + 16
+                Ns + 32
             )
             scalar = OS2IP(uniform_bytes) % self.GG.ScalarField.order
             return scalar
@@ -434,7 +434,7 @@ The following functions and notation are used throughout the document.
 
 ### Decoding random bytes as scalars {#decode-random-bytes-scalars}
 
-Given `Ns + 16` bytes, it is possible to generate a scalar modulo `p` that is statistically close to uniform.
+Given `Ns + 32` bytes, it is possible to generate a scalar modulo `p` that is statistically close to uniform.
 Interpret the bytes as a big-endian integer, then reduce it modulo `p`, where `p` is the order of the group.
 
     squeeze_scalars(state, length)
@@ -449,7 +449,7 @@ Interpret the bytes as a big-endian integer, then reduce it modulo `p`, where `p
     - Ns, the number of bytes to represent a scalar, equal to `ceil(log2(p)/8)`.
 
     1. for i in range(length):
-    2.     scalar_bytes = state.squeeze(Ns + 16)
+    2.     scalar_bytes = state.squeeze(Ns + 32)
     3.     scalars.append(OS2IP(scalar_bytes) % p)
 
 --- back

@@ -26,7 +26,7 @@ class TestDRNG(CSRNG):
 
     def random_scalar(self) -> groups.Scalar:
         Ns = int(self.scalar_cls.field_bytes_length)
-        scalar_bytes = self.getrandom(Ns + 16)
+        scalar_bytes = self.getrandom(Ns + 32)
         scalar = self.scalar_cls.field(OS2IP(scalar_bytes) % self.scalar_cls.order)
         return scalar
 
@@ -34,5 +34,5 @@ class TestDRNG(CSRNG):
         assert l < h
         rand_range = h - l
         Ns = (int(rand_range).bit_length() + 7) // 8
-        random_int = OS2IP(self.getrandom(Ns + 16)) % rand_range
+        random_int = OS2IP(self.getrandom(Ns + 32)) % rand_range
         return l + random_int
