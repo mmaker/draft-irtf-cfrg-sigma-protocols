@@ -462,6 +462,14 @@ We focus on the security guarantees of the non-interactive Fiat-Shamir transform
 
 While theoretical analysis demonstrates that both soundness and zero-knowledge properties are statistical in nature, practical security depends on the cryptographic strength of the underlying hash function, which is defined by the Fiat-Shamir transformation. It's important to note that the soundness of a zero-knowledge proof provides no guarantees regarding the computational hardness of the relation being proven. An assessment of the specific hardness properties for relations proven using these protocols falls outside the scope of this document.
 
+## Aggregated verifier checks
+
+The verifier algorithm specified in {{sigma-protocol-group}} performs each verification equation independently. Implementations MAY aggregate these checks into a single multi-scalar multiplication by taking a random linear combination of the per-equation checks with powers of a fresh randomizer. This is a verifier-side optimization and does not change the proof string.
+
+In the interactive setting, the aggregation randomizer is sampled locally by the verifier after receiving the full proof, and aggregation does not affect soundness: the prover cannot adapt to a value sampled after its last message.
+
+When the protocol is compiled to a non-interactive argument via the Fiat-Shamir transformation, aggregation introduces additional transcript-binding requirements on the aggregation randomizer. In particular, prover-supplied sub-challenges arising from disjunctive compositions, and the prover response itself, MUST be absorbed into the transcript before the aggregation randomizer is derived. See {{fiat-shamir}} for details.
+
 ## Privacy Considerations
 
 Sigma Protocols are insecure against malicious verifiers and should not be used.
