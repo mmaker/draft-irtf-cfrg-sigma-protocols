@@ -219,7 +219,7 @@ Implementations SHOULD NOT aggregate verifier checks. Performing each `V_i` inde
 
 If aggregation is required, the aggregation randomizer `beta` SHOULD be sampled from true randomness local to the verifier. A verifier-sampled `beta` is sufficient for soundness regardless of what the prover sent, because the prover cannot predict it.
 
-If neither of the above is acceptable, for example in deterministic settings where multiple parties must independently verify the same proof bytestring and agree on the result, then `beta` MUST be derived via the Fiat-Shamir transformation as described in {{deterministic-aggregation}}.
+If neither of the above is acceptable, for example when no source of randomness is available to the verifier and the speedup from aggregation is highly desirable, then `beta` MUST be derived via the Fiat-Shamir transformation as described in {{deterministic-aggregation}}.
 
 ## Deterministic aggregation {#deterministic-aggregation}
 
