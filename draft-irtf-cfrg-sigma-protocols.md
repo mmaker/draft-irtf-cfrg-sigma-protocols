@@ -468,7 +468,11 @@ The verifier algorithm specified in {{sigma-protocol-group}} performs each verif
 
 In the interactive setting, the aggregation randomizer is sampled locally by the verifier after receiving the full proof, and aggregation does not affect soundness: the prover cannot adapt to a value sampled after its last message.
 
-When the protocol is compiled to a non-interactive argument via the Fiat-Shamir transformation, aggregation introduces additional transcript-binding requirements on the aggregation randomizer. In particular, prover-supplied sub-challenges arising from disjunctive compositions, and the prover response itself, MUST be absorbed into the transcript before the aggregation randomizer is derived. See {{fiat-shamir}} for details.
+Implementations SHOULD NOT aggregate verifier checks. Performing each verification equation independently eliminates an entire class of transcript-management errors at the cost of verifier performance only. For most applications the unaggregated verifier is preferable, and the performance gap is small in absolute terms.
+
+If aggregation is required, the aggregation randomizer SHOULD be sampled from true randomness local to the verifier. A verifier-sampled randomizer is sufficient for soundness regardless of what the prover sent, because the prover cannot predict it.
+
+If aggregation must be deterministic, see {{fiat-shamir}} for the required transcript discipline.
 
 ## Privacy Considerations
 
