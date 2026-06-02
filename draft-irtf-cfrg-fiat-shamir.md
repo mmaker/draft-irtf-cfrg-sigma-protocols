@@ -47,30 +47,139 @@ It also establishes how the non-interactive argument string should be serialized
 
 # Introduction
 
-The Fiat-Shamir transformation is a technique that uses a duplex sponge to convert a public-coin interactive protocol between a prover and a verifier into a corresponding non-interactive argument.
-The term "public-coin" here refers to interactive protocols where all verifier messages are essentially random values sent in the clear.
-It depends on:
+The Fiat-Shamir transformation allows to turn a public-coin interactive argument into a non-interactive argument
 
-- An _initialization vector_ (IV) uniquely identifying the protocol, the session, and the statement being proven.
-- An _interactive protocol_ supporting a family of statements to be proven.
-- A _duplex sponge instantiation_ capable of absorbing inputs incrementally and squeezing variable-length unpredictable messages.
-- A _codec_, which securely remaps prover elements into the base alphabet, and outputs of the duplex sponge into verifier messages (preserving the distribution).
+~~~ aasvg
++--------------------------------------------------------------------------+
+| NARG Prover (session id, instance, witness)                              |
+|                                                                          |
+|                                                              +------+    |
+|  session id ------------------------------------------------>| Init |    |
+|                                                              +------+    |
+|                                                                   |      |
+|                                                                   v      |
+|                                                              +--------+  |
+|  instance -------------------------------------------------->| Absorb |  |
+|                                                              +--------+  |
+|                                                                   |      |
+|                                                                   v      |
+|                                                              +--------+  |
+|     salt --------------------------------------------------->| Absorb |  |
+|  +---------------------+                                     +--------+  |
+|  | Interactive Prover  |                                          |      |
+|  |  (instance, witness)|                                          v      |
+|  |                     | prover_msg[1]   +------------+      +--------+  |
+|  |                     +---------------->| encode_1   |----->| Absorb |  |
+|  |                     |                 +------------+      +--------+  |
+|  |                     |                                          |      |
+|  |                     |                                          v      |
+|  |                     | verifier_msg[1] +------------+      +---------+ |
+|  |                     |<----------------| decode_1   |<-----| Squeeze | |
+|  |                     |                 +------------+      +---------+ |
+|  |                     |                                          |      |
+|  |                     |                                          v      |
+|  |                     | prover_msg[2]   +------------+      +--------+  |
+|  |                     +---------------->| encode_2   |----->| Absorb |  |
+|  |                     |                 +------------+      +--------+  |
+|  |                     |                                          |      |
+|  |                     |                                          v      |
+|  |                     | verifier_msg[2] +------------+      +---------+ |
+|  |                     |<----------------| decode_2   |<-----| Squeeze | |
+|  |                     |                 +------------+      +---------+ |
+|  |                     |        .                                 .      |
+|  |                     |        .                                 .      |
+|  |                     |        .                                 v      |
+|  |                     | prover_msg[k-1] +-------------+     +--------+  |
+|  |                     +---------------->| encode[k-1] |---->| Absorb |  |
+|  |                     |                 +-------------+     +--------+  |
+|  |                     |                                          |      |
+|  |                     |                                          v      |
+|  |                     | verifier_msg[k-1] +-------------+   +---------+ |
+|  |                     |<------------------| decode[k-1] |<--| Squeeze | |
+|  |                     |                   +-------------+   +---------+ |
+|  |                     | prover_msg[k]                                   |
+|  |                     +------------------>                              |
+|  +---------------------+                                                 |
+|                                                                          |
+|       narg_string := (salt, prover_msg[..])                              |
++--------------------------------------------------------------------------+
+~~~
+{: #fig-fiat-shamir-prover title="Non-interactive prover for the Fiat-Shamir transformation"}
 
-# Security Considerations
+~~~ aasvg
++--------------------------------------------------------------------------+
+| NARG Verifier V(session id, instance, narg_string)                       |
+|                                                                          |
+| 1. (salt, prover_msg[..]) := deserialize(narg_string)                    |
+| 2. derive verifier messages:                                             |
+|                                                                          |
+|                                  +------+                                |
+| session id --------------------->| Init |                                |
+|                                  +------+                                |
+|                                      |                                   |
+|                                      v                                   |
+|                                  +--------+                              |
+| instance ----------------------->| Absorb |                              |
+|                                  +--------+                              |
+|                                      |                                   |
+|                                      v                                   |
+|                                  +--------+                              |
+| salt --------------------------->| Absorb |                              |
+|                                  +--------+                              |
+|                                      |                                   |
+|                                      v                                   |
+|prover_msg[1] +-----------+      +--------+                               |
+|------------->| encode[1] |----->| Absorb |                               |
+|              +-----------+      +--------+                               |
+|                                      |                                   |
+|                                      v                                   |
+|                                 +---------+                              |
+|                                 | Squeeze |--+                           |
+|                                 +---------+  |                           |
+|                                      |       v                           |
+|                                      |  +----------+                     |
+|                                      |  | decode_1 |--> verifier_msg[1]  |
+|                                      |  +----------+                     |
+|                                      v                                   |
+|prover_msg[2] +-----------+      +--------+                               |
+|------------->| encode[2] |----->| Absorb |                               |
+|              +-----------+      +--------+                               |
+|                                      |                                   |
+|                                      v                                   |
+|                                 +---------+                              |
+|                                 | Squeeze |--+                           |
+|                                 +---------+  |                           |
+|                                      |       v                           |
+|                                      |  +----------+                     |
+|                                      |  | decode_2 |--> verifier_msg[2]  |
+|                                      |  +----------+                     |
+|                                      .                                   |
+|                                      .                                   |
+|                                      .                                   |
+|                                      v                                   |
+|prover_msg[k-1]+-------------+   +--------+                               |
+|-------------->| encode[k-1] |-->| Absorb |                               |
+|               +-------------+   +--------+                               |
+|                                      |                                   |
+|                                      v                                   |
+|                                 +---------+                              |
+|                                 | Squeeze |--+                           |
+|                                 +---------+  |                           |
+|                                              v                           |
+|                                     +-------------+                      |
+|                                     | decode[k-1] |--> verifier_msg[k-1] |
+|                                     +-------------+                      |
+|                                                                          |
+| 3. check IP decision:                                                    |
+|                                                                          |
+|   +-------------------------------------------------------------------+  |
+|   | Interactive Verifier (instance, prover_msg[..], verifier_msg[..]) |  |
+|   +-------------------------------------------------------------------+  |
++--------------------------------------------------------------------------+
+~~~
+{: #fig-fiat-shamir-verifier title="Non-interactive verifier for the Fiat-Shamir transformation"}
 
-The Fiat-Shamir transformation carries over the soundness and witness hiding properties of the interactive proof:
-
-- **Completeness**: If the statement being proved is true, an honest verifier can be convinced of this fact by an honest prover via the proof.
-
-- **Soundness**: If the interactive proof is sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without possession of the corresponding witness.
-
-- **Zero-Knowledge**: If the interactive proof is honest-verifier zero-knowledge, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid. This ensures that verifiers gain no knowledge about the witness.
-
-In particular, the Fiat-Shamir transformation of Sigma Protocols is a zero-knowledge and sound argument of knowledge.
-
-Note that non-interactive Sigma Protocols do not have deniability, as the non-interactive nature of the protocol implies transferable message authenticity.
-
-# The Duplex Sponge Interface
+# Random oracle instantiations
 
 The duplex sponge interface defines the space (the `Unit`) where the duplex sponge operates, plus a function for absorbing and squeezing prover messages. It provides the following interface.
 
@@ -85,7 +194,123 @@ Where:
 - `absorb(self, values: list[Unit])` denotes the absorb operation of the duplex sponge. This function takes as input a list of `Unit` elements and mutates the `DuplexSponge` internal state.
 - `squeeze(self, length: int)` denotes the squeeze operation of the duplex sponge. This function takes as input an integral `length` and squeezes a list of `Unit` elements of length `length`.
 
-# The Codec interface
+
+## SHAKE128
+
+SHAKE128 is a variable-length extendable-output function based on the Keccak sponge construction {{SHA3}}.
+It belongs to the SHA-3 family and is used here to provide a duplex sponge interface.
+
+### Init
+
+    init(self, iv)
+
+    Inputs:
+    - iv, a byte array
+
+    Outputs:
+
+    -  a duplex sponge instance
+
+    1. initial_block = iv + b'\00' * 104  # len(iv) + 104 == SHAKE128 rate
+    2. self.state = hashlib.shake_128()
+    3. self.state.update(initial_block)
+
+### Absorb
+
+    absorb(state, x)
+
+    Inputs:
+
+    - state, a duplex sponge state
+    - x, a byte array
+
+    1. h.update(x)
+
+### Squeeze
+
+    squeeze(state, length)
+
+    Inputs:
+
+    - state, the duplex sponge state
+    - length, the number of elements to be squeezed
+
+    1. return self.state.copy().digest(length)
+
+## Duplex Sponge
+
+A duplex sponge in overwrite mode is based on a permutation function that operates on a state vector. It implements the `DuplexSpongeInterface` and maintains internal state to support incremental absorption and variable-length output generation.
+
+### Init
+
+This is the constructor for a duplex sponge object. It is initialized with a 64-byte initialization vector.
+
+    new(iv)
+
+    Inputs:
+    - iv, a 64-byte initialization vector
+
+    Procedure:
+    1. self.absorb_index = 0
+    2. self.squeeze_index = self.permutation_state.R
+    3. self.rate = self.permutation_state.R
+    4. self.capacity = self.permutation_state.N - self.permutation_state.R
+
+### Absorb
+
+The absorb function incorporates data into the duplex sponge state using overwrite mode.
+
+    absorb(self, input)
+
+    Inputs:
+    - self, the current duplex sponge object
+    - input, the input bytes to be absorbed
+
+    Procedure:
+    1. self.squeeze_index = self.rate
+    2. while len(input) != 0:
+    3.     if self.absorb_index == self.rate:
+    4.         self.permutation_state.permute()
+    5.         self.absorb_index = 0
+    6.     chunk_size = min(self.rate - self.absorb_index, len(input))
+    7.     next_chunk = input[:chunk_size]
+    8.     self.permutation_state[self.absorb_index:self.absorb_index + chunk_size] = next_chunk
+    9.     self.absorb_index += chunk_size
+    10.    input = input[chunk_size:]
+
+### Squeeze
+
+The squeeze operation extracts output elements from the sponge state, which are uniformly distributed and can be used as a digest, key stream, or other cryptographic material.
+
+    squeeze(self, length)
+
+    Inputs:
+    - self, the current duplex sponge object
+    - length, the number of bytes to be squeezed out of the sponge
+
+    Outputs:
+    - digest, a byte array of `length` elements uniformly distributed
+
+    Procedure:
+    1. output = b''
+    2. while length != 0:
+    3.     if self.squeeze_index == self.rate:
+    4.         self.permutation_state.permute()
+    5.         self.squeeze_index = 0
+    6.         self.absorb_index = 0
+    7.     chunk_size = min(self.rate - self.squeeze_index, length)
+    8.     output += bytes(self.permutation_state[self.squeeze_index:self.squeeze_index+chunk_size])
+    9.     self.squeeze_index += chunk_size
+    10.    length -= chunk_size
+    11. return output
+
+### Keccak-f\[1600\] Implementation
+
+`Keccak-f` is the permutation function underlying {{SHA3}}.
+
+`KeccakDuplexSponge` instantiates `DuplexSponge` with `Keccak-f[1600]`, using rate `R = 136` bytes and capacity `C = 64` bytes.
+
+# Codecs
 
 A codec is a collection of:
 - functions that map prover messages into `Unit`s,
@@ -104,7 +329,12 @@ Where:
 
 The `verifier_challenge` function must generate a challenge from the underlying scalar field that is statistically close to uniform, from the public inputs given to the verifier, as described in {{decode-random-bytes-scalars}}.
 
-# Initialization of the Duplex Sponge State
+## Encoding
+
+## Decoding
+
+
+# Session Identifier
 
 The duplex sponge state is initialized by sequentially absorbing:
 
@@ -129,6 +359,8 @@ The Fiat-Shamir transformation is parameterized by:
 - a `SigmaProtocol`, which specifies an interactive 3-message protocol as defined in {{Section 2 of !SIGMA=I-D.draft-irtf-cfrg-sigma-protocols-00}};
 - a `Codec`, which specifies how to absorb prover messages and how to squeeze verifier challenges;
 - a `DuplexSpongeInterface`, which specifies a duplex sponge for computing challenges.
+
+The construction follows the data flow shown in {{fig-fiat-shamir-prover}} and {{fig-fiat-shamir-verifier}}.
 
 Upon initialization, the protocol receives as input:
 - `session`, which identifies the session being proven
@@ -213,7 +445,7 @@ Upon initialization, the protocol receives as input:
 
 Serialization and deserialization of scalars and group elements are defined by the ciphersuite chosen in the Sigma Protocol. In particular, `serialize_challenge`, `deserialize_challenge`, `serialize_response`, and `deserialize_response` call into the scalar `serialize` and `deserialize` functions. Likewise, `serialize_commitment` and `deserialize_commitment` call into the group element `serialize` and `deserialize` functions.
 
-## NISigmaProtocol instances (ciphersuites)
+## Ciphersuites
 
 We describe noninteractive sigma protocol instances for combinations of protocols (SigmaProtocol), codec (Codec), and duplex sponge (DuplexSpongeInterface). Descriptions of codecs and duplex sponge interfaces are in the following sections.
 
@@ -256,125 +488,7 @@ We describe a codec for the P256 curve.
     class P256Codec(ByteSchnorrCodec):
         GG = groups.GroupP256()
 
-# Duplex Sponge Interfaces
 
-## SHAKE128
-
-SHAKE128 is a variable-length extendable-output function based on the Keccak sponge construction {{SHA3}}.
-It belongs to the SHA-3 family and is used here to provide a duplex sponge interface.
-
-### Initialization
-
-    new(self, iv)
-
-    Inputs:
-
-    - iv, a byte array
-
-    Outputs:
-
-    -  a duplex sponge instance
-
-    1. initial_block = iv + b'\00' * 104  # len(iv) + 104 == SHAKE128 rate
-    2. self.state = hashlib.shake_128()
-    3. self.state.update(initial_block)
-
-### SHAKE128 Absorb
-
-    absorb(state, x)
-
-    Inputs:
-
-    - state, a duplex sponge state
-    - x, a byte array
-
-    1. h.update(x)
-
-### SHAKE128 Squeeze
-
-    squeeze(state, length)
-
-    Inputs:
-
-    - state, the duplex sponge state
-    - length, the number of elements to be squeezed
-
-    1. return self.state.copy().digest(length)
-
-## Duplex Sponge
-
-A duplex sponge in overwrite mode is based on a permutation function that operates on a state vector. It implements the `DuplexSpongeInterface` and maintains internal state to support incremental absorption and variable-length output generation.
-
-### Initialization
-
-This is the constructor for a duplex sponge object. It is initialized with a 64-byte initialization vector.
-
-    new(iv)
-
-    Inputs:
-    - iv, a 64-byte initialization vector
-
-    Procedure:
-    1. self.absorb_index = 0
-    2. self.squeeze_index = self.permutation_state.R
-    3. self.rate = self.permutation_state.R
-    4. self.capacity = self.permutation_state.N - self.permutation_state.R
-
-### Absorb
-
-The absorb function incorporates data into the duplex sponge state using overwrite mode.
-
-    absorb(self, input)
-
-    Inputs:
-    - self, the current duplex sponge object
-    - input, the input bytes to be absorbed
-
-    Procedure:
-    1. self.squeeze_index = self.rate
-    2. while len(input) != 0:
-    3.     if self.absorb_index == self.rate:
-    4.         self.permutation_state.permute()
-    5.         self.absorb_index = 0
-    6.     chunk_size = min(self.rate - self.absorb_index, len(input))
-    7.     next_chunk = input[:chunk_size]
-    8.     self.permutation_state[self.absorb_index:self.absorb_index + chunk_size] = next_chunk
-    9.     self.absorb_index += chunk_size
-    10.    input = input[chunk_size:]
-
-### Squeeze
-
-The squeeze operation extracts output elements from the sponge state, which are uniformly distributed and can be used as a digest, key stream, or other cryptographic material.
-
-    squeeze(self, length)
-
-    Inputs:
-    - self, the current duplex sponge object
-    - length, the number of bytes to be squeezed out of the sponge
-
-    Outputs:
-    - digest, a byte array of `length` elements uniformly distributed
-
-    Procedure:
-    1. output = b''
-    2. while length != 0:
-    3.     if self.squeeze_index == self.rate:
-    4.         self.permutation_state.permute()
-    5.         self.squeeze_index = 0
-    6.         self.absorb_index = 0
-    7.     chunk_size = min(self.rate - self.squeeze_index, length)
-    8.     output += bytes(self.permutation_state[self.squeeze_index:self.squeeze_index+chunk_size])
-    9.     self.squeeze_index += chunk_size
-    10.    length -= chunk_size
-    11. return output
-
-### Keccak-f\[1600\] Implementation
-
-`Keccak-f` is the permutation function underlying {{SHA3}}.
-
-`KeccakDuplexSponge` instantiates `DuplexSponge` with `Keccak-f[1600]`, using rate `R = 136` bytes and capacity `C = 64` bytes.
-
-# Codecs registry
 
 ## Elliptic curves
 
@@ -451,6 +565,28 @@ Interpret the bytes as a big-endian integer, then reduce it modulo `p`, where `p
     1. for i in range(length):
     2.     scalar_bytes = state.squeeze(Ns + 32)
     3.     scalars.append(OS2IP(scalar_bytes) % p)
+
+# Serialization of the non-interactive argument
+
+## Serialization
+
+## Deserialization
+
+# Security Considerations
+
+The Fiat-Shamir transformation carries over the soundness and witness hiding properties of the interactive proof:
+
+- **Completeness**: If the statement being proved is true, an honest verifier can be convinced of this fact by an honest prover via the proof.
+
+- **Soundness**: If the interactive proof is sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without possession of the corresponding witness.
+
+- **Zero-Knowledge**: If the interactive proof is honest-verifier zero-knowledge, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid. This ensures that verifiers gain no knowledge about the witness.
+
+In particular, the Fiat-Shamir transformation of Sigma Protocols is a zero-knowledge and sound argument of knowledge.
+
+Note that non-interactive Sigma Protocols do not have deniability, as the non-interactive nature of the protocol implies transferable message authenticity.
+
+
 
 --- back
 
