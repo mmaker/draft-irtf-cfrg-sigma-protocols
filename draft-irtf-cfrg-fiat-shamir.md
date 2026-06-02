@@ -47,30 +47,129 @@ It also establishes how the non-interactive argument string should be serialized
 
 # Introduction
 
-The Fiat-Shamir transformation is a technique that uses a duplex sponge to convert a public-coin interactive protocol between a prover and a verifier into a corresponding non-interactive argument.
-The term "public-coin" here refers to interactive protocols where all verifier messages are essentially random values sent in the clear.
-It depends on:
+The Fiat-Shamir transformation allows to turn a public-coin interactive argument into a non-interactive argument
 
-- An _initialization vector_ (IV) uniquely identifying the protocol, the session, and the statement being proven.
-- An _interactive protocol_ supporting a family of statements to be proven.
-- A _duplex sponge instantiation_ capable of absorbing inputs incrementally and squeezing variable-length unpredictable messages.
-- A _codec_, which securely remaps prover elements into the base alphabet, and outputs of the duplex sponge into verifier messages (preserving the distribution).
+~~~ aasvg
++---------------------------------------------------------------------------+
+| NARG Prover P(session id, instance, witness)                              |
+|                                                                           |
+|                                                            +---------+    |
+|  session id ---------------------------------------------> | Absorb  |    |
+|                                                            +---------+    |
+|                                                                 |         |
+|                                                                 v         |
+|                                                            +---------+    |
+|  instance -----------------------------------------------> | Absorb  |    |
+|                                                            +---------+    |
+|                                                                 |         |
+|                                                                 v         |
+|                                                            +---------+    |
+|     salt ------------------------------------------------> | Absorb  |    |
+|  +---------------------+                                   +---------+    |
+|  | Interactive Prover  |                                        |         |
+|  | P(instance, witness)|                                        v         |
+|  |                     | prover_msg[1]   +------------+    +---------+    |
+|  |                     +---------------> | encode_1   |--> | Absorb  |    |
+|  |                     |                 +------------+    +---------+    |
+|  |                     |                                        |         |
+|  |                     |                                        v         |
+|  |                     | verifier_msg[1] +------------+    +---------+    |
+|  |                     |<----------------| decode_1   |<-- | Squeeze |    |
+|  |                     |                 +------------+    +---------+    |
+|  |                     |                                        |         |
+|  |                     |                                        v         |
+|  |                     | prover_msg[2]   +------------+    +---------+    |
+|  |                     +---------------> | encode_2   |--> | Absorb  |    |
+|  |                     |                 +------------+    +---------+    |
+|  |                     |                                        |         |
+|  |                     |                                        v         |
+|  |                     | verifier_msg[2] +------------+    +---------+    |
+|  |                     |<----------------| decode_2   |<-- | Squeeze |    |
+|  |                     |                 +------------+    +---------+    |
+|  |                     |                            .           |         |
+|  |                     |                            .           |         |
+|  |                     |                            .           v         |
+|  |                     | prover_msg[k-1] +-------------+    +---------+   |
+|  |                     +---------------> | encode[k-1] |--> | Absorb  |   |
+|  |                     |                 +-------------+    +---------+   |
+|  |                     |                                         |        |
+|  |                     |                                         v        |
+|  |                     | verifier_msg[k-1] +-------------+    +---------+ |
+|  |                     |<------------------| decode[k-1] |<-- | Squeeze | |
+|  |                     |                   +-------------+    +---------+ |
+|  |                     | prover_msg[k]                                    |
+|  |                     +--------------------->                            |
+|  +---------------------+                                                  |
+|                                                                           |
+|       narg_string := (salt, prover_msg[..])                               |
++---------------------------------------------------------------------------+
+~~~
+{: #fig-fiat-shamir-prover title="Non-interactive prover for the Fiat-Shamir transformation"}
 
-# Security Considerations
+~~~ aasvg
++---------------------------------------------------------------------------+
+| NARG Verifier V(session id, instance, narg_string)                        |
+|                                                                           |
+| * (salt, (prover_msg[..]) := deserialize(narg_string)                     |
+| * derive verifier messages:                                               |
+|                                                                           |
+|                              +---------+                                  |
+| instance ------------------> | Absorb  |                                  |
+|                              +---------+                                  |
+|                                   |                                       |
+|                                   v                                       |
+|                              +---------+                                  |
+| session id ----------------> | Absorb  |                                  |
+|                              +---------+                                  |
+|                                   |                                       |
+|                                   v                                       |
+|                              +---------+                                  |
+| salt ----------------------> | Absorb  |                                  |
+|                              +---------+                                  |
+|                                   |                                       |
+|                                   v                                       |
+| prover_msg_1 +----------+    +---------+                                  |
+| -----------> | encode_1 |--> | Absorb  |                                  |
+|              +----------+    +---------+                                  |
+|                                   |                                       |
+|                                   v                                       |
+|                              +---------+   +----------+                   |
+|                              | Squeeze |-->| decode_1 |--> verifier_msg_1 |
+|                              +---------+   +----------+                   |
+|                                   |                                       |
+|                                   v                                       |
+| prover_msg_2 +----------+    +---------+                                  |
+| -----------> | encode_2 |--> | Absorb  |                                  |
+|              +----------+    +---------+                                  |
+|                                   |                                       |
+|                                   v                                       |
+|                              +---------+   +----------+                   |
+|                              | Squeeze |-->| decode_2 |--> verifier_msg_2 |
+|                              +---------+   +----------+                   |
+|                                   |                                       |
+|                                   .                                       |
+|                                   .                                       |
+|                                   .                                       |
+|                                   v                                       |
+| prover_msg[k]+-----------+   +---------+                                  |
+| -----------> | encode[k] |-> | Absorb  |                                  |
+|              +-----------+   +---------+                                  |
+|                                   |                                       |
+|                                   v                                       |
+|                              +---------+   +----------+                   |
+|                              | Squeeze |-->| decode_k |--> verifier_msg_k |
+|                              +---------+   +----------+                   |
+|                                                                           |
+| * check IP decision:                                                      |
+|                                                                           |
+|   +-------------------------------------------------------------------+   |
+|   | Interactive Verifier (instance, prover_msg[..], verifier_msg[..]) |   |
+|   +-------------------------------------------------------------------+   |
++---------------------------------------------------------------------------+
+~~~
+{: #fig-fiat-shamir-verifier title="Non-interactive verifier for the Fiat-Shamir transformation"}
 
-The Fiat-Shamir transformation carries over the soundness and witness hiding properties of the interactive proof:
-
-- **Completeness**: If the statement being proved is true, an honest verifier can be convinced of this fact by an honest prover via the proof.
-
-- **Soundness**: If the interactive proof is sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without possession of the corresponding witness.
-
-- **Zero-Knowledge**: If the interactive proof is honest-verifier zero-knowledge, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid. This ensures that verifiers gain no knowledge about the witness.
-
-In particular, the Fiat-Shamir transformation of Sigma Protocols is a zero-knowledge and sound argument of knowledge.
-
-Note that non-interactive Sigma Protocols do not have deniability, as the non-interactive nature of the protocol implies transferable message authenticity.
-
-# The Duplex Sponge Interface
+# Random oracle instantiations
 
 The duplex sponge interface defines the space (the `Unit`) where the duplex sponge operates, plus a function for absorbing and squeezing prover messages. It provides the following interface.
 
@@ -85,178 +184,6 @@ Where:
 - `absorb(self, values: list[Unit])` denotes the absorb operation of the duplex sponge. This function takes as input a list of `Unit` elements and mutates the `DuplexSponge` internal state.
 - `squeeze(self, length: int)` denotes the squeeze operation of the duplex sponge. This function takes as input an integral `length` and squeezes a list of `Unit` elements of length `length`.
 
-# The Codec interface
-
-A codec is a collection of:
-- functions that map prover messages into `Unit`s,
-- functions that map `Unit`s into verifier messages, preserving the uniform distribution
-
-A codec provides the following interface.
-
-    class Codec:
-        def prover_message(self, state, elements)
-        def verifier_challenge(self, state) -> verifier_challenge
-
-Where:
-
-- `prover_message(self, state, elements)` denotes the absorb operation of the codec. This function takes as input the duplex sponge, and elements with which to mutate the duplex sponge.
-- `verifier_challenge(self, state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the duplex sponge to produce an unpredictable verifier challenge `verifier_challenge`.
-
-The `verifier_challenge` function must generate a challenge from the underlying scalar field that is statistically close to uniform, from the public inputs given to the verifier, as described in {{decode-random-bytes-scalars}}.
-
-# Initialization of the Duplex Sponge State
-
-The duplex sponge state is initialized by sequentially absorbing:
-
-- A `protocol_id`: the unique identifier for the interactive protocol and the associated relation being proven. This identifier MUST be 64 bytes.
-- A `session_id`: the session identifier, for user-provided contextual information about the context where the proof is made (e.g. a URL, or a timestamp). This identifier is currently generated as 32 zero-bytes concatenated with a 32-byte digest derived using the duplex sponge.
-- An `instance_label`: the instance identifier for the statement being proven.
-
-The `session_id` is computed as:
-
-    state = DuplexSponge.init(b"fiat-shamir/session-id".ljust(64, b"\x00"))
-    state.absorb(session)
-    session_id = [0] * 32 || state.squeeze(32)
-
-The protocol instance label is absorbed without an explicit length prefix.
-Therefore, the encoding used to produce `instance_label` MUST be prefix-free.
-
-# Fiat-Shamir transformation for Sigma Protocols
-
-We describe how to construct non-interactive proofs for sigma protocols.
-The Fiat-Shamir transformation is parameterized by:
-
-- a `SigmaProtocol`, which specifies an interactive 3-message protocol as defined in {{Section 2 of !SIGMA=I-D.draft-irtf-cfrg-sigma-protocols-00}};
-- a `Codec`, which specifies how to absorb prover messages and how to squeeze verifier challenges;
-- a `DuplexSpongeInterface`, which specifies a duplex sponge for computing challenges.
-
-Upon initialization, the protocol receives as input:
-- `session`, which identifies the session being proven
-- `instance`, the sigma protocol instance for proving or verifying
-
-    class NISigmaProtocol:
-        Protocol: SigmaProtocol = None
-        Codec: Codec = None
-        DuplexSponge: DuplexSpongeInterface = None
-
-        def __init__(self, session, instance):
-            protocol_id = self.get_protocol_id()
-            assert len(protocol_id) == 64
-            self.sigma_protocol = self.Protocol(instance)
-            self.codec = self.Codec()
-            instance_label = self.sigma_protocol.get_instance_label()
-            session_state = self.DuplexSponge(b"fiat-shamir/session-id".ljust(64, b"\x00"))
-            session_state.absorb(session)
-            session_id = [0] * 32 || session_state.squeeze(32)
-            self.state = self.DuplexSponge(protocol_id)
-            self.state.absorb(session_id)
-            self.state.absorb(instance_label)
-
-        def _prove(self, witness, rng):
-            # Core proving logic that returns commitment, challenge, and response.
-            # The challenge is generated via the duplex sponge.
-            (prover_state, commitment) = self.sigma_protocol.prover_commit(witness, rng)
-            self.codec.prover_message(self.state, commitment)
-            challenge = self.codec.verifier_challenge(self.state)
-            response = self.sigma_protocol.prover_response(prover_state, challenge)
-            return (commitment, challenge, response)
-
-        def prove(self, witness, rng):
-            # Default proving method using challenge-response format.
-            (commitment, challenge, response) = self._prove(witness, rng)
-            assert self.sigma_protocol.verifier(commitment, challenge, response)
-            return self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
-
-        def verify(self, proof):
-            # Before running the sigma protocol verifier, one must also check that:
-            # - the proof length is exactly Nc + response_bytes_len,
-            Nc = self.sigma_protocol.instance.Domain.scalar_byte_length()
-            assert len(proof) == Nc + self.sigma_protocol.instance.response_bytes_len
-
-            # - proof deserialization successfully produces a valid challenge and a valid response,
-            challenge_bytes = proof[:Nc]
-            response_bytes = proof[Nc:]
-            challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
-            response = self.sigma_protocol.deserialize_response(response_bytes)
-            commitment = self.sigma_protocol.simulate_commitment(response, challenge)
-
-            # - the re-computed challenge equals the serialized challenge.
-            self.codec.prover_message(self.state, commitment)
-            expected_challenge = self.codec.verifier_challenge(self.state)
-            if challenge != expected_challenge:
-                return False
-
-            return self.sigma_protocol.verifier(commitment, challenge, response)
-
-        def prove_batchable(self, witness, rng):
-            # Proving method using commitment-response format.
-            # Allows for batching.
-            (commitment, challenge, response) = self._prove(witness, rng)
-            # running the verifier here is just a sanity check
-            assert self.sigma_protocol.verifier(commitment, challenge, response)
-            return self.sigma_protocol.serialize_commitment(commitment) + self.sigma_protocol.serialize_response(response)
-
-        def verify_batchable(self, proof):
-            # Before running the sigma protocol verifier, one must also check that:
-            # - the proof length is exactly commit_bytes_len + response_bytes_len
-            assert len(proof) == self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len
-
-            # - proof deserialization successfully produces a valid commitment and a valid response
-            commitment_bytes = proof[:self.sigma_protocol.instance.commit_bytes_len]
-            response_bytes = proof[self.sigma_protocol.instance.commit_bytes_len:]
-            commitment = self.sigma_protocol.deserialize_commitment(commitment_bytes)
-            response = self.sigma_protocol.deserialize_response(response_bytes)
-
-            self.codec.prover_message(self.state, commitment)
-            challenge = self.codec.verifier_challenge(self.state)
-            return self.sigma_protocol.verifier(commitment, challenge, response)
-
-Serialization and deserialization of scalars and group elements are defined by the ciphersuite chosen in the Sigma Protocol. In particular, `serialize_challenge`, `deserialize_challenge`, `serialize_response`, and `deserialize_response` call into the scalar `serialize` and `deserialize` functions. Likewise, `serialize_commitment` and `deserialize_commitment` call into the group element `serialize` and `deserialize` functions.
-
-## NISigmaProtocol instances (ciphersuites)
-
-We describe noninteractive sigma protocol instances for combinations of protocols (SigmaProtocol), codec (Codec), and duplex sponge (DuplexSpongeInterface). Descriptions of codecs and duplex sponge interfaces are in the following sections.
-
-    class NISchnorrProofShake128P256(NISigmaProtocol):
-        Protocol = SchnorrProof
-        Codec = P256Codec
-        DuplexSponge = SHAKE128
-
-    class NISchnorrProofShake128Bls12381(NISigmaProtocol):
-        Protocol = SchnorrProof
-        Codec = Bls12381Codec
-        DuplexSponge = SHAKE128
-
-    class NISchnorrProofKeccakDuplexSpongeBls12381(NISigmaProtocol):
-        Protocol = SchnorrProof
-        Codec = Bls12381Codec
-        DuplexSponge = KeccakDuplexSponge
-
-# Codec for Schnorr proofs {#group-prove}
-
-We describe a codec for Schnorr proofs over groups of prime order `p` where `Unit = u8`.
-
-    class ByteSchnorrCodec(Codec):
-        GG: groups.Group = None
-
-        def prover_message(self, elements: list):
-            state.absorb(self.GG.serialize(elements))
-
-        def verifier_challenge(self, state):
-            # see https://eprint.iacr.org/2025/536.pdf, Appendix C.
-            Ns = self.GG.ScalarField.scalar_byte_length()
-            uniform_bytes = state.squeeze(
-                Ns + 32
-            )
-            scalar = OS2IP(uniform_bytes) % self.GG.ScalarField.order
-            return scalar
-
-We describe a codec for the P256 curve.
-
-    class P256Codec(ByteSchnorrCodec):
-        GG = groups.GroupP256()
-
-# Duplex Sponge Interfaces
 
 ## SHAKE128
 
@@ -374,7 +301,185 @@ The squeeze operation extracts output elements from the sponge state, which are 
 
 `KeccakDuplexSponge` instantiates `DuplexSponge` with `Keccak-f[1600]`, using rate `R = 136` bytes and capacity `C = 64` bytes.
 
-# Codecs registry
+# Codecs
+
+A codec is a collection of:
+- functions that map prover messages into `Unit`s,
+- functions that map `Unit`s into verifier messages, preserving the uniform distribution
+
+A codec provides the following interface.
+
+    class Codec:
+        def prover_message(self, state, elements)
+        def verifier_challenge(self, state) -> verifier_challenge
+
+Where:
+
+- `prover_message(self, state, elements)` denotes the absorb operation of the codec. This function takes as input the duplex sponge, and elements with which to mutate the duplex sponge.
+- `verifier_challenge(self, state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the duplex sponge to produce an unpredictable verifier challenge `verifier_challenge`.
+
+The `verifier_challenge` function must generate a challenge from the underlying scalar field that is statistically close to uniform, from the public inputs given to the verifier, as described in {{decode-random-bytes-scalars}}.
+
+## Encoding
+
+## Decoding
+
+
+# Session Identifier
+
+The duplex sponge state is initialized by sequentially absorbing:
+
+- A `protocol_id`: the unique identifier for the interactive protocol and the associated relation being proven. This identifier MUST be 64 bytes.
+- A `session_id`: the session identifier, for user-provided contextual information about the context where the proof is made (e.g. a URL, or a timestamp). This identifier is currently generated as 32 zero-bytes concatenated with a 32-byte digest derived using the duplex sponge.
+- An `instance_label`: the instance identifier for the statement being proven.
+
+The `session_id` is computed as:
+
+    state = DuplexSponge.init(b"fiat-shamir/session-id".ljust(64, b"\x00"))
+    state.absorb(session)
+    session_id = [0] * 32 || state.squeeze(32)
+
+The protocol instance label is absorbed without an explicit length prefix.
+Therefore, the encoding used to produce `instance_label` MUST be prefix-free.
+
+# Fiat-Shamir transformation for Sigma Protocols
+
+We describe how to construct non-interactive proofs for sigma protocols.
+The Fiat-Shamir transformation is parameterized by:
+
+- a `SigmaProtocol`, which specifies an interactive 3-message protocol as defined in {{Section 2 of !SIGMA=I-D.draft-irtf-cfrg-sigma-protocols-00}};
+- a `Codec`, which specifies how to absorb prover messages and how to squeeze verifier challenges;
+- a `DuplexSpongeInterface`, which specifies a duplex sponge for computing challenges.
+
+The construction follows the data flow shown in {{fig-fiat-shamir-prover}} and {{fig-fiat-shamir-verifier}}.
+
+Upon initialization, the protocol receives as input:
+- `session`, which identifies the session being proven
+- `instance`, the sigma protocol instance for proving or verifying
+
+    class NISigmaProtocol:
+        Protocol: SigmaProtocol = None
+        Codec: Codec = None
+        DuplexSponge: DuplexSpongeInterface = None
+
+        def __init__(self, session, instance):
+            protocol_id = self.get_protocol_id()
+            assert len(protocol_id) == 64
+            self.sigma_protocol = self.Protocol(instance)
+            self.codec = self.Codec()
+            instance_label = self.sigma_protocol.get_instance_label()
+            session_state = self.DuplexSponge(b"fiat-shamir/session-id".ljust(64, b"\x00"))
+            session_state.absorb(session)
+            session_id = [0] * 32 || session_state.squeeze(32)
+            self.state = self.DuplexSponge(protocol_id)
+            self.state.absorb(session_id)
+            self.state.absorb(instance_label)
+
+        def _prove(self, witness, rng):
+            # Core proving logic that returns commitment, challenge, and response.
+            # The challenge is generated via the duplex sponge.
+            (prover_state, commitment) = self.sigma_protocol.prover_commit(witness, rng)
+            self.codec.prover_message(self.state, commitment)
+            challenge = self.codec.verifier_challenge(self.state)
+            response = self.sigma_protocol.prover_response(prover_state, challenge)
+            return (commitment, challenge, response)
+
+        def prove(self, witness, rng):
+            # Default proving method using challenge-response format.
+            (commitment, challenge, response) = self._prove(witness, rng)
+            assert self.sigma_protocol.verifier(commitment, challenge, response)
+            return self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
+
+        def verify(self, proof):
+            # Before running the sigma protocol verifier, one must also check that:
+            # - the proof length is exactly Nc + response_bytes_len,
+            Nc = self.sigma_protocol.instance.Domain.scalar_byte_length()
+            assert len(proof) == Nc + self.sigma_protocol.instance.response_bytes_len
+
+            # - proof deserialization successfully produces a valid challenge and a valid response,
+            challenge_bytes = proof[:Nc]
+            response_bytes = proof[Nc:]
+            challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
+            response = self.sigma_protocol.deserialize_response(response_bytes)
+            commitment = self.sigma_protocol.simulate_commitment(response, challenge)
+
+            # - the re-computed challenge equals the serialized challenge.
+            self.codec.prover_message(self.state, commitment)
+            expected_challenge = self.codec.verifier_challenge(self.state)
+            if challenge != expected_challenge:
+                return False
+
+            return self.sigma_protocol.verifier(commitment, challenge, response)
+
+        def prove_batchable(self, witness, rng):
+            # Proving method using commitment-response format.
+            # Allows for batching.
+            (commitment, challenge, response) = self._prove(witness, rng)
+            # running the verifier here is just a sanity check
+            assert self.sigma_protocol.verifier(commitment, challenge, response)
+            return self.sigma_protocol.serialize_commitment(commitment) + self.sigma_protocol.serialize_response(response)
+
+        def verify_batchable(self, proof):
+            # Before running the sigma protocol verifier, one must also check that:
+            # - the proof length is exactly commit_bytes_len + response_bytes_len
+            assert len(proof) == self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len
+
+            # - proof deserialization successfully produces a valid commitment and a valid response
+            commitment_bytes = proof[:self.sigma_protocol.instance.commit_bytes_len]
+            response_bytes = proof[self.sigma_protocol.instance.commit_bytes_len:]
+            commitment = self.sigma_protocol.deserialize_commitment(commitment_bytes)
+            response = self.sigma_protocol.deserialize_response(response_bytes)
+
+            self.codec.prover_message(self.state, commitment)
+            challenge = self.codec.verifier_challenge(self.state)
+            return self.sigma_protocol.verifier(commitment, challenge, response)
+
+Serialization and deserialization of scalars and group elements are defined by the ciphersuite chosen in the Sigma Protocol. In particular, `serialize_challenge`, `deserialize_challenge`, `serialize_response`, and `deserialize_response` call into the scalar `serialize` and `deserialize` functions. Likewise, `serialize_commitment` and `deserialize_commitment` call into the group element `serialize` and `deserialize` functions.
+
+## Ciphersuites
+
+We describe noninteractive sigma protocol instances for combinations of protocols (SigmaProtocol), codec (Codec), and duplex sponge (DuplexSpongeInterface). Descriptions of codecs and duplex sponge interfaces are in the following sections.
+
+    class NISchnorrProofShake128P256(NISigmaProtocol):
+        Protocol = SchnorrProof
+        Codec = P256Codec
+        DuplexSponge = SHAKE128
+
+    class NISchnorrProofShake128Bls12381(NISigmaProtocol):
+        Protocol = SchnorrProof
+        Codec = Bls12381Codec
+        DuplexSponge = SHAKE128
+
+    class NISchnorrProofKeccakDuplexSpongeBls12381(NISigmaProtocol):
+        Protocol = SchnorrProof
+        Codec = Bls12381Codec
+        DuplexSponge = KeccakDuplexSponge
+
+# Codec for Schnorr proofs {#group-prove}
+
+We describe a codec for Schnorr proofs over groups of prime order `p` where `Unit = u8`.
+
+    class ByteSchnorrCodec(Codec):
+        GG: groups.Group = None
+
+        def prover_message(self, elements: list):
+            state.absorb(self.GG.serialize(elements))
+
+        def verifier_challenge(self, state):
+            # see https://eprint.iacr.org/2025/536.pdf, Appendix C.
+            Ns = self.GG.ScalarField.scalar_byte_length()
+            uniform_bytes = state.squeeze(
+                Ns + 32
+            )
+            scalar = OS2IP(uniform_bytes) % self.GG.ScalarField.order
+            return scalar
+
+We describe a codec for the P256 curve.
+
+    class P256Codec(ByteSchnorrCodec):
+        GG = groups.GroupP256()
+
+
 
 ## Elliptic curves
 
@@ -451,6 +556,28 @@ Interpret the bytes as a big-endian integer, then reduce it modulo `p`, where `p
     1. for i in range(length):
     2.     scalar_bytes = state.squeeze(Ns + 32)
     3.     scalars.append(OS2IP(scalar_bytes) % p)
+
+# Serialization of the non-interactive argument
+
+## Serialization
+
+## Deserialization
+
+# Security Considerations
+
+The Fiat-Shamir transformation carries over the soundness and witness hiding properties of the interactive proof:
+
+- **Completeness**: If the statement being proved is true, an honest verifier can be convinced of this fact by an honest prover via the proof.
+
+- **Soundness**: If the interactive proof is sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without possession of the corresponding witness.
+
+- **Zero-Knowledge**: If the interactive proof is honest-verifier zero-knowledge, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid. This ensures that verifiers gain no knowledge about the witness.
+
+In particular, the Fiat-Shamir transformation of Sigma Protocols is a zero-knowledge and sound argument of knowledge.
+
+Note that non-interactive Sigma Protocols do not have deniability, as the non-interactive nature of the protocol implies transferable message authenticity.
+
+
 
 --- back
 
