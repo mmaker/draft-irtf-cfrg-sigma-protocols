@@ -112,7 +112,36 @@ This document describes Sigma Protocols for proving knowledge of pre-images of l
 
 # Introduction
 
-Any Sigma Protocol must define a *commitment* (computed by the prover), a *challenge* (randomly sampled from a specific distribution), and a *response* (computed by the prover). One of the advantages of Sigma Protocols is their composability, which enables the construction of more complex protocols. A classic example is the OR composition {{CramerDS94}}. Given a Sigma Protocol for N relations, it is possible to prove knowledge of one of N witnesses for those relations . The composed sigma protocols can be made non-interactive using the Fiat-Shamir transformation {{Cramer97}}. However, such compositions must be handled carefully to preserve security properties as discussed in {{security-considerations}}.
+Any Sigma Protocol must define a *commitment* (computed by the prover), a *challenge* (randomly sampled from a specific distribution), and a *response* (computed by the prover).
+
+The interactive protocol has the following three-message flow:
+
+~~~ aasvg
++----------------------+                       +----------------------+
+|        Prover        |                       |       Verifier       |
+|  witness, instance   |                       |       instance       |
++----------------------+                       +----------------------+
+          |                                                |
+          | prover_commit(witness, rng)                    |
+          | commitment                                     |
+          |----------------------------------------------->|
+          |                                                |
+          |                             challenge          |
+          |                             random_scalar()    |
+          |<-----------------------------------------------|
+          |                                                |
+          | prover_response(prover_state, challenge)       |
+          | response                                       |
+          |----------------------------------------------->|
+          |                                                |
+          |                         verify transcript      |
+          |                         accept or reject       |
+~~~
+{: #fig-sigma-three-message-flow title="Three-message Sigma Protocol flow"}
+
+The prover keeps `prover_state` private between the first and third messages. The public transcript checked by the verifier is `(commitment, challenge, response)`.
+
+ One of the advantages of Sigma Protocols is their composability, which enables the construction of more complex protocols. A classic example is the OR composition {{CramerDS94}}. Given a Sigma Protocol for N relations, it is possible to prove knowledge of one of N witnesses for those relations. The composed sigma protocols can be made non-interactive using the Fiat-Shamir transformation {{Cramer97}}. However, such compositions must be handled carefully to preserve security properties as discussed in {{security-considerations}}.
 
 ## Core interface
 
