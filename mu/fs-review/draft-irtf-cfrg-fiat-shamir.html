@@ -7,8 +7,8 @@
 <title>Fiat-Shamir Transformation</title>
 <meta content="Michele Orrù" name="author">
 <meta content="
-       This document describes the Fiat-Shamir transformation, which allows to make a public-coin protocol non-interactive by means of a cryptographic hash function. 
-       It specifies how the hash function is employed, how prover messages are encoded in the hash function and how verifier messages are decoded from the hash function's output, as well as serialization and de-serialization of the non-interactive argument string. 
+       This document describes the Fiat-Shamir transformation, which allows making a public-coin protocol non-interactive by means of a cryptographic hash function. 
+       It specifies how the hash function is employed, how prover messages are encoded in the hash function and how verifier messages are decoded from the hash function's output, as well as serialization and deserialization of the non-interactive argument string. 
     " name="description">
 <meta content="xml2rfc 3.33.0" name="generator">
 <meta content="zero knowledge" name="keyword">
@@ -1080,8 +1080,8 @@ svg {
 <h1 id="title">Fiat-Shamir Transformation</h1>
 <section id="section-abstract">
       <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
-<p id="section-abstract-1">This document describes the Fiat-Shamir transformation, which allows to make a public-coin protocol non-interactive by means of a cryptographic hash function.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
-<p id="section-abstract-2">It specifies how the hash function is employed, how prover messages are encoded in the hash function and how verifier messages are decoded from the hash function's output, as well as serialization and de-serialization of the non-interactive argument string.<a href="#section-abstract-2" class="pilcrow">¶</a></p>
+<p id="section-abstract-1">This document describes the Fiat-Shamir transformation, which allows making a public-coin protocol non-interactive by means of a cryptographic hash function.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-2">It specifies how the hash function is employed, how prover messages are encoded in the hash function and how verifier messages are decoded from the hash function's output, as well as serialization and deserialization of the non-interactive argument string.<a href="#section-abstract-2" class="pilcrow">¶</a></p>
 </section>
 <section class="note rfcEditorRemove" id="section-note.1">
       <h2 id="name-about-this-document">
@@ -1154,10 +1154,16 @@ svg {
             <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-terminology-and-conventions" class="internal xref">Terminology and conventions in this document</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1">
-                <p id="section-toc.1-1.2.2.1.1" class="keepWithNext"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-byte-and-integer-conversion" class="internal xref">Byte and integer conversions</a></p>
+                <p id="section-toc.1-1.2.2.1.1" class="keepWithNext"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-bytes-and-integers" class="internal xref">Bytes and integers</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2">
-                <p id="section-toc.1-1.2.2.2.1" class="keepWithNext"><a href="#section-2.2" class="auto internal xref">2.2</a>.  <a href="#name-proof-systems" class="internal xref">Proof systems</a></p>
+                <p id="section-toc.1-1.2.2.2.1" class="keepWithNext"><a href="#section-2.2" class="auto internal xref">2.2</a>.  <a href="#name-duplex-sponges" class="internal xref">Duplex sponges</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.3">
+                <p id="section-toc.1-1.2.2.3.1"><a href="#section-2.3" class="auto internal xref">2.3</a>.  <a href="#name-proof-systems-terminology" class="internal xref">Proof systems terminology</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.4">
+                <p id="section-toc.1-1.2.2.4.1"><a href="#section-2.4" class="auto internal xref">2.4</a>.  <a href="#name-codec-and-serialization" class="internal xref">Codec and serialization</a></p>
 </li>
             </ul>
 </li>
@@ -1190,7 +1196,7 @@ svg {
                     <p id="section-toc.1-1.4.2.1.2.1.1"><a href="#section-4.1.1" class="auto internal xref">4.1.1</a>.  <a href="#name-byte-strings" class="internal xref">Byte strings</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1.2.2">
-                    <p id="section-toc.1-1.4.2.1.2.2.1"><a href="#section-4.1.2" class="auto internal xref">4.1.2</a>.  <a href="#name-character-strings" class="internal xref">Character strings</a></p>
+                    <p id="section-toc.1-1.4.2.1.2.2.1"><a href="#section-4.1.2" class="auto internal xref">4.1.2</a>.  <a href="#name-variable-length-character-s" class="internal xref">Variable-length character strings</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1.2.3">
                     <p id="section-toc.1-1.4.2.1.2.3.1"><a href="#section-4.1.3" class="auto internal xref">4.1.3</a>.  <a href="#name-sequences-and-tuples" class="internal xref">Sequences and tuples</a></p>
@@ -1243,7 +1249,7 @@ svg {
                     <p id="section-toc.1-1.6.2.2.2.1.1"><a href="#section-6.2.1" class="auto internal xref">6.2.1</a>.  <a href="#name-byte-strings-2" class="internal xref">Byte strings</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2.2.2">
-                    <p id="section-toc.1-1.6.2.2.2.2.1"><a href="#section-6.2.2" class="auto internal xref">6.2.2</a>.  <a href="#name-character-strings-2" class="internal xref">Character strings</a></p>
+                    <p id="section-toc.1-1.6.2.2.2.2.1"><a href="#section-6.2.2" class="auto internal xref">6.2.2</a>.  <a href="#name-character-strings" class="internal xref">Character strings</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2.2.3">
                     <p id="section-toc.1-1.6.2.2.2.3.1"><a href="#section-6.2.3" class="auto internal xref">6.2.3</a>.  <a href="#name-sequences-and-tuples-2" class="internal xref">Sequences and tuples</a></p>
@@ -1262,19 +1268,31 @@ svg {
             <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1">
-                <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="auto internal xref">7.1</a>.  <a href="#name-soundness" class="internal xref">Soundness</a></p>
+                <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="auto internal xref">7.1</a>.  <a href="#name-properties-of-codecs" class="internal xref">Properties of codecs</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.2">
-                <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="auto internal xref">7.2</a>.  <a href="#name-zero-knowledge" class="internal xref">Zero-Knowledge</a></p>
+                <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="auto internal xref">7.2</a>.  <a href="#name-constant-time-requirements" class="internal xref">Constant-time requirements</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.3">
-                <p id="section-toc.1-1.7.2.3.1"><a href="#section-7.3" class="auto internal xref">7.3</a>.  <a href="#name-quantum-adversaries" class="internal xref">Quantum adversaries</a></p>
+                <p id="section-toc.1-1.7.2.3.1"><a href="#section-7.3" class="auto internal xref">7.3</a>.  <a href="#name-session-identifiers-2" class="internal xref">Session identifiers</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.4">
-                <p id="section-toc.1-1.7.2.4.1"><a href="#section-7.4" class="auto internal xref">7.4</a>.  <a href="#name-indifferentiability-of-the-" class="internal xref">Indifferentiability of the hash function</a></p>
+                <p id="section-toc.1-1.7.2.4.1"><a href="#section-7.4" class="auto internal xref">7.4</a>.  <a href="#name-security-of-the-transformat" class="internal xref">Security of the transformation</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.5">
-                <p id="section-toc.1-1.7.2.5.1"><a href="#section-7.5" class="auto internal xref">7.5</a>.  <a href="#name-implementation-guidance" class="internal xref">Implementation guidance</a></p>
+                <p id="section-toc.1-1.7.2.5.1"><a href="#section-7.5" class="auto internal xref">7.5</a>.  <a href="#name-soundness" class="internal xref">Soundness</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.6">
+                <p id="section-toc.1-1.7.2.6.1"><a href="#section-7.6" class="auto internal xref">7.6</a>.  <a href="#name-zero-knowledge" class="internal xref">Zero-Knowledge</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.7">
+                <p id="section-toc.1-1.7.2.7.1"><a href="#section-7.7" class="auto internal xref">7.7</a>.  <a href="#name-quantum-adversaries" class="internal xref">Quantum adversaries</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.8">
+                <p id="section-toc.1-1.7.2.8.1"><a href="#section-7.8" class="auto internal xref">7.8</a>.  <a href="#name-indifferentiability-of-the-" class="internal xref">Indifferentiability of the hash function</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.9">
+                <p id="section-toc.1-1.7.2.9.1"><a href="#section-7.9" class="auto internal xref">7.9</a>.  <a href="#name-implementation-guidance" class="internal xref">Implementation guidance</a></p>
 </li>
             </ul>
 </li>
@@ -1337,7 +1355,7 @@ svg {
 <a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
       </h2>
 <p id="section-1-1">A public-coin interactive protocol is an exchange of messages between a prover and a verifier in which every verifier message is a uniformly random value sampled independently of the protocol state.
-The Fiat-Shamir transformation removes interaction from a public-coin interactive argument by relying on a cryptographic hash function. The non-interactive prover derives each verifier message on its own via a hash function, and serializes the protocol transcript into a <em>non-interactive argument</em> (NARG) string. The verifier recomputes the same verifier messages from the NARG string and checks the interactive verifiers' decision. The resulting argument is secure in the random oracle model.<a href="#section-1-1" class="pilcrow">¶</a></p>
+The Fiat-Shamir transformation removes interaction from a public-coin interactive argument by relying on a cryptographic hash function. The non-interactive prover derives each verifier message on its own via a hash function, and serializes the protocol transcript into a <em>non-interactive argument</em> (NARG) string. The verifier recomputes the same verifier messages from the NARG string and checks the interactive verifier's decision. The resulting argument is secure in the random oracle model.<a href="#section-1-1" class="pilcrow">¶</a></p>
 <p id="section-1-2">This document describes the duplex sponge Fiat-Shamir transformation, and in particular:<a href="#section-1-2" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-1-3.1">
@@ -1360,7 +1378,7 @@ The Fiat-Shamir transformation removes interaction from a public-coin interactiv
 </li>
       </ul>
 <p id="section-1-6">This document specifies only byte-oriented hash functions, but this transformation generalizes to alphabets other than bytes (for example, prime-field elements); see <span>[<a href="#CO25" class="cite xref">CO25</a>]</span> for the general construction.<a href="#section-1-6" class="pilcrow">¶</a></p>
-<p id="section-1-7">Other types of non-interactive transformations (with and without random oracles) are possible, but out of scope from this specification.<a href="#section-1-7" class="pilcrow">¶</a></p>
+<p id="section-1-7">Other types of non-interactive transformations (with and without random oracles) are possible, but outside the scope of this specification.<a href="#section-1-7" class="pilcrow">¶</a></p>
 <span id="name-non-interactive-prover-for-"></span><div id="fig-fiat-shamir-prover">
 <figure id="figure-1">
         <div id="section-1-8.1">
@@ -1718,26 +1736,64 @@ The Fiat-Shamir transformation removes interaction from a public-coin interactiv
       <h2 id="name-terminology-and-conventions">
 <a href="#section-2" class="section-number selfRef">2. </a><a href="#name-terminology-and-conventions" class="section-name selfRef">Terminology and conventions in this document</a>
       </h2>
-<p id="section-2-1">The following notation is used throughout this document.<a href="#section-2-1" class="pilcrow">¶</a></p>
-<div id="byte-and-integer-conversions">
+<p id="section-2-1">The key words "<strong>MUST</strong>", "<strong>MUST NOT</strong>", "<strong>REQUIRED</strong>", "<strong>SHALL</strong>", "<strong>SHALL NOT</strong>", "<strong>SHOULD</strong>", "<strong>SHOULD NOT</strong>", "<strong>RECOMMENDED</strong>", "<strong>NOT RECOMMENDED</strong>", "<strong>MAY</strong>", and "<strong>OPTIONAL</strong>" in this document are to be interpreted as described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they appear in all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<p id="section-2-2">The following notation is used throughout this document.<a href="#section-2-2" class="pilcrow">¶</a></p>
+<div id="bytes-and-integers">
 <section id="section-2.1">
-        <h3 id="name-byte-and-integer-conversion">
-<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-byte-and-integer-conversion" class="section-name selfRef">Byte and integer conversions</a>
+        <h3 id="name-bytes-and-integers">
+<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-bytes-and-integers" class="section-name selfRef">Bytes and integers</a>
         </h3>
 <p id="section-2.1-1">A byte is an 8-bit unsigned integer (an octet), and a byte string is a finite sequence of bytes. A <code>N</code>-byte string is a byte string of length <code>N</code>. The empty byte string is written <code>""</code>; <code>x || y</code> is the concatenation of the byte strings <code>x</code> and <code>y</code>. <code>zeros(N)</code> denotes the <code>N</code>-byte string of zero bytes.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
 <p id="section-2.1-2"><code>I2OSP(n, w)</code> and <code>OS2IP(x)</code> are the primitives defined in Section 4 of <span>[<a href="#RFC8017" class="cite xref">RFC8017</a>]</span>. <code>I2OSP(n, w)</code> converts a non-negative integer <code>n</code> less than <code>256^w</code> into a <code>w</code>-byte, big-endian byte string. <code>OS2IP(x)</code> converts a byte string <code>x</code> into a non-negative integer using the big-endian byte order.<a href="#section-2.1-2" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="proof-systems">
+<div id="duplex-sponges">
 <section id="section-2.2">
-        <h3 id="name-proof-systems">
-<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-proof-systems" class="section-name selfRef">Proof systems</a>
+        <h3 id="name-duplex-sponges">
+<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-duplex-sponges" class="section-name selfRef">Duplex sponges</a>
         </h3>
-<p id="section-2.2-1">The <strong>transcript</strong> is the ordered sequence of prover and verifier messages.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
-<p id="section-2.2-2">The <strong>instance</strong> specifies the statement being proven, and is held by both the prover and the verifier.<a href="#section-2.2-2" class="pilcrow">¶</a></p>
-<p id="section-2.2-3">The <strong>witness</strong> is the prover's private input. It is known only to the prover and is never revealed. It appears neither in the transcript nor in the NARG string.<a href="#section-2.2-3" class="pilcrow">¶</a></p>
-<p id="section-2.2-4">For an NP relation, the instance is a word, the witness is its proof, and the resulting non-interactive argument will prove that the instance is in the corresponding NP language.<a href="#section-2.2-4" class="pilcrow">¶</a></p>
-<p id="section-2.2-5">The <strong>NARG string</strong> (non-interactive argument string) is the serialized output of the non-interactive prover.<a href="#section-2.2-5" class="pilcrow">¶</a></p>
+<p id="section-2.2-1">The Fiat-Shamir transformation is built on a cryptographic hash function. Rather than computing a single fixed-length digest, this document accesses the hash function through a <strong>duplex sponge</strong>: a stateful interface, defined in <a href="#hash-instantiations" class="auto internal xref">Section 3</a>, that absorbs prover messages into one internal state and squeezes verifier challenges out of it.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
+<p id="section-2.2-2">A <strong>sponge</strong> <span>[<a href="#SPONGE" class="cite xref">SPONGE</a>]</span> maps a variable-length input to a variable-length output by interleaving applications of a fixed permutation with the addition of input into, and extraction of output from, an internal state. A plain sponge is two-phase: it absorbs all of its input before any output is squeezed. The <strong>duplex</strong> construction <span>[<a href="#DUPLEX" class="cite xref">DUPLEX</a>]</span> removes this restriction, carrying the state across an arbitrary sequence of alternating Absorb and Squeeze calls. The Fiat-Shamir transformation requires exactly this interleaving, since each verifier challenge must depend on every prover message absorbed before it.<a href="#section-2.2-2" class="pilcrow">¶</a></p>
+<p id="section-2.2-3">The hash interface in this document is expressed as Absorb and Squeeze operations over a single evolving state, and is referred to as a duplex sponge. The instantiations in <a href="#shake128" class="auto internal xref">Section 3.1</a> realize this duplex interface on top of a standard sponge-based XOF.<a href="#section-2.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="proof-systems-terminology">
+<section id="section-2.3">
+        <h3 id="name-proof-systems-terminology">
+<a href="#section-2.3" class="section-number selfRef">2.3. </a><a href="#name-proof-systems-terminology" class="section-name selfRef">Proof systems terminology</a>
+        </h3>
+<p id="section-2.3-1">A <strong>prover message</strong> is a message sent by the interactive prover, and a <strong>verifier message</strong> is a message sent by the interactive verifier (a uniformly random value, since the protocol is public-coin). A message can be a value of any type for which a codec (<a href="#codecs" class="auto internal xref">Section 4</a>) is defined, such as a byte string, an unsigned integer, or a group element. The <strong>transcript</strong> is the ordered sequence of prover and verifier messages.<a href="#section-2.3-1" class="pilcrow">¶</a></p>
+<p id="section-2.3-2">The <strong>instance</strong> specifies the statement being proven, and is held by both the prover and the verifier.<a href="#section-2.3-2" class="pilcrow">¶</a></p>
+<p id="section-2.3-3">The <strong>witness</strong> is the prover's private input. It is known only to the prover and is never revealed. It appears neither in the transcript nor in the NARG string.<a href="#section-2.3-3" class="pilcrow">¶</a></p>
+<p id="section-2.3-4">For an NP relation, the instance is a word, the witness is its proof, and the resulting non-interactive argument will prove that the instance is in the corresponding NP language.<a href="#section-2.3-4" class="pilcrow">¶</a></p>
+<p id="section-2.3-5">The <strong>NARG string</strong> (non-interactive argument string) is the serialized output of the non-interactive prover.<a href="#section-2.3-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="codec-and-serialization">
+<section id="section-2.4">
+        <h3 id="name-codec-and-serialization">
+<a href="#section-2.4" class="section-number selfRef">2.4. </a><a href="#name-codec-and-serialization" class="section-name selfRef">Codec and serialization</a>
+        </h3>
+<p id="section-2.4-1">A prover message is processed in two independent ways: it is absorbed into the hash function to derive the verifier's challenges, and it is written into the NARG string sent to the verifier. This document keeps the two separate.<a href="#section-2.4-1" class="pilcrow">¶</a></p>
+<p id="section-2.4-2">A <strong>codec</strong> (<a href="#codecs" class="auto internal xref">Section 4</a>) is the pair of maps between messages and the hash function's alphabet (bytes, in this document):<a href="#section-2.4-2" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.4-3.1">
+            <p id="section-2.4-3.1.1"><strong>Encoding</strong> converts the instance and each prover message into the bytes absorbed by the sponge (<a href="#encoding-bytes" class="auto internal xref">Section 4.1</a>).<a href="#section-2.4-3.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.4-3.2">
+            <p id="section-2.4-3.2.1"><strong>Decoding</strong> converts the bytes squeezed from the sponge into a uniformly-distributed verifier message (<a href="#decoding" class="auto internal xref">Section 4.2</a>).<a href="#section-2.4-3.2.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-2.4-4"><strong>Serialization</strong> (<a href="#narg-string" class="auto internal xref">Section 6</a>) is the pair of maps between prover messages and the NARG string:<a href="#section-2.4-4" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.4-5.1">
+            <p id="section-2.4-5.1.1"><strong>Serialization</strong> writes the prover messages into the NARG string produced by the non-interactive prover.<a href="#section-2.4-5.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.4-5.2">
+            <p id="section-2.4-5.2.1"><strong>Deserialization</strong> reads the prover messages back from the NARG string, and returns an error if the message is invalid.<a href="#section-2.4-5.2.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-2.4-6">For a prover message the serialized bytes coincide with the encoded bytes (<a href="#serialization" class="auto internal xref">Section 6.1</a>), but the two serve different purposes: encoding is constrained for the security of the transformation (it is prefix-free), while deserialization is constrained to make parsing of the NARG string unambiguous (it rejects trailing or non-canonical bytes).<a href="#section-2.4-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1759,25 +1815,25 @@ The Fiat-Shamir transformation removes interaction from a public-coin interactiv
           <p id="section-3-2.3.1"><code>Squeeze(n) -&gt; buf</code>: produce <code>n</code> bytes from the state.<a href="#section-3-2.3.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
-<p id="section-3-3">Messages can be absorbed incrementally, as <code>Absorb</code> calls are associative: <code>Absorb(x)</code> followed by <code>Absorb(y)</code> is eqivalent to <code>Absorb(x || y)</code>.
+<p id="section-3-3">Messages can be absorbed incrementally, as <code>Absorb</code> calls are associative: <code>Absorb(x)</code> followed by <code>Absorb(y)</code> is equivalent to <code>Absorb(x || y)</code>.
 The output of <code>Squeeze(n)</code> is uniformly distributed (among <code>n</code>-byte strings). Guidance on how to produce a 64-byte string <code>session_id</code> is given in <a href="#session-id" class="auto internal xref">Section 5.1</a>.<a href="#section-3-3" class="pilcrow">¶</a></p>
 <div id="shake128">
 <section id="section-3.1">
         <h3 id="name-shake128-duplex-sponge">
 <a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-shake128-duplex-sponge" class="section-name selfRef">SHAKE128 Duplex Sponge</a>
         </h3>
-<p id="section-3.1-1">SHAKE128, used as a duplex sponge, absorbs and squeezes over an internal <code>Keccak-f[1600]</code> state of 1600 bits (200 bytes) with a capacity of 32 bytes and rate of 168 bytes.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.1-1">SHAKE128 <span>[<a href="#SHA3" class="cite xref">SHA3</a>]</span>, used as a duplex sponge, absorbs and squeezes over an internal <code>Keccak-f[1600]</code> state of 1600 bits (200 bytes) with a capacity of 32 bytes and rate of 168 bytes.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
 <div id="init">
 <section id="section-3.1.1">
           <h4 id="name-init">
 <a href="#section-3.1.1" class="section-number selfRef">3.1.1. </a><a href="#name-init" class="section-name selfRef">Init</a>
           </h4>
-<p id="section-3.1.1-1">Seed the verifier state absorbing the session identifier, padded with zeros to fill the rate (the remaining <code>R - 64 = 104</code> bytes).<a href="#section-3.1.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.1.1-1">Seed the state by absorbing the session identifier, padded with zeros to fill the rate (the remaining <code>R - 64 = 104</code> bytes).<a href="#section-3.1.1-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3.1.1-2">
 <pre>
     Init(self, session_id)
 
-    Input: iv, a byte array
+    Input: session_id, a byte array
 
     Output: a duplex sponge state
 
@@ -1805,7 +1861,7 @@ The output of <code>Squeeze(n)</code> is uniformly distributed (among <code>n</c
     - x, a byte array
 
     1. state.reader = None
-    2. state.ctx.update(x)
+    2. state.ctx.Update(x)
 </pre><a href="#section-3.1.2-2" class="pilcrow">¶</a>
 </div>
 </section>
@@ -1815,7 +1871,7 @@ The output of <code>Squeeze(n)</code> is uniformly distributed (among <code>n</c
           <h4 id="name-squeeze">
 <a href="#section-3.1.3" class="section-number selfRef">3.1.3. </a><a href="#name-squeeze" class="section-name selfRef">Squeeze</a>
           </h4>
-<p id="section-3.1.3-1">Returns the next <code>n</code> bytes of the SHAKE128 output stream computed over absorbed. If the sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a SHAKE128 XOF reader. Consecutive <code>Squeeze</code> calls <strong>continue</strong> the same SHAKE128 output stream.<a href="#section-3.1.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.1.3-1">Returns the next <code>n</code> bytes of the SHAKE128 output stream computed over the absorbed input. If the sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a SHAKE128 XOF reader. Consecutive <code>Squeeze</code> calls <strong>continue</strong> the same SHAKE128 output stream.<a href="#section-3.1.3-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3.1.3-2">
 <pre>
     Squeeze(state, n)
@@ -1823,7 +1879,7 @@ The output of <code>Squeeze(n)</code> is uniformly distributed (among <code>n</c
     Inputs:
 
     - state, the duplex sponge state
-    - length, the number of elements to be squeezed
+    - n, the number of elements to be squeezed
 
     Output: a uniformly-distributed random n-byte string
 
@@ -1843,7 +1899,7 @@ The output of <code>Squeeze(n)</code> is uniformly distributed (among <code>n</c
       <h2 id="name-codecs">
 <a href="#section-4" class="section-number selfRef">4. </a><a href="#name-codecs" class="section-name selfRef">Codecs</a>
       </h2>
-<p id="section-4-1">A codec is a set of function that map prover and verifier messages to hash function alphabet:<a href="#section-4-1" class="pilcrow">¶</a></p>
+<p id="section-4-1">A codec is a set of functions that map prover and verifier messages to the hash function's alphabet:<a href="#section-4-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-4-2.1">
           <p id="section-4-2.1.1">Encoding converts prover messages into the bytes absorbed by the sponge. Encoding functions <strong>MUST</strong> be prefix-free.<a href="#section-4-2.1.1" class="pilcrow">¶</a></p>
@@ -1879,12 +1935,12 @@ The caller is responsible for ensuring that the length is fixed by the surroundi
 </div>
 </section>
 </div>
-<div id="character-strings">
+<div id="variable-length-character-strings">
 <section id="section-4.1.2">
-          <h4 id="name-character-strings">
-<a href="#section-4.1.2" class="section-number selfRef">4.1.2. </a><a href="#name-character-strings" class="section-name selfRef">Character strings</a>
+          <h4 id="name-variable-length-character-s">
+<a href="#section-4.1.2" class="section-number selfRef">4.1.2. </a><a href="#name-variable-length-character-s" class="section-name selfRef">Variable-length character strings</a>
           </h4>
-<p id="section-4.1.2-1">A UTF-8 string of fewer than 2^32 bytes is encoded as its byte length (a little-endian 32-bit integer) followed by its bytes.<a href="#section-4.1.2-1" class="pilcrow">¶</a></p>
+<p id="section-4.1.2-1">A UTF-8 string of fewer than 2^32 bytes is encoded as its byte length (a big-endian 32-bit integer) followed by its bytes.<a href="#section-4.1.2-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.1.2-2">
 <pre>
     EncodeString(s)
@@ -1894,7 +1950,7 @@ The caller is responsible for ensuring that the length is fixed by the surroundi
     Output: out, a (N+4)-byte string
 
     1. b = utf8(s)
-    2. return LE(len(b), 4) || b
+    2. return I2OSP(len(b), 4) || b
 </pre><a href="#section-4.1.2-2" class="pilcrow">¶</a>
 </div>
 <p id="section-4.1.2-3">The length prefix makes the encoding prefix-free.<a href="#section-4.1.2-3" class="pilcrow">¶</a></p>
@@ -1913,19 +1969,19 @@ The caller is responsible for ensuring that the length is fixed by the surroundi
           <h4 id="name-unsigned-integers">
 <a href="#section-4.1.4" class="section-number selfRef">4.1.4. </a><a href="#name-unsigned-integers" class="section-name selfRef">Unsigned integers</a>
           </h4>
-<p id="section-4.1.4-1">An element of an integer <code>m</code> is represented by its unique integer representative in the range <code>[0, m)</code> and encoded big-endian as defined in I2OSP <span>[<a href="#RFC8017" class="cite xref">RFC8017</a>]</span>.<a href="#section-4.1.4-1" class="pilcrow">¶</a></p>
+<p id="section-4.1.4-1">An integer modulo <code>M</code> is represented by its unique integer representative in the range <code>[0, M)</code> and encoded big-endian as defined in I2OSP <span>[<a href="#RFC8017" class="cite xref">RFC8017</a>]</span>.<a href="#section-4.1.4-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.1.4-2">
 <pre>
-    EncodeScalar(x, m)
+    EncodeScalar(x, M)
 
     Inputs:
-    - x, an integer modulo m
-    - m, the oder of the integer ring
+    - x, an integer modulo M
+    - M, the order of the integer ring
 
     Output: out, a Ns-byte string
 
-    1. Ns = ceil(bitlength(m) / 8)
-    2. assert 0 &lt;= x &lt; m
+    1. Ns = ceil(log2(M) / 8)
+    2. assert 0 &lt;= x &lt; M
     3. return I2OSP(x, Ns)
 </pre><a href="#section-4.1.4-2" class="pilcrow">¶</a>
 </div>
@@ -1936,8 +1992,8 @@ The caller is responsible for ensuring that the length is fixed by the surroundi
           <h4 id="name-elliptic-curve-groups">
 <a href="#section-4.1.5" class="section-number selfRef">4.1.5. </a><a href="#name-elliptic-curve-groups" class="section-name selfRef">Elliptic curve groups</a>
           </h4>
-<p id="section-4.1.5-1">A scalar field element is serialized to a canonical <code>Ns</code>-byte string using the group's sclar field serialization function. For the prime-order elliptic curve groups in scope, this is equivalent to <code>EncodeScalar</code> described in <a href="#encoding-scalars" class="auto internal xref">Section 4.1.4</a>.<a href="#section-4.1.5-1" class="pilcrow">¶</a></p>
-<p id="section-4.1.5-2">A group element is serialized to a canonical <code>Ne</code>-byte string using the group's element-serialization function. For the prime-order elliptic-curve groups in scope, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>. Each group element has exactly one <code>Ne</code>-byte representation. The value of <code>Ne</code> and the concrete conversion are fixed by the ciphersuite. Batch serialization options should be preferred when available.<a href="#section-4.1.5-2" class="pilcrow">¶</a></p>
+<p id="section-4.1.5-1">A scalar field element is serialized to a canonical <code>Ns</code>-byte string using the group's scalar field serialization function. For most prime-order elliptic curve groups, this is equivalent to <code>EncodeScalar</code> described in <a href="#encoding-scalars" class="auto internal xref">Section 4.1.4</a>.<a href="#section-4.1.5-1" class="pilcrow">¶</a></p>
+<p id="section-4.1.5-2">A group element is serialized to a canonical <code>Ne</code>-byte string using the group's element-serialization function. For the most prime-order elliptic-curve groups, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>. Each group element has exactly one <code>Ne</code>-byte representation. The value of <code>Ne</code> and the concrete conversion are fixed by the ciphersuite. Batch serialization options should be preferred when available.<a href="#section-4.1.5-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1976,23 +2032,22 @@ The caller is responsible for ensuring that the length is fixed by the surroundi
           <h4 id="name-unsigned-integers-2">
 <a href="#section-4.2.2" class="section-number selfRef">4.2.2. </a><a href="#name-unsigned-integers-2" class="section-name selfRef">Unsigned integers</a>
           </h4>
-<p id="section-4.2.2-1">To sample a uniformly random element modulo <code>m</code> of <code>Ns</code> bytes (that is <code>Ns = ceil(log2(m) / 8)</code>), decode <code>Ns + 32</code> bytes by interpreting them as a big-endian non-negative integer with <code>OS2IP</code>, and reduce modulo <code>m</code>.<a href="#section-4.2.2-1" class="pilcrow">¶</a></p>
+<p id="section-4.2.2-1">To sample a uniformly random element modulo <code>M</code> of <code>Ns</code> bytes (that is <code>Ns = ceil(log2(M) / 8)</code>), decode <code>Ns + 32</code> bytes by interpreting them as a big-endian non-negative integer with <code>OS2IP</code>, and reduce modulo <code>M</code>.<a href="#section-4.2.2-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.2.2-2">
 <pre>
-    DecodeScalar(buf, m)
+    DecodeScalar(buf, M)
 
     Inputs:
     - buf, a byte string of length Ns + 32
-    - m, the modulus
+    - M, the modulus
 
-    Output: out, an integer in the range [0, m)
+    Output: out, an integer in the range [0, M)
 
-    1. Ns = ceil(log2(m) / 8)
-    2. assert len(buf) == Ns + 32
-    3. return OS2IP(buf) mod m
+    1. assert len(buf) == Ns + 32
+    2. return OS2IP(buf) mod M
 </pre><a href="#section-4.2.2-2" class="pilcrow">¶</a>
 </div>
-<p id="section-4.2.2-3">The 32 extra bytes bound the bias introduced by the modular reduction to be cryptographically negligible.<a href="#section-4.2.2-3" class="pilcrow">¶</a></p>
+<p id="section-4.2.2-3">The 32 extra bytes (256 bits) ensure that the statistical distance between the reduced value and the uniform distribution over <code>[0, M)</code> is at most <code>2^-256</code>, which is cryptographically negligible. This mirrors the <code>hash_to_field</code> construction of <span>[<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>, whose Section 5 samples <code>k</code> extra bits to bound the reduction bias by <code>2^-k</code>.<a href="#section-4.2.2-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2016,10 +2071,10 @@ It <strong>SHOULD</strong> be derived from a variable-length application context
             <p id="section-5.1-2.1.1">session identifiers <strong>MUST</strong> have nonzero length. A minimum length of 32 bytes is <strong>RECOMMENDED</strong> to reduce the chance of collisions with other applications.<a href="#section-5.1-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-5.1-2.2">
-            <p id="section-5.1-2.2.1">session identifiers <strong>MUST</strong> uniquely identify the <strong>non-interactive argument</strong> used, including both the IP (interactive protocol), the hash suite, the statement being proven, and the codecs.<a href="#section-5.1-2.2.1" class="pilcrow">¶</a></p>
+            <p id="section-5.1-2.2.1">session identifiers <strong>MUST</strong> uniquely identify the <strong>non-interactive argument</strong> used, including the IP (interactive protocol), the hash suite, the statement being proven, and the codecs.<a href="#section-5.1-2.2.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-5.1-2.3">
-            <p id="section-5.1-2.3.1">session identifers <strong>MUST</strong> contain contextual information about the context where the proof is made (e.g. a URL, or a timestamp). This identifier is currently generated as 32 zero-bytes, concatenated with a 32-byte digest derived using the duplex sponge.<a href="#section-5.1-2.3.1" class="pilcrow">¶</a></p>
+            <p id="section-5.1-2.3.1">session identifiers <strong>MUST</strong> contain contextual information about where the proof is made (e.g. a URL, or a timestamp).<a href="#section-5.1-2.3.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-5.1-2.4">
             <p id="section-5.1-2.4.1">session identifiers <strong>SHOULD</strong> begin with a fixed identification string that is unique to the application.<a href="#section-5.1-2.4.1" class="pilcrow">¶</a></p>
@@ -2044,8 +2099,8 @@ It <strong>SHOULD</strong> be derived from a variable-length application context
 </pre><a href="#section-5.1-3" class="pilcrow">¶</a>
 </div>
 <p id="section-5.1-4">As an example, consider a fictional application named Foo that implements sigma protocols over elliptic curves for encrypted messages shared during a time epoch <code>tt</code>. A reasonable choice of tag is <code>FOO-SV{xx}-{tt}-DSFS-{hashID}-SIGMA-PROOFS-{yy}</code>, where <code>xx</code> are the two-digit numbers indicating the version, <code>yy</code> are the two-digit numbers indicating the elliptic-curve ciphersuite, <code>hashID</code> is the hash identifier, and <code>tt</code> is the epoch identifier.<a href="#section-5.1-4" class="pilcrow">¶</a></p>
-<p id="section-5.1-5">Another example, cosider a fictional application name Bar that implements an ad-hoc zero-knowledge virtual machine for correct execution of circuits. A reasonable choice of tag is <code>BAR-COM{cc}</code> where <code>{cc}</code> is the commit hash of the associated version of the cryptographic specification of the protocol.<a href="#section-5.1-5" class="pilcrow">¶</a></p>
-<p id="section-5.1-6">Other applications <strong>MAY</strong> use custom session identifiers, as long as they do NOT<a href="#section-5.1-6" class="pilcrow">¶</a></p>
+<p id="section-5.1-5">As another example, consider a fictional application named Bar that implements an ad-hoc zero-knowledge virtual machine for correct execution of circuits. A reasonable choice of tag is <code>BAR-COM{cc}</code> where <code>{cc}</code> is the commit hash of the associated version of the cryptographic specification of the protocol.<a href="#section-5.1-5" class="pilcrow">¶</a></p>
+<p id="section-5.1-6">Other applications <strong>MAY</strong> use custom session identifiers, provided the tail 32 bytes are non-zero.<a href="#section-5.1-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="zero-knowledge-salts">
@@ -2054,7 +2109,7 @@ It <strong>SHOULD</strong> be derived from a variable-length application context
 <a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-zero-knowledge-salts" class="section-name selfRef">Zero-knowledge salts</a>
         </h3>
 <p id="section-5.2-1">If the interactive argument is honest-verifier zero-knowledge, but the first message of the interactive proof is <em>not</em> unpredictable, the non-interactive prover and verifier <strong>MUST</strong> absorb a 32-byte salt immediately after the session identifier.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
-<p id="section-5.2-2">The salt is sampled uniformly a random from a cryptographically secure entropy source. The salt <strong>MUST</strong> be used only once and <strong>MUST</strong> NOT be copied or reused, and should be zeroized as soon as it is no longer needed.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
+<p id="section-5.2-2">The salt is sampled uniformly at random from a cryptographically secure entropy source. The salt <strong>MUST</strong> be used only once and <strong>MUST NOT</strong> be copied or reused, and should be zeroized as soon as it is no longer needed.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="instance">
@@ -2062,9 +2117,8 @@ It <strong>SHOULD</strong> be derived from a variable-length application context
         <h3 id="name-instance">
 <a href="#section-5.3" class="section-number selfRef">5.3. </a><a href="#name-instance" class="section-name selfRef">Instance</a>
         </h3>
-<p id="section-5.3-1">The instance is part of the statement being proven. The prover and verifier <strong>MUST</strong> include the instance before any prover message is absorbed, and after the session identifier.<a href="#section-5.3-1" class="pilcrow">¶</a></p>
-<p id="section-5.3-2">The instance encoding function <code>encode[0]</code>, displayed in <a href="#fig-fiat-shamir-prover" class="auto internal xref">Figure 1</a> and <a href="#fig-fiat-shamir-verifier" class="auto internal xref">Figure 2</a>, depends fully on the relation being proven, and is specified as part of the relation specification.<a href="#section-5.3-2" class="pilcrow">¶</a></p>
-<p id="section-5.3-3">The instance encoding <strong>MUST</strong> be prefix-free, and identify all public values whose modification would change the statement being proven, including the relation, ciphersuite, group parameters, generators, public keys, and public elements. Prior works describes the fatal security impact of omitting public statement data from the Fiat-Shamir input permits a proof for one statement to be interpreted as a proof for a related statement under modified public parameters <span>[<a href="#BPW16" class="cite xref">BPW16</a>]</span>.<a href="#section-5.3-3" class="pilcrow">¶</a></p>
+<p id="section-5.3-1">The instance is part of the statement being proven. The prover and verifier <strong>MUST</strong> include the instance before any prover message is absorbed, and after the session identifier. The encoding function <code>encode[0]</code>, displayed in <a href="#fig-fiat-shamir-prover" class="auto internal xref">Figure 1</a> and <a href="#fig-fiat-shamir-verifier" class="auto internal xref">Figure 2</a>, maps the instance into the hash function input domain. It has to be specified as part of the relation specification, and may rely on the encodings in <a href="#encoding-bytes" class="auto internal xref">Section 4.1</a>.<a href="#section-5.3-1" class="pilcrow">¶</a></p>
+<p id="section-5.3-2">The instance encoding <strong>MUST</strong> be prefix-free, and identify all public values whose modification would change the statement being proven, including the relation, ciphersuite, group parameters, generators, public keys, and public elements. Omitting public statement data from the Fiat-Shamir input will allow a proof for one statement to be interpreted as a proof for a related statement under modified public parameters <span>[<a href="#BPW16" class="cite xref">BPW16</a>]</span>.<a href="#section-5.3-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2087,8 +2141,8 @@ It <strong>SHOULD</strong> be derived from a variable-length application context
         <h3 id="name-deserialization">
 <a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-deserialization" class="section-name selfRef">Deserialization</a>
         </h3>
-<p id="section-6.2-1">Deserialization of the NARG string consists in reading the prover messages, and compute the inverse of the serialization procedure: each message is read by consuming a fixed number of bytes, determined by its type and the instance, and advancing past them.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
-<p id="section-6.2-2">Verification <strong>MUST</strong> fail if the any of the prover messages cannot be deserialized successfully. After the last expected prover message has been read, the verifier <strong>MUST</strong> verify that no bytes remain. Bytes that are never read or that are decoded despite being invalid will defeat strong simulation extractability: an adversary will be able to malleate a valid proof to obtain a second, distinct accepting proof for the same statement.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
+<p id="section-6.2-1">Deserialization of the NARG string consists in reading the prover messages and computing the inverse of the serialization procedure: each message is read by consuming a fixed number of bytes, determined by its type and the instance, and advancing past them.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
+<p id="section-6.2-2">Verification <strong>MUST</strong> fail if any of the prover messages cannot be deserialized successfully. After the last expected prover message has been read, the verifier <strong>MUST</strong> verify that no bytes remain. Bytes that are never read or that are decoded despite being invalid will defeat strong simulation extractability: an adversary will be able to malleate a valid proof to obtain a second, distinct accepting proof for the same statement.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
 <div id="byte-strings-1">
 <section id="section-6.2.1">
           <h4 id="name-byte-strings-2">
@@ -2097,13 +2151,28 @@ It <strong>SHOULD</strong> be derived from a variable-length application context
 <p id="section-6.2.1-1">Read the next <code>N</code> bytes, where <code>N</code> is fixed by the protocol, and return them. Any <code>N</code>-byte string is a valid encoding.<a href="#section-6.2.1-1" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="character-strings-1">
+<div id="character-strings">
 <section id="section-6.2.2">
-          <h4 id="name-character-strings-2">
-<a href="#section-6.2.2" class="section-number selfRef">6.2.2. </a><a href="#name-character-strings-2" class="section-name selfRef">Character strings</a>
+          <h4 id="name-character-strings">
+<a href="#section-6.2.2" class="section-number selfRef">6.2.2. </a><a href="#name-character-strings" class="section-name selfRef">Character strings</a>
           </h4>
-<p id="section-6.2.2-1">Read a 4-byte little-endian length <code>L</code>, then read the next <code>L</code> bytes. Fail if
-those <code>L</code> bytes are not valid UTF-8. The value is the resulting string.<a href="#section-6.2.2-1" class="pilcrow">¶</a></p>
+<p id="section-6.2.2-1">Read a 4-byte length <code>N</code> via <code>OS2IP</code>, then read the next <code>N</code> bytes. Fail if fewer than <code>N</code> bytes remain, or if those bytes are not a valid UTF-8 encoding. The value is the resulting string.<a href="#section-6.2.2-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-6.2.2-2">
+<pre>
+    DeserializeString(input)
+
+    Input: input, the unread remainder of the NARG string
+
+    Output: s, a UTF-8 string
+
+    1. assert len(input) &gt;= 4
+    2. N = OS2IP(input[0:4])
+    3. assert len(input) == 4 + N
+    4. b = input[4 : 4 + N]
+    5. return utf8_decode(b)
+</pre><a href="#section-6.2.2-2" class="pilcrow">¶</a>
+</div>
+<p id="section-6.2.2-3">This consumes <code>4 + N</code> bytes of the NARG string.<a href="#section-6.2.2-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="sequences-and-tuples-1">
@@ -2119,7 +2188,7 @@ those <code>L</code> bytes are not valid UTF-8. The value is the resulting strin
           <h4 id="name-unsigned-integers-3">
 <a href="#section-6.2.4" class="section-number selfRef">6.2.4. </a><a href="#name-unsigned-integers-3" class="section-name selfRef">Unsigned integers</a>
           </h4>
-<p id="section-6.2.4-1">Read the next <code>Ns</code> bytes and interpret them as a big-endian integer <code>m = OS2IP(.)</code>. If <code>m &gt;= p</code>, fail: non-canonical encodings of field elements <strong>MUST</strong> be rejected. The value returned is <code>m</code>.<a href="#section-6.2.4-1" class="pilcrow">¶</a></p>
+<p id="section-6.2.4-1">Read the next <code>Ns</code> bytes and interpret them as a big-endian integer <code>m = OS2IP(.)</code>. If <code>m &gt;= M</code>, fail: non-canonical encodings of field elements <strong>MUST</strong> be rejected. The value returned is <code>m</code>.<a href="#section-6.2.4-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="group-elements">
@@ -2128,7 +2197,7 @@ those <code>L</code> bytes are not valid UTF-8. The value is the resulting strin
 <a href="#section-6.2.5" class="section-number selfRef">6.2.5. </a><a href="#name-group-elements" class="section-name selfRef">Group elements</a>
           </h4>
 <p id="section-6.2.5-1">Read the next <code>Ne</code> bytes and convert them to a group element using the group's element-deserialization function.<a href="#section-6.2.5-1" class="pilcrow">¶</a></p>
-<p id="section-6.2.5-2">For the elliptic-curve groups in scope this, is the encoding procedure, such as the Octet-String-to-Elliptic-Curve-Point conversion of <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>. Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation steps and fail unless the input is the canonical encoding of a valid group element.<a href="#section-6.2.5-2" class="pilcrow">¶</a></p>
+<p id="section-6.2.5-2">For the elliptic-curve groups in scope, this is the decoding procedure, such as the Octet-String-to-Elliptic-Curve-Point conversion of <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>. Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation steps and fail unless the input is the canonical encoding of a valid group element.<a href="#section-6.2.5-2" class="pilcrow">¶</a></p>
 <p id="section-6.2.5-3">For elliptic curves these steps check that the coordinates are in the correct range, and that the point lies on the curve subgroup used for cryptographic operations.<a href="#section-6.2.5-3" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2141,62 +2210,94 @@ those <code>L</code> bytes are not valid UTF-8. The value is the resulting strin
       <h2 id="name-security-considerations">
 <a href="#section-7" class="section-number selfRef">7. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
       </h2>
-<p id="section-7-1">The Fiat-Shamir transformation carries over the soundness and witness hiding properties of the interactive proof.<a href="#section-7-1" class="pilcrow">¶</a></p>
-<p id="section-7-2">In particular, completeness of this transformation is preserved: if the statement being proved is true, then the resulting non-interactive argument string is valid.<a href="#section-7-2" class="pilcrow">¶</a></p>
-<div id="soundness">
+<p id="section-7-1">This section contains additional security considerations about the Fiat-Shamir transformation as described in this document.<a href="#section-7-1" class="pilcrow">¶</a></p>
+<div id="properties-of-codecs">
 <section id="section-7.1">
-        <h3 id="name-soundness">
-<a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-soundness" class="section-name selfRef">Soundness</a>
+        <h3 id="name-properties-of-codecs">
+<a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-properties-of-codecs" class="section-name selfRef">Properties of codecs</a>
         </h3>
-<p id="section-7.1-1">If the interactive proof is sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without possession of the corresponding witness (in the random oracle model).<a href="#section-7.1-1" class="pilcrow">¶</a></p>
-<p id="section-7.1-2">Soundness and straightline knowledge soundness carry over to the non-intearcive argument, with an additive soundness loss quadratic in the number of queries the adversary makes to the random oracle <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>.<a href="#section-7.1-2" class="pilcrow">¶</a></p>
+<p id="section-7.1-1">Decodings <strong>MUST</strong> be infallible, since completeness of the resulting non-interactive arguments depends on it. It is also important to note that using a non-uniform input produces an output that is easily distinguished from a uniformly random point.<a href="#section-7.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="constant-time-requirements">
+<section id="section-7.2">
+        <h3 id="name-constant-time-requirements">
+<a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-constant-time-requirements" class="section-name selfRef">Constant-time requirements</a>
+        </h3>
+<p id="section-7.2-1">Constant-time implementation of all the functions in this document is <strong>STRONGLY RECOMMENDED</strong>, to avoid leaking information via side channels. While the protocol operates on "public coins", the instance can contain private information, such as verification keys not meant to be shared, or messages meant to be private between prover and verifier. In the case of keyed-verification anonymous credentials, this also includes the zero-knowledge verifier, because verification uses the issuer's secret key.<a href="#section-7.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="session-identifiers">
+<section id="section-7.3">
+        <h3 id="name-session-identifiers-2">
+<a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-session-identifiers-2" class="section-name selfRef">Session identifiers</a>
+        </h3>
+<p id="section-7.3-1">The purpose of session identifiers is to ensure composability and mitigate protocol confusion.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="security-of-the-transformation">
+<section id="section-7.4">
+        <h3 id="name-security-of-the-transformat">
+<a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-security-of-the-transformat" class="section-name selfRef">Security of the transformation</a>
+        </h3>
+<p id="section-7.4-1">The Fiat-Shamir transformation carries over the soundness and zero-knowledge properties of the interactive proof.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
+<p id="section-7.4-2">Completeness of the non-interactive argument is preserved: if the statement being proved is true, then the resulting non-interactive argument string is valid.<a href="#section-7.4-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="soundness">
+<section id="section-7.5">
+        <h3 id="name-soundness">
+<a href="#section-7.5" class="section-number selfRef">7.5. </a><a href="#name-soundness" class="section-name selfRef">Soundness</a>
+        </h3>
+<p id="section-7.5-1">If the interactive proof is sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without possession of the corresponding witness (in the random oracle model).<a href="#section-7.5-1" class="pilcrow">¶</a></p>
+<p id="section-7.5-2">Soundness and straightline knowledge soundness carry over to the non-interactive argument, with an additive soundness loss quadratic in the number of queries the adversary makes to the random oracle <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>.<a href="#section-7.5-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="zero-knowledge">
-<section id="section-7.2">
+<section id="section-7.6">
         <h3 id="name-zero-knowledge">
-<a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-zero-knowledge" class="section-name selfRef">Zero-Knowledge</a>
+<a href="#section-7.6" class="section-number selfRef">7.6. </a><a href="#name-zero-knowledge" class="section-name selfRef">Zero-Knowledge</a>
         </h3>
-<p id="section-7.2-1">If the interactive proof is honest-verifier zero-knowledge, <em>and the first message is unpredictable</em>, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid.<a href="#section-7.2-1" class="pilcrow">¶</a></p>
-<p id="section-7.2-2">The additive zero-knowledge loss introduced by the transformation is linear in the number of queries the adversary makes to the random oracle <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>.<a href="#section-7.2-2" class="pilcrow">¶</a></p>
+<p id="section-7.6-1">If the interactive proof is honest-verifier zero-knowledge, <em>and the first message is unpredictable</em>, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid.<a href="#section-7.6-1" class="pilcrow">¶</a></p>
+<p id="section-7.6-2">The additive zero-knowledge loss introduced by the transformation is linear in the number of queries the adversary makes to the random oracle <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>.<a href="#section-7.6-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quantum-adversaries">
-<section id="section-7.3">
+<section id="section-7.7">
         <h3 id="name-quantum-adversaries">
-<a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-quantum-adversaries" class="section-name selfRef">Quantum adversaries</a>
+<a href="#section-7.7" class="section-number selfRef">7.7. </a><a href="#name-quantum-adversaries" class="section-name selfRef">Quantum adversaries</a>
         </h3>
-<p id="section-7.3-1">If the interactive proof is sound against quantum adversaries, then the non-interactive proof after the Fiat-Shamir transformation in the random oracle model is also secure against quantum adversary.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
-<p id="section-7.3-2">The loss introduced by a quantum adversary is polynomial (larger than quadratic) in the number of quantum random-oracle queries.<a href="#section-7.3-2" class="pilcrow">¶</a></p>
+<p id="section-7.7-1">If the interactive proof is sound against quantum adversaries, then the non-interactive proof after the Fiat-Shamir transformation in the random oracle model is also secure against quantum adversaries.<a href="#section-7.7-1" class="pilcrow">¶</a></p>
+<p id="section-7.7-2">The loss introduced by a quantum adversary is polynomial (larger than quadratic) in the number of quantum random-oracle queries.<a href="#section-7.7-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="indifferentiability-of-the-hash-function">
-<section id="section-7.4">
+<section id="section-7.8">
         <h3 id="name-indifferentiability-of-the-">
-<a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-indifferentiability-of-the-" class="section-name selfRef">Indifferentiability of the hash function</a>
+<a href="#section-7.8" class="section-number selfRef">7.8. </a><a href="#name-indifferentiability-of-the-" class="section-name selfRef">Indifferentiability of the hash function</a>
         </h3>
-<p id="section-7.4-1">The random oracle instantiation <strong>MUST</strong> be extraction-friendly and simulation-friendly indifferentiable to preserve soundness and zero-knowledge of the transformation.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
-<p id="section-7.4-2">To provide soundness and zero-knowledge, stronger capabilities that indifferentiability are needed <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>. Implementers do not need these notions to use the transformation, but they are the reason a different hash construction <strong>SHOULD NOT</strong>  be substituted on the strength of indifferentiability alone.<a href="#section-7.4-2" class="pilcrow">¶</a></p>
+<p id="section-7.8-1">The random oracle instantiation <strong>MUST</strong> be extraction-friendly and simulation-friendly indifferentiable to preserve soundness and zero-knowledge of the transformation.<a href="#section-7.8-1" class="pilcrow">¶</a></p>
+<p id="section-7.8-2">To provide soundness and zero-knowledge, stronger capabilities than indifferentiability are needed <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>. Implementers do not need these notions to use the transformation, but they are the reason a different hash construction <strong>SHOULD NOT</strong> be substituted on the strength of indifferentiability alone.<a href="#section-7.8-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="implementation-guidance">
-<section id="section-7.5">
+<section id="section-7.9">
         <h3 id="name-implementation-guidance">
-<a href="#section-7.5" class="section-number selfRef">7.5. </a><a href="#name-implementation-guidance" class="section-name selfRef">Implementation guidance</a>
+<a href="#section-7.9" class="section-number selfRef">7.9. </a><a href="#name-implementation-guidance" class="section-name selfRef">Implementation guidance</a>
         </h3>
-<p id="section-7.5-1">The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities, especially due to incorrect implementations involving out-of order prover messages, and invalid instance encodings.<a href="#section-7.5-1" class="pilcrow">¶</a></p>
-<p id="section-7.5-2">Absorbing a prover message and serializing it to (or reading it from) the NARG string <strong>SHOULD</strong> be coupled, to prevernt prover messages to be hashed without being serialized, skipped, or reordered.<a href="#section-7.5-2" class="pilcrow">¶</a></p>
-<p id="section-7.5-3">A sequential transcript interface is RECOMMENDED: implementations are encouraged to expose two directed state machines<a href="#section-7.5-3" class="pilcrow">¶</a></p>
+<p id="section-7.9-1">The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities, especially due to incorrect implementations involving out-of-order prover messages, and invalid instance encodings.<a href="#section-7.9-1" class="pilcrow">¶</a></p>
+<p id="section-7.9-2">Absorbing a prover message and serializing it to (or reading it from) the NARG string <strong>SHOULD</strong> be coupled, to prevent prover messages from being hashed without being serialized, skipped, or reordered.<a href="#section-7.9-2" class="pilcrow">¶</a></p>
+<p id="section-7.9-3">A sequential transcript interface is <strong>RECOMMENDED</strong>: implementations are encouraged to expose two directed state machines<a href="#section-7.9-3" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-7.5-4.1">
-            <p id="section-7.5-4.1.1">(instance, witness) -&gt; prove -&gt; proof, and<a href="#section-7.5-4.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-7.9-4.1">
+            <p id="section-7.9-4.1.1">(instance, witness) -&gt; prove -&gt; proof, and<a href="#section-7.9-4.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-7.5-4.2">
-            <p id="section-7.5-4.2.1">(instance, proof) -&gt; verify -&gt; accept/reject<a href="#section-7.5-4.2.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-7.9-4.2">
+            <p id="section-7.9-4.2.1">(instance, proof) -&gt; verify -&gt; accept/reject<a href="#section-7.9-4.2.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-7.5-5">where prover messages are randomly addressable.<a href="#section-7.5-5" class="pilcrow">¶</a></p>
-<p id="section-7.5-6">APIs exponsing a proof object are prone to soundness bugs, as they provide out-of-order or partial access to prover messages. a byte-oriented stream enforces sequential, exactly-once processing together. End-of-input check is necessary to prevent malleability pitfalls.<a href="#section-7.5-6" class="pilcrow">¶</a></p>
+<p id="section-7.9-5">where prover messages are randomly addressable.<a href="#section-7.9-5" class="pilcrow">¶</a></p>
+<p id="section-7.9-6">APIs exposing a proof object are prone to soundness bugs, as they provide out-of-order or partial access to prover messages. A byte-oriented stream enforces sequential, exactly-once processing. An end-of-input check is necessary to prevent malleability pitfalls.<a href="#section-7.9-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2220,9 +2321,25 @@ those <code>L</code> bytes are not valid UTF-8. The value is the resulting strin
 <a href="#section-9.1" class="section-number selfRef">9.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
         </h3>
 <dl class="references">
+<dt id="RFC2119">[RFC2119]</dt>
+        <dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 <dt id="RFC8017">[RFC8017]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Moriarty, K., Ed.</span>, <span class="refAuthor">Kaliski, B.</span>, <span class="refAuthor">Jonsson, J.</span>, and <span class="refAuthor">A. Rusch</span>, <span class="refTitle">"PKCS #1: RSA Cryptography Specifications Version 2.2"</span>, <span class="seriesInfo">RFC 8017</span>, <span class="seriesInfo">DOI 10.17487/RFC8017</span>, <time datetime="2016-11" class="refDate">November 2016</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8017">https://www.rfc-editor.org/rfc/rfc8017</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8174">[RFC8174]</dt>
+        <dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="SEC1">[SEC1]</dt>
+        <dd>
+<span class="refAuthor">Standards for Efficient Cryptography Group (SECG)</span>, <span class="refTitle">"SEC 1: Elliptic Curve Cryptography"</span>, <span>&lt;<a href="https://www.secg.org/sec1-v2.pdf">https://www.secg.org/sec1-v2.pdf</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="SHA3">[SHA3]</dt>
+      <dd>
+<span class="refTitle">"SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions"</span>, <span>n.d.</span>, <span>&lt;<a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf">https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
 </section>
@@ -2241,13 +2358,17 @@ those <code>L</code> bytes are not valid UTF-8. The value is the resulting strin
         <dd>
 <span class="refAuthor">Chiesa, A.</span> and <span class="refAuthor">M. Orrù</span>, <span class="refTitle">"A Fiat-Shamir Transformation From Duplex Sponges"</span>, <time datetime="2025" class="refDate">2025</time>, <span>&lt;<a href="https://eprint.iacr.org/2025/536.pdf">https://eprint.iacr.org/2025/536.pdf</a>&gt;</span>. </dd>
 <dd class="break"></dd>
-<dt id="SEC1">[SEC1]</dt>
+<dt id="DUPLEX">[DUPLEX]</dt>
         <dd>
-<span class="refAuthor">Standards for Efficient Cryptography Group (SECG)</span>, <span class="refTitle">"SEC 1: Elliptic Curve Cryptography"</span>, <span>&lt;<a href="https://www.secg.org/sec1-v2.pdf">https://www.secg.org/sec1-v2.pdf</a>&gt;</span>. </dd>
+<span class="refAuthor">Bertoni, G.</span>, <span class="refAuthor">Daemen, J.</span>, <span class="refAuthor">Peeters, M.</span>, and <span class="refAuthor">G. V. Assche</span>, <span class="refTitle">"Duplexing the Sponge: Single-Pass Authenticated Encryption and Other Applications"</span>, <time datetime="2011" class="refDate">2011</time>, <span>&lt;<a href="https://keccak.team/files/SpongeDuplex.pdf">https://keccak.team/files/SpongeDuplex.pdf</a>&gt;</span>. </dd>
 <dd class="break"></dd>
-<dt id="SHA3">[SHA3]</dt>
+<dt id="RFC9380">[RFC9380]</dt>
+        <dd>
+<span class="refAuthor">Faz-Hernandez, A.</span>, <span class="refAuthor">Scott, S.</span>, <span class="refAuthor">Sullivan, N.</span>, <span class="refAuthor">Wahby, R. S.</span>, and <span class="refAuthor">C. A. Wood</span>, <span class="refTitle">"Hashing to Elliptic Curves"</span>, <span class="seriesInfo">RFC 9380</span>, <span class="seriesInfo">DOI 10.17487/RFC9380</span>, <time datetime="2023-08" class="refDate">August 2023</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9380">https://www.rfc-editor.org/rfc/rfc9380</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="SPONGE">[SPONGE]</dt>
       <dd>
-<span class="refTitle">"SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions"</span>, <span>n.d.</span>, <span>&lt;<a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf">https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf</a>&gt;</span>. </dd>
+<span class="refAuthor">Bertoni, G.</span>, <span class="refAuthor">Daemen, J.</span>, <span class="refAuthor">Peeters, M.</span>, and <span class="refAuthor">G. V. Assche</span>, <span class="refTitle">"Cryptographic Sponge Functions"</span>, <time datetime="2011" class="refDate">2011</time>, <span>&lt;<a href="https://keccak.team/files/CSF-0.1.pdf">https://keccak.team/files/CSF-0.1.pdf</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
 </section>
