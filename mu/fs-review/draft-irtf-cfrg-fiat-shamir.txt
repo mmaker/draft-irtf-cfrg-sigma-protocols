@@ -1,0 +1,939 @@
+
+
+
+
+Crypto Forum                                                     M. Orrù
+Internet-Draft                                                      CNRS
+Intended status: Informational                               8 June 2026
+Expires: 10 December 2026
+
+
+                       Fiat-Shamir Transformation
+                   draft-irtf-cfrg-fiat-shamir-latest
+
+Abstract
+
+   This document describes the Fiat-Shamir transformation, which allows
+   to make a public-coin protocol non-interactive by means of a
+   cryptographic hash function.
+
+   It specifies how the hash function is employed, how prover messages
+   are encoded in the hash function and how verifier messages are
+   decoded from the hash function's output, as well as serialization and
+   de-serialization of the non-interactive argument string.
+
+About This Document
+
+   This note is to be removed before publishing as an RFC.
+
+   The latest revision of this draft can be found at
+   https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-
+   cfrg-fiat-shamir.html.  Status information for this document may be
+   found at https://datatracker.ietf.org/doc/draft-irtf-cfrg-fiat-
+   shamir/.
+
+   Discussion of this document takes place on the Crypto Forum Research
+   Group mailing list (mailto:cfrg@ietf.org), which is archived at
+   https://mailarchive.ietf.org/arch/browse/cfrg.  Subscribe at
+   https://www.ietf.org/mailman/listinfo/cfrg/.
+
+   Source for this draft and an issue tracker can be found at
+   https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 10 December 2026.
+
+Copyright Notice
+
+   Copyright (c) 2026 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
+
+Table of Contents
+
+   1.  Introduction
+   2.  Terminology and conventions in this document
+     2.1.  Byte and integer conversions
+     2.2.  Proof systems
+   3.  Duplex Sponge interface and instances
+     3.1.  SHAKE128 Duplex Sponge
+       3.1.1.  Init
+       3.1.2.  Absorb
+       3.1.3.  Squeeze
+   4.  Codecs
+     4.1.  Encoding into byte strings
+       4.1.1.  Byte strings
+       4.1.2.  Character strings
+       4.1.3.  Sequences and tuples
+       4.1.4.  Unsigned integers
+       4.1.5.  Elliptic curve groups
+     4.2.  Decoding from byte strings
+       4.2.1.  Byte arrays
+       4.2.2.  Unsigned integers
+   5.  Initialization
+     5.1.  Session identifiers
+     5.2.  Zero-knowledge salts
+     5.3.  Instance
+   6.  Non-interactive argument string
+     6.1.  Serialization
+     6.2.  Deserialization
+       6.2.1.  Byte strings
+       6.2.2.  Character strings
+       6.2.3.  Sequences and tuples
+       6.2.4.  Unsigned integers
+       6.2.5.  Group elements
+   7.  Security Considerations
+     7.1.  Soundness
+     7.2.  Zero-Knowledge
+     7.3.  Quantum adversaries
+     7.4.  Indifferentiability of the hash function
+     7.5.  Implementation guidance
+   8.  IANA Considerations
+   9.  References
+     9.1.  Normative References
+     9.2.  Informative References
+   Appendix A.  Test Vectors
+     A.1.  test_keccak_duplex_sponge_SHAKE128
+     A.2.  test_absorb_empty_before_does_not_break_SHAKE128
+     A.3.  test_absorb_empty_after_does_not_break_SHAKE128
+     A.4.  test_squeeze_zero_behavior_SHAKE128
+     A.5.  test_squeeze_zero_after_behavior_SHAKE128
+     A.6.  test_absorb_squeeze_absorb_consistency_SHAKE128
+     A.7.  test_associativity_of_absorb_SHAKE128
+     A.8.  test_iv_affects_output_SHAKE128
+     A.9.  test_multiple_blocks_absorb_squeeze_SHAKE128
+   Author's Address
+
+1.  Introduction
+
+   A public-coin interactive protocol is an exchange of messages between
+   a prover and a verifier in which every verifier message is a
+   uniformly random value sampled independently of the protocol state.
+   The Fiat-Shamir transformation removes interaction from a public-coin
+   interactive argument by relying on a cryptographic hash function.
+   The non-interactive prover derives each verifier message on its own
+   via a hash function, and serializes the protocol transcript into a
+   _non-interactive argument_ (NARG) string.  The verifier recomputes
+   the same verifier messages from the NARG string and checks the
+   interactive verifiers' decision.  The resulting argument is secure in
+   the random oracle model.
+
+   This document describes the duplex sponge Fiat-Shamir transformation,
+   and in particular:
+
+   *  a non-interactive argument prover (NARG prover), and
+
+   *  a non-interactive argument verifier (NARG verifier)
+
+   Both the non-interactive prover and verifier rely on:
+
+   *  a duplex sponge, prescribing how to interact with the
+      cryptographic hash function (Section 3);
+
+   *  a set of codecs, describing how each prover message is absorbed
+      into the sponge and how each verifier message is derived
+      (Section 4);
+
+   *  a serialization and deserialization procedure for the NARG string
+      produced by the prover (Section 6).
+
+   This document specifies only byte-oriented hash functions, but this
+   transformation generalizes to alphabets other than bytes (for
+   example, prime-field elements); see [CO25] for the general
+   construction.
+
+   Other types of non-interactive transformations (with and without
+   random oracles) are possible, but out of scope from this
+   specification.
+
++--------------------------------------------------------------------------+
+| NARG Prover (session id, instance, witness)                              |
+|                                                                          |
+|                                                              +------+    |
+|  session id ------------------------------------------------>| Init |    |
+|                                                              +------+    |
+|                                                                   |      |
+|                                                                   v      |
+|                                          +------------+      +--------+  |
+|  instance ------------------------------>| encode[0]  |----->| Absorb |  |
+|  +---------------------+                 +------------+      +--------+  |
+|  | Interactive Prover  |                                          |      |
+|  |  (instance, witness)|                                          v      |
+|  |                     | prover_msg[1]   +------------+      +--------+  |
+|  |                     +---------------->| encode[1]  |----->| Absorb |  |
+|  |                     |                 +------------+      +--------+  |
+|  |                     |                                          |      |
+|  |                     |                                          v      |
+|  |                     | verifier_msg[1] +------------+      +---------+ |
+|  |                     |<----------------| decode[1]  |<-----| Squeeze | |
+|  |                     |                 +------------+      +---------+ |
+|  |                     |                                          |      |
+|  |                     |                                          v      |
+|  |                     | prover_msg[2]   +------------+      +--------+  |
+|  |                     +---------------->| encode[2]  |----->| Absorb |  |
+|  |                     |                 +------------+      +--------+  |
+|  |                     |                                          |      |
+|  |                     |                                          v      |
+|  |                     | verifier_msg[2] +------------+      +---------+ |
+|  |                     |<----------------| decode[2]  |<-----| Squeeze | |
+|  |                     |                 +------------+      +---------+ |
+|  |                     |        .                                 .      |
+|  |                     |        .                                 .      |
+|  |                     |        .                                 v      |
+|  |                     | prover_msg[k-1] +-------------+     +--------+  |
+|  |                     +---------------->| encode[k-1] |---->| Absorb |  |
+|  |                     |                 +-------------+     +--------+  |
+|  |                     |                                          |      |
+|  |                     |                                          v      |
+|  |                     | verifier_msg[k-1] +-------------+   +---------+ |
+|  |                     |<------------------| decode[k-1] |<--| Squeeze | |
+|  |                     |                   +-------------+   +---------+ |
+|  |                     | prover_msg[k]                                   |
+|  |                     +------------------>                              |
+|  +---------------------+                                                 |
+|                                                                          |
+|       narg_string := serialize(prover_msg[..])                           |
++--------------------------------------------------------------------------+
+
+ Figure 1: Non-interactive prover for the Fiat-Shamir transformation
+
++--------------------------------------------------------------------------+
+| NARG Verifier V(session id, instance, narg_string)                       |
+|                                                                          |
+| 1. prover_msg[..] := deserialize(narg_string)                            |
+| 2. derive verifier messages:                                             |
+|                                                                          |
+|                                  +------+                                |
+| session id --------------------->| Init |                                |
+|                                  +------+                                |
+|                                      |                                   |
+|                                      v                                   |
+|              +-----------+       +--------+                              |
+| instance --->| encode[0] |------>| Absorb |                              |
+|              +-----------+       +--------+                              |
+|                                      |                                   |
+|                                      v                                   |
+|prover_msg[1] +-----------+      +--------+                               |
+|------------->| encode[1] |----->| Absorb |                               |
+|              +-----------+      +--------+                               |
+|                                      |                                   |
+|                                      v                                   |
+|                                 +---------+                              |
+|                                 | Squeeze |--+                           |
+|                                 +---------+  |                           |
+|                                      |       v                           |
+|                                      |  +-----------+                    |
+|                                      |  | decode[1] |--> verifier_msg[1] |
+|                                      |  +-----------+                    |
+|                                      v                                   |
+|prover_msg[2] +-----------+      +--------+                               |
+|------------->| encode[2] |----->| Absorb |                               |
+|              +-----------+      +--------+                               |
+|                                      |                                   |
+|                                      v                                   |
+|                                 +---------+                              |
+|                                 | Squeeze |--+                           |
+|                                 +---------+  |                           |
+|                                      |       v                           |
+|                                      |  +-----------+                    |
+|                                      |  | decode[2] |--> verifier_msg[2] |
+|                                      |  +-----------+                    |
+|                                      .                                   |
+|                                      .                                   |
+|                                      .                                   |
+|                                      v                                   |
+|prover_msg[k-1]+-------------+   +--------+                               |
+|-------------->| encode[k-1] |-->| Absorb |                               |
+|               +-------------+   +--------+                               |
+|                                      |                                   |
+|                                      v                                   |
+|                                 +---------+                              |
+|                                 | Squeeze |--+                           |
+|                                 +---------+  |                           |
+|                                              v                           |
+|                                     +-------------+                      |
+|                                     | decode[k-1] |--> verifier_msg[k-1] |
+|                                     +-------------+                      |
+|                                                                          |
+| 3. check IP decision:                                                    |
+|                                                                          |
+|   +-------------------------------------------------------------------+  |
+|   | Interactive Verifier (instance, prover_msg[..], verifier_msg[..]) |  |
+|   +-------------------------------------------------------------------+  |
++--------------------------------------------------------------------------+
+
+Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
+
+   The security guarantees provided by this transformation are described
+   in Section 7.  Applications wishing to provide zero-knowledge MAY
+   require an additional salt (Section 5.2).
+
+2.  Terminology and conventions in this document
+
+   The following notation is used throughout this document.
+
+2.1.  Byte and integer conversions
+
+   A byte is an 8-bit unsigned integer (an octet), and a byte string is
+   a finite sequence of bytes.  A N-byte string is a byte string of
+   length N.  The empty byte string is written ""; x || y is the
+   concatenation of the byte strings x and y. zeros(N) denotes the
+   N-byte string of zero bytes.
+
+   I2OSP(n, w) and OS2IP(x) are the primitives defined in Section 4 of
+   [RFC8017].  I2OSP(n, w) converts a non-negative integer n less than
+   256^w into a w-byte, big-endian byte string.  OS2IP(x) converts a
+   byte string x into a non-negative integer using the big-endian byte
+   order.
+
+2.2.  Proof systems
+
+   The *transcript* is the ordered sequence of prover and verifier
+   messages.
+
+   The *instance* specifies the statement being proven, and is held by
+   both the prover and the verifier.
+
+   The *witness* is the prover's private input.  It is known only to the
+   prover and is never revealed.  It appears neither in the transcript
+   nor in the NARG string.
+
+   For an NP relation, the instance is a word, the witness is its proof,
+   and the resulting non-interactive argument will prove that the
+   instance is in the corresponding NP language.
+
+   The *NARG string* (non-interactive argument string) is the serialized
+   output of the non-interactive prover.
+
+3.  Duplex Sponge interface and instances
+
+   Prover and verifier messages are handled via three operations:
+
+   *  Init(session_id) -> state: create a new state seeded by the
+      64-byte domain-separation string session_id.
+
+   *  Absorb(x): absorb the byte string x into the state.
+
+   *  Squeeze(n) -> buf: produce n bytes from the state.
+
+   Messages can be absorbed incrementally, as Absorb calls are
+   associative: Absorb(x) followed by Absorb(y) is eqivalent to
+   Absorb(x || y).  The output of Squeeze(n) is uniformly distributed
+   (among n-byte strings).  Guidance on how to produce a 64-byte string
+   session_id is given in Section 5.1.
+
+3.1.  SHAKE128 Duplex Sponge
+
+   SHAKE128, used as a duplex sponge, absorbs and squeezes over an
+   internal Keccak-f[1600] state of 1600 bits (200 bytes) with a
+   capacity of 32 bytes and rate of 168 bytes.
+
+3.1.1.  Init
+
+   Seed the verifier state absorbing the session identifier, padded with
+   zeros to fill the rate (the remaining R - 64 = 104 bytes).
+
+       Init(self, session_id)
+
+       Input: iv, a byte array
+
+       Output: a duplex sponge state
+
+       1. assert len(session_id) == 64
+       2. ctx = SHAKE128.New()
+       3. ctx.Update(session_id || zeros(R - 64))
+       4. return state := (ctx, reader = None)
+
+3.1.2.  Absorb
+
+   Feed a byte string x into the state.
+
+       Absorb(state, x)
+
+       Inputs:
+
+       - state, a duplex sponge state
+       - x, a byte array
+
+       1. state.reader = None
+       2. state.ctx.update(x)
+
+3.1.3.  Squeeze
+
+   Returns the next n bytes of the SHAKE128 output stream computed over
+   absorbed.  If the sponge is in the absorbing phase, it finalizes a
+   copy of the absorbing context as a SHAKE128 XOF reader.  Consecutive
+   Squeeze calls *continue* the same SHAKE128 output stream.
+
+       Squeeze(state, n)
+
+       Inputs:
+
+       - state, the duplex sponge state
+       - length, the number of elements to be squeezed
+
+       Output: a uniformly-distributed random n-byte string
+
+       1. if state.reader == None:
+       2.    state.reader = self.ctx.Copy().Finalize()
+       3. state.reader.read(n)
+
+4.  Codecs
+
+   A codec is a set of function that map prover and verifier messages to
+   hash function alphabet:
+
+   *  Encoding converts prover messages into the bytes absorbed by the
+      sponge.  Encoding functions *MUST* be prefix-free.
+
+   *  Decoding converts squeezed bytes into verifier messages.  Decoding
+      *MUST* preserve the uniform distribution (up to a small codec
+      error).
+
+   Codecs serve a different purpose than proof serialization, which is
+   described in Section 6.1.
+
+4.1.  Encoding into byte strings
+
+   All encoding functions *MUST* have a unique, non-ambiguous pre-image.
+   That is, encodings are *prefix-free*: for any two distinct values,
+   the encoding of one is never a prefix of the encoding of the other.
+
+4.1.1.  Byte strings
+
+   The encoding of a non-empty byte string is the identity map.  The
+   caller is responsible for ensuring that the length is fixed by the
+   surrounding protocol.
+
+       EncodeBytes(x)
+
+       Input: x, a non-empty N-byte string
+
+       Output: out, a N-byte string
+
+       1. return x
+
+4.1.2.  Character strings
+
+   A UTF-8 string of fewer than 2^32 bytes is encoded as its byte length
+   (a little-endian 32-bit integer) followed by its bytes.
+
+       EncodeString(s)
+
+       Input: s, a N-byte utf-8 encoded string
+
+       Output: out, a (N+4)-byte string
+
+       1. b = utf8(s)
+       2. return LE(len(b), 4) || b
+
+   The length prefix makes the encoding prefix-free.
+
+4.1.3.  Sequences and tuples
+
+   A fixed-length array or a tuple is encoded as the concatenation of
+   the encodings of its elements, with no separators.
+
+4.1.4.  Unsigned integers
+
+   An element of an integer m is represented by its unique integer
+   representative in the range [0, m) and encoded big-endian as defined
+   in I2OSP [RFC8017].
+
+       EncodeScalar(x, m)
+
+       Inputs:
+       - x, an integer modulo m
+       - m, the oder of the integer ring
+
+       Output: out, a Ns-byte string
+
+       1. Ns = ceil(bitlength(m) / 8)
+       2. assert 0 <= x < m
+       3. return I2OSP(x, Ns)
+
+4.1.5.  Elliptic curve groups
+
+   A scalar field element is serialized to a canonical Ns-byte string
+   using the group's sclar field serialization function.  For the prime-
+   order elliptic curve groups in scope, this is equivalent to
+   EncodeScalar described in Section 4.1.4.
+
+   A group element is serialized to a canonical Ne-byte string using the
+   group's element-serialization function.  For the prime-order
+   elliptic-curve groups in scope, this is the compressed Elliptic-
+   Curve-Point-to-Octet-String conversion of [SEC1].  Each group element
+   has exactly one Ne-byte representation.  The value of Ne and the
+   concrete conversion are fixed by the ciphersuite.  Batch
+   serialization options should be preferred when available.
+
+4.2.  Decoding from byte strings
+
+   Decoding converts a uniformly-distributed byte string into a verifier
+   message.  Each verifier message type fixes the number of bytes to
+   squeeze.
+
+   Decoding need not be injective: the requirement for the decoding map
+   is that it be _distribution-preserving_: if its input is a uniformly
+   random byte string, then its output is (statistically close to)
+   uniformly distributed over the verifier message type.
+
+4.2.1.  Byte arrays
+
+   The decoding function for fixed-length byte arrays is the identity.
+
+       DecodeBytes(buf, N)
+
+       Inputs:
+       - buf, a byte string
+       - N, the expected byte length
+
+       Output: out, a byte string of length N
+
+       1. assert len(buf) == N
+       2. return buf
+
+4.2.2.  Unsigned integers
+
+   To sample a uniformly random element modulo m of Ns bytes (that is Ns
+   = ceil(log2(m) / 8)), decode Ns + 32 bytes by interpreting them as a
+   big-endian non-negative integer with OS2IP, and reduce modulo m.
+
+       DecodeScalar(buf, m)
+
+       Inputs:
+       - buf, a byte string of length Ns + 32
+       - m, the modulus
+
+       Output: out, an integer in the range [0, m)
+
+       1. Ns = ceil(log2(m) / 8)
+       2. assert len(buf) == Ns + 32
+       3. return OS2IP(buf) mod m
+
+   The 32 extra bytes bound the bias introduced by the modular reduction
+   to be cryptographically negligible.
+
+5.  Initialization
+
+5.1.  Session identifiers
+
+   The session identifier is a 64-byte value that identifies the
+   application context.  It *SHOULD* be derived from a variable-length
+   application context string constructed according to the following
+   requirements:
+
+   1.  session identifiers *MUST* have nonzero length.  A minimum length
+       of 32 bytes is *RECOMMENDED* to reduce the chance of collisions
+       with other applications.
+
+   2.  session identifiers *MUST* uniquely identify the *non-interactive
+       argument* used, including both the IP (interactive protocol), the
+       hash suite, the statement being proven, and the codecs.
+
+   3.  session identifers *MUST* contain contextual information about
+       the context where the proof is made (e.g. a URL, or a timestamp).
+       This identifier is currently generated as 32 zero-bytes,
+       concatenated with a 32-byte digest derived using the duplex
+       sponge.
+
+   4.  session identifiers *SHOULD* begin with a fixed identification
+       string that is unique to the application.
+
+   5.  session identifiers *SHOULD* include a version number.
+
+       DeriveSessionID(s)
+
+       Inputs:
+       - s, an application-chosen byte string
+
+       Output: session_id, a byte string of length 64
+
+       1. iv = "irtf-cfrg-fiat-shamir/session-id" || zeros(32)
+       2. sponge = SHAKE128.Init(iv)
+       3. sponge.Absorb(s)
+       4. return zeros(32) || sponge.Squeeze(32)
+
+   As an example, consider a fictional application named Foo that
+   implements sigma protocols over elliptic curves for encrypted
+   messages shared during a time epoch tt.  A reasonable choice of tag
+   is FOO-SV{xx}-{tt}-DSFS-{hashID}-SIGMA-PROOFS-{yy}, where xx are the
+   two-digit numbers indicating the version, yy are the two-digit
+   numbers indicating the elliptic-curve ciphersuite, hashID is the hash
+   identifier, and tt is the epoch identifier.
+
+   Another example, cosider a fictional application name Bar that
+   implements an ad-hoc zero-knowledge virtual machine for correct
+   execution of circuits.  A reasonable choice of tag is BAR-COM{cc}
+   where {cc} is the commit hash of the associated version of the
+   cryptographic specification of the protocol.
+
+   Other applications *MAY* use custom session identifiers, as long as
+   they do NOT
+
+5.2.  Zero-knowledge salts
+
+   If the interactive argument is honest-verifier zero-knowledge, but
+   the first message of the interactive proof is _not_ unpredictable,
+   the non-interactive prover and verifier *MUST* absorb a 32-byte salt
+   immediately after the session identifier.
+
+   The salt is sampled uniformly a random from a cryptographically
+   secure entropy source.  The salt *MUST* be used only once and *MUST*
+   NOT be copied or reused, and should be zeroized as soon as it is no
+   longer needed.
+
+5.3.  Instance
+
+   The instance is part of the statement being proven.  The prover and
+   verifier *MUST* include the instance before any prover message is
+   absorbed, and after the session identifier.
+
+   The instance encoding function encode[0], displayed in Figure 1 and
+   Figure 2, depends fully on the relation being proven, and is
+   specified as part of the relation specification.
+
+   The instance encoding *MUST* be prefix-free, and identify all public
+   values whose modification would change the statement being proven,
+   including the relation, ciphersuite, group parameters, generators,
+   public keys, and public elements.  Prior works describes the fatal
+   security impact of omitting public statement data from the Fiat-
+   Shamir input permits a proof for one statement to be interpreted as a
+   proof for a related statement under modified public parameters
+   [BPW16].
+
+6.  Non-interactive argument string
+
+6.1.  Serialization
+
+   Serialization is the concatenation of the byte encoding of each
+   prover message, as defined in Section 4.1.
+
+6.2.  Deserialization
+
+   Deserialization of the NARG string consists in reading the prover
+   messages, and compute the inverse of the serialization procedure:
+   each message is read by consuming a fixed number of bytes, determined
+   by its type and the instance, and advancing past them.
+
+   Verification *MUST* fail if the any of the prover messages cannot be
+   deserialized successfully.  After the last expected prover message
+   has been read, the verifier *MUST* verify that no bytes remain.
+   Bytes that are never read or that are decoded despite being invalid
+   will defeat strong simulation extractability: an adversary will be
+   able to malleate a valid proof to obtain a second, distinct accepting
+   proof for the same statement.
+
+6.2.1.  Byte strings
+
+   Read the next N bytes, where N is fixed by the protocol, and return
+   them.  Any N-byte string is a valid encoding.
+
+6.2.2.  Character strings
+
+   Read a 4-byte little-endian length L, then read the next L bytes.
+   Fail if those L bytes are not valid UTF-8.  The value is the
+   resulting string.
+
+6.2.3.  Sequences and tuples
+
+   Deserialize each element in order.  Fail if any element fails to
+   deserialize.  The number and types of the elements are fixed by the
+   protocol.
+
+6.2.4.  Unsigned integers
+
+   Read the next Ns bytes and interpret them as a big-endian integer m =
+   OS2IP(.).  If m >= p, fail: non-canonical encodings of field elements
+   *MUST* be rejected.  The value returned is m.
+
+6.2.5.  Group elements
+
+   Read the next Ne bytes and convert them to a group element using the
+   group's element-deserialization function.
+
+   For the elliptic-curve groups in scope this, is the encoding
+   procedure, such as the Octet-String-to-Elliptic-Curve-Point
+   conversion of [SEC1].  Deserialization *MUST* perform the
+   ciphersuite's input-validation steps and fail unless the input is the
+   canonical encoding of a valid group element.
+
+   For elliptic curves these steps check that the coordinates are in the
+   correct range, and that the point lies on the curve subgroup used for
+   cryptographic operations.
+
+7.  Security Considerations
+
+   The Fiat-Shamir transformation carries over the soundness and witness
+   hiding properties of the interactive proof.
+
+   In particular, completeness of this transformation is preserved: if
+   the statement being proved is true, then the resulting non-
+   interactive argument string is valid.
+
+7.1.  Soundness
+
+   If the interactive proof is sound, then so is the non-interactive
+   proof.  In particular, valid proofs cannot be generated without
+   possession of the corresponding witness (in the random oracle model).
+
+   Soundness and straightline knowledge soundness carry over to the non-
+   intearcive argument, with an additive soundness loss quadratic in the
+   number of queries the adversary makes to the random oracle [CO25].
+
+7.2.  Zero-Knowledge
+
+   If the interactive proof is honest-verifier zero-knowledge, _and the
+   first message is unpredictable_, then so is the non-interactive
+   proof.  In particular, the resulting argument string does not reveal
+   any information beyond what can be directly inferred from the
+   statement being valid.
+
+   The additive zero-knowledge loss introduced by the transformation is
+   linear in the number of queries the adversary makes to the random
+   oracle [CO25].
+
+7.3.  Quantum adversaries
+
+   If the interactive proof is sound against quantum adversaries, then
+   the non-interactive proof after the Fiat-Shamir transformation in the
+   random oracle model is also secure against quantum adversary.
+
+   The loss introduced by a quantum adversary is polynomial (larger than
+   quadratic) in the number of quantum random-oracle queries.
+
+7.4.  Indifferentiability of the hash function
+
+   The random oracle instantiation *MUST* be extraction-friendly and
+   simulation-friendly indifferentiable to preserve soundness and zero-
+   knowledge of the transformation.
+
+   To provide soundness and zero-knowledge, stronger capabilities that
+   indifferentiability are needed [CO25].  Implementers do not need
+   these notions to use the transformation, but they are the reason a
+   different hash construction *SHOULD NOT* be substituted on the
+   strength of indifferentiability alone.
+
+7.5.  Implementation guidance
+
+   The Fiat-Shamir transformation has historically led to a number of
+   critical security vulnerabilities, especially due to incorrect
+   implementations involving out-of order prover messages, and invalid
+   instance encodings.
+
+   Absorbing a prover message and serializing it to (or reading it from)
+   the NARG string *SHOULD* be coupled, to prevernt prover messages to
+   be hashed without being serialized, skipped, or reordered.
+
+   A sequential transcript interface is RECOMMENDED: implementations are
+   encouraged to expose two directed state machines
+
+   *  (instance, witness) -> prove -> proof, and
+
+   *  (instance, proof) -> verify -> accept/reject
+
+   where prover messages are randomly addressable.
+
+   APIs exponsing a proof object are prone to soundness bugs, as they
+   provide out-of-order or partial access to prover messages. a byte-
+   oriented stream enforces sequential, exactly-once processing
+   together.  End-of-input check is necessary to prevent malleability
+   pitfalls.
+
+8.  IANA Considerations
+
+   This document has no IANA actions.
+
+9.  References
+
+9.1.  Normative References
+
+   [RFC8017]  Moriarty, K., Ed., Kaliski, B., Jonsson, J., and A. Rusch,
+              "PKCS #1: RSA Cryptography Specifications Version 2.2",
+              RFC 8017, DOI 10.17487/RFC8017, November 2016,
+              <https://www.rfc-editor.org/rfc/rfc8017>.
+
+9.2.  Informative References
+
+   [BPW16]    Bernhard, D., Pereira, O., and B. Warinschi, "How not to
+              Prove Yourself: Pitfalls of the Fiat-Shamir Heuristic and
+              Applications to Helios", 2016,
+              <https://eprint.iacr.org/2016/771>.
+
+   [CO25]     Chiesa, A. and M. Orrù, "A Fiat-Shamir Transformation From
+              Duplex Sponges", 2025,
+              <https://eprint.iacr.org/2025/536.pdf>.
+
+   [SEC1]     Standards for Efficient Cryptography Group (SECG), "SEC 1:
+              Elliptic Curve Cryptography",
+              <https://www.secg.org/sec1-v2.pdf>.
+
+   [SHA3]     "SHA-3 Standard: Permutation-Based Hash and Extendable-
+              Output Functions", n.d.,
+              <https://nvlpubs.nist.gov/nistpubs/FIPS/
+              NIST.FIPS.202.pdf>.
+
+Appendix A.  Test Vectors
+
+A.1.  test_keccak_duplex_sponge_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = absorb:6261736963206475706c65782073706f6e67652074657374
+   Operation2 = squeeze:64
+   Expected = f845c3ef4231a4d6e09c29b1eea0055842246fd57558fd7d93e1302f7
+   799dd9593d2e4d06eda72d5252ca5b2feff4b8cb324ec96673a7417cf70fa77b1898
+   991
+
+A.2.  test_absorb_empty_before_does_not_break_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = absorb:656d707479206d657373616765206166746572
+   Operation2 = absorb:
+   Operation3 = squeeze:64
+   Expected = 3953e577d9e5d4dc7b86d1a62e881f2d1eb750ea3550fcae315854d16
+   6136ae816ca922a4c7e54d711b8721c8969598449922122768c50313f47eef35020b
+   73c
+
+A.3.  test_absorb_empty_after_does_not_break_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = absorb:
+   Operation2 = absorb:656d707479206d657373616765206265666f7265
+   Operation3 = squeeze:64
+   Expected = 6e475edd3c400bec314d5891af570841a547c95d1a651adff9a8bfb70
+   719a79b5afde316386da13fa83525662df3c5b2367d987bf3dc4199efdb9d0612572
+   785
+
+A.4.  test_squeeze_zero_behavior_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = squeeze:0
+   Operation2 = absorb:7a65726f2073717565657a652074657374
+   Operation3 = squeeze:0
+   Operation4 = squeeze:64
+   Expected = 4cf7f008057b63cb615547a143f42cf793b86b239f404d2f28b3f0919
+   7d850eb029df3024ad468be5aceb2fa60e9fb7add98436236be69ddb34314ce7a905
+   f23
+
+A.5.  test_squeeze_zero_after_behavior_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = squeeze:0
+   Operation2 = absorb:7a65726f2073717565657a65206166746572
+   Operation3 = squeeze:64
+   Expected = bd9278e6f65cb854935b3f6b2c51ab158be8ea09744509519b8f06f0c
+   501d07c429e37f232b6f0955b620ff6226d9d02e4817b1447e7309023a3a14f73587
+   6ec
+
+A.6.  test_absorb_squeeze_absorb_consistency_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 656467652d636173652d746573742d646f6d61696e2d6162736f72620000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = absorb:696e7465726c65617665206669727374
+   Operation2 = squeeze:32
+   Operation3 = absorb:696e7465726c65617665207365636f6e64
+   Operation4 = squeeze:32
+   Expected = 4d31a75f29851f9f15cd54fa6f2335cbe07b947b9d3c28092c1ba7315
+   e295921
+
+A.7.  test_associativity_of_absorb_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 6162736f72622d6173736f6369617469766974792d646f6d61696e000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = absorb:6173736f63696174697669747920746573742066756c6c
+   Operation2 = squeeze:32
+   Expected = c0faa351141d60678dceff4f3a5760381bb335ad113958b70edf7b242
+   df01c8a
+
+A.8.  test_iv_affects_output_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 646f6d61696e2d6f6e652d646966666572732d6865726500000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = absorb:697620646966666572656e63652074657374
+   Operation2 = squeeze:32
+   Expected = 7650642267cc544abf0e01ce28e2595aec4c2f5b5e5e3720ab5514496
+   37b35f2
+
+A.9.  test_multiple_blocks_absorb_squeeze_SHAKE128
+
+   DuplexSponge = SHAKE128
+   IV = 6d756c74692d626c6f636b2d6162736f72622d7465737400000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000
+   Operation1 = absorb:abababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababab
+   Operation2 = squeeze:600
+   Expected = 526d4f6cfca230e0654bf8749bddc0f4416a8a164c50f3c1b0bc1d527
+   2a88b9a524e73cafad76691a29c0e03a5255fd8fb9d778ef5a0c8c9e11e003011d25
+   6bf92dd36233e4c6c360baca0f8ac305d459adb1231a801742669efa051396e96417
+   814448b5328336d028a62dbddf24d1bb68496d27f1944eb24d4b2812d9ad4eae6c26
+   0b720c44ed2be8bfeeed3acc2640edbab987674f2cef8ceacda1e04f254170aba424
+   1dabc6364ed5afc09b58205682d5e8413bf5f9d97e9c799b97876ccd1c48d86759ad
+   e5871acc4c5d41d37f2b1843c8b6f9e0bade78342d56f9b1e8232d4c7553674d889e
+   69fe24dea31f42f0b02b70161876ceb12cc0b36868c262cbebb5e815a1eceaee97ae
+   d3402a518287c32f2f469c3a38a17afd0f0d82433acf695ae143ded9412b4e6b6144
+   bd6d4be6bb7de33c05f560480c63aa89336954f1cf5992399e6ed59d406adb4497bb
+   88aa897fd3d65646cf86e796da4f193c418a74d662f57e0e0c775386abdace02157e
+   519ba54495555145016c550ff32004981d0e34f0abe7d814ac4fe25260473ffa8746
+   0a736f20954e8d3b9f16140e79451953fe6cfc222cba6ad4f85a2e2efd6ff8f5fef6
+   5d8480e6af40baab298c4de57f30d08a5e1b4c10d123a5af7702ff26ba9a84a6fe92
+   f48391b23a7e8e8cb06deda74d1b10870611995f6bfe4df60320a0b7f2c891cad5a5
+   645ecec80868ed568591a74dafb35cabb42dae1a1085269b655db1ebf09929f63d5a
+   f775a24e43759f673b83aeefef382bc2b7bf175bb9d90e77911466ffb3b230754776
+   5cd5adc30a6b07881a88fd1511e5f8d2dcc4347c076e6c79676d8df
+
+Author's Address
+
+   Michele Orrù
+   CNRS
+   Email: m@orru.net

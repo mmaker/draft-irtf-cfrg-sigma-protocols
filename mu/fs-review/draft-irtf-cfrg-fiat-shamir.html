@@ -1,0 +1,2495 @@
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>Fiat-Shamir Transformation</title>
+<meta content="Michele Orrù" name="author">
+<meta content="
+       This document describes the Fiat-Shamir transformation, which allows to make a public-coin protocol non-interactive by means of a cryptographic hash function. 
+       It specifies how the hash function is employed, how prover messages are encoded in the hash function and how verifier messages are decoded from the hash function's output, as well as serialization and de-serialization of the non-interactive argument string. 
+    " name="description">
+<meta content="xml2rfc 3.33.0" name="generator">
+<meta content="zero knowledge" name="keyword">
+<meta content="hash" name="keyword">
+<meta content="draft-irtf-cfrg-fiat-shamir-latest" name="ietf.draft">
+<!-- Generator version information:
+  xml2rfc 3.33.0
+    Python 3.12.13
+    ConfigArgParse 1.7
+    google-i18n-address 3.1.1
+    intervaltree 3.2.1
+    Jinja2 3.1.6
+    lxml 6.0.2
+    platformdirs 4.9.6
+    pycountry 24.6.1
+    PyYAML 6.0.3
+    requests 2.33.1
+    wcwidth 0.7.0
+-->
+<link href="draft-irtf-cfrg-fiat-shamir.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Lora SemiBold'), local('Lora-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-semibold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+}
+
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-greek.woff2') format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-greek.woff2') format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  color-scheme: light dark;
+  --background-color: #fff;
+  --text-color: #222;
+  --title-color: #191919;
+  --link-color: #2a6496;
+  --highlight-color: #f9f9f9;
+  --line-color: #eee;
+  --pilcrow-weak: #ddd;
+  --pilcrow-strong: #bbb;
+  --small-font-size: 14.5px;
+  --font-mono: 'Oxygen Mono', monospace;
+  --font-title: "Sofia Sans Semi Condensed", sans-serif;
+  scrollbar-color: #bbb #eee;
+}
+body {
+  max-width: 600px;
+  margin: 75px auto;
+  padding: 0 5px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  font: 16px/22px "Lora", serif;
+  scroll-behavior: smooth;
+}
+
+.ears {
+  display: none;
+}
+
+/* headings */
+section {
+  clear: both;
+}
+.section-number {
+  padding-right: 0.5em;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-title);
+  font-weight: 680;
+  margin: 0.8em 0 0.3em;
+  font-size-adjust: 0.5;
+  color: var(--title-color);
+}
+h1 {
+  &#title {
+    font-size: 32px;
+    line-height: 40px;
+    clear: both;
+    margin: 1.5em 0 0.2em;
+  }
+  &#rfcnum {
+    margin: 1.5em 0 0.2em;
+    & + h1#title {
+      margin: 0.2em 0;
+    }
+  }
+}
+
+h1, h2, h3 {
+  font-size: 22px;
+  line-height: 27px;
+}
+h4, h5, h6 {
+  font-size: 20px;
+  line-height: 24px;
+}
+
+/* general structure */
+.author {
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+#abstract+p {
+  font-size: 18px;
+  line-height: 24px;
+  & code, & samp, & tt {
+    font-size: 16px;
+    line-height: 0;
+  }
+}
+
+p {
+  padding: 0;
+  margin: 0.5em 0;
+  text-align: left;
+}
+div {
+  margin: 0;
+}
+.alignRight {
+  margin: 1em 0;
+  &.art-text {
+    background-color: var(--highlight-color);
+    border: 1px solid var(--line-color);
+    border-radius: 3px;
+    padding: 0.5em 1em 0;
+    margin-bottom: 0.5em;
+    & pre {
+      padding: 0;
+      width: auto;
+    }
+  }
+  & > *:first-child {
+    border: none;
+    margin: 0;
+    float: right;
+    clear: both;
+  }
+  & > *:nth-child(2) {
+    clear: both;
+    display: block;
+    border: none;
+  }
+}
+svg {
+  display: block;
+  /* font-family isn't space-separated, but =~ will have to do */
+  &[font-family~="monospace" i], & [font-family~="monospace" i] {
+    font-family: var(--font-mono);
+  }
+}
+.alignCenter {
+  margin: 1em 0;
+  &.art-text {
+    background-color: var(--highlight-color);
+    border: 1px solid var(--line-color);
+    border-radius: 3px;
+    padding: 0.5em 1em 0;
+    margin-bottom: 0.5em;
+    & pre {
+      padding: 0;
+      width: auto;
+    }
+  }
+  & > *:first-child {
+    border: none;
+    /* this isn't optimal, but it's an existence proof.  PrinceXML doesn't
+       support flexbox yet.
+    */
+    display: table;
+    margin: 0 auto;
+  }
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 0.5em 2em;
+  & :is(ol, ul) {
+    margin-left: 1em;
+  }
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+  & li {
+    margin-top: 0.5em;
+  }
+}
+:is(ul, ol).compact, .ulCompact, .olCompact {
+  margin: 0 0 0 2em;
+  & li {
+    margin: 0;
+    & :first-child { margin-top: 0; }
+    & :last-child { margin-bottom: 0; }
+  }
+}
+
+/* definition lists */
+dl {
+  clear: left;
+  --indent: 3ch;
+  /* --indent: attr(indent ch); not supported in any browser, but we can dream */
+  &.olPercent {
+    --indent: 5ch;
+    & > dt {
+      min-width: calc(var(--indent) - 2ch);
+      float: none;
+    }
+  }
+
+  dl > dd > & {
+    margin-top: 0.5em;
+    margin-bottom: 0;
+  }
+
+  &:not(.dlNewline) > dt {
+    float: left;
+    margin-right: 2ch;
+    min-width: 8ch;
+  }
+  & > dd {
+    margin-bottom: .8em;
+    margin-left: var(--indent) !important; /* stupid element overrides */
+    min-height: 2ex;
+  }
+}
+:is(dl.compact, .dlCompact) > dd {
+  margin-bottom: 0;
+  & > :is(:first-child, .break:first-child + *) {
+    margin-top: 0;
+  }
+  & > :is(:last-child) {
+    margin-bottom: 0;
+  }
+}
+:is(dd, span).break {
+  display: none;
+}
+
+/* links */
+a {
+  text-decoration: none;
+  &[href] {
+    color: var(--link-color);
+    &:hover { text-decoration: underline; }
+    &.selfRef {
+      color: var(--text-color);
+      &:hover {
+        text-decoration: none;
+        background-color: var(--highlight-color);
+      }
+    }
+  }
+}
+.iref + a[href].internal {
+  color: var(--text-color);
+}
+a.xref:is(.cite, .auto), :is(#status-of-memo, #copyright) a {
+  white-space: nowrap;
+}
+
+/* Figures */
+tt, code, pre {
+  background-color: var(--highlight-color);
+  font: 14px/22px var(--font-mono);
+}
+tt, code {
+  /* changing the font for inline elements leads to different ascender
+     and descender heights; as we want to retain baseline alignment,
+     remove leading to avoid altering the final height of lines
+     note: this fails if these blocks take an entire line,
+     a different solution would be great */
+  line-height: 0;
+}
+:is(h1, h2, h3, h4, h5, h6) :is(tt, code) {
+  font-size: 84%;
+}
+pre {
+  border: 1px solid var(--line-color);
+  font-size: 13.5px;
+  line-height: 16px;
+  letter-spacing: -0.2px;
+  margin: 5px;
+  padding: 5px;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0.5em 0;
+  padding: 0;
+  & blockquote {
+    margin: 0.8em 0.4em 0.4em;
+  }
+}
+figcaption, caption {
+  font-style: italic;
+  margin: 0.5em 1.5em;
+  text-align: left;
+  caption-side: bottom;
+}
+@media screen {
+  /* Auto-collapse boilerplate. */
+  :is(#status-of-memo, #copyright) {
+    & p {
+      margin: -2px 0;
+      max-height: 0;
+      transition: max-height 2s ease, margin 0.5s ease 0.5s;
+      overflow: hidden;
+    }
+    &:hover p,
+    & h2:target ~ p {
+      margin: 0.5em 0;
+      max-height: 500px;
+      overflow: auto;
+    }
+  }
+  pre, svg {
+    display: inline-block;
+    /* In the horizontal direction, sometimes people make over-sized figures.
+       Scrollbars for those is therefore necessary: auto adds them as necessary..
+       In the vertical direction, the line-height can combine with the font
+       asender/descender height to produce scrollbars: hidden avoids that. */
+    overflow: auto hidden;
+  }
+  pre {
+    max-width: 100%;
+    width: calc(100% - 22px - 1em);
+  }
+  svg {
+    max-width: calc(100% - 22px - 1em);
+  }
+  figure pre {
+    display: block;
+    width: calc(100% - 25px);
+  }
+  :is(pre, svg) + .pilcrow {
+    display: inline-block;
+    vertical-align: text-bottom;
+    padding-bottom: 8px;
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 0 2em;
+  font-style: italic;
+}
+blockquote {
+  margin: 1em 0;
+  border-left: 2px var(--pilcrow-strong) solid;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+
+/* tables */
+table {
+  width: auto;
+  max-width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+  &.right { margin-left: auto; }
+  &.center { margin-left: auto; margin-right: auto; }
+  &.left { margin-right: auto; }
+  & .text-left { text-align: left; }
+  & .text-center { text-align: center; }
+  & .text-right { text-align: right; }
+  & caption {
+    margin: 0;
+    padding: 3px 0 3px 1em;
+  }
+  & p { margin: 0; }
+}
+
+thead, tbody {
+  border: 1px solid var(--line-color);
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 5px 10px;
+}
+th {
+  background-color: var(--line-color);
+}
+:is(tr:nth-child(2n), thead+tbody > tr:nth-child(2n+1)) > td {
+  background-color: var(--background-color);
+}
+:is(tr:nth-child(2n+1), thead+tbody > tr:nth-child(2n)) > td {
+  background-color: var(--highlight-color);
+}
+
+/* pilcrow */
+a.pilcrow {
+  margin-left: 3px;
+  opacity: 0.2;
+  user-select: none;
+  &[href] {
+    color: var(--pilcrow-weak);
+    &:hover { text-decoration: none; }
+  }
+  @media not print {
+    :hover > &, &:focus {
+      opacity: 1;
+    }
+    &[href]:hover {
+      color: var(--pilcrow-strong);
+      background-color: transparent;
+    }
+  }
+  @media print {
+    display: none;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid var(--line-color);
+}
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: 600;
+  font-size: var(--small-font-size);
+}
+.role {
+  font-variant: all-small-caps;
+}
+sub, sup {
+  line-height: 1;
+  font-size: 80%;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: var(--small-font-size);
+  line-height: 18px;
+  --identifier-width: 15ch;
+  & dt {
+    width: var(--identifier-width);
+    min-width: var(--identifier-width);
+    clear: left;
+    float: left;
+    text-align: right;
+    margin-right: 1ch;
+  }
+  & dd {
+    margin: 0;
+    margin-left: calc(1em + var(--identifier-width)) !important;
+    min-width: 5em;
+  }
+  & .authors {
+    & .author {
+      display: inline-block;
+      margin-right: 1.5em;
+    }
+    & .org {
+      font-style: italic;
+    }
+  }
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #999;
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+  & .prepared {
+    float: right;
+  }
+}
+
+/* table of contents */
+#toc {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+
+  & nav {
+    & ul {
+      margin: 0 0.5em 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    & li {
+      line-height: 1.3em;
+      margin: 2px 0;
+      padding-left: 1.2em;
+      text-indent: -1.2em;
+    }
+  }
+  & a.xref {
+    white-space: normal;
+  }
+}
+
+.references {
+  & > dt {
+    text-align: right;
+    font-weight: bold;
+    min-width: 10ch;
+    margin-right: 1.5ch;
+    &:target::before {
+      content: "⇒";
+      margin: 0 10px 0 -25px;
+    }
+  }
+  & > dd {
+    margin-left: 12ch !important;
+    overflow: visible;
+    & .refInstance {
+      margin-bottom: 0.8em;
+    }
+    & .ascii {
+      margin-bottom: 0.25em;
+    }
+  }
+}
+
+#rfc\.index\.index + ul {
+  margin-left: 0;
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  max-width: 20em;
+  margin: 1em auto 1em 0;
+
+  & .nameRole {
+    font-weight: 700;
+    margin-left: 0;
+  }
+  & .label {
+    margin: 0.5em 0;
+  }
+  & .type {
+    display: none;
+  }
+  & .alternative-contact {
+    margin: 0.5em 0 0.25em 0;
+  }
+  & .non-ascii {
+    margin: 0 0 0 2em;
+  }
+  & div.left {
+    text-align: left;
+  }
+  & div.right {
+    text-align: right;
+  }
+}
+
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+@media (min-width: 500px) {
+  #authors-addresses {
+    & > section {
+      column-count: 2;
+      column-gap: 20px;
+    }
+    & > section > h2 {
+      column-span: all;
+    }
+    /* hack for break-inside: avoid-column */
+    & address {
+      display: inline-block;
+      break-inside: avoid-column;
+    }
+  }
+}
+
+/* Comments */
+.rfcEditorRemove {
+  & p:first-of-type {
+    font-style: italic;
+  }
+}
+.cref {
+  background-color: rgba(249, 232, 105, 0.3);
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+
+@media screen {
+  #toc {
+    & nav {
+      font-family: var(--font-title);
+      font-weight: 360;
+      & > ul { margin-bottom: 2em; }
+      & ul {
+        margin: 0 0 0 4px;
+        & :is(p, li) {
+          margin: 2px 0;
+        }
+      }
+    }
+    & a.toplink {
+      float: right;
+    }
+  }
+}
+@media not screen {
+  #toc a.toplink {
+    display: none;
+  }
+}
+
+
+/* TOC layout for smaller screens */
+@media screen and (max-width: 929px) {
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 1px 0 0 0;
+    margin: 0;
+    border-bottom: 1px solid #ccc;
+    opacity: 0.6;
+    & h2 {
+      margin: 0;
+      padding: 2px 0 2px 6px;
+      padding-right: 1em;
+      font-size: 18px;
+      line-height: 24px;
+      min-width: 190px;
+      text-align: right;
+      background-color: #444;
+      color: white;
+      cursor: pointer;
+      &::before { /* css hamburger */
+        float: right;
+        position: relative;
+        width: 1em;
+        height: 1px;
+        left: -164px;
+        margin: 8px 0 0 0;
+        background: white none repeat scroll 0 0;
+        box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+        content: "";
+      }
+    }
+    & nav {
+      display: none;
+      background-color: var(--background-color);
+      padding: 0.5em 1em 1em;
+      overflow: auto;
+      overscroll-behavior: contain;
+      height: calc(100vh - 48px);
+      border-left: 1px solid #ddd;
+    }
+    &.active {
+      opacity: 1;
+      & nav { display: block; }
+    }
+    /* Make the collapsed ToC header render white on gray also when it's a link */
+    & h2 a,
+    & h2 a:is(:link, :focus, :hover),
+    & a.toplink,
+    & a.toplink:hover {
+      color: white;
+      background-color: #444;
+      text-decoration: none;
+    }
+    & a.toplink {
+      margin: 2px 0.5em 0;
+    }
+  }
+}
+
+/* TOC layout for wide screens */
+@media screen and (min-width: 930px) {
+  body {
+    padding-right: 360px;
+    padding-right: calc(min(180px + 20%, 500px));
+  }
+  #toc {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    right: calc(50vw - 480px);
+    width: 312px;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+    & h2 {
+      margin: 0;
+      padding: 0.25em 1em 1em 0;
+    }
+    & nav {
+      display: block;
+      height: calc(90vh - 84px);
+      bottom: 0;
+      padding: 0.5em 0 2em;
+      overflow: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+    }
+    & a.toplink {
+      margin: 8px 0.5em 0;
+    }
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc {
+    page-break-before: always;
+    border-top: none;
+    padding-top: 0;
+  }
+  #n-introduction {
+    page-break-before: always;
+  }
+  figure, pre, .vcard {
+    page-break-inside: avoid;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  :is(h2, h3, h4, h5, h6)+*, dd {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+}
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+}
+
+/* Dark mode. */
+@media (prefers-color-scheme: dark) {
+:root {
+  --background-color: #121212;
+  --text-color: #f0f0f0;
+  --title-color: #fff;
+  --link-color: #4da4f0;
+  --highlight-color: #282828;
+  --line-color: #444;
+  --pilcrow-weak: #444;
+  --pilcrow-strong: #666;
+  scrollbar-color: #777 #333;
+}
+}
+
+/* SVG Trick: a prefix match works because only black and white are allowed */
+svg {
+  & :is([stroke="black"], [stroke^="#000"]) {
+    stroke: var(--text-color);
+  }
+  & :is([stroke="white"], [stroke^="#fff"]) {
+    stroke: var(--background-color);
+  }
+  & :is([fill="black"], [fill^="#000"], :not([fill])) {
+    fill: var(--text-color);
+  }
+  & :is([fill="white"], [fill^="#fff"]) {
+    fill: var(--background-color);
+  }
+}
+</style>
+
+</head>
+<body class="xml2rfc">
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">Fiat-Shamir Transformation</td>
+<td class="right">June 2026</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Orrù</td>
+<td class="center">Expires 10 December 2026</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">Crypto Forum</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-irtf-cfrg-fiat-shamir-latest</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2026-06-08" class="published">8 June 2026</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Informational</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2026-12-10">10 December 2026</time></dd>
+<dt class="label-authors">Author:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">M. Orrù</div>
+<div class="org">CNRS</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">Fiat-Shamir Transformation</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">This document describes the Fiat-Shamir transformation, which allows to make a public-coin protocol non-interactive by means of a cryptographic hash function.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-2">It specifies how the hash function is employed, how prover messages are encoded in the hash function and how verifier messages are decoded from the hash function's output, as well as serialization and de-serialization of the non-interactive argument string.<a href="#section-abstract-2" class="pilcrow">¶</a></p>
+</section>
+<section class="note rfcEditorRemove" id="section-note.1">
+      <h2 id="name-about-this-document">
+<a href="#name-about-this-document" class="section-name selfRef">About This Document</a>
+      </h2>
+<p id="section-note.1-1">This note is to be removed before publishing as an RFC.<a href="#section-note.1-1" class="pilcrow">¶</a></p>
+<p id="section-note.1-2">
+        The latest revision of this draft can be found at <span><a href="https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-fiat-shamir.html">https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-fiat-shamir.html</a></span>.
+        Status information for this document may be found at <span><a href="https://datatracker.ietf.org/doc/draft-irtf-cfrg-fiat-shamir/">https://datatracker.ietf.org/doc/draft-irtf-cfrg-fiat-shamir/</a></span>.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
+<p id="section-note.1-3">
+        Discussion of this document takes place on the
+        Crypto Forum Research Group mailing list (<span><a href="mailto:cfrg@ietf.org">mailto:cfrg@ietf.org</a></span>),
+        which is archived at <span><a href="https://mailarchive.ietf.org/arch/browse/cfrg">https://mailarchive.ietf.org/arch/browse/cfrg</a></span>.
+        Subscribe at <span><a href="https://www.ietf.org/mailman/listinfo/cfrg/">https://www.ietf.org/mailman/listinfo/cfrg/</a></span>.<a href="#section-note.1-3" class="pilcrow">¶</a></p>
+<p id="section-note.1-4">Source for this draft and an issue tracker can be found at
+        <span><a href="https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols">https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols</a></span>.<a href="#section-note.1-4" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 10 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2026 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document. Code Components extracted from this
+            document must include Revised BSD License text as described in
+            Section 4.e of the Trust Legal Provisions and are provided without
+            warranty as described in the Revised BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1" class="keepWithNext"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-terminology-and-conventions" class="internal xref">Terminology and conventions in this document</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1">
+                <p id="section-toc.1-1.2.2.1.1" class="keepWithNext"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-byte-and-integer-conversion" class="internal xref">Byte and integer conversions</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2">
+                <p id="section-toc.1-1.2.2.2.1" class="keepWithNext"><a href="#section-2.2" class="auto internal xref">2.2</a>.  <a href="#name-proof-systems" class="internal xref">Proof systems</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-duplex-sponge-interface-and" class="internal xref">Duplex Sponge interface and instances</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-shake128-duplex-sponge" class="internal xref">SHAKE128 Duplex Sponge</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1.2.1">
+                    <p id="section-toc.1-1.3.2.1.2.1.1"><a href="#section-3.1.1" class="auto internal xref">3.1.1</a>.  <a href="#name-init" class="internal xref">Init</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1.2.2">
+                    <p id="section-toc.1-1.3.2.1.2.2.1"><a href="#section-3.1.2" class="auto internal xref">3.1.2</a>.  <a href="#name-absorb" class="internal xref">Absorb</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1.2.3">
+                    <p id="section-toc.1-1.3.2.1.2.3.1"><a href="#section-3.1.3" class="auto internal xref">3.1.3</a>.  <a href="#name-squeeze" class="internal xref">Squeeze</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-codecs" class="internal xref">Codecs</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1">
+                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="auto internal xref">4.1</a>.  <a href="#name-encoding-into-byte-strings" class="internal xref">Encoding into byte strings</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1.2.1">
+                    <p id="section-toc.1-1.4.2.1.2.1.1"><a href="#section-4.1.1" class="auto internal xref">4.1.1</a>.  <a href="#name-byte-strings" class="internal xref">Byte strings</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1.2.2">
+                    <p id="section-toc.1-1.4.2.1.2.2.1"><a href="#section-4.1.2" class="auto internal xref">4.1.2</a>.  <a href="#name-character-strings" class="internal xref">Character strings</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1.2.3">
+                    <p id="section-toc.1-1.4.2.1.2.3.1"><a href="#section-4.1.3" class="auto internal xref">4.1.3</a>.  <a href="#name-sequences-and-tuples" class="internal xref">Sequences and tuples</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1.2.4">
+                    <p id="section-toc.1-1.4.2.1.2.4.1"><a href="#section-4.1.4" class="auto internal xref">4.1.4</a>.  <a href="#name-unsigned-integers" class="internal xref">Unsigned integers</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1.2.5">
+                    <p id="section-toc.1-1.4.2.1.2.5.1"><a href="#section-4.1.5" class="auto internal xref">4.1.5</a>.  <a href="#name-elliptic-curve-groups" class="internal xref">Elliptic curve groups</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.2">
+                <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="auto internal xref">4.2</a>.  <a href="#name-decoding-from-byte-strings" class="internal xref">Decoding from byte strings</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.2.2.1">
+                    <p id="section-toc.1-1.4.2.2.2.1.1"><a href="#section-4.2.1" class="auto internal xref">4.2.1</a>.  <a href="#name-byte-arrays" class="internal xref">Byte arrays</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.2.2.2">
+                    <p id="section-toc.1-1.4.2.2.2.2.1"><a href="#section-4.2.2" class="auto internal xref">4.2.2</a>.  <a href="#name-unsigned-integers-2" class="internal xref">Unsigned integers</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-initialization" class="internal xref">Initialization</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1">
+                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="auto internal xref">5.1</a>.  <a href="#name-session-identifiers" class="internal xref">Session identifiers</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.2">
+                <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="auto internal xref">5.2</a>.  <a href="#name-zero-knowledge-salts" class="internal xref">Zero-knowledge salts</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.3">
+                <p id="section-toc.1-1.5.2.3.1"><a href="#section-5.3" class="auto internal xref">5.3</a>.  <a href="#name-instance" class="internal xref">Instance</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-non-interactive-argument-st" class="internal xref">Non-interactive argument string</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.1">
+                <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="auto internal xref">6.1</a>.  <a href="#name-serialization" class="internal xref">Serialization</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2">
+                <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="auto internal xref">6.2</a>.  <a href="#name-deserialization" class="internal xref">Deserialization</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2.2.1">
+                    <p id="section-toc.1-1.6.2.2.2.1.1"><a href="#section-6.2.1" class="auto internal xref">6.2.1</a>.  <a href="#name-byte-strings-2" class="internal xref">Byte strings</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2.2.2">
+                    <p id="section-toc.1-1.6.2.2.2.2.1"><a href="#section-6.2.2" class="auto internal xref">6.2.2</a>.  <a href="#name-character-strings-2" class="internal xref">Character strings</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2.2.3">
+                    <p id="section-toc.1-1.6.2.2.2.3.1"><a href="#section-6.2.3" class="auto internal xref">6.2.3</a>.  <a href="#name-sequences-and-tuples-2" class="internal xref">Sequences and tuples</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2.2.4">
+                    <p id="section-toc.1-1.6.2.2.2.4.1"><a href="#section-6.2.4" class="auto internal xref">6.2.4</a>.  <a href="#name-unsigned-integers-3" class="internal xref">Unsigned integers</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2.2.5">
+                    <p id="section-toc.1-1.6.2.2.2.5.1"><a href="#section-6.2.5" class="auto internal xref">6.2.5</a>.  <a href="#name-group-elements" class="internal xref">Group elements</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1">
+                <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="auto internal xref">7.1</a>.  <a href="#name-soundness" class="internal xref">Soundness</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.2">
+                <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="auto internal xref">7.2</a>.  <a href="#name-zero-knowledge" class="internal xref">Zero-Knowledge</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.3">
+                <p id="section-toc.1-1.7.2.3.1"><a href="#section-7.3" class="auto internal xref">7.3</a>.  <a href="#name-quantum-adversaries" class="internal xref">Quantum adversaries</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.4">
+                <p id="section-toc.1-1.7.2.4.1"><a href="#section-7.4" class="auto internal xref">7.4</a>.  <a href="#name-indifferentiability-of-the-" class="internal xref">Indifferentiability of the hash function</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.5">
+                <p id="section-toc.1-1.7.2.5.1"><a href="#section-7.5" class="auto internal xref">7.5</a>.  <a href="#name-implementation-guidance" class="internal xref">Implementation guidance</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-8" class="auto internal xref">8</a>.  <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#section-9" class="auto internal xref">9</a>.  <a href="#name-references" class="internal xref">References</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.1">
+                <p id="section-toc.1-1.9.2.1.1"><a href="#section-9.1" class="auto internal xref">9.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.2">
+                <p id="section-toc.1-1.9.2.2.1"><a href="#section-9.2" class="auto internal xref">9.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#appendix-A" class="auto internal xref">Appendix A</a>.  <a href="#name-test-vectors" class="internal xref">Test Vectors</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.1">
+                <p id="section-toc.1-1.10.2.1.1"><a href="#appendix-A.1" class="auto internal xref">A.1</a>.  <a href="#name-test_keccak_duplex_sponge_s" class="internal xref">test_keccak_duplex_sponge_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.2">
+                <p id="section-toc.1-1.10.2.2.1"><a href="#appendix-A.2" class="auto internal xref">A.2</a>.  <a href="#name-test_absorb_empty_before_do" class="internal xref">test_absorb_empty_before_does_not_break_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.3">
+                <p id="section-toc.1-1.10.2.3.1"><a href="#appendix-A.3" class="auto internal xref">A.3</a>.  <a href="#name-test_absorb_empty_after_doe" class="internal xref">test_absorb_empty_after_does_not_break_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.4">
+                <p id="section-toc.1-1.10.2.4.1"><a href="#appendix-A.4" class="auto internal xref">A.4</a>.  <a href="#name-test_squeeze_zero_behavior_" class="internal xref">test_squeeze_zero_behavior_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.5">
+                <p id="section-toc.1-1.10.2.5.1"><a href="#appendix-A.5" class="auto internal xref">A.5</a>.  <a href="#name-test_squeeze_zero_after_beh" class="internal xref">test_squeeze_zero_after_behavior_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.6">
+                <p id="section-toc.1-1.10.2.6.1"><a href="#appendix-A.6" class="auto internal xref">A.6</a>.  <a href="#name-test_absorb_squeeze_absorb_" class="internal xref">test_absorb_squeeze_absorb_consistency_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.7">
+                <p id="section-toc.1-1.10.2.7.1"><a href="#appendix-A.7" class="auto internal xref">A.7</a>.  <a href="#name-test_associativity_of_absor" class="internal xref">test_associativity_of_absorb_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.8">
+                <p id="section-toc.1-1.10.2.8.1"><a href="#appendix-A.8" class="auto internal xref">A.8</a>.  <a href="#name-test_iv_affects_output_shak" class="internal xref">test_iv_affects_output_SHAKE128</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.9">
+                <p id="section-toc.1-1.10.2.9.1"><a href="#appendix-A.9" class="auto internal xref">A.9</a>.  <a href="#name-test_multiple_blocks_absorb" class="internal xref">test_multiple_blocks_absorb_squeeze_SHAKE128</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
+            <p id="section-toc.1-1.11.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-authors-address" class="internal xref">Author's Address</a></p>
+</li>
+        </ul>
+</nav>
+</section>
+</div>
+<div id="introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-1-1">A public-coin interactive protocol is an exchange of messages between a prover and a verifier in which every verifier message is a uniformly random value sampled independently of the protocol state.
+The Fiat-Shamir transformation removes interaction from a public-coin interactive argument by relying on a cryptographic hash function. The non-interactive prover derives each verifier message on its own via a hash function, and serializes the protocol transcript into a <em>non-interactive argument</em> (NARG) string. The verifier recomputes the same verifier messages from the NARG string and checks the interactive verifiers' decision. The resulting argument is secure in the random oracle model.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">This document describes the duplex sponge Fiat-Shamir transformation, and in particular:<a href="#section-1-2" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-1-3.1">
+          <p id="section-1-3.1.1">a non-interactive argument prover (NARG prover), and<a href="#section-1-3.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-1-3.2">
+          <p id="section-1-3.2.1">a non-interactive argument verifier (NARG verifier)<a href="#section-1-3.2.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<p id="section-1-4">Both the non-interactive prover and verifier rely on:<a href="#section-1-4" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-1-5.1">
+          <p id="section-1-5.1.1">a duplex sponge, prescribing how to interact with the cryptographic hash function (<a href="#hash-instantiations" class="auto internal xref">Section 3</a>);<a href="#section-1-5.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-1-5.2">
+          <p id="section-1-5.2.1">a set of codecs, describing how each prover message is absorbed into the sponge and how each verifier message is derived (<a href="#codecs" class="auto internal xref">Section 4</a>);<a href="#section-1-5.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-1-5.3">
+          <p id="section-1-5.3.1">a serialization and deserialization procedure for the NARG string produced by the prover (<a href="#narg-string" class="auto internal xref">Section 6</a>).<a href="#section-1-5.3.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<p id="section-1-6">This document specifies only byte-oriented hash functions, but this transformation generalizes to alphabets other than bytes (for example, prime-field elements); see <span>[<a href="#CO25" class="cite xref">CO25</a>]</span> for the general construction.<a href="#section-1-6" class="pilcrow">¶</a></p>
+<p id="section-1-7">Other types of non-interactive transformations (with and without random oracles) are possible, but out of scope from this specification.<a href="#section-1-7" class="pilcrow">¶</a></p>
+<span id="name-non-interactive-prover-for-"></span><div id="fig-fiat-shamir-prover">
+<figure id="figure-1">
+        <div id="section-1-8.1">
+          <div class="alignLeft art-svg artwork" id="section-1-8.1.1">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="800" width="616" viewBox="0 0 616 800" class="diagram" text-anchor="middle" font-family="monospace" font-size="13px" stroke-linecap="round">
+              <path d="M 8,32 L 8,784" fill="none" stroke="black"></path>
+              <path d="M 32,192 L 32,736" fill="none" stroke="black"></path>
+              <path d="M 208,192 L 208,736" fill="none" stroke="black"></path>
+              <path d="M 352,160 L 352,192" fill="none" stroke="black"></path>
+              <path d="M 352,240 L 352,272" fill="none" stroke="black"></path>
+              <path d="M 352,320 L 352,352" fill="none" stroke="black"></path>
+              <path d="M 352,400 L 352,432" fill="none" stroke="black"></path>
+              <path d="M 352,480 L 352,512" fill="none" stroke="black"></path>
+              <path d="M 352,576 L 352,608" fill="none" stroke="black"></path>
+              <path d="M 368,656 L 368,688" fill="none" stroke="black"></path>
+              <path d="M 456,160 L 456,192" fill="none" stroke="black"></path>
+              <path d="M 456,240 L 456,272" fill="none" stroke="black"></path>
+              <path d="M 456,320 L 456,352" fill="none" stroke="black"></path>
+              <path d="M 456,400 L 456,432" fill="none" stroke="black"></path>
+              <path d="M 456,480 L 456,512" fill="none" stroke="black"></path>
+              <path d="M 464,576 L 464,608" fill="none" stroke="black"></path>
+              <path d="M 480,656 L 480,688" fill="none" stroke="black"></path>
+              <path d="M 512,80 L 512,112" fill="none" stroke="black"></path>
+              <path d="M 512,160 L 512,192" fill="none" stroke="black"></path>
+              <path d="M 512,240 L 512,272" fill="none" stroke="black"></path>
+              <path d="M 512,320 L 512,352" fill="none" stroke="black"></path>
+              <path d="M 512,400 L 512,432" fill="none" stroke="black"></path>
+              <path d="M 512,480 L 512,512" fill="none" stroke="black"></path>
+              <path d="M 512,576 L 512,608" fill="none" stroke="black"></path>
+              <path d="M 512,656 L 512,688" fill="none" stroke="black"></path>
+              <path d="M 552,120 L 552,152" fill="none" stroke="black"></path>
+              <path d="M 552,200 L 552,232" fill="none" stroke="black"></path>
+              <path d="M 552,280 L 552,312" fill="none" stroke="black"></path>
+              <path d="M 552,360 L 552,392" fill="none" stroke="black"></path>
+              <path d="M 552,440 L 552,472" fill="none" stroke="black"></path>
+              <path d="M 552,616 L 552,648" fill="none" stroke="black"></path>
+              <path d="M 568,80 L 568,112" fill="none" stroke="black"></path>
+              <path d="M 584,160 L 584,192" fill="none" stroke="black"></path>
+              <path d="M 584,240 L 584,272" fill="none" stroke="black"></path>
+              <path d="M 584,400 L 584,432" fill="none" stroke="black"></path>
+              <path d="M 584,576 L 584,608" fill="none" stroke="black"></path>
+              <path d="M 592,320 L 592,352" fill="none" stroke="black"></path>
+              <path d="M 592,480 L 592,512" fill="none" stroke="black"></path>
+              <path d="M 592,656 L 592,688" fill="none" stroke="black"></path>
+              <path d="M 608,32 L 608,784" fill="none" stroke="black"></path>
+              <path d="M 8,32 L 608,32" fill="none" stroke="black"></path>
+              <path d="M 512,80 L 568,80" fill="none" stroke="black"></path>
+              <path d="M 120,96 L 504,96" fill="none" stroke="black"></path>
+              <path d="M 512,112 L 568,112" fill="none" stroke="black"></path>
+              <path d="M 352,160 L 456,160" fill="none" stroke="black"></path>
+              <path d="M 512,160 L 584,160" fill="none" stroke="black"></path>
+              <path d="M 104,176 L 344,176" fill="none" stroke="black"></path>
+              <path d="M 464,176 L 504,176" fill="none" stroke="black"></path>
+              <path d="M 32,192 L 208,192" fill="none" stroke="black"></path>
+              <path d="M 352,192 L 456,192" fill="none" stroke="black"></path>
+              <path d="M 512,192 L 584,192" fill="none" stroke="black"></path>
+              <path d="M 352,240 L 456,240" fill="none" stroke="black"></path>
+              <path d="M 512,240 L 584,240" fill="none" stroke="black"></path>
+              <path d="M 208,256 L 344,256" fill="none" stroke="black"></path>
+              <path d="M 464,256 L 504,256" fill="none" stroke="black"></path>
+              <path d="M 352,272 L 456,272" fill="none" stroke="black"></path>
+              <path d="M 512,272 L 584,272" fill="none" stroke="black"></path>
+              <path d="M 352,320 L 456,320" fill="none" stroke="black"></path>
+              <path d="M 512,320 L 592,320" fill="none" stroke="black"></path>
+              <path d="M 216,336 L 344,336" fill="none" stroke="black"></path>
+              <path d="M 464,336 L 504,336" fill="none" stroke="black"></path>
+              <path d="M 352,352 L 456,352" fill="none" stroke="black"></path>
+              <path d="M 512,352 L 592,352" fill="none" stroke="black"></path>
+              <path d="M 352,400 L 456,400" fill="none" stroke="black"></path>
+              <path d="M 512,400 L 584,400" fill="none" stroke="black"></path>
+              <path d="M 208,416 L 344,416" fill="none" stroke="black"></path>
+              <path d="M 464,416 L 504,416" fill="none" stroke="black"></path>
+              <path d="M 352,432 L 456,432" fill="none" stroke="black"></path>
+              <path d="M 512,432 L 584,432" fill="none" stroke="black"></path>
+              <path d="M 352,480 L 456,480" fill="none" stroke="black"></path>
+              <path d="M 512,480 L 592,480" fill="none" stroke="black"></path>
+              <path d="M 216,496 L 344,496" fill="none" stroke="black"></path>
+              <path d="M 464,496 L 504,496" fill="none" stroke="black"></path>
+              <path d="M 352,512 L 456,512" fill="none" stroke="black"></path>
+              <path d="M 512,512 L 592,512" fill="none" stroke="black"></path>
+              <path d="M 352,576 L 464,576" fill="none" stroke="black"></path>
+              <path d="M 512,576 L 584,576" fill="none" stroke="black"></path>
+              <path d="M 208,592 L 344,592" fill="none" stroke="black"></path>
+              <path d="M 472,592 L 504,592" fill="none" stroke="black"></path>
+              <path d="M 352,608 L 464,608" fill="none" stroke="black"></path>
+              <path d="M 512,608 L 584,608" fill="none" stroke="black"></path>
+              <path d="M 368,656 L 480,656" fill="none" stroke="black"></path>
+              <path d="M 512,656 L 592,656" fill="none" stroke="black"></path>
+              <path d="M 216,672 L 360,672" fill="none" stroke="black"></path>
+              <path d="M 488,672 L 504,672" fill="none" stroke="black"></path>
+              <path d="M 368,688 L 480,688" fill="none" stroke="black"></path>
+              <path d="M 512,688 L 592,688" fill="none" stroke="black"></path>
+              <path d="M 208,720 L 360,720" fill="none" stroke="black"></path>
+              <path d="M 32,736 L 208,736" fill="none" stroke="black"></path>
+              <path d="M 8,784 L 608,784" fill="none" stroke="black"></path>
+              <polygon class="arrowhead" points="560,648 548,642.4 548,653.6" fill="black" transform="rotate(90,552,648)"></polygon>
+              <polygon class="arrowhead" points="560,472 548,466.4 548,477.6" fill="black" transform="rotate(90,552,472)"></polygon>
+              <polygon class="arrowhead" points="560,392 548,386.4 548,397.6" fill="black" transform="rotate(90,552,392)"></polygon>
+              <polygon class="arrowhead" points="560,312 548,306.4 548,317.6" fill="black" transform="rotate(90,552,312)"></polygon>
+              <polygon class="arrowhead" points="560,232 548,226.4 548,237.6" fill="black" transform="rotate(90,552,232)"></polygon>
+              <polygon class="arrowhead" points="560,152 548,146.4 548,157.6" fill="black" transform="rotate(90,552,152)"></polygon>
+              <polygon class="arrowhead" points="512,592 500,586.4 500,597.6" fill="black" transform="rotate(0,504,592)"></polygon>
+              <polygon class="arrowhead" points="512,416 500,410.4 500,421.6" fill="black" transform="rotate(0,504,416)"></polygon>
+              <polygon class="arrowhead" points="512,256 500,250.4 500,261.6" fill="black" transform="rotate(0,504,256)"></polygon>
+              <polygon class="arrowhead" points="512,176 500,170.4 500,181.6" fill="black" transform="rotate(0,504,176)"></polygon>
+              <polygon class="arrowhead" points="512,96 500,90.4 500,101.6" fill="black" transform="rotate(0,504,96)"></polygon>
+              <polygon class="arrowhead" points="496,672 484,666.4 484,677.6" fill="black" transform="rotate(180,488,672)"></polygon>
+              <polygon class="arrowhead" points="472,496 460,490.4 460,501.6" fill="black" transform="rotate(180,464,496)"></polygon>
+              <polygon class="arrowhead" points="472,336 460,330.4 460,341.6" fill="black" transform="rotate(180,464,336)"></polygon>
+              <polygon class="arrowhead" points="368,720 356,714.4 356,725.6" fill="black" transform="rotate(0,360,720)"></polygon>
+              <polygon class="arrowhead" points="352,592 340,586.4 340,597.6" fill="black" transform="rotate(0,344,592)"></polygon>
+              <polygon class="arrowhead" points="352,416 340,410.4 340,421.6" fill="black" transform="rotate(0,344,416)"></polygon>
+              <polygon class="arrowhead" points="352,256 340,250.4 340,261.6" fill="black" transform="rotate(0,344,256)"></polygon>
+              <polygon class="arrowhead" points="352,176 340,170.4 340,181.6" fill="black" transform="rotate(0,344,176)"></polygon>
+              <polygon class="arrowhead" points="224,672 212,666.4 212,677.6" fill="black" transform="rotate(180,216,672)"></polygon>
+              <polygon class="arrowhead" points="224,496 212,490.4 212,501.6" fill="black" transform="rotate(180,216,496)"></polygon>
+              <polygon class="arrowhead" points="224,336 212,330.4 212,341.6" fill="black" transform="rotate(180,216,336)"></polygon>
+              <g class="text">
+                <text x="36" y="52">NARG</text>
+                <text x="84" y="52">Prover</text>
+                <text x="148" y="52">(session</text>
+                <text x="200" y="52">id,</text>
+                <text x="256" y="52">instance,</text>
+                <text x="332" y="52">witness)</text>
+                <text x="56" y="100">session</text>
+                <text x="100" y="100">id</text>
+                <text x="540" y="100">Init</text>
+                <text x="60" y="180">instance</text>
+                <text x="400" y="180">encode[0]</text>
+                <text x="548" y="180">Absorb</text>
+                <text x="88" y="212">Interactive</text>
+                <text x="164" y="212">Prover</text>
+                <text x="92" y="228">(instance,</text>
+                <text x="172" y="228">witness)</text>
+                <text x="272" y="244">prover_msg[1]</text>
+                <text x="400" y="260">encode[1]</text>
+                <text x="548" y="260">Absorb</text>
+                <text x="280" y="324">verifier_msg[1]</text>
+                <text x="400" y="340">decode[1]</text>
+                <text x="552" y="340">Squeeze</text>
+                <text x="272" y="404">prover_msg[2]</text>
+                <text x="400" y="420">encode[2]</text>
+                <text x="548" y="420">Absorb</text>
+                <text x="280" y="484">verifier_msg[2]</text>
+                <text x="400" y="500">decode[2]</text>
+                <text x="552" y="500">Squeeze</text>
+                <text x="280" y="532">.</text>
+                <text x="552" y="532">.</text>
+                <text x="280" y="548">.</text>
+                <text x="552" y="548">.</text>
+                <text x="280" y="564">.</text>
+                <text x="552" y="564">v</text>
+                <text x="280" y="580">prover_msg[k-1]</text>
+                <text x="408" y="596">encode[k-1]</text>
+                <text x="548" y="596">Absorb</text>
+                <text x="288" y="660">verifier_msg[k-1]</text>
+                <text x="424" y="676">decode[k-1]</text>
+                <text x="552" y="676">Squeeze</text>
+                <text x="272" y="708">prover_msg[k]</text>
+                <text x="112" y="772">narg_string</text>
+                <text x="172" y="772">:=</text>
+                <text x="288" y="772">serialize(prover_msg[..])</text>
+              </g>
+            </svg><a href="#section-1-8.1.1" class="pilcrow">¶</a>
+</div>
+</div>
+<figcaption><a href="#figure-1" class="selfRef">Figure 1</a>:
+<a href="#name-non-interactive-prover-for-" class="selfRef">Non-interactive prover for the Fiat-Shamir transformation</a>
+        </figcaption></figure>
+</div>
+<span id="name-non-interactive-verifier-fo"></span><div id="fig-fiat-shamir-verifier">
+<figure id="figure-2">
+        <div id="section-1-9.1">
+          <div class="alignLeft art-svg artwork" id="section-1-9.1.1">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="1056" width="616" viewBox="0 0 616 1056" class="diagram" text-anchor="middle" font-family="monospace" font-size="13px" stroke-linecap="round">
+              <path d="M 8,32 L 8,1040" fill="none" stroke="black"></path>
+              <path d="M 40,992 L 40,1024" fill="none" stroke="black"></path>
+              <path d="M 128,208 L 128,240" fill="none" stroke="black"></path>
+              <path d="M 128,288 L 128,320" fill="none" stroke="black"></path>
+              <path d="M 128,496 L 128,528" fill="none" stroke="black"></path>
+              <path d="M 136,752 L 136,784" fill="none" stroke="black"></path>
+              <path d="M 224,208 L 224,240" fill="none" stroke="black"></path>
+              <path d="M 224,288 L 224,320" fill="none" stroke="black"></path>
+              <path d="M 224,496 L 224,528" fill="none" stroke="black"></path>
+              <path d="M 248,752 L 248,784" fill="none" stroke="black"></path>
+              <path d="M 280,288 L 280,320" fill="none" stroke="black"></path>
+              <path d="M 280,368 L 280,400" fill="none" stroke="black"></path>
+              <path d="M 280,496 L 280,528" fill="none" stroke="black"></path>
+              <path d="M 280,576 L 280,608" fill="none" stroke="black"></path>
+              <path d="M 280,752 L 280,784" fill="none" stroke="black"></path>
+              <path d="M 280,832 L 280,864" fill="none" stroke="black"></path>
+              <path d="M 288,128 L 288,160" fill="none" stroke="black"></path>
+              <path d="M 288,208 L 288,240" fill="none" stroke="black"></path>
+              <path d="M 312,896 L 312,928" fill="none" stroke="black"></path>
+              <path d="M 320,168 L 320,200" fill="none" stroke="black"></path>
+              <path d="M 320,248 L 320,280" fill="none" stroke="black"></path>
+              <path d="M 320,328 L 320,360" fill="none" stroke="black"></path>
+              <path d="M 320,408 L 320,488" fill="none" stroke="black"></path>
+              <path d="M 320,536 L 320,568" fill="none" stroke="black"></path>
+              <path d="M 320,616 L 320,680" fill="none" stroke="black"></path>
+              <path d="M 320,792 L 320,824" fill="none" stroke="black"></path>
+              <path d="M 344,128 L 344,160" fill="none" stroke="black"></path>
+              <path d="M 344,432 L 344,464" fill="none" stroke="black"></path>
+              <path d="M 344,640 L 344,672" fill="none" stroke="black"></path>
+              <path d="M 352,288 L 352,320" fill="none" stroke="black"></path>
+              <path d="M 352,496 L 352,528" fill="none" stroke="black"></path>
+              <path d="M 352,752 L 352,784" fill="none" stroke="black"></path>
+              <path d="M 360,208 L 360,240" fill="none" stroke="black"></path>
+              <path d="M 360,368 L 360,400" fill="none" stroke="black"></path>
+              <path d="M 360,576 L 360,608" fill="none" stroke="black"></path>
+              <path d="M 360,832 L 360,864" fill="none" stroke="black"></path>
+              <path d="M 384,384 L 384,424" fill="none" stroke="black"></path>
+              <path d="M 384,592 L 384,632" fill="none" stroke="black"></path>
+              <path d="M 384,848 L 384,888" fill="none" stroke="black"></path>
+              <path d="M 424,896 L 424,928" fill="none" stroke="black"></path>
+              <path d="M 440,432 L 440,464" fill="none" stroke="black"></path>
+              <path d="M 440,640 L 440,672" fill="none" stroke="black"></path>
+              <path d="M 584,992 L 584,1024" fill="none" stroke="black"></path>
+              <path d="M 608,32 L 608,1040" fill="none" stroke="black"></path>
+              <path d="M 8,32 L 608,32" fill="none" stroke="black"></path>
+              <path d="M 288,128 L 344,128" fill="none" stroke="black"></path>
+              <path d="M 112,144 L 280,144" fill="none" stroke="black"></path>
+              <path d="M 288,160 L 344,160" fill="none" stroke="black"></path>
+              <path d="M 128,208 L 224,208" fill="none" stroke="black"></path>
+              <path d="M 288,208 L 360,208" fill="none" stroke="black"></path>
+              <path d="M 96,224 L 120,224" fill="none" stroke="black"></path>
+              <path d="M 232,224 L 280,224" fill="none" stroke="black"></path>
+              <path d="M 128,240 L 224,240" fill="none" stroke="black"></path>
+              <path d="M 288,240 L 360,240" fill="none" stroke="black"></path>
+              <path d="M 128,288 L 224,288" fill="none" stroke="black"></path>
+              <path d="M 280,288 L 352,288" fill="none" stroke="black"></path>
+              <path d="M 16,304 L 120,304" fill="none" stroke="black"></path>
+              <path d="M 232,304 L 272,304" fill="none" stroke="black"></path>
+              <path d="M 128,320 L 224,320" fill="none" stroke="black"></path>
+              <path d="M 280,320 L 352,320" fill="none" stroke="black"></path>
+              <path d="M 280,368 L 360,368" fill="none" stroke="black"></path>
+              <path d="M 368,384 L 384,384" fill="none" stroke="black"></path>
+              <path d="M 280,400 L 360,400" fill="none" stroke="black"></path>
+              <path d="M 344,432 L 440,432" fill="none" stroke="black"></path>
+              <path d="M 448,448 L 464,448" fill="none" stroke="black"></path>
+              <path d="M 344,464 L 440,464" fill="none" stroke="black"></path>
+              <path d="M 128,496 L 224,496" fill="none" stroke="black"></path>
+              <path d="M 280,496 L 352,496" fill="none" stroke="black"></path>
+              <path d="M 16,512 L 120,512" fill="none" stroke="black"></path>
+              <path d="M 232,512 L 272,512" fill="none" stroke="black"></path>
+              <path d="M 128,528 L 224,528" fill="none" stroke="black"></path>
+              <path d="M 280,528 L 352,528" fill="none" stroke="black"></path>
+              <path d="M 280,576 L 360,576" fill="none" stroke="black"></path>
+              <path d="M 368,592 L 384,592" fill="none" stroke="black"></path>
+              <path d="M 280,608 L 360,608" fill="none" stroke="black"></path>
+              <path d="M 344,640 L 440,640" fill="none" stroke="black"></path>
+              <path d="M 448,656 L 464,656" fill="none" stroke="black"></path>
+              <path d="M 344,672 L 440,672" fill="none" stroke="black"></path>
+              <path d="M 136,752 L 248,752" fill="none" stroke="black"></path>
+              <path d="M 280,752 L 352,752" fill="none" stroke="black"></path>
+              <path d="M 16,768 L 128,768" fill="none" stroke="black"></path>
+              <path d="M 256,768 L 272,768" fill="none" stroke="black"></path>
+              <path d="M 136,784 L 248,784" fill="none" stroke="black"></path>
+              <path d="M 280,784 L 352,784" fill="none" stroke="black"></path>
+              <path d="M 280,832 L 360,832" fill="none" stroke="black"></path>
+              <path d="M 368,848 L 384,848" fill="none" stroke="black"></path>
+              <path d="M 280,864 L 360,864" fill="none" stroke="black"></path>
+              <path d="M 312,896 L 424,896" fill="none" stroke="black"></path>
+              <path d="M 432,912 L 448,912" fill="none" stroke="black"></path>
+              <path d="M 312,928 L 424,928" fill="none" stroke="black"></path>
+              <path d="M 40,992 L 584,992" fill="none" stroke="black"></path>
+              <path d="M 40,1024 L 584,1024" fill="none" stroke="black"></path>
+              <path d="M 8,1040 L 608,1040" fill="none" stroke="black"></path>
+              <polygon class="arrowhead" points="472,656 460,650.4 460,661.6" fill="black" transform="rotate(0,464,656)"></polygon>
+              <polygon class="arrowhead" points="472,448 460,442.4 460,453.6" fill="black" transform="rotate(0,464,448)"></polygon>
+              <polygon class="arrowhead" points="456,912 444,906.4 444,917.6" fill="black" transform="rotate(0,448,912)"></polygon>
+              <polygon class="arrowhead" points="392,888 380,882.4 380,893.6" fill="black" transform="rotate(90,384,888)"></polygon>
+              <polygon class="arrowhead" points="392,632 380,626.4 380,637.6" fill="black" transform="rotate(90,384,632)"></polygon>
+              <polygon class="arrowhead" points="392,424 380,418.4 380,429.6" fill="black" transform="rotate(90,384,424)"></polygon>
+              <polygon class="arrowhead" points="328,824 316,818.4 316,829.6" fill="black" transform="rotate(90,320,824)"></polygon>
+              <polygon class="arrowhead" points="328,568 316,562.4 316,573.6" fill="black" transform="rotate(90,320,568)"></polygon>
+              <polygon class="arrowhead" points="328,488 316,482.4 316,493.6" fill="black" transform="rotate(90,320,488)"></polygon>
+              <polygon class="arrowhead" points="328,360 316,354.4 316,365.6" fill="black" transform="rotate(90,320,360)"></polygon>
+              <polygon class="arrowhead" points="328,280 316,274.4 316,285.6" fill="black" transform="rotate(90,320,280)"></polygon>
+              <polygon class="arrowhead" points="328,200 316,194.4 316,205.6" fill="black" transform="rotate(90,320,200)"></polygon>
+              <polygon class="arrowhead" points="288,224 276,218.4 276,229.6" fill="black" transform="rotate(0,280,224)"></polygon>
+              <polygon class="arrowhead" points="288,144 276,138.4 276,149.6" fill="black" transform="rotate(0,280,144)"></polygon>
+              <polygon class="arrowhead" points="280,768 268,762.4 268,773.6" fill="black" transform="rotate(0,272,768)"></polygon>
+              <polygon class="arrowhead" points="280,512 268,506.4 268,517.6" fill="black" transform="rotate(0,272,512)"></polygon>
+              <polygon class="arrowhead" points="280,304 268,298.4 268,309.6" fill="black" transform="rotate(0,272,304)"></polygon>
+              <polygon class="arrowhead" points="136,768 124,762.4 124,773.6" fill="black" transform="rotate(0,128,768)"></polygon>
+              <polygon class="arrowhead" points="128,512 116,506.4 116,517.6" fill="black" transform="rotate(0,120,512)"></polygon>
+              <polygon class="arrowhead" points="128,304 116,298.4 116,309.6" fill="black" transform="rotate(0,120,304)"></polygon>
+              <polygon class="arrowhead" points="128,224 116,218.4 116,229.6" fill="black" transform="rotate(0,120,224)"></polygon>
+              <g class="text">
+                <text x="36" y="52">NARG</text>
+                <text x="92" y="52">Verifier</text>
+                <text x="168" y="52">V(session</text>
+                <text x="224" y="52">id,</text>
+                <text x="280" y="52">instance,</text>
+                <text x="372" y="52">narg_string)</text>
+                <text x="28" y="84">1.</text>
+                <text x="100" y="84">prover_msg[..]</text>
+                <text x="172" y="84">:=</text>
+                <text x="284" y="84">deserialize(narg_string)</text>
+                <text x="28" y="100">2.</text>
+                <text x="68" y="100">derive</text>
+                <text x="132" y="100">verifier</text>
+                <text x="208" y="100">messages:</text>
+                <text x="48" y="148">session</text>
+                <text x="92" y="148">id</text>
+                <text x="316" y="148">Init</text>
+                <text x="52" y="228">instance</text>
+                <text x="176" y="228">encode[0]</text>
+                <text x="324" y="228">Absorb</text>
+                <text x="64" y="292">prover_msg[1]</text>
+                <text x="176" y="308">encode[1]</text>
+                <text x="316" y="308">Absorb</text>
+                <text x="320" y="388">Squeeze</text>
+                <text x="392" y="452">decode[1]</text>
+                <text x="536" y="452">verifier_msg[1]</text>
+                <text x="64" y="500">prover_msg[2]</text>
+                <text x="176" y="516">encode[2]</text>
+                <text x="316" y="516">Absorb</text>
+                <text x="320" y="596">Squeeze</text>
+                <text x="392" y="660">decode[2]</text>
+                <text x="536" y="660">verifier_msg[2]</text>
+                <text x="320" y="692">.</text>
+                <text x="320" y="708">.</text>
+                <text x="320" y="724">.</text>
+                <text x="320" y="740">v</text>
+                <text x="72" y="756">prover_msg[k-1]</text>
+                <text x="192" y="772">encode[k-1]</text>
+                <text x="316" y="772">Absorb</text>
+                <text x="320" y="852">Squeeze</text>
+                <text x="368" y="916">decode[k-1]</text>
+                <text x="528" y="916">verifier_msg[k-1]</text>
+                <text x="28" y="964">3.</text>
+                <text x="64" y="964">check</text>
+                <text x="100" y="964">IP</text>
+                <text x="152" y="964">decision:</text>
+                <text x="96" y="1012">Interactive</text>
+                <text x="180" y="1012">Verifier</text>
+                <text x="260" y="1012">(instance,</text>
+                <text x="368" y="1012">prover_msg[..],</text>
+                <text x="504" y="1012">verifier_msg[..])</text>
+              </g>
+            </svg><a href="#section-1-9.1.1" class="pilcrow">¶</a>
+</div>
+</div>
+<figcaption><a href="#figure-2" class="selfRef">Figure 2</a>:
+<a href="#name-non-interactive-verifier-fo" class="selfRef">Non-interactive verifier for the Fiat-Shamir transformation</a>
+        </figcaption></figure>
+</div>
+<p id="section-1-10">The security guarantees provided by this transformation are described in <a href="#security-considerations" class="auto internal xref">Section 7</a>. Applications wishing to provide zero-knowledge MAY require an additional salt (<a href="#zero-knowledge-salts" class="auto internal xref">Section 5.2</a>).<a href="#section-1-10" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="terminology-and-conventions-in-this-document">
+<section id="section-2">
+      <h2 id="name-terminology-and-conventions">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-terminology-and-conventions" class="section-name selfRef">Terminology and conventions in this document</a>
+      </h2>
+<p id="section-2-1">The following notation is used throughout this document.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<div id="byte-and-integer-conversions">
+<section id="section-2.1">
+        <h3 id="name-byte-and-integer-conversion">
+<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-byte-and-integer-conversion" class="section-name selfRef">Byte and integer conversions</a>
+        </h3>
+<p id="section-2.1-1">A byte is an 8-bit unsigned integer (an octet), and a byte string is a finite sequence of bytes. A <code>N</code>-byte string is a byte string of length <code>N</code>. The empty byte string is written <code>""</code>; <code>x || y</code> is the concatenation of the byte strings <code>x</code> and <code>y</code>. <code>zeros(N)</code> denotes the <code>N</code>-byte string of zero bytes.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.1-2"><code>I2OSP(n, w)</code> and <code>OS2IP(x)</code> are the primitives defined in Section 4 of <span>[<a href="#RFC8017" class="cite xref">RFC8017</a>]</span>. <code>I2OSP(n, w)</code> converts a non-negative integer <code>n</code> less than <code>256^w</code> into a <code>w</code>-byte, big-endian byte string. <code>OS2IP(x)</code> converts a byte string <code>x</code> into a non-negative integer using the big-endian byte order.<a href="#section-2.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="proof-systems">
+<section id="section-2.2">
+        <h3 id="name-proof-systems">
+<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-proof-systems" class="section-name selfRef">Proof systems</a>
+        </h3>
+<p id="section-2.2-1">The <strong>transcript</strong> is the ordered sequence of prover and verifier messages.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
+<p id="section-2.2-2">The <strong>instance</strong> specifies the statement being proven, and is held by both the prover and the verifier.<a href="#section-2.2-2" class="pilcrow">¶</a></p>
+<p id="section-2.2-3">The <strong>witness</strong> is the prover's private input. It is known only to the prover and is never revealed. It appears neither in the transcript nor in the NARG string.<a href="#section-2.2-3" class="pilcrow">¶</a></p>
+<p id="section-2.2-4">For an NP relation, the instance is a word, the witness is its proof, and the resulting non-interactive argument will prove that the instance is in the corresponding NP language.<a href="#section-2.2-4" class="pilcrow">¶</a></p>
+<p id="section-2.2-5">The <strong>NARG string</strong> (non-interactive argument string) is the serialized output of the non-interactive prover.<a href="#section-2.2-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="hash-instantiations">
+<section id="section-3">
+      <h2 id="name-duplex-sponge-interface-and">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-duplex-sponge-interface-and" class="section-name selfRef">Duplex Sponge interface and instances</a>
+      </h2>
+<p id="section-3-1">Prover and verifier messages are handled via three operations:<a href="#section-3-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3-2.1">
+          <p id="section-3-2.1.1"><code>Init(session_id) -&gt; state</code>: create a new state seeded by the 64-byte domain-separation string <code>session_id</code>.<a href="#section-3-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-3-2.2">
+          <p id="section-3-2.2.1"><code>Absorb(x)</code>: absorb the byte string <code>x</code> into the state.<a href="#section-3-2.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-3-2.3">
+          <p id="section-3-2.3.1"><code>Squeeze(n) -&gt; buf</code>: produce <code>n</code> bytes from the state.<a href="#section-3-2.3.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<p id="section-3-3">Messages can be absorbed incrementally, as <code>Absorb</code> calls are associative: <code>Absorb(x)</code> followed by <code>Absorb(y)</code> is eqivalent to <code>Absorb(x || y)</code>.
+The output of <code>Squeeze(n)</code> is uniformly distributed (among <code>n</code>-byte strings). Guidance on how to produce a 64-byte string <code>session_id</code> is given in <a href="#session-id" class="auto internal xref">Section 5.1</a>.<a href="#section-3-3" class="pilcrow">¶</a></p>
+<div id="shake128">
+<section id="section-3.1">
+        <h3 id="name-shake128-duplex-sponge">
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-shake128-duplex-sponge" class="section-name selfRef">SHAKE128 Duplex Sponge</a>
+        </h3>
+<p id="section-3.1-1">SHAKE128, used as a duplex sponge, absorbs and squeezes over an internal <code>Keccak-f[1600]</code> state of 1600 bits (200 bytes) with a capacity of 32 bytes and rate of 168 bytes.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+<div id="init">
+<section id="section-3.1.1">
+          <h4 id="name-init">
+<a href="#section-3.1.1" class="section-number selfRef">3.1.1. </a><a href="#name-init" class="section-name selfRef">Init</a>
+          </h4>
+<p id="section-3.1.1-1">Seed the verifier state absorbing the session identifier, padded with zeros to fill the rate (the remaining <code>R - 64 = 104</code> bytes).<a href="#section-3.1.1-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.1.1-2">
+<pre>
+    Init(self, session_id)
+
+    Input: iv, a byte array
+
+    Output: a duplex sponge state
+
+    1. assert len(session_id) == 64
+    2. ctx = SHAKE128.New()
+    3. ctx.Update(session_id || zeros(R - 64))
+    4. return state := (ctx, reader = None)
+</pre><a href="#section-3.1.1-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="absorb">
+<section id="section-3.1.2">
+          <h4 id="name-absorb">
+<a href="#section-3.1.2" class="section-number selfRef">3.1.2. </a><a href="#name-absorb" class="section-name selfRef">Absorb</a>
+          </h4>
+<p id="section-3.1.2-1">Feed a byte string <code>x</code> into the state.<a href="#section-3.1.2-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.1.2-2">
+<pre>
+    Absorb(state, x)
+
+    Inputs:
+
+    - state, a duplex sponge state
+    - x, a byte array
+
+    1. state.reader = None
+    2. state.ctx.update(x)
+</pre><a href="#section-3.1.2-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="squeeze">
+<section id="section-3.1.3">
+          <h4 id="name-squeeze">
+<a href="#section-3.1.3" class="section-number selfRef">3.1.3. </a><a href="#name-squeeze" class="section-name selfRef">Squeeze</a>
+          </h4>
+<p id="section-3.1.3-1">Returns the next <code>n</code> bytes of the SHAKE128 output stream computed over absorbed. If the sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a SHAKE128 XOF reader. Consecutive <code>Squeeze</code> calls <strong>continue</strong> the same SHAKE128 output stream.<a href="#section-3.1.3-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.1.3-2">
+<pre>
+    Squeeze(state, n)
+
+    Inputs:
+
+    - state, the duplex sponge state
+    - length, the number of elements to be squeezed
+
+    Output: a uniformly-distributed random n-byte string
+
+    1. if state.reader == None:
+    2.    state.reader = self.ctx.Copy().Finalize()
+    3. state.reader.read(n)
+</pre><a href="#section-3.1.3-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="codecs">
+<section id="section-4">
+      <h2 id="name-codecs">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-codecs" class="section-name selfRef">Codecs</a>
+      </h2>
+<p id="section-4-1">A codec is a set of function that map prover and verifier messages to hash function alphabet:<a href="#section-4-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-4-2.1">
+          <p id="section-4-2.1.1">Encoding converts prover messages into the bytes absorbed by the sponge. Encoding functions <strong>MUST</strong> be prefix-free.<a href="#section-4-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-4-2.2">
+          <p id="section-4-2.2.1">Decoding converts squeezed bytes into verifier messages. Decoding <strong>MUST</strong> preserve the uniform distribution (up to a small codec error).<a href="#section-4-2.2.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<p id="section-4-3">Codecs serve a different purpose than proof serialization, which is described in <a href="#serialization" class="auto internal xref">Section 6.1</a>.<a href="#section-4-3" class="pilcrow">¶</a></p>
+<div id="encoding-bytes">
+<section id="section-4.1">
+        <h3 id="name-encoding-into-byte-strings">
+<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-encoding-into-byte-strings" class="section-name selfRef">Encoding into byte strings</a>
+        </h3>
+<p id="section-4.1-1">All encoding functions <strong>MUST</strong> have a unique, non-ambiguous pre-image. That is, encodings are <strong>prefix-free</strong>: for any two distinct values, the encoding of one is never a prefix of the encoding of the other.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<div id="byte-strings">
+<section id="section-4.1.1">
+          <h4 id="name-byte-strings">
+<a href="#section-4.1.1" class="section-number selfRef">4.1.1. </a><a href="#name-byte-strings" class="section-name selfRef">Byte strings</a>
+          </h4>
+<p id="section-4.1.1-1">The encoding of a non-empty byte string is the identity map.
+The caller is responsible for ensuring that the length is fixed by the surrounding protocol.<a href="#section-4.1.1-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.1.1-2">
+<pre>
+    EncodeBytes(x)
+
+    Input: x, a non-empty N-byte string
+
+    Output: out, a N-byte string
+
+    1. return x
+</pre><a href="#section-4.1.1-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="character-strings">
+<section id="section-4.1.2">
+          <h4 id="name-character-strings">
+<a href="#section-4.1.2" class="section-number selfRef">4.1.2. </a><a href="#name-character-strings" class="section-name selfRef">Character strings</a>
+          </h4>
+<p id="section-4.1.2-1">A UTF-8 string of fewer than 2^32 bytes is encoded as its byte length (a little-endian 32-bit integer) followed by its bytes.<a href="#section-4.1.2-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.1.2-2">
+<pre>
+    EncodeString(s)
+
+    Input: s, a N-byte utf-8 encoded string
+
+    Output: out, a (N+4)-byte string
+
+    1. b = utf8(s)
+    2. return LE(len(b), 4) || b
+</pre><a href="#section-4.1.2-2" class="pilcrow">¶</a>
+</div>
+<p id="section-4.1.2-3">The length prefix makes the encoding prefix-free.<a href="#section-4.1.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="sequences-and-tuples">
+<section id="section-4.1.3">
+          <h4 id="name-sequences-and-tuples">
+<a href="#section-4.1.3" class="section-number selfRef">4.1.3. </a><a href="#name-sequences-and-tuples" class="section-name selfRef">Sequences and tuples</a>
+          </h4>
+<p id="section-4.1.3-1">A fixed-length array or a tuple is encoded as the concatenation of the encodings of its elements, with no separators.<a href="#section-4.1.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="encoding-scalars">
+<section id="section-4.1.4">
+          <h4 id="name-unsigned-integers">
+<a href="#section-4.1.4" class="section-number selfRef">4.1.4. </a><a href="#name-unsigned-integers" class="section-name selfRef">Unsigned integers</a>
+          </h4>
+<p id="section-4.1.4-1">An element of an integer <code>m</code> is represented by its unique integer representative in the range <code>[0, m)</code> and encoded big-endian as defined in I2OSP <span>[<a href="#RFC8017" class="cite xref">RFC8017</a>]</span>.<a href="#section-4.1.4-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.1.4-2">
+<pre>
+    EncodeScalar(x, m)
+
+    Inputs:
+    - x, an integer modulo m
+    - m, the oder of the integer ring
+
+    Output: out, a Ns-byte string
+
+    1. Ns = ceil(bitlength(m) / 8)
+    2. assert 0 &lt;= x &lt; m
+    3. return I2OSP(x, Ns)
+</pre><a href="#section-4.1.4-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="elliptic-curve-groups">
+<section id="section-4.1.5">
+          <h4 id="name-elliptic-curve-groups">
+<a href="#section-4.1.5" class="section-number selfRef">4.1.5. </a><a href="#name-elliptic-curve-groups" class="section-name selfRef">Elliptic curve groups</a>
+          </h4>
+<p id="section-4.1.5-1">A scalar field element is serialized to a canonical <code>Ns</code>-byte string using the group's sclar field serialization function. For the prime-order elliptic curve groups in scope, this is equivalent to <code>EncodeScalar</code> described in <a href="#encoding-scalars" class="auto internal xref">Section 4.1.4</a>.<a href="#section-4.1.5-1" class="pilcrow">¶</a></p>
+<p id="section-4.1.5-2">A group element is serialized to a canonical <code>Ne</code>-byte string using the group's element-serialization function. For the prime-order elliptic-curve groups in scope, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>. Each group element has exactly one <code>Ne</code>-byte representation. The value of <code>Ne</code> and the concrete conversion are fixed by the ciphersuite. Batch serialization options should be preferred when available.<a href="#section-4.1.5-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="decoding">
+<section id="section-4.2">
+        <h3 id="name-decoding-from-byte-strings">
+<a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-decoding-from-byte-strings" class="section-name selfRef">Decoding from byte strings</a>
+        </h3>
+<p id="section-4.2-1">Decoding converts a uniformly-distributed byte string into a verifier message. Each verifier message type fixes the number of bytes to squeeze.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
+<p id="section-4.2-2">Decoding need not be injective: the requirement for the decoding map is that it be <em>distribution-preserving</em>: if its input is a uniformly random byte string, then its output is (statistically close to) uniformly distributed over the verifier message type.<a href="#section-4.2-2" class="pilcrow">¶</a></p>
+<div id="byte-arrays">
+<section id="section-4.2.1">
+          <h4 id="name-byte-arrays">
+<a href="#section-4.2.1" class="section-number selfRef">4.2.1. </a><a href="#name-byte-arrays" class="section-name selfRef">Byte arrays</a>
+          </h4>
+<p id="section-4.2.1-1">The decoding function for fixed-length byte arrays is the identity.<a href="#section-4.2.1-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.2.1-2">
+<pre>
+    DecodeBytes(buf, N)
+
+    Inputs:
+    - buf, a byte string
+    - N, the expected byte length
+
+    Output: out, a byte string of length N
+
+    1. assert len(buf) == N
+    2. return buf
+</pre><a href="#section-4.2.1-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="decoding-scalars">
+<section id="section-4.2.2">
+          <h4 id="name-unsigned-integers-2">
+<a href="#section-4.2.2" class="section-number selfRef">4.2.2. </a><a href="#name-unsigned-integers-2" class="section-name selfRef">Unsigned integers</a>
+          </h4>
+<p id="section-4.2.2-1">To sample a uniformly random element modulo <code>m</code> of <code>Ns</code> bytes (that is <code>Ns = ceil(log2(m) / 8)</code>), decode <code>Ns + 32</code> bytes by interpreting them as a big-endian non-negative integer with <code>OS2IP</code>, and reduce modulo <code>m</code>.<a href="#section-4.2.2-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.2.2-2">
+<pre>
+    DecodeScalar(buf, m)
+
+    Inputs:
+    - buf, a byte string of length Ns + 32
+    - m, the modulus
+
+    Output: out, an integer in the range [0, m)
+
+    1. Ns = ceil(log2(m) / 8)
+    2. assert len(buf) == Ns + 32
+    3. return OS2IP(buf) mod m
+</pre><a href="#section-4.2.2-2" class="pilcrow">¶</a>
+</div>
+<p id="section-4.2.2-3">The 32 extra bytes bound the bias introduced by the modular reduction to be cryptographically negligible.<a href="#section-4.2.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="initialization">
+<section id="section-5">
+      <h2 id="name-initialization">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-initialization" class="section-name selfRef">Initialization</a>
+      </h2>
+<div id="session-id">
+<section id="section-5.1">
+        <h3 id="name-session-identifiers">
+<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-session-identifiers" class="section-name selfRef">Session identifiers</a>
+        </h3>
+<p id="section-5.1-1">The session identifier is a 64-byte value that identifies the application context.
+It <strong>SHOULD</strong> be derived from a variable-length application context string constructed according to the following requirements:<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-5.1-2">
+<li id="section-5.1-2.1">
+            <p id="section-5.1-2.1.1">session identifiers <strong>MUST</strong> have nonzero length. A minimum length of 32 bytes is <strong>RECOMMENDED</strong> to reduce the chance of collisions with other applications.<a href="#section-5.1-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.1-2.2">
+            <p id="section-5.1-2.2.1">session identifiers <strong>MUST</strong> uniquely identify the <strong>non-interactive argument</strong> used, including both the IP (interactive protocol), the hash suite, the statement being proven, and the codecs.<a href="#section-5.1-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.1-2.3">
+            <p id="section-5.1-2.3.1">session identifers <strong>MUST</strong> contain contextual information about the context where the proof is made (e.g. a URL, or a timestamp). This identifier is currently generated as 32 zero-bytes, concatenated with a 32-byte digest derived using the duplex sponge.<a href="#section-5.1-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.1-2.4">
+            <p id="section-5.1-2.4.1">session identifiers <strong>SHOULD</strong> begin with a fixed identification string that is unique to the application.<a href="#section-5.1-2.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.1-2.5">
+            <p id="section-5.1-2.5.1">session identifiers <strong>SHOULD</strong> include a version number.<a href="#section-5.1-2.5.1" class="pilcrow">¶</a></p>
+</li>
+        </ol>
+<div class="alignLeft art-text artwork" id="section-5.1-3">
+<pre>
+    DeriveSessionID(s)
+
+    Inputs:
+    - s, an application-chosen byte string
+
+    Output: session_id, a byte string of length 64
+
+    1. iv = "irtf-cfrg-fiat-shamir/session-id" || zeros(32)
+    2. sponge = SHAKE128.Init(iv)
+    3. sponge.Absorb(s)
+    4. return zeros(32) || sponge.Squeeze(32)
+</pre><a href="#section-5.1-3" class="pilcrow">¶</a>
+</div>
+<p id="section-5.1-4">As an example, consider a fictional application named Foo that implements sigma protocols over elliptic curves for encrypted messages shared during a time epoch <code>tt</code>. A reasonable choice of tag is <code>FOO-SV{xx}-{tt}-DSFS-{hashID}-SIGMA-PROOFS-{yy}</code>, where <code>xx</code> are the two-digit numbers indicating the version, <code>yy</code> are the two-digit numbers indicating the elliptic-curve ciphersuite, <code>hashID</code> is the hash identifier, and <code>tt</code> is the epoch identifier.<a href="#section-5.1-4" class="pilcrow">¶</a></p>
+<p id="section-5.1-5">Another example, cosider a fictional application name Bar that implements an ad-hoc zero-knowledge virtual machine for correct execution of circuits. A reasonable choice of tag is <code>BAR-COM{cc}</code> where <code>{cc}</code> is the commit hash of the associated version of the cryptographic specification of the protocol.<a href="#section-5.1-5" class="pilcrow">¶</a></p>
+<p id="section-5.1-6">Other applications <strong>MAY</strong> use custom session identifiers, as long as they do NOT<a href="#section-5.1-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="zero-knowledge-salts">
+<section id="section-5.2">
+        <h3 id="name-zero-knowledge-salts">
+<a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-zero-knowledge-salts" class="section-name selfRef">Zero-knowledge salts</a>
+        </h3>
+<p id="section-5.2-1">If the interactive argument is honest-verifier zero-knowledge, but the first message of the interactive proof is <em>not</em> unpredictable, the non-interactive prover and verifier <strong>MUST</strong> absorb a 32-byte salt immediately after the session identifier.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+<p id="section-5.2-2">The salt is sampled uniformly a random from a cryptographically secure entropy source. The salt <strong>MUST</strong> be used only once and <strong>MUST</strong> NOT be copied or reused, and should be zeroized as soon as it is no longer needed.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="instance">
+<section id="section-5.3">
+        <h3 id="name-instance">
+<a href="#section-5.3" class="section-number selfRef">5.3. </a><a href="#name-instance" class="section-name selfRef">Instance</a>
+        </h3>
+<p id="section-5.3-1">The instance is part of the statement being proven. The prover and verifier <strong>MUST</strong> include the instance before any prover message is absorbed, and after the session identifier.<a href="#section-5.3-1" class="pilcrow">¶</a></p>
+<p id="section-5.3-2">The instance encoding function <code>encode[0]</code>, displayed in <a href="#fig-fiat-shamir-prover" class="auto internal xref">Figure 1</a> and <a href="#fig-fiat-shamir-verifier" class="auto internal xref">Figure 2</a>, depends fully on the relation being proven, and is specified as part of the relation specification.<a href="#section-5.3-2" class="pilcrow">¶</a></p>
+<p id="section-5.3-3">The instance encoding <strong>MUST</strong> be prefix-free, and identify all public values whose modification would change the statement being proven, including the relation, ciphersuite, group parameters, generators, public keys, and public elements. Prior works describes the fatal security impact of omitting public statement data from the Fiat-Shamir input permits a proof for one statement to be interpreted as a proof for a related statement under modified public parameters <span>[<a href="#BPW16" class="cite xref">BPW16</a>]</span>.<a href="#section-5.3-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="narg-string">
+<section id="section-6">
+      <h2 id="name-non-interactive-argument-st">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-non-interactive-argument-st" class="section-name selfRef">Non-interactive argument string</a>
+      </h2>
+<div id="serialization">
+<section id="section-6.1">
+        <h3 id="name-serialization">
+<a href="#section-6.1" class="section-number selfRef">6.1. </a><a href="#name-serialization" class="section-name selfRef">Serialization</a>
+        </h3>
+<p id="section-6.1-1">Serialization is the concatenation of the byte encoding of each prover message, as defined in <a href="#encoding-bytes" class="auto internal xref">Section 4.1</a>.<a href="#section-6.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="deserialization">
+<section id="section-6.2">
+        <h3 id="name-deserialization">
+<a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-deserialization" class="section-name selfRef">Deserialization</a>
+        </h3>
+<p id="section-6.2-1">Deserialization of the NARG string consists in reading the prover messages, and compute the inverse of the serialization procedure: each message is read by consuming a fixed number of bytes, determined by its type and the instance, and advancing past them.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
+<p id="section-6.2-2">Verification <strong>MUST</strong> fail if the any of the prover messages cannot be deserialized successfully. After the last expected prover message has been read, the verifier <strong>MUST</strong> verify that no bytes remain. Bytes that are never read or that are decoded despite being invalid will defeat strong simulation extractability: an adversary will be able to malleate a valid proof to obtain a second, distinct accepting proof for the same statement.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
+<div id="byte-strings-1">
+<section id="section-6.2.1">
+          <h4 id="name-byte-strings-2">
+<a href="#section-6.2.1" class="section-number selfRef">6.2.1. </a><a href="#name-byte-strings-2" class="section-name selfRef">Byte strings</a>
+          </h4>
+<p id="section-6.2.1-1">Read the next <code>N</code> bytes, where <code>N</code> is fixed by the protocol, and return them. Any <code>N</code>-byte string is a valid encoding.<a href="#section-6.2.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="character-strings-1">
+<section id="section-6.2.2">
+          <h4 id="name-character-strings-2">
+<a href="#section-6.2.2" class="section-number selfRef">6.2.2. </a><a href="#name-character-strings-2" class="section-name selfRef">Character strings</a>
+          </h4>
+<p id="section-6.2.2-1">Read a 4-byte little-endian length <code>L</code>, then read the next <code>L</code> bytes. Fail if
+those <code>L</code> bytes are not valid UTF-8. The value is the resulting string.<a href="#section-6.2.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="sequences-and-tuples-1">
+<section id="section-6.2.3">
+          <h4 id="name-sequences-and-tuples-2">
+<a href="#section-6.2.3" class="section-number selfRef">6.2.3. </a><a href="#name-sequences-and-tuples-2" class="section-name selfRef">Sequences and tuples</a>
+          </h4>
+<p id="section-6.2.3-1">Deserialize each element in order. Fail if any element fails to deserialize. The number and types of the elements are fixed by the protocol.<a href="#section-6.2.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="unsigned-integers">
+<section id="section-6.2.4">
+          <h4 id="name-unsigned-integers-3">
+<a href="#section-6.2.4" class="section-number selfRef">6.2.4. </a><a href="#name-unsigned-integers-3" class="section-name selfRef">Unsigned integers</a>
+          </h4>
+<p id="section-6.2.4-1">Read the next <code>Ns</code> bytes and interpret them as a big-endian integer <code>m = OS2IP(.)</code>. If <code>m &gt;= p</code>, fail: non-canonical encodings of field elements <strong>MUST</strong> be rejected. The value returned is <code>m</code>.<a href="#section-6.2.4-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="group-elements">
+<section id="section-6.2.5">
+          <h4 id="name-group-elements">
+<a href="#section-6.2.5" class="section-number selfRef">6.2.5. </a><a href="#name-group-elements" class="section-name selfRef">Group elements</a>
+          </h4>
+<p id="section-6.2.5-1">Read the next <code>Ne</code> bytes and convert them to a group element using the group's element-deserialization function.<a href="#section-6.2.5-1" class="pilcrow">¶</a></p>
+<p id="section-6.2.5-2">For the elliptic-curve groups in scope this, is the encoding procedure, such as the Octet-String-to-Elliptic-Curve-Point conversion of <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>. Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation steps and fail unless the input is the canonical encoding of a valid group element.<a href="#section-6.2.5-2" class="pilcrow">¶</a></p>
+<p id="section-6.2.5-3">For elliptic curves these steps check that the coordinates are in the correct range, and that the point lies on the curve subgroup used for cryptographic operations.<a href="#section-6.2.5-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="security-considerations">
+<section id="section-7">
+      <h2 id="name-security-considerations">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      </h2>
+<p id="section-7-1">The Fiat-Shamir transformation carries over the soundness and witness hiding properties of the interactive proof.<a href="#section-7-1" class="pilcrow">¶</a></p>
+<p id="section-7-2">In particular, completeness of this transformation is preserved: if the statement being proved is true, then the resulting non-interactive argument string is valid.<a href="#section-7-2" class="pilcrow">¶</a></p>
+<div id="soundness">
+<section id="section-7.1">
+        <h3 id="name-soundness">
+<a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-soundness" class="section-name selfRef">Soundness</a>
+        </h3>
+<p id="section-7.1-1">If the interactive proof is sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without possession of the corresponding witness (in the random oracle model).<a href="#section-7.1-1" class="pilcrow">¶</a></p>
+<p id="section-7.1-2">Soundness and straightline knowledge soundness carry over to the non-intearcive argument, with an additive soundness loss quadratic in the number of queries the adversary makes to the random oracle <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>.<a href="#section-7.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="zero-knowledge">
+<section id="section-7.2">
+        <h3 id="name-zero-knowledge">
+<a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-zero-knowledge" class="section-name selfRef">Zero-Knowledge</a>
+        </h3>
+<p id="section-7.2-1">If the interactive proof is honest-verifier zero-knowledge, <em>and the first message is unpredictable</em>, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid.<a href="#section-7.2-1" class="pilcrow">¶</a></p>
+<p id="section-7.2-2">The additive zero-knowledge loss introduced by the transformation is linear in the number of queries the adversary makes to the random oracle <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>.<a href="#section-7.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="quantum-adversaries">
+<section id="section-7.3">
+        <h3 id="name-quantum-adversaries">
+<a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-quantum-adversaries" class="section-name selfRef">Quantum adversaries</a>
+        </h3>
+<p id="section-7.3-1">If the interactive proof is sound against quantum adversaries, then the non-interactive proof after the Fiat-Shamir transformation in the random oracle model is also secure against quantum adversary.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
+<p id="section-7.3-2">The loss introduced by a quantum adversary is polynomial (larger than quadratic) in the number of quantum random-oracle queries.<a href="#section-7.3-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="indifferentiability-of-the-hash-function">
+<section id="section-7.4">
+        <h3 id="name-indifferentiability-of-the-">
+<a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-indifferentiability-of-the-" class="section-name selfRef">Indifferentiability of the hash function</a>
+        </h3>
+<p id="section-7.4-1">The random oracle instantiation <strong>MUST</strong> be extraction-friendly and simulation-friendly indifferentiable to preserve soundness and zero-knowledge of the transformation.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
+<p id="section-7.4-2">To provide soundness and zero-knowledge, stronger capabilities that indifferentiability are needed <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>. Implementers do not need these notions to use the transformation, but they are the reason a different hash construction <strong>SHOULD NOT</strong>  be substituted on the strength of indifferentiability alone.<a href="#section-7.4-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="implementation-guidance">
+<section id="section-7.5">
+        <h3 id="name-implementation-guidance">
+<a href="#section-7.5" class="section-number selfRef">7.5. </a><a href="#name-implementation-guidance" class="section-name selfRef">Implementation guidance</a>
+        </h3>
+<p id="section-7.5-1">The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities, especially due to incorrect implementations involving out-of order prover messages, and invalid instance encodings.<a href="#section-7.5-1" class="pilcrow">¶</a></p>
+<p id="section-7.5-2">Absorbing a prover message and serializing it to (or reading it from) the NARG string <strong>SHOULD</strong> be coupled, to prevernt prover messages to be hashed without being serialized, skipped, or reordered.<a href="#section-7.5-2" class="pilcrow">¶</a></p>
+<p id="section-7.5-3">A sequential transcript interface is RECOMMENDED: implementations are encouraged to expose two directed state machines<a href="#section-7.5-3" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-7.5-4.1">
+            <p id="section-7.5-4.1.1">(instance, witness) -&gt; prove -&gt; proof, and<a href="#section-7.5-4.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.5-4.2">
+            <p id="section-7.5-4.2.1">(instance, proof) -&gt; verify -&gt; accept/reject<a href="#section-7.5-4.2.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-7.5-5">where prover messages are randomly addressable.<a href="#section-7.5-5" class="pilcrow">¶</a></p>
+<p id="section-7.5-6">APIs exponsing a proof object are prone to soundness bugs, as they provide out-of-order or partial access to prover messages. a byte-oriented stream enforces sequential, exactly-once processing together. End-of-input check is necessary to prevent malleability pitfalls.<a href="#section-7.5-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="iana-considerations">
+<section id="section-8">
+      <h2 id="name-iana-considerations">
+<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-8-1">This document has no IANA actions.<a href="#section-8-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="sec-combined-references">
+<section id="section-9">
+      <h2 id="name-references">
+<a href="#section-9" class="section-number selfRef">9. </a><a href="#name-references" class="section-name selfRef">References</a>
+      </h2>
+<div id="sec-normative-references">
+<section id="section-9.1">
+        <h3 id="name-normative-references">
+<a href="#section-9.1" class="section-number selfRef">9.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+        </h3>
+<dl class="references">
+<dt id="RFC8017">[RFC8017]</dt>
+      <dd>
+<span class="refAuthor">Moriarty, K., Ed.</span>, <span class="refAuthor">Kaliski, B.</span>, <span class="refAuthor">Jonsson, J.</span>, and <span class="refAuthor">A. Rusch</span>, <span class="refTitle">"PKCS #1: RSA Cryptography Specifications Version 2.2"</span>, <span class="seriesInfo">RFC 8017</span>, <span class="seriesInfo">DOI 10.17487/RFC8017</span>, <time datetime="2016-11" class="refDate">November 2016</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8017">https://www.rfc-editor.org/rfc/rfc8017</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="sec-informative-references">
+<section id="section-9.2">
+        <h3 id="name-informative-references">
+<a href="#section-9.2" class="section-number selfRef">9.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+        </h3>
+<dl class="references">
+<dt id="BPW16">[BPW16]</dt>
+        <dd>
+<span class="refAuthor">Bernhard, D.</span>, <span class="refAuthor">Pereira, O.</span>, and <span class="refAuthor">B. Warinschi</span>, <span class="refTitle">"How not to Prove Yourself: Pitfalls of the Fiat-Shamir Heuristic and Applications to Helios"</span>, <time datetime="2016" class="refDate">2016</time>, <span>&lt;<a href="https://eprint.iacr.org/2016/771">https://eprint.iacr.org/2016/771</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="CO25">[CO25]</dt>
+        <dd>
+<span class="refAuthor">Chiesa, A.</span> and <span class="refAuthor">M. Orrù</span>, <span class="refTitle">"A Fiat-Shamir Transformation From Duplex Sponges"</span>, <time datetime="2025" class="refDate">2025</time>, <span>&lt;<a href="https://eprint.iacr.org/2025/536.pdf">https://eprint.iacr.org/2025/536.pdf</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="SEC1">[SEC1]</dt>
+        <dd>
+<span class="refAuthor">Standards for Efficient Cryptography Group (SECG)</span>, <span class="refTitle">"SEC 1: Elliptic Curve Cryptography"</span>, <span>&lt;<a href="https://www.secg.org/sec1-v2.pdf">https://www.secg.org/sec1-v2.pdf</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="SHA3">[SHA3]</dt>
+      <dd>
+<span class="refTitle">"SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions"</span>, <span>n.d.</span>, <span>&lt;<a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf">https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+</section>
+</div>
+<div id="test-vectors">
+<section id="appendix-A">
+      <h2 id="name-test-vectors">
+<a href="#appendix-A" class="section-number selfRef">Appendix A. </a><a href="#name-test-vectors" class="section-name selfRef">Test Vectors</a>
+      </h2>
+<div id="testkeccakduplexspongeshake128">
+<section id="appendix-A.1">
+        <h3 id="name-test_keccak_duplex_sponge_s">
+<a href="#appendix-A.1" class="section-number selfRef">A.1. </a><a href="#name-test_keccak_duplex_sponge_s" class="section-name selfRef">test_keccak_duplex_sponge_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.1-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = absorb:6261736963206475706c65782073706f6e67652074657374
+Operation2 = squeeze:64
+Expected = f845c3ef4231a4d6e09c29b1eea0055842246fd57558fd7d93e1302f7
+799dd9593d2e4d06eda72d5252ca5b2feff4b8cb324ec96673a7417cf70fa77b1898
+991
+</pre><a href="#appendix-A.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testabsorbemptybeforedoesnotbreakshake128">
+<section id="appendix-A.2">
+        <h3 id="name-test_absorb_empty_before_do">
+<a href="#appendix-A.2" class="section-number selfRef">A.2. </a><a href="#name-test_absorb_empty_before_do" class="section-name selfRef">test_absorb_empty_before_does_not_break_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.2-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = absorb:656d707479206d657373616765206166746572
+Operation2 = absorb:
+Operation3 = squeeze:64
+Expected = 3953e577d9e5d4dc7b86d1a62e881f2d1eb750ea3550fcae315854d16
+6136ae816ca922a4c7e54d711b8721c8969598449922122768c50313f47eef35020b
+73c
+</pre><a href="#appendix-A.2-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testabsorbemptyafterdoesnotbreakshake128">
+<section id="appendix-A.3">
+        <h3 id="name-test_absorb_empty_after_doe">
+<a href="#appendix-A.3" class="section-number selfRef">A.3. </a><a href="#name-test_absorb_empty_after_doe" class="section-name selfRef">test_absorb_empty_after_does_not_break_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.3-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = absorb:
+Operation2 = absorb:656d707479206d657373616765206265666f7265
+Operation3 = squeeze:64
+Expected = 6e475edd3c400bec314d5891af570841a547c95d1a651adff9a8bfb70
+719a79b5afde316386da13fa83525662df3c5b2367d987bf3dc4199efdb9d0612572
+785
+</pre><a href="#appendix-A.3-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testsqueezezerobehaviorshake128">
+<section id="appendix-A.4">
+        <h3 id="name-test_squeeze_zero_behavior_">
+<a href="#appendix-A.4" class="section-number selfRef">A.4. </a><a href="#name-test_squeeze_zero_behavior_" class="section-name selfRef">test_squeeze_zero_behavior_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.4-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = squeeze:0
+Operation2 = absorb:7a65726f2073717565657a652074657374
+Operation3 = squeeze:0
+Operation4 = squeeze:64
+Expected = 4cf7f008057b63cb615547a143f42cf793b86b239f404d2f28b3f0919
+7d850eb029df3024ad468be5aceb2fa60e9fb7add98436236be69ddb34314ce7a905
+f23
+</pre><a href="#appendix-A.4-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testsqueezezeroafterbehaviorshake128">
+<section id="appendix-A.5">
+        <h3 id="name-test_squeeze_zero_after_beh">
+<a href="#appendix-A.5" class="section-number selfRef">A.5. </a><a href="#name-test_squeeze_zero_after_beh" class="section-name selfRef">test_squeeze_zero_after_behavior_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.5-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 756e69745f74657374735f6b656363616b5f697600000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = squeeze:0
+Operation2 = absorb:7a65726f2073717565657a65206166746572
+Operation3 = squeeze:64
+Expected = bd9278e6f65cb854935b3f6b2c51ab158be8ea09744509519b8f06f0c
+501d07c429e37f232b6f0955b620ff6226d9d02e4817b1447e7309023a3a14f73587
+6ec
+</pre><a href="#appendix-A.5-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testabsorbsqueezeabsorbconsistencyshake128">
+<section id="appendix-A.6">
+        <h3 id="name-test_absorb_squeeze_absorb_">
+<a href="#appendix-A.6" class="section-number selfRef">A.6. </a><a href="#name-test_absorb_squeeze_absorb_" class="section-name selfRef">test_absorb_squeeze_absorb_consistency_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.6-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 656467652d636173652d746573742d646f6d61696e2d6162736f72620000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = absorb:696e7465726c65617665206669727374
+Operation2 = squeeze:32
+Operation3 = absorb:696e7465726c65617665207365636f6e64
+Operation4 = squeeze:32
+Expected = 4d31a75f29851f9f15cd54fa6f2335cbe07b947b9d3c28092c1ba7315
+e295921
+</pre><a href="#appendix-A.6-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testassociativityofabsorbshake128">
+<section id="appendix-A.7">
+        <h3 id="name-test_associativity_of_absor">
+<a href="#appendix-A.7" class="section-number selfRef">A.7. </a><a href="#name-test_associativity_of_absor" class="section-name selfRef">test_associativity_of_absorb_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.7-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 6162736f72622d6173736f6369617469766974792d646f6d61696e000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = absorb:6173736f63696174697669747920746573742066756c6c
+Operation2 = squeeze:32
+Expected = c0faa351141d60678dceff4f3a5760381bb335ad113958b70edf7b242
+df01c8a
+</pre><a href="#appendix-A.7-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testivaffectsoutputshake128">
+<section id="appendix-A.8">
+        <h3 id="name-test_iv_affects_output_shak">
+<a href="#appendix-A.8" class="section-number selfRef">A.8. </a><a href="#name-test_iv_affects_output_shak" class="section-name selfRef">test_iv_affects_output_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.8-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 646f6d61696e2d6f6e652d646966666572732d6865726500000000000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = absorb:697620646966666572656e63652074657374
+Operation2 = squeeze:32
+Expected = 7650642267cc544abf0e01ce28e2595aec4c2f5b5e5e3720ab5514496
+37b35f2
+</pre><a href="#appendix-A.8-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="testmultipleblocksabsorbsqueezeshake128">
+<section id="appendix-A.9">
+        <h3 id="name-test_multiple_blocks_absorb">
+<a href="#appendix-A.9" class="section-number selfRef">A.9. </a><a href="#name-test_multiple_blocks_absorb" class="section-name selfRef">test_multiple_blocks_absorb_squeeze_SHAKE128</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.9-1">
+<pre>
+DuplexSponge = SHAKE128
+IV = 6d756c74692d626c6f636b2d6162736f72622d7465737400000000000000000
+00000000000000000000000000000000000000000000000000000000000000000
+Operation1 = absorb:abababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababababab
+abababababababababababababababababababababababababababababababab
+Operation2 = squeeze:600
+Expected = 526d4f6cfca230e0654bf8749bddc0f4416a8a164c50f3c1b0bc1d527
+2a88b9a524e73cafad76691a29c0e03a5255fd8fb9d778ef5a0c8c9e11e003011d25
+6bf92dd36233e4c6c360baca0f8ac305d459adb1231a801742669efa051396e96417
+814448b5328336d028a62dbddf24d1bb68496d27f1944eb24d4b2812d9ad4eae6c26
+0b720c44ed2be8bfeeed3acc2640edbab987674f2cef8ceacda1e04f254170aba424
+1dabc6364ed5afc09b58205682d5e8413bf5f9d97e9c799b97876ccd1c48d86759ad
+e5871acc4c5d41d37f2b1843c8b6f9e0bade78342d56f9b1e8232d4c7553674d889e
+69fe24dea31f42f0b02b70161876ceb12cc0b36868c262cbebb5e815a1eceaee97ae
+d3402a518287c32f2f469c3a38a17afd0f0d82433acf695ae143ded9412b4e6b6144
+bd6d4be6bb7de33c05f560480c63aa89336954f1cf5992399e6ed59d406adb4497bb
+88aa897fd3d65646cf86e796da4f193c418a74d662f57e0e0c775386abdace02157e
+519ba54495555145016c550ff32004981d0e34f0abe7d814ac4fe25260473ffa8746
+0a736f20954e8d3b9f16140e79451953fe6cfc222cba6ad4f85a2e2efd6ff8f5fef6
+5d8480e6af40baab298c4de57f30d08a5e1b4c10d123a5af7702ff26ba9a84a6fe92
+f48391b23a7e8e8cb06deda74d1b10870611995f6bfe4df60320a0b7f2c891cad5a5
+645ecec80868ed568591a74dafb35cabb42dae1a1085269b655db1ebf09929f63d5a
+f775a24e43759f673b83aeefef382bc2b7bf175bb9d90e77911466ffb3b230754776
+5cd5adc30a6b07881a88fd1511e5f8d2dcc4347c076e6c79676d8df
+</pre><a href="#appendix-A.9-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="appendix-B">
+      <h2 id="name-authors-address">
+<a href="#name-authors-address" class="section-name selfRef">Author's Address</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Michele Orrù</span></div>
+<div dir="auto" class="left"><span class="org">CNRS</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:m@orru.net" class="email">m@orru.net</a>
+</div>
+</address>
+</section>
+</div>
+<script>const toc = document.getElementById("toc");
+toc.querySelector("h2").addEventListener("click", e => {
+  toc.classList.toggle("active");
+});
+toc.querySelector("nav").addEventListener("click", e => {
+  toc.classList.remove("active");
+});
+</script>
+</body>
+</html>
