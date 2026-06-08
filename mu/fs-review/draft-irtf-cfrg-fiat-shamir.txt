@@ -428,30 +428,30 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    Seed the state by absorbing the session identifier, padded with zeros
    to fill the rate (the remaining R - 64 = 104 bytes).
 
-       Init(self, session_id)
+   Init(self, session_id)
 
-       Input: session_id, a byte array
+   Input: session_id, a byte array
 
-       Output: a duplex sponge state
+   Output: a duplex sponge state
 
-       1. assert len(session_id) == 64
-       2. ctx = SHAKE128.New()
-       3. ctx.Update(session_id || zeros(R - 64))
-       4. return state := (ctx, reader = None)
+   1. assert len(session_id) == 64
+   2. ctx = SHAKE128.New()
+   3. ctx.Update(session_id || zeros(R - 64))
+   4. return state := (ctx, reader = None)
 
 3.1.2.  Absorb
 
    Feed a byte string x into the state.
 
-       Absorb(state, x)
+   Absorb(state, x)
 
-       Inputs:
+   Inputs:
 
-       - state, a duplex sponge state
-       - x, a byte array
+   - state, a duplex sponge state
+   - x, a byte array
 
-       1. state.reader = None
-       2. state.ctx.Update(x)
+   1. state.reader = None
+   2. state.ctx.Update(x)
 
 3.1.3.  Squeeze
 
@@ -460,18 +460,18 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    finalizes a copy of the absorbing context as a SHAKE128 XOF reader.
    Consecutive Squeeze calls *continue* the same SHAKE128 output stream.
 
-       Squeeze(state, n)
+   Squeeze(state, n)
 
-       Inputs:
+   Inputs:
 
-       - state, the duplex sponge state
-       - n, the number of elements to be squeezed
+   - state, the duplex sponge state
+   - n, the number of elements to be squeezed
 
-       Output: a uniformly-distributed random n-byte string
+   Output: a uniformly-distributed random n-byte string
 
-       1. if state.reader == None:
-       2.    state.reader = self.ctx.Copy().Finalize()
-       3. state.reader.read(n)
+   1. if state.reader == None:
+   2.    state.reader = self.ctx.Copy().Finalize()
+   3. state.reader.read(n)
 
 4.  Codecs
 
@@ -500,27 +500,27 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    caller is responsible for ensuring that the length is fixed by the
    surrounding protocol.
 
-       EncodeBytes(x)
+   EncodeBytes(x)
 
-       Input: x, a non-empty N-byte string
+   Input: x, a non-empty N-byte string
 
-       Output: out, a N-byte string
+   Output: out, a N-byte string
 
-       1. return x
+   1. return x
 
 4.1.2.  Variable-length character strings
 
    A UTF-8 string of fewer than 2^32 bytes is encoded as its byte length
    (a big-endian 32-bit integer) followed by its bytes.
 
-       EncodeString(s)
+   EncodeString(s)
 
-       Input: s, a N-byte utf-8 encoded string
+   Input: s, a N-byte utf-8 encoded string
 
-       Output: out, a (N+4)-byte string
+   Output: out, a (N+4)-byte string
 
-       1. b = utf8(s)
-       2. return I2OSP(len(b), 4) || b
+   1. b = utf8(s)
+   2. return I2OSP(len(b), 4) || b
 
    The length prefix makes the encoding prefix-free.
 
@@ -535,17 +535,17 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    representative in the range [0, M) and encoded big-endian as defined
    in I2OSP [RFC8017].
 
-       EncodeScalar(x, M)
+   EncodeScalar(x, M)
 
-       Inputs:
-       - x, an integer modulo M
-       - M, the order of the integer ring
+   Inputs:
+   - x, an integer modulo M
+   - M, the order of the integer ring
 
-       Output: out, a Ns-byte string
+   Output: out, a Ns-byte string
 
-       1. Ns = ceil(log2(M) / 8)
-       2. assert 0 <= x < M
-       3. return I2OSP(x, Ns)
+   1. Ns = ceil(log2(M) / 8)
+   2. assert 0 <= x < M
+   3. return I2OSP(x, Ns)
 
 4.1.5.  Elliptic curve groups
 
@@ -577,16 +577,16 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    The decoding function for fixed-length byte arrays is the identity.
 
-       DecodeBytes(buf, N)
+   DecodeBytes(buf, N)
 
-       Inputs:
-       - buf, a byte string
-       - N, the expected byte length
+   Inputs:
+   - buf, a byte string
+   - N, the expected byte length
 
-       Output: out, a byte string of length N
+   Output: out, a byte string of length N
 
-       1. assert len(buf) == N
-       2. return buf
+   1. assert len(buf) == N
+   2. return buf
 
 4.2.2.  Unsigned integers
 
@@ -594,16 +594,16 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    = ceil(log2(M) / 8)), decode Ns + 32 bytes by interpreting them as a
    big-endian non-negative integer with OS2IP, and reduce modulo M.
 
-       DecodeScalar(buf, M)
+   DecodeScalar(buf, M)
 
-       Inputs:
-       - buf, a byte string of length Ns + 32
-       - M, the modulus
+   Inputs:
+   - buf, a byte string of length Ns + 32
+   - M, the modulus
 
-       Output: out, an integer in the range [0, M)
+   Output: out, an integer in the range [0, M)
 
-       1. assert len(buf) == Ns + 32
-       2. return OS2IP(buf) mod M
+   1. assert len(buf) == Ns + 32
+   2. return OS2IP(buf) mod M
 
    The 32 extra bytes (256 bits) ensure that the statistical distance
    between the reduced value and the uniform distribution over [0, M) is
@@ -636,17 +636,17 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    5.  session identifiers *SHOULD* include a version number.
 
-       DeriveSessionID(s)
+   DeriveSessionID(s)
 
-       Inputs:
-       - s, an application-chosen byte string
+   Inputs:
+   - s, an application-chosen byte string
 
-       Output: session_id, a byte string of length 64
+   Output: session_id, a byte string of length 64
 
-       1. iv = "irtf-cfrg-fiat-shamir/session-id" || zeros(32)
-       2. sponge = SHAKE128.Init(iv)
-       3. sponge.Absorb(s)
-       4. return zeros(32) || sponge.Squeeze(32)
+   1. iv = "irtf-cfrg-fiat-shamir/session-id" || zeros(32)
+   2. sponge = SHAKE128.Init(iv)
+   3. sponge.Absorb(s)
+   4. return zeros(32) || sponge.Squeeze(32)
 
    As an example, consider a fictional application named Foo that
    implements sigma protocols over elliptic curves for encrypted
@@ -728,17 +728,17 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    if fewer than N bytes remain, or if those bytes are not a valid UTF-8
    encoding.  The value is the resulting string.
 
-       DeserializeString(input)
+   DeserializeString(input)
 
-       Input: input, the unread remainder of the NARG string
+   Input: input, the unread remainder of the NARG string
 
-       Output: s, a UTF-8 string
+   Output: s, a UTF-8 string
 
-       1. assert len(input) >= 4
-       2. N = OS2IP(input[0:4])
-       3. assert len(input) == 4 + N
-       4. b = input[4 : 4 + N]
-       5. return utf8_decode(b)
+   1. assert len(input) >= 4
+   2. N = OS2IP(input[0:4])
+   3. assert len(input) == 4 + N
+   4. b = input[4 : 4 + N]
+   5. return utf8_decode(b)
 
    This consumes 4 + N bytes of the NARG string.
 
