@@ -28,63 +28,138 @@ author:
     email: "m@orru.net"
 
 normative:
-
-informative:
   SHA3:
     title: "SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions"
     target: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
+  SEC1:
+    title: "SEC 1: Elliptic Curve Cryptography"
+    target: https://www.secg.org/sec1-v2.pdf
+    date: false
+    author:
+      -
+        ins: Standards for Efficient Cryptography Group (SECG)
+
+informative:
+  CO25:
+    title: "A Fiat-Shamir Transformation From Duplex Sponges"
+    target: https://eprint.iacr.org/2025/536.pdf
+    date: 2025
+    author:
+      -
+        fullname: "Alessandro Chiesa"
+      -
+        fullname: "Michele Orrù"
+  SPONGE:
+    title: "Cryptographic Sponge Functions"
+    target: https://keccak.team/files/CSF-0.1.pdf
+    date: 2011
+    author:
+      -
+        fullname: "Guido Bertoni"
+      -
+        fullname: "Joan Daemen"
+      -
+        fullname: "Michaël Peeters"
+      -
+        fullname: "Gilles Van Assche"
+  DUPLEX:
+    title: "Duplexing the Sponge: Single-Pass Authenticated Encryption and Other Applications"
+    target: https://keccak.team/files/SpongeDuplex.pdf
+    date: 2011
+    author:
+      - fullname: "Guido Bertoni"
+      - fullname: "Joan Daemen"
+      - fullname: "Michaël Peeters"
+      - fullname: "Gilles Van Assche"
+  BPW16:
+    title: "How not to Prove Yourself: Pitfalls of the Fiat-Shamir Heuristic and Applications to Helios"
+    target: https://eprint.iacr.org/2016/771
+    date: 2016
+    author:
+      - fullname: "David Bernhard"
+      - fullname: "Olivier Pereira"
+      - fullname: "Bogdan Warinschi"
+  DMWG23:
+    title: "Weak Fiat-Shamir Attacks on Modern Proof Systems"
+    target: https://eprint.iacr.org/2023/691
+    date: 2023
+    author:
+      - fullname: "Quang Dao"
+      - fullname: "Jim Miller"
+      - fullname: "Opal Wright"
+      - fullname: "Paul Grubbs"
+  SAFE:
+    title: "SAFE: Sponge API for Field Elements"
+    target: https://eprint.iacr.org/2023/522
+    date: 2023
+    author:
+      - fullname: "JP Aumasson"
+      - fullname: "Dmitry Khovratovich"
+      - fullname: "Bart Mennink"
+      - fullname: "Porçu Quine"
 
 --- abstract
 
-This document describes how to construct a non-interactive proof via the Fiat–Shamir transformation, using a generic procedure that compiles an interactive proof into a non-interactive one by relying on a stateful duplex sponge object.
+This document describes the Fiat-Shamir transformation, which allows making a public-coin protocol non-interactive by means of a cryptographic hash function.
 
-The duplex sponge interface requires two methods: absorb and squeeze, which respectively read and write elements of a specified base type. The absorb operation incrementally updates the duplex sponge's internal state, while the squeeze operation produces variable-length, unpredictable outputs. This interface can be instantiated with different constructions based on permutation or compression functions.
-
-This specification also defines codecs to securely map prover messages into the duplex sponge domain, from the duplex sponge domain into verifier messages.
-It also establishes how the non-interactive argument string should be serialized.
+It specifies how the hash function is employed, how prover messages are encoded as hash-function input, and how verifier messages are decoded from the hash function's output, as well as the serialization and deserialization of the non-interactive argument string.
 
 --- middle
 
 # Introduction
 
-The Fiat-Shamir transformation allows to turn a public-coin interactive argument into a non-interactive argument
+A public-coin interactive protocol is an exchange of messages between a prover and a verifier in which every verifier message is a uniformly random value sampled independently of the protocol state.
+
+The Fiat-Shamir transformation removes interaction from a public-coin interactive argument by relying on a cryptographic hash function. The non-interactive prover derives each verifier message on its own via a hash function, and serializes the protocol transcript into a *non-interactive argument* (NARG) string. The verifier recomputes the same verifier messages from the NARG string and checks the interactive verifier's decision. The resulting argument is secure in the random oracle model.
+
+This document describes the duplex sponge Fiat-Shamir transformation, and in particular:
+
+- a non-interactive argument prover (NARG prover), and
+- a non-interactive argument verifier (NARG verifier)
+
+The prover is a randomized procedure and generally relies on a cryptographically-secure entropy source; the verifier **SHOULD** be deterministic.
+
+Both the non-interactive prover and verifier rely on:
+
+- a duplex sponge, prescribing how to interact with the cryptographic hash function ({{hash-instantiations}});
+- a set of codecs, describing how each prover and verifier message talk to the duplex sponge ({{codecs}});
+- a serialization and deserialization procedure for the NARG string produced by the prover ({{narg-string}}).
+
+This document specifies only byte-oriented hash functions, but this transformation generalizes to alphabets other than bytes (for example, prime-field elements); see {{CO25}} for the general construction.
+
+Other types of non-interactive transformations (with and without random oracles) are possible, but outside the scope of this specification.
 
 ~~~ aasvg
 +--------------------------------------------------------------------------+
-| NARG Prover (session id, instance, witness)                              |
+| NARG Prover (session_id, instance, witness)                              |
 |                                                                          |
 |                                                              +------+    |
-|  session id ------------------------------------------------>| Init |    |
+|  session_id ------------------------------------------------>| Init |    |
 |                                                              +------+    |
 |                                                                   |      |
 |                                                                   v      |
-|                                                              +--------+  |
-|  instance -------------------------------------------------->| Absorb |  |
-|                                                              +--------+  |
-|                                                                   |      |
-|                                                                   v      |
-|                                                              +--------+  |
-|     salt --------------------------------------------------->| Absorb |  |
-|  +---------------------+                                     +--------+  |
+|                                          +------------+      +--------+  |
+|  instance ------------------------------>| encode[0]  |----->| Absorb |  |
+|  +---------------------+                 +------------+      +--------+  |
 |  | Interactive Prover  |                                          |      |
 |  |  (instance, witness)|                                          v      |
 |  |                     | prover_msg[1]   +------------+      +--------+  |
-|  |                     +---------------->| encode_1   |----->| Absorb |  |
+|  |                     +---------------->| encode[1]  |----->| Absorb |  |
 |  |                     |                 +------------+      +--------+  |
 |  |                     |                                          |      |
 |  |                     |                                          v      |
 |  |                     | verifier_msg[1] +------------+      +---------+ |
-|  |                     |<----------------| decode_1   |<-----| Squeeze | |
+|  |                     |<----------------| decode[1]  |<-----| Squeeze | |
 |  |                     |                 +------------+      +---------+ |
 |  |                     |                                          |      |
 |  |                     |                                          v      |
 |  |                     | prover_msg[2]   +------------+      +--------+  |
-|  |                     +---------------->| encode_2   |----->| Absorb |  |
+|  |                     +---------------->| encode[2]  |----->| Absorb |  |
 |  |                     |                 +------------+      +--------+  |
 |  |                     |                                          |      |
 |  |                     |                                          v      |
 |  |                     | verifier_msg[2] +------------+      +---------+ |
-|  |                     |<----------------| decode_2   |<-----| Squeeze | |
+|  |                     |<----------------| decode[2]  |<-----| Squeeze | |
 |  |                     |                 +------------+      +---------+ |
 |  |                     |        .                                 .      |
 |  |                     |        .                                 .      |
@@ -101,492 +176,526 @@ The Fiat-Shamir transformation allows to turn a public-coin interactive argument
 |  |                     +------------------>                              |
 |  +---------------------+                                                 |
 |                                                                          |
-|       narg_string := (salt, prover_msg[..])                              |
+|       narg_string := serialize(prover_msg[..])                           |
 +--------------------------------------------------------------------------+
 ~~~
 {: #fig-fiat-shamir-prover title="Non-interactive prover for the Fiat-Shamir transformation"}
 
 ~~~ aasvg
-+--------------------------------------------------------------------------+
-| NARG Verifier V(session id, instance, narg_string)                       |
-|                                                                          |
-| 1. (salt, prover_msg[..]) := deserialize(narg_string)                    |
-| 2. derive verifier messages:                                             |
-|                                                                          |
-|                                  +------+                                |
-| session id --------------------->| Init |                                |
-|                                  +------+                                |
-|                                      |                                   |
-|                                      v                                   |
-|                                  +--------+                              |
-| instance ----------------------->| Absorb |                              |
-|                                  +--------+                              |
-|                                      |                                   |
-|                                      v                                   |
-|                                  +--------+                              |
-| salt --------------------------->| Absorb |                              |
-|                                  +--------+                              |
-|                                      |                                   |
-|                                      v                                   |
-|prover_msg[1] +-----------+      +--------+                               |
-|------------->| encode[1] |----->| Absorb |                               |
-|              +-----------+      +--------+                               |
-|                                      |                                   |
-|                                      v                                   |
-|                                 +---------+                              |
-|                                 | Squeeze |--+                           |
-|                                 +---------+  |                           |
-|                                      |       v                           |
-|                                      |  +----------+                     |
-|                                      |  | decode_1 |--> verifier_msg[1]  |
-|                                      |  +----------+                     |
-|                                      v                                   |
-|prover_msg[2] +-----------+      +--------+                               |
-|------------->| encode[2] |----->| Absorb |                               |
-|              +-----------+      +--------+                               |
-|                                      |                                   |
-|                                      v                                   |
-|                                 +---------+                              |
-|                                 | Squeeze |--+                           |
-|                                 +---------+  |                           |
-|                                      |       v                           |
-|                                      |  +----------+                     |
-|                                      |  | decode_2 |--> verifier_msg[2]  |
-|                                      |  +----------+                     |
-|                                      .                                   |
-|                                      .                                   |
-|                                      .                                   |
-|                                      v                                   |
-|prover_msg[k-1]+-------------+   +--------+                               |
-|-------------->| encode[k-1] |-->| Absorb |                               |
-|               +-------------+   +--------+                               |
-|                                      |                                   |
-|                                      v                                   |
-|                                 +---------+                              |
-|                                 | Squeeze |--+                           |
-|                                 +---------+  |                           |
-|                                              v                           |
-|                                     +-------------+                      |
-|                                     | decode[k-1] |--> verifier_msg[k-1] |
-|                                     +-------------+                      |
-|                                                                          |
-| 3. check IP decision:                                                    |
-|                                                                          |
-|   +-------------------------------------------------------------------+  |
-|   | Interactive Verifier (instance, prover_msg[..], verifier_msg[..]) |  |
-|   +-------------------------------------------------------------------+  |
-+--------------------------------------------------------------------------+
++-----------------------------------------------------------------------+
+| NARG Verifier V(session_id, instance, narg_string)                    |
+|                                                                       |
+| 1. prover_msg[..] := deserialize(narg_string)                         |
+| 2. derive verifier messages:                                          |
+|                                                                       |
+|                                     +------+                          |
+| session_id ------------------------>| Init |                          |
+|                                     +------+                          |
+|                                         |                             |
+|                                         v                             |
+|              +-----------+          +--------+                        |
+| instance --->| encode[0] |--------->| Absorb |                        |
+|              +-----------+          +--------+                        |
+|                                         |                             |
+|                                         v                             |
+|prover_msg[1] +-----------+          +--------+                        |
+|------------->| encode[1] |--------->| Absorb |                        |
+|              +-----------+          +--------+                        |
+|                                         |                             |
+|                                         v                             |
+| verifier_msg[1] +-----------+       +---------+                       |
+| <---------------| decode[1] |<------| Squeeze |                       |
+|                 +-----------+       +---------+                       |
+|                                         |                             |
+|                                         v                             |
+|prover_msg[2] +-----------+          +--------+                        |
+|------------->| encode[2] |--------->| Absorb |                        |
+|              +-----------+          +--------+                        |
+|                                         |                             |
+|                                         v                             |
+| verifier_msg[2] +-----------+       +---------+                       |
+| <---------------| decode[2] |<------| Squeeze |                       |
+|                 +-----------+       +---------+                       |
+|                                         .                             |
+|                                         .                             |
+|                                         .                             |
+|                                         v                             |
+|prover_msg[k]  +-----------+       +--------+                          |
+|-------------->| encode[k] |------>| Absorb |                          |
+|               +-----------+       +--------+                          |
+|                                         |                             |
+|                                         v                             |
+| verifier_msg[k]   +-----------+   +---------+                         |
+| <-----------------| decode[k] |<--| Squeeze |                         |
+|                   +-----------+   +---------+                         |
+|                                                                       |
+| 3. check IP decision:                                                 |
+|                                                                       |
+| +-------------------------------------------------------------------+ |
+| | Interactive Verifier (instance, prover_msg[..], verifier_msg[..]) | |
+| +-------------------------------------------------------------------+ |
++-----------------------------------------------------------------------+
 ~~~
 {: #fig-fiat-shamir-verifier title="Non-interactive verifier for the Fiat-Shamir transformation"}
 
-# Random oracle instantiations
+The security guarantees provided by this transformation are described in {{security-considerations}}.
 
-The duplex sponge interface defines the space (the `Unit`) where the duplex sponge operates, plus a function for absorbing and squeezing prover messages. It provides the following interface.
+# Terminology and conventions in this document
 
-    class DuplexSponge:
-      def init(iv: bytes) -> DuplexSponge
-      def absorb(self, x: list[Unit])
-      def squeeze(self, length: int) -> list[Unit]
+The key words "**MUST**", "**MUST NOT**", "**REQUIRED**", "**SHALL**", "**SHALL NOT**", "**SHOULD**", "**SHOULD NOT**", "**RECOMMENDED**", "**NOT RECOMMENDED**", "**MAY**", and "**OPTIONAL**" in this document are to be interpreted as described in BCP 14 {{!RFC2119}} {{!RFC8174}} when, and only when, they appear in all capitals, as shown here.
 
-Where:
+The following notation is used throughout this document.
 
-- `init(iv: bytes) -> DuplexSponge` denotes the initialization function. This function takes as input a 64-byte initialization vector `iv` and initializes the state of the duplex sponge.
-- `absorb(self, values: list[Unit])` denotes the absorb operation of the duplex sponge. This function takes as input a list of `Unit` elements and mutates the `DuplexSponge` internal state.
-- `squeeze(self, length: int)` denotes the squeeze operation of the duplex sponge. This function takes as input an integral `length` and squeezes a list of `Unit` elements of length `length`.
+## Bytes and integers
 
+A byte is an 8-bit unsigned integer (an octet), and a **byte string** is a finite sequence of bytes. An `N`-byte string is a byte string of length `N`. The empty byte string is written `""`; `x || y` is the concatenation of the byte strings `x` and `y`. `zeros(N)` denotes the `N`-byte string of zero bytes.
 
-## SHAKE128
+`I2OSP(n, w)` and `OS2IP(x)` are the primitives defined in Section 4 of {{!RFC8017}}. `I2OSP(n, w)` converts a non-negative integer `n` less than `256^w` into a `w`-byte, big-endian byte string. `OS2IP(x)` converts a byte string `x` into a non-negative integer using the big-endian byte order.
 
-SHAKE128 is a variable-length extendable-output function based on the Keccak sponge construction {{SHA3}}.
-It belongs to the SHA-3 family and is used here to provide a duplex sponge interface.
+A byte string `x` is a **prefix** of a byte string `y` if `y == x || z` for some byte string `z` (even empty). An encoding is **prefix-free** if, for any two distinct values, the encoding of one is never a prefix of the encoding of the other. A simple prefix-free encoding of a byte string `b` is `I2OSP(len(b), 4) || b` as described in {{varlen-encoding}}.
 
-### Init
+## Duplex sponge interface
 
-    init(self, iv)
+The Fiat-Shamir transformation is built on a cryptographic hash function, modeled as a random oracle. Rather than computing a single fixed-length digest, this document uses the hash function through a stateful interface called a **duplex sponge** (defined in {{hash-instantiations}}), which `Absorb`s prover messages into an evolving internal state and `Squeeze`s from that state the bytes from which verifier challenges are derived.
 
-    Inputs:
-    - iv, a byte array
+The interface generalizes the **sponge** {{SPONGE}}, which maps a variable-length input to a variable-length output by absorbing all of its input and then squeezing all of its output, to the **duplex** setting {{DUPLEX}}, in which absorbing and squeezing may be arbitrarily interleaved over a single retained state. The state is split into a **rate**, the portion through which bytes are absorbed and squeezed, and a **capacity**, which is never read or written directly and whose size sets the security level. Security relies on the capacity. The properties a concrete instantiation must satisfy for this to hold, and the resulting security loss, are given in {{security-considerations}} and analyzed in {{CO25}}.
 
-    Outputs:
+## Proof systems terminology
 
-    -  a duplex sponge instance
+A **prover message** is a message sent by the interactive prover, and a **verifier message** is a message sent by the interactive verifier (a uniformly random value, since the protocol is public-coin). A message can be a value of any type for which a codec ({{codecs}}) is defined, such as a byte string, an unsigned integer, or a group element. The **transcript** is the ordered sequence of prover and verifier messages.
 
-    1. initial_block = iv + b'\00' * 104  # len(iv) + 104 == SHAKE128 rate
-    2. self.state = hashlib.shake_128()
-    3. self.state.update(initial_block)
+The **instance** specifies the statement being proven and is held by both the prover and the verifier.
 
-### Absorb
+The **witness** is the prover's private input. It is known only to the prover and is never revealed. It appears neither in the transcript nor in the NARG string.
 
-    absorb(state, x)
+For an NP language, the instance is a word, the witness is proof of its membership in the language, and the resulting non-interactive argument proves that the instance is indeed in the language. This claim is also referred to as the **statement**. Proof systems might support different statements or express the same language in different ways.
 
-    Inputs:
+The **NARG string** (non-interactive argument string) is the serialized output of the non-interactive prover.
 
-    - state, a duplex sponge state
-    - x, a byte array
+The notation in this document is for an interactive argument with `k` rounds in which the prover moves first and the verifier moves last. Other types of interactions can be expressed in the same notation by setting the unused messages to the empty string: a protocol whose verifier moves first (such as a batch argument) sets its first prover message to `""`, and one whose prover moves last (such as a sigma protocol) sets its final verifier message to `""`. Prover and verifier round messages `2`, ..., `k-1` **MUST** be non-empty.
 
-    1. h.update(x)
+## Codec and serialization
+
+A prover message is processed in two independent ways: it is absorbed into the hash function to derive the verifier's challenges, and it is written into the NARG string sent to the verifier. This document keeps the two separate.
+
+A **codec** ({{codecs}}) is the pair of maps between messages and the hash function's alphabet (bytes, in this document):
+
+- **Encoding** converts the instance and each prover message into the bytes absorbed by the sponge ({{encoding-bytes}}).
+- **Decoding** converts the bytes squeezed from the sponge into a uniformly-distributed verifier message ({{decoding}}).
+
+**Serialization** ({{narg-string}}) is the pair of maps between prover messages and the NARG string:
+
+- **Serialization** writes the prover messages into the NARG string produced by the non-interactive prover.
+- **Deserialization** reads the prover messages back from the NARG string, and returns an error if the message is invalid.
+
+For a prover message the serialized bytes coincide with the encoded bytes ({{serialization}}), but the two serve different purposes: encoding is constrained for the security of the transformation (it is prefix-free), while deserialization is constrained to make parsing of the NARG string unambiguous (trailing or invalid byte strings are rejected).
+
+# Duplex sponge {#hash-instantiations}
+
+This section lists the duplex sponge instantiations provided in this document.
+
+## Interface
+
+Prover and verifier messages are handled via three operations:
+
+- `Init(session_id) -> state`: create a new duplex sponge state, seeded by the 32-byte string `session_id`.
+- `Absorb(x)`: absorb the byte string `x` into the state.
+- `Squeeze(n) -> buf`: produce `n` bytes from the state.
+
+The sponge interface does not encode message boundaries, as messages can be absorbed incrementally: `Absorb(x)` followed by `Absorb(y)` is equivalent to `Absorb(x || y)`. The output of `Squeeze(n)` is uniformly distributed over `n`-byte strings and depends on the session identifier and on every byte absorbed before the call. Consecutive `Squeeze` calls continue one output stream, while any intervening `Absorb` starts a fresh one.
+
+For all duplex sponges, `Squeeze(n)`, `Absorb("")`, `Squeeze(n)` can return the same `n` bytes twice. An empty absorb therefore **MUST NOT** be relied on to separate two challenges. See {{proof-systems-terminology}} for the length requirements of prover messages.
+
+Guidance on how to produce a 32-byte `session_id` is given in {{session-id}}; its security requirements in {{indifferentiability-of-the-hash-function}}.
+
+## SHAKE128 duplex sponge {#shake128}
+
+In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the `Keccak-f` permutation: SHAKE128 and SHAKE256. Four other fixed-length hash-function instances (SHA3-224, SHA3-256, SHA3-384, and SHA3-512) are also defined but are out of scope for this document. A SHAKE is an XOF defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance strengths for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of {{SHA3}}). This instantiation targets 128-bit security.
+
+Viewed as a duplex sponge, the SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits). This instantiation is equivalent to invoking the SHAKE128 XOF on the concatenation of the session identifier, the encoded instance, and the encoded prover messages. That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
+
+~~~
+verifier_msg[i] := decode[i](SHAKE128(
+                       session_id || zeros(R - 32)
+                       || encode[0](instance)
+                       || encode[1](prover_msg[1])
+                       || ...
+                       || encode[i](prover_msg[i]),
+                   len_i * 8))
+~~~
+
+The session identifier is padded with `R - 32 = 136` zero bytes so that the instance and prover messages begin on a fresh rate-block boundary (see {{init}}).
+
+### Init {#init}
+
+Seed the state by absorbing the session identifier, padded with zeros to fill the rate (the remaining `R - 32 = 136` bytes).
+The zeros are ordinary input absorbed before the standard SHAKE128 padding.
+
+~~~
+Init(session_id)
+
+Input: session_id, a byte array
+
+Output: a duplex sponge state
+
+1. assert len(session_id) == 32
+2. ctx = SHAKE128.New()
+3. ctx.Update(session_id || zeros(R - 32))
+4. return state := (ctx, reader = None)
+~~~
+
+### Absorb {#shake128-absorb}
+
+Feed a byte string `x` into the state.
+
+~~~
+Absorb(state, x)
+
+Inputs:
+
+- state, a duplex sponge state
+- x, a byte array
+
+1. state.reader = None
+2. state.ctx.Update(x)
+~~~
 
 ### Squeeze
 
-    squeeze(state, length)
+Returns the next `n` bytes of the SHAKE128 output stream computed over the absorbed input. If the sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a SHAKE128 XOF reader. Consecutive `Squeeze` calls **continue** the same SHAKE128 output stream.
 
-    Inputs:
+~~~
+Squeeze(state, n)
 
-    - state, the duplex sponge state
-    - length, the number of elements to be squeezed
+Inputs:
 
-    1. return self.state.copy().digest(length)
+- state, the duplex sponge state
+- n, the number of bytes to be squeezed
 
-## Duplex Sponge
+Output: a uniformly-distributed random n-byte string
 
-A duplex sponge in overwrite mode is based on a permutation function that operates on a state vector. It implements the `DuplexSpongeInterface` and maintains internal state to support incremental absorption and variable-length output generation.
+1. if state.reader == None:
+2.    state.reader = state.ctx.Copy().Finalize()
+3. return state.reader.read(n)
+~~~
 
-### Init
-
-This is the constructor for a duplex sponge object. It is initialized with a 64-byte initialization vector.
-
-    new(iv)
-
-    Inputs:
-    - iv, a 64-byte initialization vector
-
-    Procedure:
-    1. self.absorb_index = 0
-    2. self.squeeze_index = self.permutation_state.R
-    3. self.rate = self.permutation_state.R
-    4. self.capacity = self.permutation_state.N - self.permutation_state.R
-
-### Absorb
-
-The absorb function incorporates data into the duplex sponge state using overwrite mode.
-
-    absorb(self, input)
-
-    Inputs:
-    - self, the current duplex sponge object
-    - input, the input bytes to be absorbed
-
-    Procedure:
-    1. self.squeeze_index = self.rate
-    2. while len(input) != 0:
-    3.     if self.absorb_index == self.rate:
-    4.         self.permutation_state.permute()
-    5.         self.absorb_index = 0
-    6.     chunk_size = min(self.rate - self.absorb_index, len(input))
-    7.     next_chunk = input[:chunk_size]
-    8.     self.permutation_state[self.absorb_index:self.absorb_index + chunk_size] = next_chunk
-    9.     self.absorb_index += chunk_size
-    10.    input = input[chunk_size:]
-
-### Squeeze
-
-The squeeze operation extracts output elements from the sponge state, which are uniformly distributed and can be used as a digest, key stream, or other cryptographic material.
-
-    squeeze(self, length)
-
-    Inputs:
-    - self, the current duplex sponge object
-    - length, the number of bytes to be squeezed out of the sponge
-
-    Outputs:
-    - digest, a byte array of `length` elements uniformly distributed
-
-    Procedure:
-    1. output = b''
-    2. while length != 0:
-    3.     if self.squeeze_index == self.rate:
-    4.         self.permutation_state.permute()
-    5.         self.squeeze_index = 0
-    6.         self.absorb_index = 0
-    7.     chunk_size = min(self.rate - self.squeeze_index, length)
-    8.     output += bytes(self.permutation_state[self.squeeze_index:self.squeeze_index+chunk_size])
-    9.     self.squeeze_index += chunk_size
-    10.    length -= chunk_size
-    11. return output
-
-### Keccak-f\[1600\] Implementation
-
-`Keccak-f` is the permutation function underlying {{SHA3}}.
-
-`KeccakDuplexSponge` instantiates `DuplexSponge` with `Keccak-f[1600]`, using rate `R = 136` bytes and capacity `C = 64` bytes.
+Consecutive `Squeeze` calls with no intervening `Absorb` continue the same output stream, and any `Absorb` restarts the stream at offset zero (see {{shake128-absorb}}). The `Copy().Finalize()` in `Squeeze` realizes this without consuming the absorbing state: squeezed bytes are never fed back into the state.
 
 # Codecs
 
-A codec is a collection of:
-- functions that map prover messages into `Unit`s,
-- functions that map `Unit`s into verifier messages, preserving the uniform distribution
+A codec is a set of functions that map prover and verifier messages to the hash function's alphabet:
 
-A codec provides the following interface.
-
-    class Codec:
-        def prover_message(self, state, elements)
-        def verifier_challenge(self, state) -> verifier_challenge
+- Encoding converts prover messages into the bytes absorbed by the sponge. Encoding functions **MUST** be prefix-free.
+- Decoding converts squeezed bytes into verifier messages. Decoding **MUST** preserve the uniform distribution (up to a small codec error).
 
-Where:
+Codecs serve a different purpose than proof serialization, which is described in {{serialization}}.
 
-- `prover_message(self, state, elements)` denotes the absorb operation of the codec. This function takes as input the duplex sponge, and elements with which to mutate the duplex sponge.
-- `verifier_challenge(self, state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the duplex sponge to produce an unpredictable verifier challenge `verifier_challenge`.
-
-The `verifier_challenge` function must generate a challenge from the underlying scalar field that is statistically close to uniform, from the public inputs given to the verifier, as described in {{decode-random-bytes-scalars}}.
+## Encoding into byte strings {#encoding-bytes}
 
-## Encoding
-
-## Decoding
-
-
-# Session Identifier
-
-The duplex sponge state is initialized by sequentially absorbing:
-
-- A `protocol_id`: the unique identifier for the interactive protocol and the associated relation being proven. This identifier MUST be 64 bytes.
-- A `session_id`: the session identifier, for user-provided contextual information about the context where the proof is made (e.g. a URL, or a timestamp). This identifier is currently generated as 32 zero-bytes concatenated with a 32-byte digest derived using the duplex sponge.
-- An `instance_label`: the instance identifier for the statement being proven.
-
-The `session_id` is computed as:
-
-    state = DuplexSponge.init(b"fiat-shamir/session-id".ljust(64, b"\x00"))
-    state.absorb(session)
-    session_id = [0] * 32 || state.squeeze(32)
+All encoding functions **MUST** be prefix-free.
 
-The protocol instance label is absorbed without an explicit length prefix.
-Therefore, the encoding used to produce `instance_label` MUST be prefix-free.
+### Variable-length byte strings {#varlen-encoding}
 
-# Fiat-Shamir transformation for Sigma Protocols
+A byte string of fewer than 2^32 bytes is encoded as its byte length (via `I2OSP`), followed by its bytes. The length prefix makes the encoding prefix-free.
 
-We describe how to construct non-interactive proofs for sigma protocols.
-The Fiat-Shamir transformation is parameterized by:
+~~~
+EncodeBytes(s)
 
-- a `SigmaProtocol`, which specifies an interactive 3-message protocol as defined in {{Section 2 of !SIGMA=I-D.draft-irtf-cfrg-sigma-protocols-00}};
-- a `Codec`, which specifies how to absorb prover messages and how to squeeze verifier challenges;
-- a `DuplexSpongeInterface`, which specifies a duplex sponge for computing challenges.
+Input: s, a N-byte string
 
-The construction follows the data flow shown in {{fig-fiat-shamir-prover}} and {{fig-fiat-shamir-verifier}}.
-
-Upon initialization, the protocol receives as input:
-- `session`, which identifies the session being proven
-- `instance`, the sigma protocol instance for proving or verifying
-
-    class NISigmaProtocol:
-        Protocol: SigmaProtocol = None
-        Codec: Codec = None
-        DuplexSponge: DuplexSpongeInterface = None
+Output: out, a (N+4)-byte string
 
-        def __init__(self, session, instance):
-            protocol_id = self.get_protocol_id()
-            assert len(protocol_id) == 64
-            self.sigma_protocol = self.Protocol(instance)
-            self.codec = self.Codec()
-            instance_label = self.sigma_protocol.get_instance_label()
-            session_state = self.DuplexSponge(b"fiat-shamir/session-id".ljust(64, b"\x00"))
-            session_state.absorb(session)
-            session_id = [0] * 32 || session_state.squeeze(32)
-            self.state = self.DuplexSponge(protocol_id)
-            self.state.absorb(session_id)
-            self.state.absorb(instance_label)
+1. return I2OSP(len(s), 4) || s
+~~~
 
-        def _prove(self, witness, rng):
-            # Core proving logic that returns commitment, challenge, and response.
-            # The challenge is generated via the duplex sponge.
-            (prover_state, commitment) = self.sigma_protocol.prover_commit(witness, rng)
-            self.codec.prover_message(self.state, commitment)
-            challenge = self.codec.verifier_challenge(self.state)
-            response = self.sigma_protocol.prover_response(prover_state, challenge)
-            return (commitment, challenge, response)
+### Sequences and tuples
 
-        def prove(self, witness, rng):
-            # Default proving method using challenge-response format.
-            (commitment, challenge, response) = self._prove(witness, rng)
-            assert self.sigma_protocol.verifier(commitment, challenge, response)
-            return self.sigma_protocol.serialize_challenge(challenge) + self.sigma_protocol.serialize_response(response)
+A fixed-length array or a tuple is encoded as the concatenation of the encodings of its elements, with no separators.
 
-        def verify(self, proof):
-            # Before running the sigma protocol verifier, one must also check that:
-            # - the proof length is exactly Nc + response_bytes_len,
-            Nc = self.sigma_protocol.instance.Domain.scalar_byte_length()
-            assert len(proof) == Nc + self.sigma_protocol.instance.response_bytes_len
+### Unsigned integers {#encoding-scalars}
 
-            # - proof deserialization successfully produces a valid challenge and a valid response,
-            challenge_bytes = proof[:Nc]
-            response_bytes = proof[Nc:]
-            challenge = self.sigma_protocol.deserialize_challenge(challenge_bytes)
-            response = self.sigma_protocol.deserialize_response(response_bytes)
-            commitment = self.sigma_protocol.simulate_commitment(response, challenge)
+This section specifies the **default** encoding of an integer modulo `M`. When the integer is a component of a type that already has a specified serialization, that serialization **MUST** be used instead, and it **MUST** itself be prefix-free. The encoding below is chosen to coincide with the serializations of most standards; where it does not, the type's own serialization should be preferred.
 
-            # - the re-computed challenge equals the serialized challenge.
-            self.codec.prover_message(self.state, commitment)
-            expected_challenge = self.codec.verifier_challenge(self.state)
-            if challenge != expected_challenge:
-                return False
+For instance, a scalar field element of an elliptic curve is serialized to a canonical `Ns`-byte string using the group's scalar field serialization function. For most prime-order elliptic-curve groups, this serialization is `EncodeScalar` as described below.
 
-            return self.sigma_protocol.verifier(commitment, challenge, response)
+An integer modulo `M` is represented by its unique integer representative in the range `[0, M)` and encoded via `I2OSP`.
 
-        def prove_batchable(self, witness, rng):
-            # Proving method using commitment-response format.
-            # Allows for batching.
-            (commitment, challenge, response) = self._prove(witness, rng)
-            # running the verifier here is just a sanity check
-            assert self.sigma_protocol.verifier(commitment, challenge, response)
-            return self.sigma_protocol.serialize_commitment(commitment) + self.sigma_protocol.serialize_response(response)
+~~~
+EncodeScalar(x, M)
 
-        def verify_batchable(self, proof):
-            # Before running the sigma protocol verifier, one must also check that:
-            # - the proof length is exactly commit_bytes_len + response_bytes_len
-            assert len(proof) == self.sigma_protocol.instance.commit_bytes_len + self.sigma_protocol.instance.response_bytes_len
+Inputs:
+- x, an integer modulo M
+- M, the order of the integer ring
 
-            # - proof deserialization successfully produces a valid commitment and a valid response
-            commitment_bytes = proof[:self.sigma_protocol.instance.commit_bytes_len]
-            response_bytes = proof[self.sigma_protocol.instance.commit_bytes_len:]
-            commitment = self.sigma_protocol.deserialize_commitment(commitment_bytes)
-            response = self.sigma_protocol.deserialize_response(response_bytes)
+Output: out, a Ns-byte string
 
-            self.codec.prover_message(self.state, commitment)
-            challenge = self.codec.verifier_challenge(self.state)
-            return self.sigma_protocol.verifier(commitment, challenge, response)
+1. assert 0 <= x < M
+2. return I2OSP(x, Ns)
+~~~
 
-Serialization and deserialization of scalars and group elements are defined by the ciphersuite chosen in the Sigma Protocol. In particular, `serialize_challenge`, `deserialize_challenge`, `serialize_response`, and `deserialize_response` call into the scalar `serialize` and `deserialize` functions. Likewise, `serialize_commitment` and `deserialize_commitment` call into the group element `serialize` and `deserialize` functions.
 
-## Ciphersuites
+### Elliptic curve group elements
 
-We describe noninteractive sigma protocol instances for combinations of protocols (SigmaProtocol), codec (Codec), and duplex sponge (DuplexSpongeInterface). Descriptions of codecs and duplex sponge interfaces are in the following sections.
+A group element is serialized to a canonical `Ne`-byte string using the group's element-serialization function. For most prime-order elliptic-curve groups, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of {{SEC1}}. Each group element has exactly one `Ne`-byte representation. The value of `Ne` and the concrete conversion are fixed by the ciphersuite.
 
-    class NISchnorrProofShake128P256(NISigmaProtocol):
-        Protocol = SchnorrProof
-        Codec = P256Codec
-        DuplexSponge = SHAKE128
+## Decoding from byte strings {#decoding}
 
-    class NISchnorrProofShake128Bls12381(NISigmaProtocol):
-        Protocol = SchnorrProof
-        Codec = Bls12381Codec
-        DuplexSponge = SHAKE128
+Decoding converts a uniformly-distributed `Squeeze` output into a verifier message. Each verifier message type fixes the number of bytes to squeeze.
 
-    class NISchnorrProofKeccakDuplexSpongeBls12381(NISigmaProtocol):
-        Protocol = SchnorrProof
-        Codec = Bls12381Codec
-        DuplexSponge = KeccakDuplexSponge
+Decoding is not serialization, and need not be injective; the requirement is that it be *distribution-preserving*: if its input is a uniformly random byte string, then its output is (statistically close to) uniformly distributed over the verifier message type.
 
-# Codec for Schnorr proofs {#group-prove}
+### Byte arrays
 
-We describe a codec for Schnorr proofs over groups of prime order `p` where `Unit = u8`.
+The decoding function for fixed-length byte arrays is the identity.
 
-    class ByteSchnorrCodec(Codec):
-        GG: groups.Group = None
+~~~
+DecodeBytes(buf, N)
 
-        def prover_message(self, elements: list):
-            state.absorb(self.GG.serialize(elements))
+Inputs:
+- buf, a byte string
+- N, the expected byte length
 
-        def verifier_challenge(self, state):
-            # see https://eprint.iacr.org/2025/536.pdf, Appendix C.
-            Ns = self.GG.ScalarField.scalar_byte_length()
-            uniform_bytes = state.squeeze(
-                Ns + 32
-            )
-            scalar = OS2IP(uniform_bytes) % self.GG.ScalarField.order
-            return scalar
+Output: out, a byte string of length N
 
-We describe a codec for the P256 curve.
+1. fail if len(buf) != N
+2. return buf
+~~~
 
-    class P256Codec(ByteSchnorrCodec):
-        GG = groups.GroupP256()
+### Unsigned integers {#decoding-scalars}
 
+To sample a uniformly random element modulo `M` of `Ns` bytes (that is, the smallest integer `Ns` with `256^Ns >= M`), squeeze `Ns + 32` bytes by interpreting them as a big-endian non-negative integer via `OS2IP`, and reduce modulo `M`.
 
+~~~
+DecodeScalar(buf, M)
 
-## Elliptic curves
+Inputs:
+- buf, a byte string of length Ns + 32
+- M, the modulus
 
-### Notation and Terminology {#notation}
+Output: out, an integer in the range [0, M)
 
-For an elliptic curve, we consider two fields, the coordinate fields, which indicates the base field, the field over which the elliptic curve equation is defined, and the scalar field, over which the scalar operations are performed.
+1. fail if len(buf) != Ns + 32
+2. return OS2IP(buf) mod M
+~~~
 
-The following functions and notation are used throughout the document.
+The 32 extra bytes (256 bits) ensure that the statistical distance between the reduced value and the uniform distribution over `[0, M)` is at most `2^-256`, which is cryptographically negligible. More generally, sampling `Ns + n` bytes bounds the bias to `2^-8n`.
 
-- `concat(x0, ..., xN)`: Concatenation of byte strings.
-- `OS2IP` and `I2OSP`: Convert a byte string to and from a non-negative integer, as described in
-  {{!RFC8017}}. Note that these functions operate on byte strings in big-endian byte order.
-- The function `ecpoint_to_bytes` converts an elliptic curve point in affine-form into an array string of length `ceil(ceil(log2(coordinate_field_order))/ 8) + 1` using `int_to_bytes` prepended by one byte. This is defined as
+In two cases this approach is inefficient: if `log2(M)` is significantly smaller than 256, and if `M` is a 2-power.
+In such cases, applications **MAY** use an alternative decoding function, provided it meets the following security requirements:
 
-      ecpoint_to_bytes(element)
-      Inputs:
-      - `element`, an elliptic curve element in affine form, with attributes `x` and `y` corresponding to its affine coordinates, represented as integers modulo the coordinate field order.
+-  The function **MUST** have bias less than the soundness error of the interactive argument.
+-  The function **MUST NOT** use rejection sampling.
+-  The function **SHOULD** be amenable to straight-line implementations.
 
-      Outputs:
+Similar requirements and a longer discussion are available in {{?RFC9380}}, Section 5.
 
-      A byte array
+### Elliptic curve scalar field
 
-      Constants:
+A scalar field element is decoded via `DecodeScalar` in {{decoding-scalars}}.
 
-      Ng, the number of bytes to represent an element in the coordinate field, equal to `ceil(log2(field.order())/8)`.
+# Initialization
 
-      1. byte = 2 if sgn0(element.y) == 0 else 3
-      2. return I2OSP(byte, 1) + I2OSP(x, Ng)
+Before any prover message is processed, both parties start the duplex sponge with the session identifier ({{session-id}}), and then the instance ({{instance}}). Neither of the two is part of the NARG string: the verifier holds both as its own inputs.
 
-### Absorb scalars
+## Session identifiers {#session-id}
 
-    absorb_scalars(state, scalars)
+The session identifier is a 32-byte string that identifies the application context.
 
-    Inputs:
+For a duplex sponge operating over bytes, the procedure `DeriveSessionID` allows producing a secure session identifier provided the input tag satisfies the following security requirements:
 
-    - state, the duplex sponge
-    - scalars, a list of elements of the elliptic curve's scalar field
+1. the tag **MUST** uniquely identify the **non-interactive argument** used, including the IP (interactive protocol), the types of prover and verifier messages, the hash suite, the language associated to the interactive argument, and the codecs used.
+2. the tag **MUST** contain contextual information about where the proof is made (e.g. a URL, or a timestamp).
+3. the tag **SHOULD** begin with a fixed identification string that is unique to the application.
+4. the tag **SHOULD** include a version number.
 
-    Constants:
+~~~
+DeriveSessionID(tag)
 
-    - Ns, the number of bytes to represent a scalar element, equal to `ceil(log2(p)/8)`.
+Inputs:
+- tag, an application-chosen byte string
 
-    1. for scalar in scalars:
-    2.     state.absorb(I2OSP(scalar, Ns))
+Output: session_id, a 32-byte string
 
-### Absorb elements
+1. duplex_sponge = DS.Init("irtf-cfrg-fiat-shamir/session-id")
+2. duplex_sponge.Absorb(tag)
+3. return duplex_sponge.Squeeze(32)
+~~~
 
-    absorb_elements(state, elements)
+The 32-byte string `"irtf-cfrg-fiat-shamir/session-id"` is a domain separator for this derivation.
 
-    Inputs:
+As an example, consider a fictional application named Foo that implements sigma protocols over elliptic curves for encrypted messages shared during a time epoch `tt`. A reasonable choice of tag is:
 
-    - state, the duplex sponge
-    - elements, a list of group elements
+~~~
+FOO-SV{xx}-{tt}-DSFS-{hashID}-SIGMA-PROOFS-{yy}
+~~~
 
-    1. for element in elements:
-    2.     state.absorb(ecpoint_to_bytes(element))
+where `xx` is the two-digit number indicating the version, `yy` is the two-digit number indicating the elliptic-curve ciphersuite, `hashID` is the hash identifier, and `tt` is the epoch identifier.
 
-### Decoding random bytes as scalars {#decode-random-bytes-scalars}
+As another example, consider a fictional application named Bar that implements an ad-hoc zero-knowledge virtual machine for correct execution of circuits. A reasonable choice of tag is
 
-Given `Ns + 32` bytes, it is possible to generate a scalar modulo `p` that is statistically close to uniform.
-Interpret the bytes as a big-endian integer, then reduce it modulo `p`, where `p` is the order of the group.
+~~~
+BAR-COM{cc}
+~~~
 
-    squeeze_scalars(state, length)
+where `{cc}` is the commit hash of the associated version of the cryptographic specification of the protocol.
 
-    Inputs:
+Yet another reasonable choice for the session identifier is to append a description of the proof system together with the length of each prover and verifier message, after the version string. For instance:
 
-    - state, the duplex sponge
-    - length, an unsigned integer of 64 bits determining the number of scalars to output.
+~~~
+BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-message-S1challenge
+~~~
 
-    Constants:
+where `xx` is the two-digit version number, `hashID` is the hash identifier, and `ff` is the two-digit identifier of the finite field over which the proof is computed. The suffix `A2round-message-S1challenge` describes one sumcheck round (the pattern repeats each round): the prover absorbs (`A`) two field elements `round-message`, and the verifier squeezes (`S`) one field element `challenge`. This is similar to the SAFE API {{SAFE}} *IO pattern*, which is checked by the prover and verifier during execution.
 
-    - Ns, the number of bytes to represent a scalar, equal to `ceil(log2(p)/8)`.
+## Instance
 
-    1. for i in range(length):
-    2.     scalar_bytes = state.squeeze(Ns + 32)
-    3.     scalars.append(OS2IP(scalar_bytes) % p)
+The instance is input to the non-interactive prover and the non-interactive verifier; it fixes the specific statement being proven.
 
-# Serialization of the non-interactive argument
+The instance is the first value absorbed into the sponge after `Init(session_id)` and before any prover message. The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map. While the session identifier of the previous section {{session-id}} fixes the language, the instance selects one of its members.
+
+As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the encodings of {{encoding-bytes}}.
+
+Omitting public statement data from the sponge compromises soundness of the proof system. See {{instance-encoding}}.
+
+# Non-interactive argument string {#narg-string}
 
 ## Serialization
 
+Serialization is the concatenation of the byte encoding of each prover message, as defined in {{encoding-bytes}}.
+
 ## Deserialization
 
-# Security Considerations
+Deserialization of the NARG string consists in reading the prover messages and computing the inverse of the serialization procedure: each message is read by consuming a fixed number of bytes, determined by its type and the instance, and advancing past them.
 
-The Fiat-Shamir transformation carries over the soundness and witness hiding properties of the interactive proof:
+Verification **MUST** fail if any of the prover messages cannot be deserialized successfully. After the last expected prover message has been read, the verifier **MUST** verify that no bytes remain. Bytes that are never read or that are decoded despite being invalid will defeat strong simulation extractability: an adversary will be able to malleate a valid proof to obtain a second, distinct accepting proof for the same statement.
 
-- **Completeness**: If the statement being proved is true, an honest verifier can be convinced of this fact by an honest prover via the proof.
+### Byte strings
 
-- **Soundness**: If the interactive proof is sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without possession of the corresponding witness.
+Read a 4-byte length `N` via `OS2IP`, then read the next `N` bytes.
 
-- **Zero-Knowledge**: If the interactive proof is honest-verifier zero-knowledge, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid. This ensures that verifiers gain no knowledge about the witness.
+~~~
+DeserializeString(input)
 
-In particular, the Fiat-Shamir transformation of Sigma Protocols is a zero-knowledge and sound argument of knowledge.
+Input: input, the unread remainder of the NARG string
 
-Note that non-interactive Sigma Protocols do not have deniability, as the non-interactive nature of the protocol implies transferable message authenticity.
+Output: b, a N-byte string
 
+1. fail if len(input) < 4
+2. N = OS2IP(input[0:4])
+3. fail if len(input) - 4 < N
+4. b = input[4 : 4 + N]
+5. return b
+~~~
 
+This consumes `4 + N` bytes of the NARG string, and fails if fewer bytes remain. The value decoded is the resulting byte string. Note that the value `N` is attacker-controlled and can be as large as `2^32 - 1`, so computing `4 + N` can overflow 32-bit integers.
+
+### Sequences and tuples
+
+Deserialize each element in order. Fail if any element fails to deserialize. The number and types of the elements are fixed by the protocol.
+
+### Unsigned integers
+
+This section specifies the **default** deserialization of an integer modulo `M`. When the integer is a component of a type that already has a specified deserialization, that deserialization **MUST** be used instead. As with encoding ({{encoding-scalars}}), the default below is chosen to coincide with the deserializations of most standards; where it does not, the type's own deserialization governs.
+
+Read the next `Ns` bytes and interpret them as a big-endian integer `m = OS2IP(.)`. If `m >= M`, fail: non-canonical encodings of field elements **MUST** be rejected. The value returned is `m`.
+
+### Group elements
+
+Read the next `Ne` bytes and convert them to a group element using the group's element-deserialization function.
+Deserialization **MUST** perform the ciphersuite's input-validation steps and fail unless the input is the canonical encoding of a valid group element.
+
+For example, for elliptic curves defined in {{SEC1}}, decoding is the Octet-String-to-Elliptic-Curve-Point conversion, which checks that the encoding is well-formed and that the point lies on the curve, and returns "invalid" otherwise. Membership in the subgroup used for cryptographic operations is not checked by this conversion: it is implied for curves of prime order, but requires an explicit check when the cofactor is greater than one.
+
+# Efficiency considerations
+
+Batch encoding/decoding algorithms should be preferred when available, because they amortize per-element cost over a whole sequence. For example, serializing or deserializing a batch of compressed elliptic-curve points requires only one modular inversion for the entire batch (via Montgomery's trick) rather than one per point, which is the dominant cost in point (de)compression.
+
+The state of the duplex sponge after `Init(session_id)` (see {{session-id}}) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of it instead of re-initializing the duplex sponge. In the SHAKE128 instantiation, where the padded session identifier fills exactly one rate block ({{init}}), this saves one invocation of the permutation function permutation per execution, and amortizes the cost of `DeriveSessionID` when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing `encode[0](instance)`.
+
+# Security considerations
+
+This section contains additional security considerations about the Fiat-Shamir transformation as described in this document.
+
+## Codecs
+
+While encoding maps are never inverted during the protocol, the security proof relies on a left inverse existing and being efficiently computable: the knowledge-soundness extractor uses it to recover prover messages from the absorbed bytes {{CO25}}.
+
+Decoding preserves the uniform distribution only when its input is uniform. Verifier messages **MUST** therefore be derived from `Squeeze` output and never from prover-controlled or otherwise non-uniform bytes: decoding a non-uniform input yields a verifier message that is distinguishable from uniform, which would break the public-coin property the transformation depends on.
+
+## Constant-time requirements
+
+While the protocol operates on "public coins", the instance can contain private information, such as verification keys not meant to be shared, or messages meant to be private between prover and verifier. Therefore, constant-time implementation of all the functions in this document is **RECOMMENDED**, to avoid leaking information via side channels.
+
+For example, in the case of keyed-verification anonymous credentials, the zero-knowledge verifier will compute an instance that depends on the issuer's secret key and as such the instance is not meant to be public.
+
+## Session identifiers
+
+The purpose of session identifiers is to ensure composability and mitigate protocol confusion.
+
+A session identifier uniquely identifies one session of a protocol, so that messages and state belonging to concurrent applications or proof systems are not confused. It **MAY** be reused, and reuse is expected whenever several proofs share the same application context: the identifier names that context, and identical contexts are meant to share one. Applications requiring proofs to be unique, non-replayable, or fresh can achieve this by adding, for example, a counter or timestamp to the session identifier.
+
+## Security of the transformation
+
+The Fiat-Shamir transformation carries over the soundness and zero-knowledge properties of the interactive proof.
+
+Completeness of the non-interactive argument is preserved: if the statement being proven is true, then the resulting non-interactive argument string is valid.
+
+## Soundness
+
+If the interactive proof is state-restoration sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without a corresponding witness existing (in the random oracle model).
+
+Soundness and knowledge soundness carry over to the non-interactive argument, with an additive soundness loss quadratic in the number of queries the adversary makes to the random oracle {{CO25}}.
+
+## Zero-Knowledge
+
+If the interactive proof is honest-verifier zero-knowledge, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid.
+
+The additive zero-knowledge loss introduced by the transformation is linear in the number of queries the adversary makes to the random oracle {{CO25}}.
+
+Zero-knowledge holds only when the prover draws fresh commitment randomness for each proof from a cryptographically secure entropy source, as noted in {{introduction}}. Reusing the same randomness (or correlated randomness) across two proofs will compromise zero-knowledge. Implementations **SHOULD** sample different random coins for each proof using the operating system's secure entropy source.
+
+## Quantum adversaries
+
+If the interactive proof is state-restoration sound against quantum adversaries, then the non-interactive proof after the Fiat-Shamir transformation in the random oracle model is also secure against quantum adversaries.
+
+The loss introduced by a quantum adversary is polynomial (larger than quadratic) in the number of quantum random-oracle queries.
+
+## Indifferentiability of the hash function
+
+The random oracle instantiation **MUST** be extraction-friendly and simulation-friendly indifferentiable to preserve soundness and zero-knowledge of the transformation.
+
+To provide soundness and zero-knowledge, stronger capabilities than indifferentiability are needed {{CO25}}. Implementers do not need these notions to use the transformation, but they are the reason a different hash construction **SHOULD NOT** be substituted on the strength of indifferentiability alone.
+
+## Instance encoding
+
+Incorrect encoding of the instance has historically led to a number of critical security vulnerabilities, often grouped under the term *weak Fiat-Shamir transformation* {{BPW16}}. In each of them, the cryptographic hash function was not provided the full statement being proven. A malicious prover then can compute the verifier message first, and choose the omitted part of the instance afterwards so that the verification equation is satisfied on a statement whose witness it does not hold.
+
+One such example is in {{BPW16}}. A Chaum-Pedersen proof of equality for an instance `(G, H, X, Y)` proves knowledge of a witness `x` such that `X = x * G` and `Y = x * H`. The prover sends commitments `(A, B)`, obtains a challenge `c`, and replies with a scalar `f`; the verifier accepts when `f * G == A + c * X` and `f * H == B + c * Y`. Suppose the challenge `c` is derived by absorbing only the commitments `(A, B)`, leaving the statement `(G, H, X, Y)` out of the transcript. A malicious prover can pick `A`, `B`, `H`, and `f` at random, derive `c`, and only then set `X` and `Y` to the unique values that satisfy the two equations. Verification passes, yet no single `x` satisfies both `X = x * G` and `Y = x * H`: a false statement has been proven. Other examples are available in {{DMWG23}}, for a range of different applications.
+
+All security guarantees are conditioned on the instance being part of the relation being proven. The Fiat-Shamir transformation does not verify that the statement being proven is well-formed, or valid. If the inputs provided are outside the relation, no security guarantee is provided.
+
+## Implementation guidance {#implementation-guidance}
+
+The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities, especially due to incorrect implementations involving out-of-order, or missing prover messages.
+
+Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. We recommend negative testing, to help exercise the rejection paths on which soundness depends. Implementations should check that tampering with a valid NARG string causes verification to fail, for example by flipping, appending, or prepending bytes, and by replacing each prover message in turn with a different value.
+
+Absorbing a prover message and serializing it to (or reading it from) the NARG string **SHOULD** be coupled, to prevent prover messages from being hashed without being serialized, or from being skipped or reordered.
+
+A sequential transcript interface is **RECOMMENDED**: implementations are encouraged to expose two directed state machines
+
+* (instance, witness) -> prove -> proof, and
+* (instance, proof) -> verify -> accept/reject
+
+where the proof object is a byte string.
+
+Particular care must be taken when building a proof object that is only later serialized into a NARG string: its fields are randomly addressable, making them prone to out-of-order or partial access to prover messages, which can in turn compromise soundness of the resulting non-interactive argument. A sequential interface, by contrast, enforces in-order processing. An end-of-input check is necessary to prevent malleability.
+
+The NARG string must be treated as untrusted input, since it can be supplied by an adversary. Non-interactive verifiers therefore **MUST NOT** assume that length indicators are honest, that integers fall within their expected range, or that the proof length is correct.
+
+# IANA Considerations
+
+This document has no IANA actions.
 
 --- back
 
