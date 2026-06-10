@@ -759,19 +759,19 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    The instance is input to the non-interactive prover and the non-
    interactive verifier; it fixes the specific statement being proven.
 
-   While the session identifier of the previous section Section 5.1
-   fixes the language; the instance selects one of its members.
+   The instance is the first value absorbed into the sponge, after
+   Init(session_id), and before any prover message, the prover and
+   verifier *MUST* absorb encode[0](instance), where encode[0] is the
+   first encoding map.  While the session identifier of the previous
+   section Section 5.1 fixes the language; the instance selects one of
+   its members.
 
-   The instance is the first value absorbed into the sponge.
-   Immediately after Init(session_id), and before any prover message,
-   the prover and verifier *MUST* absorb encode[0](instance), where
-   encode[0] is the first encoding map.  As for every encoding map,
-   encode[0] *MUST* be prefix-free: two distinct instances *MUST NOT*
-   encode to the same byte string.  Injectivity is what binds the
-   challenge to the full statement; without it a malicious prover may be
-   able to satisfy the verification equations on a statement it cannot
-   prove (see Section 8.9).  The encoding map encode[0] *SHOULD* reuse
-   the encodings of Section 4.1.
+   As for every encoding map, encode[0] *MUST* be prefix-free: two
+   distinct instances *MUST NOT* encode to the same byte string.
+   Injectivity is what binds the challenge to the full statement;
+   without it a malicious prover may be able to satisfy the verification
+   equations on a statement it cannot prove (see Section 8.9).  The
+   encoding map encode[0] *SHOULD* reuse the encodings of Section 4.1.
 
    Omitting public statement data from the sponge compromises soundness
    of the proof system.  See Section 8.9.
@@ -1028,7 +1028,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    Particular care must be taken when building a proof object that is
    only later serialized into a NARG string: its fields are randomly
    addressable, making them prone to out-of-order or partial access to
-   prover messages, which leads to bugs.  A sequential interface, by
+   prover messages, which can in turn compromise soundness of the
+   resulting non-interactive argument.  A sequential interface, by
    contrast, enforces in-order processing.  An end-of-input check is
    necessary to prevent malleability.
 
