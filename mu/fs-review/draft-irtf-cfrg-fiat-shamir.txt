@@ -163,7 +163,7 @@ Table of Contents
       cryptographic hash function (Section 3);
 
    *  a set of codecs, describing how each prover and verifier message
-      speak to the duplex sponge (Section 4);
+      talk to the duplex sponge (Section 4);
 
    *  a serialization and deserialization procedure for the NARG string
       produced by the prover (Section 6).
@@ -323,11 +323,9 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    function, modeled as a random oracle.  Rather than computing a single
    fixed-length digest, this document uses the hash function through a
    stateful interface called a *duplex sponge* (defined in Section 3),
-   which Absorbs prover messages into one evolving internal state and
+   which Absorbs prover messages into an evolving internal state and
    Squeezes from that state the bytes from which verifier challenges are
-   derived.  This interleaving is essential to the transformation: each
-   verifier challenge must depend on every prover message absorbed
-   before it.
+   derived.
 
    The interface generalizes the *sponge* [SPONGE], which maps a
    variable-length input to a variable-length output by absorbing all of
@@ -363,12 +361,11 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    prover and is never revealed.  It appears neither in the transcript
    nor in the NARG string.
 
-   For an NP relation, the instance is a word, the witness is its proof,
+   For an NP language, the instance is a word, the witness is its proof,
    and the resulting non-interactive argument proves that the instance
-   is in the corresponding NP language.  Proof systems might rely on
-   different relations or express the same relation in different ways.
-   The *statement family* denotes the relation whose membership is being
-   proven.
+   is indeed in the language.  This is also referred to as *statement*.
+   Proof systems might suport different statements or express the same
+   language in different ways.
 
    The *NARG string* (non-interactive argument string) is the serialized
    output of the non-interactive prover.
@@ -379,7 +376,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    setting the unused messages to the empty string: a protocol whose
    verifier moves first (such as a batch argument) sets its first prover
    message to "", and one whose prover moves last (such as a sigma
-   protocol) sets its final verifier message to "".
+   protocol) sets its final verifier message to "".  Prover and verifier
+   round messages 2, ..., k-1 *MUST* be non-empty.
 
 2.4.  Codec and serialization
 
@@ -433,24 +431,58 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    can be absorbed incrementally: Absorb(x) followed by Absorb(y) is
    equivalent to Absorb(x || y).  The output of Squeeze(n) is uniformly
    distributed over n-byte strings and depends on the session identifier
-   and on every byte absorbed before the call.  Guidance on how to
-   produce a 32-byte session_id is given in Section 5.1; its security
-   requirements in Section 8.8.
+   and on every byte absorbed before the call.  Consecutive Squeeze
+   calls continue one output stream, while any intervening Absorb starts
+   a fresh one.
+
+   Absorbing the empty string starts a fresh stream without changing the
+   absorbed bytes, so Squeeze(n), Absorb(""), Squeeze(n) may return the
+   same n bytes twice.  An empty absorb *MUST NOT* be used to separate
+   two challenges; a non-empty message *MUST* be absorbed between them
+   (see Section 2.3).
+
+   Guidance on how to produce a 32-byte session_id is given in
+   Section 5.1; its security requirements in Section 8.8.
 
 3.2.  SHAKE128 duplex sponge
 
-   SHAKE128 [SHA3] is used as a duplex sponge over the Keccak-f[1600]
-   permutation.  The state is a 200-byte (1600-bit) string, split into a
-   rate of R = 168 bytes and a capacity of 32 bytes (256 bits).
-   Operationally, this instantiation is equivalent to invoking the
-   SHAKE128 XOF on the concatenation of the prover messages.
+   In the SHA-3 family, two extendable-output functions (SHAKEs) are
+   defined over the Keccak-f[1600] permutation: SHAKE128 and SHAKE256.
+   Four other fixed-length hash-function instances (SHA3-224, SHA3-256,
+   SHA3-384, and SHA3-512) are also defined but are out of scope for
+   this document.  A SHAKE is an XOF defined as SHAKE(M, n) where the
+   output is an n-bit message M.  The corresponding collision and
+   second-preimage-resistance strengths for SHAKE128 are min(n/2,128)
+   and min(n,128) bits, respectively (see Appendix A.1 of [SHA3]).  This
+   instantiation targets 128-bit security.
 
-   This instantiation targets 128-bit security.
+   Viewed as a duplex sponge, the SHAKE128 state is a 200-byte
+   (1600-bit) string, split into a rate of R = 168 bytes and a capacity
+   of 32 bytes (256 bits).  Operationally, this instantiation is
+   equivalent to invoking the SHAKE128 XOF on the concatenation of the
+   session identifier, instance, and prover messages.  That is, the i-th
+   verifier message (for i > 1) of byte length len_i is computed as:
+
+   verifier_msg[i] := decode[i](SHAKE128(
+       session_id || zeros(R - 32)
+       || instance
+       || prover_msg[1] || ... || prover_msg[i], len_i * 8))
+
+   The session identifier is padded with R - 32 = 136 zero bytes so that
+   the instance and prover messages begin on a fresh rate-block boundary
+   (see Section 3.2.1).
+
+   For all duplex sponges Absorb("") *MAY* be a no-op, and thus
+   Squeeze(n), Absorb(""), Squeeze(n) can return the same n bytes twice.
+   An empty absorb therefore *MUST NOT* be relied on to separate two
+   challenges.  See Section 2.3 for the length requirements of prover
+   messages.
 
 3.2.1.  Init
 
    Seed the state by absorbing the session identifier, padded with zeros
-   to fill the rate (the remaining R - 32 = 136 bytes).
+   to fill the rate (the remaining R - 32 = 136 bytes).  The zeros are
+   ordinary input absorbed before the standard SHAKE128 padding.
 
    Init(session_id)
 
@@ -489,7 +521,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    Inputs:
 
    - state, the duplex sponge state
-   - n, the number of elements to be squeezed
+   - n, the number of bytes to be squeezed
 
    Output: a uniformly-distributed random n-byte string
 
@@ -651,16 +683,13 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    Before any prover message is processed, both parties start the duplex
    sponge with the session identifier (Section 5.1), and then the
-   instance (Section 5.2).
-
-   Neither of the two is part of the NARG string: the verifier holds
-   both as its own inputs and recomputes this prefix to re-derive the
-   verifier challenges.
+   instance (Section 5.2).  Neither of the two is part of the NARG
+   string: the verifier holds both as its own inputs.
 
 5.1.  Session identifiers
 
-   The session identifier is a (non-zero) 32-byte string that identifies
-   the application context.
+   The session identifier is a 32-byte string that identifies the
+   application context.
 
    For a duplex sponge operating over bytes, the procedure
    DeriveSessionID allows to produce a secure session identifier
@@ -668,8 +697,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    1.  the tag *MUST* uniquely identify the *non-interactive argument*
        used, including the IP (interactive protocol), the types of
-       prover and verifier messages, the hash suite, the _statement
-       family_ of the interactive argument, and the codecs used.
+       prover and verifier messages, the hash suite, the language
+       associated to the interactive argument, and the codecs used.
 
    2.  the tag *MUST* contain contextual information about where the
        proof is made (e.g. a URL, or a timestamp).
@@ -684,7 +713,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    Inputs:
    - tag, an application-chosen byte string
 
-   Output: session_id, a non-zero 32-byte string
+   Output: session_id, a 32-byte string
 
    1. duplex_sponge = DS.Init("irtf-cfrg-fiat-shamir/session-id")
    2. duplex_sponge.Absorb(tag)
@@ -696,7 +725,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    As an example, consider a fictional application named Foo that
    implements sigma protocols over elliptic curves for encrypted
    messages shared during a time epoch tt.  A reasonable choice of tag
-   is
+   is:
 
    FOO-SV{xx}-{tt}-DSFS-{hashID}-SIGMA-PROOFS-{yy}
 
@@ -722,23 +751,30 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    where xx is the two-digit version number, hashID is the hash
    identifier, and ff is the two-digit identifier of the finite field
-   over which the proof is computed.  The suffix A1round-message-
+   over which the proof is computed.  The suffix A2round-message-
    S1challenge describes one sumcheck round (the pattern repeats each
-   round): the prover absorbs (A) one field element round-message, and
+   round): the prover absorbs (A) two field elements round-message, and
    the verifier squeezes (S) one field element challenge.  This is
-   similar to the SAFE API [SAFE] _IO pattern_, which is checked the
+   similar to the SAFE API [SAFE] _IO pattern_, which is checked by the
    prover and verifier during execution.
 
 5.2.  Instance
 
-   The instance is the public input that fixes the specific statement
-   being proven, within the statement family identified by the session
-   identifier.
+   The instance is input to the non-interactive prover and the non-
+   interactive verifier; it fixes the specific statement being proven.
 
-   The prover and verifier *MUST* include the instance immediately after
-   Init(session_id), and before any prover message.
+   While the session identifier of the previous section Section 5.1
+   fixes the language; the instance selects one of its members.
 
-   The encoding map encode[0] *MUST* be prefix-free, and *SHOULD* reuse
+   The instance is the first value absorbed into the sponge.
+   Immediately after Init(session_id), and before any prover message,
+   the prover and verifier *MUST* absorb encode[0](instance), where
+   encode[0] is the first encoding map.  As for every encoding map,
+   encode[0] *MUST* be prefix-free: two distinct instances *MUST NOT*
+   encode to the same byte string.  Injectivity is what binds the
+   challenge to the full statement; without it a malicious prover may be
+   able to satisfy the verification equations on a statement it cannot
+   prove (see Section 8.9).  The encoding map encode[0] *SHOULD* reuse
    the encodings of Section 4.1.
 
    Omitting public statement data from the sponge compromises soundness
@@ -838,8 +874,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    While encoding maps are never inverted during the protocol, the
    security proof relies on a left inverse existing and being
    efficiently computable: the knowledge-soundness extractor uses it to
-   recover prover messages from the absorbed bytes [CO25].  This is why
-   the left inverse must exist and be efficiently computable.
+   recover prover messages from the absorbed bytes [CO25].
 
    Decoding preserves the uniform distribution only when its input is
    uniform.  Verifier messages *MUST* therefore be derived from Squeeze
@@ -889,8 +924,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    If the interactive proof is state-restoration sound, then so is the
    non-interactive proof.  In particular, valid proofs cannot be
-   generated without possession a corresponding witness existing (in the
-   random oracle model).
+   generated without a corresponding witness existing (in the random
+   oracle model).
 
    Soundness and knowledge soundness carry over to the non-interactive
    argument, with an additive soundness loss quadratic in the number of
@@ -973,12 +1008,12 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    implementations involving out-of-order, or missing prover messages.
 
    Test vectors can help confirming that honestly-generated proofs
-   verify, but such tests exercise only completeness.  Negative testing
-   can help exercise the rejection paths on which soundness depends.
-   Implementations should check that tampering with a valid NARG string
-   causes verification to fail, for example by flipping, appending, or
-   prepending bytes, and by replacing each prover message in turn with a
-   different value.
+   verify, but such tests exercise only completeness.  We recomment
+   negative testing, to help exercise the rejection paths on which
+   soundness depends.  Implementations should check that tampering with
+   a valid NARG string causes verification to fail, for example by
+   flipping, appending, or prepending bytes, and by replacing each
+   prover message in turn with a different value.
 
    Absorbing a prover message and serializing it to (or reading it from)
    the NARG string *SHOULD* be coupled, to prevent prover messages from
@@ -992,12 +1027,19 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    *  (instance, proof) -> verify -> accept/reject
 
-   where the proof object is a byte string, and not randomly
-   addressable.  APIs exposing a proof object are prone to soundness
-   bugs, as they provide out-of-order or partial access to prover
-   messages.  In lieu of object attributes in a proof object, enforce
-   sequential exactly-once processing.  An end-of-input check is
+   where the proof object is a byte string.
+
+   Particular care must be taken when building a proof object that is
+   only later serialized into a NARG string: its fields are randomly
+   addressable, making them prone to out-of-order or partial access to
+   prover messages, which leads to bugs.  A sequential interface, by
+   contrast, enforces in-order processing.  An end-of-input check is
    necessary to prevent malleability.
+
+   The NARG string must be treated as untrusted input, since it can be
+   supplied by an adversary.  Non-interactive verifiers therefore *MUST
+   NOT* assume that length indicators are honest, that integers fall
+   within their expected range, or that the proof length is correct..
 
 9.  IANA Considerations
 
