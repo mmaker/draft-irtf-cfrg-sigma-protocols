@@ -1754,8 +1754,7 @@ Both the non-interactive prover and verifier rely on:<a href="#section-1-5" clas
 <a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-duplex-sponge-interface" class="section-name selfRef">Duplex sponge interface</a>
         </h3>
 <p id="section-2.2-1">The Fiat-Shamir transformation is built on a cryptographic hash function, modeled as a random oracle. Rather than computing a single fixed-length digest, this document uses the hash function through a stateful interface called a <strong>duplex sponge</strong> (defined in <a href="#hash-instantiations" class="auto internal xref">Section 3</a>), which <code>Absorb</code>s prover messages into an evolving internal state and <code>Squeeze</code>s from that state the bytes from which verifier challenges are derived.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
-<p id="section-2.2-2">The interface generalizes the <strong>sponge</strong> <span>[<a href="#SPONGE" class="cite xref">SPONGE</a>]</span>, which maps a variable-length input to a variable-length output by absorbing all of its input and then squeezing all of its output, to the <strong>duplex</strong> setting <span>[<a href="#DUPLEX" class="cite xref">DUPLEX</a>]</span>, in which absorbing and squeezing may be arbitrarily interleaved over a single retained state. The state is split into a <strong>rate</strong>, the portion through which bytes are absorbed and squeezed, and a <strong>capacity</strong>, which is never read or written directly and whose size sets the security level. The instantiation in <a href="#shake128" class="auto internal xref">Section 3.2</a> realizes this interface on top of the standard sponge-based extendable-output function (XOF).<a href="#section-2.2-2" class="pilcrow">¶</a></p>
-<p id="section-2.2-3">The squeezed bytes stand in for the verifier's random coins, so the security of the transformation rests on the capacity. The properties a concrete instantiation must satisfy for this to hold, and the resulting security loss, are given in <a href="#security-considerations" class="auto internal xref">Section 8</a> and analyzed in <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>.<a href="#section-2.2-3" class="pilcrow">¶</a></p>
+<p id="section-2.2-2">The interface generalizes the <strong>sponge</strong> <span>[<a href="#SPONGE" class="cite xref">SPONGE</a>]</span>, which maps a variable-length input to a variable-length output by absorbing all of its input and then squeezing all of its output, to the <strong>duplex</strong> setting <span>[<a href="#DUPLEX" class="cite xref">DUPLEX</a>]</span>, in which absorbing and squeezing may be arbitrarily interleaved over a single retained state. The state is split into a <strong>rate</strong>, the portion through which bytes are absorbed and squeezed, and a <strong>capacity</strong>, which is never read or written directly and whose size sets the security level. Security relies on the capacity. The properties a concrete instantiation must satisfy for this to hold, and the resulting security loss, are given in <a href="#security-considerations" class="auto internal xref">Section 8</a> and analyzed in <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>.<a href="#section-2.2-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="proof-systems-terminology">
@@ -1834,13 +1833,14 @@ Both the non-interactive prover and verifier rely on:<a href="#section-1-5" clas
 <a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-shake128-duplex-sponge" class="section-name selfRef">SHAKE128 duplex sponge</a>
         </h3>
 <p id="section-3.2-1">In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the <code>Keccak-f[1600]</code> permutation: SHAKE128 and SHAKE256. Four other fixed-length hash-function instances (SHA3-224, SHA3-256, SHA3-384, and SHA3-512) are also defined but are out of scope for this document. A SHAKE is an XOF defined as SHAKE(M, n) where the output is an n-bit  message M. The corresponding collision and second-preimage-resistance strengths for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of <span>[<a href="#SHA3" class="cite xref">SHA3</a>]</span>). This instantiation targets 128-bit security.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
-<p id="section-3.2-2">Viewed as a duplex sponge, the SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of <code>R = 168</code> bytes and a capacity of 32 bytes (256 bits). Operationally, this instantiation is equivalent to invoking the SHAKE128 XOF on the concatenation of the session identifier, instance, and prover messages. That is, the <code>i</code>-th verifier message (for <code>i &gt; 1</code>) of byte length <code>len_i</code> is computed as:<a href="#section-3.2-2" class="pilcrow">¶</a></p>
+<p id="section-3.2-2">Viewed as a duplex sponge, the SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of <code>R = 168</code> bytes and a capacity of 32 bytes (256 bits). Operationally, this instantiation is equivalent to invoking the SHAKE128 XOF on the concatenation of the session identifier, instance, and prover messages. That is, the <code>i</code>-th verifier message (for <code>i &gt; 1</code>) of bit length <code>len_i</code> is computed as:<a href="#section-3.2-2" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3.2-3">
 <pre>
 verifier_msg[i] := decode[i](SHAKE128(
-    session_id || zeros(R - 32)
-    || instance
-    || prover_msg[1] || ... || prover_msg[i], len_i * 8))
+                       session_id || zeros(R - 32)
+                       || instance
+                       || prover_msg[1] || ... || prover_msg[i],
+                   len_i * 8))
 </pre><a href="#section-3.2-3" class="pilcrow">¶</a>
 </div>
 <p id="section-3.2-4">The session identifier is padded with <code>R - 32 = 136</code> zero bytes so that the instance and prover messages begin on a fresh rate-block boundary (see <a href="#init" class="auto internal xref">Section 3.2.1</a>).<a href="#section-3.2-4" class="pilcrow">¶</a></p>
@@ -2134,7 +2134,7 @@ BAR-COM{cc}
 </pre><a href="#section-5.1-10" class="pilcrow">¶</a>
 </div>
 <p id="section-5.1-11">where <code>{cc}</code> is the commit hash of the associated version of the cryptographic specification of the protocol.<a href="#section-5.1-11" class="pilcrow">¶</a></p>
-<p id="section-5.1-12">In the same spirit, yet another reasonable choice for the session identifier is to append to the domain separator and version string a description of the proof system together with the length of each prover and verifier message. For instance:<a href="#section-5.1-12" class="pilcrow">¶</a></p>
+<p id="section-5.1-12">Yet another reasonable choice for the session identifier is to append to the domain separator and version string a description of the proof system together with the length of each prover and verifier message. For instance:<a href="#section-5.1-12" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-5.1-13">
 <pre>
 BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A1round-message-S1challenge

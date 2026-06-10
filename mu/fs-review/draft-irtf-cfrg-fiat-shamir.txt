@@ -334,15 +334,10 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    interleaved over a single retained state.  The state is split into a
    *rate*, the portion through which bytes are absorbed and squeezed,
    and a *capacity*, which is never read or written directly and whose
-   size sets the security level.  The instantiation in Section 3.2
-   realizes this interface on top of the standard sponge-based
-   extendable-output function (XOF).
-
-   The squeezed bytes stand in for the verifier's random coins, so the
-   security of the transformation rests on the capacity.  The properties
-   a concrete instantiation must satisfy for this to hold, and the
-   resulting security loss, are given in Section 8 and analyzed in
-   [CO25].
+   size sets the security level.  Security relies on the capacity.  The
+   properties a concrete instantiation must satisfy for this to hold,
+   and the resulting security loss, are given in Section 8 and analyzed
+   in [CO25].
 
 2.3.  Proof systems terminology
 
@@ -461,12 +456,13 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    of 32 bytes (256 bits).  Operationally, this instantiation is
    equivalent to invoking the SHAKE128 XOF on the concatenation of the
    session identifier, instance, and prover messages.  That is, the i-th
-   verifier message (for i > 1) of byte length len_i is computed as:
+   verifier message (for i > 1) of bit length len_i is computed as:
 
    verifier_msg[i] := decode[i](SHAKE128(
-       session_id || zeros(R - 32)
-       || instance
-       || prover_msg[1] || ... || prover_msg[i], len_i * 8))
+                          session_id || zeros(R - 32)
+                          || instance
+                          || prover_msg[1] || ... || prover_msg[i],
+                      len_i * 8))
 
    The session identifier is padded with R - 32 = 136 zero bytes so that
    the instance and prover messages begin on a fresh rate-block boundary
@@ -742,10 +738,10 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    where {cc} is the commit hash of the associated version of the
    cryptographic specification of the protocol.
 
-   In the same spirit, yet another reasonable choice for the session
-   identifier is to append to the domain separator and version string a
-   description of the proof system together with the length of each
-   prover and verifier message.  For instance:
+   Yet another reasonable choice for the session identifier is to append
+   to the domain separator and version string a description of the proof
+   system together with the length of each prover and verifier message.
+   For instance:
 
    BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A1round-message-S1challenge
 
