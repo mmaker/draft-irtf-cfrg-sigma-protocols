@@ -2238,7 +2238,7 @@ Output: b, a N-byte string
         <h3 id="name-codecs-2">
 <a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-codecs-2" class="section-name selfRef">Codecs</a>
         </h3>
-<p id="section-8.1-1">While encoding maps are never inverted during the protocol, the security proof relies on a left inverse existing and being efficiently computable: the knowledge-soundness extractor uses it to recover prover messages from the absorbed bytes <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>. This is why encoding <strong>MUST</strong> be prefix-free and injective on its domain.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
+<p id="section-8.1-1">While encoding maps are never inverted during the protocol, the security proof relies on a left inverse existing and being efficiently computable: the knowledge-soundness extractor uses it to recover prover messages from the absorbed bytes <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>. This is why the left inverse must exist and be efficiently computable.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
 <p id="section-8.1-2">Decoding preserves the uniform distribution only when its input is uniform. Verifier messages <strong>MUST</strong> therefore be derived from <code>Squeeze</code> output and never from prover-controlled or otherwise non-uniform bytes: decoding a non-uniform input yields a verifier message that is distinguishable from uniform, which would break the public-coin property the transformation depends on.<a href="#section-8.1-2" class="pilcrow">¶</a></p>
 </section>
 </div>

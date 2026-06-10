@@ -839,7 +839,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    security proof relies on a left inverse existing and being
    efficiently computable: the knowledge-soundness extractor uses it to
    recover prover messages from the absorbed bytes [CO25].  This is why
-   encoding *MUST* be prefix-free and injective on its domain.
+   the left inverse must exist and be efficiently computable.
 
    Decoding preserves the uniform distribution only when its input is
    uniform.  Verifier messages *MUST* therefore be derived from Squeeze
