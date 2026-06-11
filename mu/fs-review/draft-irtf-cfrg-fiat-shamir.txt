@@ -4,8 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                              10 June 2026
-Expires: 12 December 2026
+Intended status: Informational                              11 June 2026
+Expires: 13 December 2026
 
 
                        Fiat-Shamir Transformation
@@ -55,7 +55,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 12 December 2026.
+   This Internet-Draft will expire on 13 December 2026.
 
 Copyright Notice
 
@@ -157,7 +157,9 @@ Table of Contents
 
    The prover is a randomized procedure and generally relies on a
    cryptographically-secure entropy source; the verifier *SHOULD* be
-   deterministic.  Both the non-interactive prover and verifier rely on:
+   deterministic.
+
+   Both the non-interactive prover and verifier rely on:
 
    *  a duplex sponge, prescribing how to interact with the
       cryptographic hash function (Section 3);
@@ -178,10 +180,10 @@ Table of Contents
    specification.
 
 +--------------------------------------------------------------------------+
-| NARG Prover (session id, instance, witness)                              |
+| NARG Prover (session_id, instance, witness)                              |
 |                                                                          |
 |                                                              +------+    |
-|  session id ------------------------------------------------>| Init |    |
+|  session_id ------------------------------------------------>| Init |    |
 |                                                              +------+    |
 |                                                                   |      |
 |                                                                   v      |
@@ -229,13 +231,13 @@ Table of Contents
  Figure 1: Non-interactive prover for the Fiat-Shamir transformation
 
 +-----------------------------------------------------------------------+
-| NARG Verifier V(session id, instance, narg_string)                    |
+| NARG Verifier V(session_id, instance, narg_string)                    |
 |                                                                       |
 | 1. prover_msg[..] := deserialize(narg_string)                         |
 | 2. derive verifier messages:                                          |
 |                                                                       |
 |                                     +------+                          |
-| session id ------------------------>| Init |                          |
+| session_id ------------------------>| Init |                          |
 |                                     +------+                          |
 |                                         |                             |
 |                                         v                             |
@@ -359,7 +361,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    For an NP language, the instance is a word, the witness is its proof,
    and the resulting non-interactive argument proves that the instance
    is indeed in the language.  This is also referred to as *statement*.
-   Proof systems might suport different statements or express the same
+   Proof systems might support different statements or express the same
    language in different ways.
 
    The *NARG string* (non-interactive argument string) is the serialized
@@ -430,11 +432,10 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    calls continue one output stream, while any intervening Absorb starts
    a fresh one.
 
-   Absorbing the empty string starts a fresh stream without changing the
-   absorbed bytes, so Squeeze(n), Absorb(""), Squeeze(n) may return the
-   same n bytes twice.  An empty absorb *MUST NOT* be used to separate
-   two challenges; a non-empty message *MUST* be absorbed between them
-   (see Section 2.3).
+   For all duplex sponges, Squeeze(n), Absorb(""), Squeeze(n) can return
+   the same n bytes twice.  An empty absorb therefore *MUST NOT* be
+   relied on to separate two challenges.  See Section 2.3 for the length
+   requirements of prover messages.
 
    Guidance on how to produce a 32-byte session_id is given in
    Section 5.1; its security requirements in Section 8.8.
@@ -446,9 +447,9 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    Four other fixed-length hash-function instances (SHA3-224, SHA3-256,
    SHA3-384, and SHA3-512) are also defined but are out of scope for
    this document.  A SHAKE is an XOF defined as SHAKE(M, n) where the
-   output is an n-bit message M.  The corresponding collision and
-   second-preimage-resistance strengths for SHAKE128 are min(n/2,128)
-   and min(n,128) bits, respectively (see Appendix A.1 of [SHA3]).  This
+   output is an n-bit string.  The corresponding collision and second-
+   preimage-resistance strengths for SHAKE128 are min(n/2,128) and
+   min(n,128) bits, respectively (see Appendix A.1 of [SHA3]).  This
    instantiation targets 128-bit security.
 
    Viewed as a duplex sponge, the SHAKE128 state is a 200-byte
@@ -456,7 +457,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    of 32 bytes (256 bits).  Operationally, this instantiation is
    equivalent to invoking the SHAKE128 XOF on the concatenation of the
    session identifier, instance, and prover messages.  That is, the i-th
-   verifier message (for i > 1) of bit length len_i is computed as:
+   verifier message (for k >= i > 1) of byte length len_i is computed
+   as:
 
    verifier_msg[i] := decode[i](SHAKE128(
                           session_id || zeros(R - 32)
@@ -467,12 +469,6 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    The session identifier is padded with R - 32 = 136 zero bytes so that
    the instance and prover messages begin on a fresh rate-block boundary
    (see Section 3.2.1).
-
-   For all duplex sponges Absorb("") *MAY* be a no-op, and thus
-   Squeeze(n), Absorb(""), Squeeze(n) can return the same n bytes twice.
-   An empty absorb therefore *MUST NOT* be relied on to separate two
-   challenges.  See Section 2.3 for the length requirements of prover
-   messages.
 
 3.2.1.  Init
 
@@ -527,7 +523,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    Consecutive Squeeze calls with no intervening Absorb continue the
    same output stream, and any Absorb restarts the stream at offset zero
-   Section 3.2.2.  The Copy().Finalize() in Squeeze realizes this
+   (see Section 3.2.2).  The Copy().Finalize() in Squeeze realizes this
    without consuming the absorbing state: squeezed bytes are never fed
    back into the state.
 
@@ -635,9 +631,9 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 4.2.2.  Unsigned integers
 
    To sample a uniformly random element modulo M of Ns bytes (that is,
-   the smallest integer Ns with 8*Ns >= log2(M-1)), squeeze Ns + 32
-   bytes by interpreting them as a big-endian non-negative integer via
-   OS2IP, and reduce modulo M.
+   the smallest integer Ns with 256^Ns >= M), squeeze Ns + 32 bytes by
+   interpreting them as a big-endian non-negative integer via OS2IP, and
+   reduce modulo M.
 
    DecodeScalar(buf, M)
 
@@ -688,8 +684,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    application context.
 
    For a duplex sponge operating over bytes, the procedure
-   DeriveSessionID allows to produce a secure session identifier
-   provided the input tag satisfies the following security requirements:
+   DeriveSessionID allows producing a secure session identifier provided
+   the input tag satisfies the following security requirements:
 
    1.  the tag *MUST* uniquely identify the *non-interactive argument*
        used, including the IP (interactive protocol), the types of
@@ -739,11 +735,10 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    cryptographic specification of the protocol.
 
    Yet another reasonable choice for the session identifier is to append
-   to the domain separator and version string a description of the proof
-   system together with the length of each prover and verifier message.
-   For instance:
+   a description of the proof system together with the length of each
+   prover and verifier message, after the version string.  For instance:
 
-   BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A1round-message-S1challenge
+   BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-message-S1challenge
 
    where xx is the two-digit version number, hashID is the hash
    identifier, and ff is the two-digit identifier of the finite field
@@ -759,19 +754,17 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    The instance is input to the non-interactive prover and the non-
    interactive verifier; it fixes the specific statement being proven.
 
-   The instance is the first value absorbed into the sponge, after
-   Init(session_id), and before any prover message, the prover and
+   The instance is the first value absorbed into the sponge after
+   Init(session_id) and before any prover message.  The prover and
    verifier *MUST* absorb encode[0](instance), where encode[0] is the
    first encoding map.  While the session identifier of the previous
-   section Section 5.1 fixes the language; the instance selects one of
+   section Section 5.1 fixes the language, the instance selects one of
    its members.
 
-   As for every encoding map, encode[0] *MUST* be prefix-free: two
-   distinct instances *MUST NOT* encode to the same byte string.
-   Injectivity is what binds the challenge to the full statement;
-   without it a malicious prover may be able to satisfy the verification
-   equations on a statement it cannot prove (see Section 8.9).  The
-   encoding map encode[0] *SHOULD* reuse the encodings of Section 4.1.
+   As for every encoding map, encode[0] *MUST* be prefix-free, else a
+   malicious prover may be able to satisfy the verification equations on
+   a statement it cannot prove (see Section 8.9).  The encoding map
+   encode[0] *SHOULD* reuse the encodings of Section 4.1.
 
    Omitting public statement data from the sponge compromises soundness
    of the proof system.  See Section 8.9.
@@ -839,17 +832,15 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 6.2.4.  Group elements
 
    Read the next Ne bytes and convert them to a group element using the
-   group's element-deserialization function.
+   group's element-deserialization function.  Deserialization *MUST*
+   perform the ciphersuite's input-validation steps and fail unless the
+   input is the canonical encoding of a valid group element.
 
-   For the elliptic-curve groups in scope, this is the decoding
-   procedure — for example, the Octet-String-to-Elliptic-Curve-Point
-   conversion of [SEC1].  Deserialization *MUST* perform the
-   ciphersuite's input-validation steps and fail unless the input is the
-   canonical encoding of a valid group element.
-
-   For elliptic curves, these steps check that the coordinates are in
-   the correct range and that the point lies in the subgroup used for
-   cryptographic operations.
+   For example, in elliptic curves defined in [SEC1], decoding is
+   prescribed in the Octet-String-to-Elliptic-Curve-Point conversion,
+   which internally checks that the coordinates are in the correct
+   range, and that the point lies in the subgroup used for cryptographic
+   operations; else, "invalid" is returned.
 
 7.  Efficiency considerations
 
@@ -885,7 +876,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    contain private information, such as verification keys not meant to
    be shared, or messages meant to be private between prover and
    verifier.  Therefore, constant-time implementation of all the
-   functions in this document is strongly *RECOMMENDED*, to avoid
+   functions in this document is *STRONGLY RECOMMENDED*, to avoid
    leaking information via side channels.
 
    For example, in the case of keyed-verification anonymous credentials,
@@ -1003,13 +994,13 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    critical security vulnerabilities, especially due to incorrect
    implementations involving out-of-order, or missing prover messages.
 
-   Test vectors can help confirming that honestly-generated proofs
-   verify, but such tests exercise only completeness.  We recomment
-   negative testing, to help exercise the rejection paths on which
-   soundness depends.  Implementations should check that tampering with
-   a valid NARG string causes verification to fail, for example by
-   flipping, appending, or prepending bytes, and by replacing each
-   prover message in turn with a different value.
+   Test vectors can help confirm that honestly-generated proofs verify,
+   but such tests exercise only completeness.  We recommend negative
+   testing, to help exercise the rejection paths on which soundness
+   depends.  Implementations should check that tampering with a valid
+   NARG string causes verification to fail, for example by flipping,
+   appending, or prepending bytes, and by replacing each prover message
+   in turn with a different value.
 
    Absorbing a prover message and serializing it to (or reading it from)
    the NARG string *SHOULD* be coupled, to prevent prover messages from
@@ -1036,7 +1027,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    The NARG string must be treated as untrusted input, since it can be
    supplied by an adversary.  Non-interactive verifiers therefore *MUST
    NOT* assume that length indicators are honest, that integers fall
-   within their expected range, or that the proof length is correct..
+   within their expected range, or that the proof length is correct.
 
 9.  IANA Considerations
 
