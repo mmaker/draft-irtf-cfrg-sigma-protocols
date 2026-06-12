@@ -1049,7 +1049,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù</td>
-<td class="center">Expires 13 December 2026</td>
+<td class="center">Expires 14 December 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1062,12 +1062,12 @@ svg {
 <dd class="internet-draft">draft-irtf-cfrg-fiat-shamir-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-06-11" class="published">11 June 2026</time>
+<time datetime="2026-06-12" class="published">12 June 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-12-13">13 December 2026</time></dd>
+<dd class="expires"><time datetime="2026-12-14">14 December 2026</time></dd>
 <dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
@@ -1118,7 +1118,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 13 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 14 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1168,7 +1168,7 @@ svg {
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
-            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-duplex-sponge-instantiation" class="internal xref">Duplex sponge instantiations</a></p>
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-duplex-sponge" class="internal xref">Duplex sponge</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
                 <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-interface" class="internal xref">Interface</a></p>
@@ -1761,7 +1761,7 @@ svg {
 <p id="section-2.3-1">A <strong>prover message</strong> is a message sent by the interactive prover, and a <strong>verifier message</strong> is a message sent by the interactive verifier (a uniformly random value, since the protocol is public-coin). A message can be a value of any type for which a codec (<a href="#codecs" class="auto internal xref">Section 4</a>) is defined, such as a byte string, an unsigned integer, or a group element. The <strong>transcript</strong> is the ordered sequence of prover and verifier messages.<a href="#section-2.3-1" class="pilcrow">¶</a></p>
 <p id="section-2.3-2">The <strong>instance</strong> specifies the statement being proven and is held by both the prover and the verifier.<a href="#section-2.3-2" class="pilcrow">¶</a></p>
 <p id="section-2.3-3">The <strong>witness</strong> is the prover's private input. It is known only to the prover and is never revealed. It appears neither in the transcript nor in the NARG string.<a href="#section-2.3-3" class="pilcrow">¶</a></p>
-<p id="section-2.3-4">For an NP language, the instance is a word, the witness is its proof, and the resulting non-interactive argument proves that the instance is indeed in the language. This is also referred to as <strong>statement</strong>. Proof systems might support different statements or express the same language in different ways.<a href="#section-2.3-4" class="pilcrow">¶</a></p>
+<p id="section-2.3-4">For an NP language, the instance is a word, the witness is proof of its membership in the language, and the resulting non-interactive argument proves that the instance is indeed in the language. This claim is also referred to as the <strong>statement</strong>. Proof systems might support different statements or express the same language in different ways.<a href="#section-2.3-4" class="pilcrow">¶</a></p>
 <p id="section-2.3-5">The <strong>NARG string</strong> (non-interactive argument string) is the serialized output of the non-interactive prover.<a href="#section-2.3-5" class="pilcrow">¶</a></p>
 <p id="section-2.3-6">The notation in this document is for an interactive argument with <code>k</code> rounds in which the prover moves first and the verifier moves last. Other types of interactions can be expressed in the same notation by setting the unused messages to the empty string: a protocol whose verifier moves first (such as a batch argument) sets its first prover message to <code>""</code>, and one whose prover moves last (such as a sigma protocol) sets its final verifier message to <code>""</code>. Prover and verifier round messages <code>2</code>, ..., <code>k-1</code> <strong>MUST</strong> be non-empty.<a href="#section-2.3-6" class="pilcrow">¶</a></p>
 </section>
@@ -1797,8 +1797,8 @@ svg {
 </div>
 <div id="hash-instantiations">
 <section id="section-3">
-      <h2 id="name-duplex-sponge-instantiation">
-<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-duplex-sponge-instantiation" class="section-name selfRef">Duplex sponge instantiations</a>
+      <h2 id="name-duplex-sponge">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-duplex-sponge" class="section-name selfRef">Duplex sponge</a>
       </h2>
 <p id="section-3-1">This section lists the duplex sponge instantiations provided in this document.<a href="#section-3-1" class="pilcrow">¶</a></p>
 <div id="interface">
@@ -1829,13 +1829,15 @@ svg {
 <a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-shake128-duplex-sponge" class="section-name selfRef">SHAKE128 duplex sponge</a>
         </h3>
 <p id="section-3.2-1">In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the <code>Keccak-f[1600]</code> permutation: SHAKE128 and SHAKE256. Four other fixed-length hash-function instances (SHA3-224, SHA3-256, SHA3-384, and SHA3-512) are also defined but are out of scope for this document. A SHAKE is an XOF defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance strengths for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of <span>[<a href="#SHA3" class="cite xref">SHA3</a>]</span>). This instantiation targets 128-bit security.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
-<p id="section-3.2-2">Viewed as a duplex sponge, the SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of <code>R = 168</code> bytes and a capacity of 32 bytes (256 bits). Operationally, this instantiation is equivalent to invoking the SHAKE128 XOF on the concatenation of the session identifier, instance, and prover messages. That is, the <code>i</code>-th verifier message (for <code>k &gt;= i &gt; 1</code>) of byte length <code>len_i</code> is computed as:<a href="#section-3.2-2" class="pilcrow">¶</a></p>
+<p id="section-3.2-2">Viewed as a duplex sponge, the SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of <code>R = 168</code> bytes and a capacity of 32 bytes (256 bits). This instantiation is equivalent to invoking the SHAKE128 XOF on the concatenation of the session identifier, the encoded instance, and the encoded prover messages. That is, the <code>i</code>-th verifier message (for <code>1 &lt;= i &lt;= k</code>) of byte length <code>len_i</code> is computed as:<a href="#section-3.2-2" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3.2-3">
 <pre>
 verifier_msg[i] := decode[i](SHAKE128(
                        session_id || zeros(R - 32)
-                       || instance
-                       || prover_msg[1] || ... || prover_msg[i],
+                       || encode[0](instance)
+                       || encode[1](prover_msg[1])
+                       || ...
+                       || encode[i](prover_msg[i]),
                    len_i * 8))
 </pre><a href="#section-3.2-3" class="pilcrow">¶</a>
 </div>
@@ -2187,12 +2189,12 @@ Output: b, a N-byte string
 
 1. fail if len(input) &lt; 4
 2. N = OS2IP(input[0:4])
-3. fail if len(input) &lt; 4 + N
+3. fail if len(input) - 4 &lt; N
 4. b = input[4 : 4 + N]
 5. return b
 </pre><a href="#section-6.2.1-2" class="pilcrow">¶</a>
 </div>
-<p id="section-6.2.1-3">This consumes <code>4 + N</code> bytes of the NARG string, and fails if fewer bytes remain. The value decoded is the resulting byte string.<a href="#section-6.2.1-3" class="pilcrow">¶</a></p>
+<p id="section-6.2.1-3">This consumes <code>4 + N</code> bytes of the NARG string, and fails if fewer bytes remain. The value decoded is the resulting byte string. Note that the value <code>N</code> is attacker-controlled and can be as large as <code>2^32 - 1</code>, so computing <code>4 + N</code> can overflow 32-bit integers.<a href="#section-6.2.1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="sequences-and-tuples-1">
@@ -2219,7 +2221,7 @@ Output: b, a N-byte string
           </h4>
 <p id="section-6.2.4-1">Read the next <code>Ne</code> bytes and convert them to a group element using the group's element-deserialization function.
 Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation steps and fail unless the input is the canonical encoding of a valid group element.<a href="#section-6.2.4-1" class="pilcrow">¶</a></p>
-<p id="section-6.2.4-2">For example, in elliptic curves defined in <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>, decoding is prescribed in the Octet-String-to-Elliptic-Curve-Point conversion, which internally checks that the coordinates are in the correct range, and that the point lies in the subgroup used for cryptographic operations; else, "invalid" is returned.<a href="#section-6.2.4-2" class="pilcrow">¶</a></p>
+<p id="section-6.2.4-2">For example, for elliptic curves defined in <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>, decoding is the Octet-String-to-Elliptic-Curve-Point conversion, which checks that the encoding is well-formed and that the point lies on the curve, and returns "invalid" otherwise. Membership in the subgroup used for cryptographic operations is not checked by this conversion: it is implied for curves of prime order, but requires an explicit check when the cofactor is greater than one.<a href="#section-6.2.4-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2232,6 +2234,7 @@ Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation
 <a href="#section-7" class="section-number selfRef">7. </a><a href="#name-efficiency-considerations" class="section-name selfRef">Efficiency considerations</a>
       </h2>
 <p id="section-7-1">Batch encoding/decoding algorithms should be preferred when available, because they amortize per-element cost over a whole sequence. For example, serializing or deserializing a batch of compressed elliptic-curve points requires only one modular inversion for the entire batch (via Montgomery's trick) rather than one per point, which is the dominant cost in point (de)compression.<a href="#section-7-1" class="pilcrow">¶</a></p>
+<p id="section-7-2">The state of the duplex sponge after <code>Init(session_id)</code> (see <a href="#session-id" class="auto internal xref">Section 5.1</a>) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of it instead of re-initializing the duplex sponge. In the SHAKE128 instantiation, where the padded session identifier fills exactly one rate block (<a href="#init" class="auto internal xref">Section 3.2.1</a>), this saves one invocation of the permutation function permutation per execution, and amortizes the cost of <code>DeriveSessionID</code> when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing <code>encode[0](instance)</code>.<a href="#section-7-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="security-considerations">
@@ -2254,7 +2257,7 @@ Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation
         <h3 id="name-constant-time-requirements">
 <a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-constant-time-requirements" class="section-name selfRef">Constant-time requirements</a>
         </h3>
-<p id="section-8.2-1">While the protocol operates on "public coins", the instance can contain private information, such as verification keys not meant to be shared, or messages meant to be private between prover and verifier. Therefore, constant-time implementation of all the functions in this document is <strong>STRONGLY RECOMMENDED</strong>, to avoid leaking information via side channels.<a href="#section-8.2-1" class="pilcrow">¶</a></p>
+<p id="section-8.2-1">While the protocol operates on "public coins", the instance can contain private information, such as verification keys not meant to be shared, or messages meant to be private between prover and verifier. Therefore, constant-time implementation of all the functions in this document is <strong>RECOMMENDED</strong>, to avoid leaking information via side channels.<a href="#section-8.2-1" class="pilcrow">¶</a></p>
 <p id="section-8.2-2">For example, in the case of keyed-verification anonymous credentials, the zero-knowledge verifier will compute an instance that depends on the issuer's secret key and as such the instance is not meant to be public.<a href="#section-8.2-2" class="pilcrow">¶</a></p>
 </section>
 </div>

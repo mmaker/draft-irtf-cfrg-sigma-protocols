@@ -4,8 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                              11 June 2026
-Expires: 13 December 2026
+Intended status: Informational                              12 June 2026
+Expires: 14 December 2026
 
 
                        Fiat-Shamir Transformation
@@ -55,7 +55,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 13 December 2026.
+   This Internet-Draft will expire on 14 December 2026.
 
 Copyright Notice
 
@@ -79,7 +79,7 @@ Table of Contents
      2.2.  Duplex sponge interface
      2.3.  Proof systems terminology
      2.4.  Codec and serialization
-   3.  Duplex sponge instantiations
+   3.  Duplex sponge
      3.1.  Interface
      3.2.  SHAKE128 duplex sponge
        3.2.1.  Init
@@ -358,11 +358,12 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    prover and is never revealed.  It appears neither in the transcript
    nor in the NARG string.
 
-   For an NP language, the instance is a word, the witness is its proof,
-   and the resulting non-interactive argument proves that the instance
-   is indeed in the language.  This is also referred to as *statement*.
-   Proof systems might support different statements or express the same
-   language in different ways.
+   For an NP language, the instance is a word, the witness is proof of
+   its membership in the language, and the resulting non-interactive
+   argument proves that the instance is indeed in the language.  This
+   claim is also referred to as the *statement*. Proof systems might
+   support different statements or express the same language in
+   different ways.
 
    The *NARG string* (non-interactive argument string) is the serialized
    output of the non-interactive prover.
@@ -408,7 +409,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    NARG string unambiguous (trailing or invalid byte strings are
    rejected).
 
-3.  Duplex sponge instantiations
+3.  Duplex sponge
 
    This section lists the duplex sponge instantiations provided in this
    document.
@@ -454,16 +455,18 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    Viewed as a duplex sponge, the SHAKE128 state is a 200-byte
    (1600-bit) string, split into a rate of R = 168 bytes and a capacity
-   of 32 bytes (256 bits).  Operationally, this instantiation is
-   equivalent to invoking the SHAKE128 XOF on the concatenation of the
-   session identifier, instance, and prover messages.  That is, the i-th
-   verifier message (for k >= i > 1) of byte length len_i is computed
+   of 32 bytes (256 bits).  This instantiation is equivalent to invoking
+   the SHAKE128 XOF on the concatenation of the session identifier, the
+   encoded instance, and the encoded prover messages.  That is, the i-th
+   verifier message (for 1 <= i <= k) of byte length len_i is computed
    as:
 
    verifier_msg[i] := decode[i](SHAKE128(
                           session_id || zeros(R - 32)
-                          || instance
-                          || prover_msg[1] || ... || prover_msg[i],
+                          || encode[0](instance)
+                          || encode[1](prover_msg[1])
+                          || ...
+                          || encode[i](prover_msg[i]),
                       len_i * 8))
 
    The session identifier is padded with R - 32 = 136 zero bytes so that
@@ -803,12 +806,14 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    1. fail if len(input) < 4
    2. N = OS2IP(input[0:4])
-   3. fail if len(input) < 4 + N
+   3. fail if len(input) - 4 < N
    4. b = input[4 : 4 + N]
    5. return b
 
    This consumes 4 + N bytes of the NARG string, and fails if fewer
-   bytes remain.  The value decoded is the resulting byte string.
+   bytes remain.  The value decoded is the resulting byte string.  Note
+   that the value N is attacker-controlled and can be as large as 2^32 -
+   1, so computing 4 + N can overflow 32-bit integers.
 
 6.2.2.  Sequences and tuples
 
@@ -836,11 +841,13 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    perform the ciphersuite's input-validation steps and fail unless the
    input is the canonical encoding of a valid group element.
 
-   For example, in elliptic curves defined in [SEC1], decoding is
-   prescribed in the Octet-String-to-Elliptic-Curve-Point conversion,
-   which internally checks that the coordinates are in the correct
-   range, and that the point lies in the subgroup used for cryptographic
-   operations; else, "invalid" is returned.
+   For example, for elliptic curves defined in [SEC1], decoding is the
+   Octet-String-to-Elliptic-Curve-Point conversion, which checks that
+   the encoding is well-formed and that the point lies on the curve, and
+   returns "invalid" otherwise.  Membership in the subgroup used for
+   cryptographic operations is not checked by this conversion: it is
+   implied for curves of prime order, but requires an explicit check
+   when the cofactor is greater than one.
 
 7.  Efficiency considerations
 
@@ -850,6 +857,18 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    compressed elliptic-curve points requires only one modular inversion
    for the entire batch (via Montgomery's trick) rather than one per
    point, which is the dominant cost in point (de)compression.
+
+   The state of the duplex sponge after Init(session_id) (see
+   Section 5.1) can be precomputed.  Implementations can therefore start
+   each prover and verifier execution from a copy of it instead of re-
+   initializing the duplex sponge.  In the SHAKE128 instantiation, where
+   the padded session identifier fills exactly one rate block
+   (Section 3.2.1), this saves one invocation of the permutation
+   function permutation per execution, and amortizes the cost of
+   DeriveSessionID when the session identifier is derived from a tag.
+   The same observation extends to longer shared prefixes: proofs for
+   the same instance can additionally start from a stored copy of the
+   state obtained after absorbing encode[0](instance).
 
 8.  Security considerations
 
@@ -876,8 +895,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    contain private information, such as verification keys not meant to
    be shared, or messages meant to be private between prover and
    verifier.  Therefore, constant-time implementation of all the
-   functions in this document is *STRONGLY RECOMMENDED*, to avoid
-   leaking information via side channels.
+   functions in this document is *RECOMMENDED*, to avoid leaking
+   information via side channels.
 
    For example, in the case of keyed-verification anonymous credentials,
    the zero-knowledge verifier will compute an instance that depends on
