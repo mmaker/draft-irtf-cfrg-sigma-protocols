@@ -2245,15 +2245,32 @@ BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-message-S1challenge
         </h3>
 <p id="section-6.2-1">Deserialization of the NARG string consists in reading the prover messages and computing the inverse of the serialization procedure: each message is read by consuming a fixed number of bytes, determined by its type and the instance, and advancing past them.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
 <p id="section-6.2-2">Verification <strong>MUST</strong> fail if any of the prover messages cannot be deserialized successfully. After the last expected prover message has been read, the verifier <strong>MUST</strong> verify that no bytes remain. Bytes that are never read or that are decoded despite being invalid will cause the proof to be malleable: an adversary will be able to malleate a valid proof to obtain a second, distinct accepting proof for the same statement.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
-<div id="byte-strings">
+<div id="deserialize-byte-strings">
 <section id="section-6.2.1">
           <h4 id="name-byte-strings-2">
 <a href="#section-6.2.1" class="section-number selfRef">6.2.1. </a><a href="#name-byte-strings-2" class="section-name selfRef">Byte strings</a>
           </h4>
-<p id="section-6.2.1-1">Read a 4-byte length <code>N</code> via <code>OS2IP</code>, then read the next <code>N</code> bytes.<a href="#section-6.2.1-1" class="pilcrow">¶</a></p>
+<p id="section-6.2.1-1">An <code>N</code>-byte string whose length is known from its type and the instance is deserialized by reading that many bytes. This is the inverse of <code>EncodeBytes</code> (<a href="#varlen-encoding" class="auto internal xref">Section 4.1.1</a>).<a href="#section-6.2.1-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-6.2.1-2">
 <pre>
-DeserializeString(input)
+DeserializeBytes(input, N)
+
+Inputs:
+- input, the unread remainder of the NARG string
+- N, the expected byte length
+
+Output: b, an N-byte string
+
+1. fail if len(input) &lt; N
+2. b = input[0 : N]
+3. return b
+</pre><a href="#section-6.2.1-2" class="pilcrow">¶</a>
+</div>
+<p id="section-6.2.1-3">This consumes <code>N</code> bytes of the NARG string, and fails if fewer bytes remain.<a href="#section-6.2.1-3" class="pilcrow">¶</a></p>
+<p id="section-6.2.1-4">A byte string whose length is not known in advance is deserialized by reading a 4-byte length <code>N</code> via <code>OS2IP</code>, then reading the next <code>N</code> bytes; this is the inverse of <code>EncodeVarLenString</code> (<a href="#varlen-encoding" class="auto internal xref">Section 4.1.1</a>).<a href="#section-6.2.1-4" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-6.2.1-5">
+<pre>
+DeserializeVarLenString(input)
 
 Input: input, the unread remainder of the NARG string
 
@@ -2264,9 +2281,9 @@ Output: b, an N-byte string
 3. fail if len(input) - 4 &lt; N
 4. b = input[4 : 4 + N]
 5. return b
-</pre><a href="#section-6.2.1-2" class="pilcrow">¶</a>
+</pre><a href="#section-6.2.1-5" class="pilcrow">¶</a>
 </div>
-<p id="section-6.2.1-3">This consumes <code>4 + N</code> bytes of the NARG string, and fails if fewer bytes remain. The value decoded is the resulting byte string. Note that the value <code>N</code> is attacker-controlled and can be as large as <code>2^32 - 1</code>, so computing <code>4 + N</code> can overflow 32-bit integers.<a href="#section-6.2.1-3" class="pilcrow">¶</a></p>
+<p id="section-6.2.1-6">This consumes <code>4 + N</code> bytes of the NARG string, otherwise fails. The value decoded is the resulting byte string.<a href="#section-6.2.1-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="sequences-and-tuples-1">
@@ -2425,7 +2442,7 @@ Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation
         </ul>
 <p id="section-8.10-6">where the proof object is a byte string.<a href="#section-8.10-6" class="pilcrow">¶</a></p>
 <p id="section-8.10-7">Particular care must be taken when building a proof object that is only later serialized into a NARG string: its fields are randomly addressable, making them prone to out-of-order or partial access to prover messages, which can in turn compromise soundness of the resulting non-interactive argument. A sequential interface, by contrast, enforces in-order processing. An end-of-input check is necessary to prevent malleability.<a href="#section-8.10-7" class="pilcrow">¶</a></p>
-<p id="section-8.10-8">The NARG string must be treated as untrusted input, since it can be supplied by an adversary. Non-interactive verifiers therefore <strong>MUST NOT</strong> assume that length indicators are honest, that integers fall within their expected range, or that the proof length is correct.<a href="#section-8.10-8" class="pilcrow">¶</a></p>
+<p id="section-8.10-8">The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers <strong>MUST NOT</strong> assume that length indicators are honest, that integers fall within their expected range, or that the proof length is correct. For example, in <a href="#deserialize-byte-strings" class="auto internal xref">Section 6.2.1</a> the length prefix of a byte string is attacker-controlled, and can be as large as <code>2^32 - 1</code>, so computing <code>4 + N</code> can overflow 32-bit integers.<a href="#section-8.10-8" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>

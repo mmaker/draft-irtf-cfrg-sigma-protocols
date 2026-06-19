@@ -867,9 +867,30 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
 6.2.1.  Byte strings
 
-   Read a 4-byte length N via OS2IP, then read the next N bytes.
+   An N-byte string whose length is known from its type and the instance
+   is deserialized by reading that many bytes.  This is the inverse of
+   EncodeBytes (Section 4.1.1).
 
-   DeserializeString(input)
+   DeserializeBytes(input, N)
+
+   Inputs:
+   - input, the unread remainder of the NARG string
+   - N, the expected byte length
+
+   Output: b, an N-byte string
+
+   1. fail if len(input) < N
+   2. b = input[0 : N]
+   3. return b
+
+   This consumes N bytes of the NARG string, and fails if fewer bytes
+   remain.
+
+   A byte string whose length is not known in advance is deserialized by
+   reading a 4-byte length N via OS2IP, then reading the next N bytes;
+   this is the inverse of EncodeVarLenString (Section 4.1.1).
+
+   DeserializeVarLenString(input)
 
    Input: input, the unread remainder of the NARG string
 
@@ -881,10 +902,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    4. b = input[4 : 4 + N]
    5. return b
 
-   This consumes 4 + N bytes of the NARG string, and fails if fewer
-   bytes remain.  The value decoded is the resulting byte string.  Note
-   that the value N is attacker-controlled and can be as large as 2^32 -
-   1, so computing 4 + N can overflow 32-bit integers.
+   This consumes 4 + N bytes of the NARG string, otherwise fails.  The
+   value decoded is the resulting byte string.
 
 6.2.2.  Sequences and tuples
 
@@ -1121,10 +1140,12 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    contrast, enforces in-order processing.  An end-of-input check is
    necessary to prevent malleability.
 
-   The NARG string must be treated as untrusted input, since it can be
-   supplied by an adversary.  Non-interactive verifiers therefore *MUST
-   NOT* assume that length indicators are honest, that integers fall
-   within their expected range, or that the proof length is correct.
+   The NARG string must be treated as untrusted input.  Therefore, non-
+   interactive verifiers *MUST NOT* assume that length indicators are
+   honest, that integers fall within their expected range, or that the
+   proof length is correct.  For example, in Section 6.2.1 the length
+   prefix of a byte string is attacker-controlled, and can be as large
+   as 2^32 - 1, so computing 4 + N can overflow 32-bit integers.
 
 9.  IANA Considerations
 
