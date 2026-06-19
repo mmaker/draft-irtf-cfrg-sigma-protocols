@@ -895,17 +895,22 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 6.2.3.  Unsigned integers
 
    Read the next Ns bytes and interpret them as a big-endian integer m =
-   OS2IP(.).  If m >= M, fail: non-canonical encodings of field elements
-   *MUST* be rejected.  The value returned is m.
+   OS2IP(.).  If m >= M, fail: non-canonical integer encodings *MUST* be
+   rejected.  The value returned is m.
 
 6.2.4.  Field elements
 
-   This section specifies the default deserialization of an integer
-   modulo M.  When the integer is a component of a type that already has
-   a specified deserialization, that deserialization *MUST* be used
-   instead.  As with encoding (Section 4.1.3), the default below is
-   chosen to coincide with the deserializations of most standards; where
-   it does not, the type's own deserialization governs.
+   A field element of a field of order p^m is deserialized coordinate by
+   coordinate: read m * Ns bytes, with Ns as in Section 4.1.4, and
+   deserialize each Ns-byte coordinate as an integer modulo p using the
+   unsigned-integer deserialization above.  A prime field is the case m
+   = 1.
+
+   If the field type already has specified serialization and
+   deserialization functions, those *MUST* be used instead (see
+   Section 4.1.4).  As with encoding, the default is chosen to coincide
+   with the deserializations of most standards; where it does not, the
+   type's own deserialization governs.
 
 6.2.5.  Elliptic-curve group elements
 
