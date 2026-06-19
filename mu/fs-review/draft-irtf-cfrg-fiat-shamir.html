@@ -10,23 +10,24 @@
        This document describes the Fiat-Shamir transformation, which allows making a public-coin protocol non-interactive by means of a cryptographic hash function. 
        It specifies how the hash function is employed, how prover messages are encoded as hash-function input, and how verifier messages are decoded from the hash function's output, as well as the serialization and deserialization of the non-interactive argument string. 
     " name="description">
-<meta content="xml2rfc 3.33.0" name="generator">
+<meta content="xml2rfc 3.34.0" name="generator">
 <meta content="zero knowledge" name="keyword">
 <meta content="hash" name="keyword">
 <meta content="draft-irtf-cfrg-fiat-shamir-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.33.0
-    Python 3.12.13
-    ConfigArgParse 1.7
+  xml2rfc 3.34.0
+    Python 3.14.5
+    ConfigArgParse 1.7.5
     google-i18n-address 3.1.1
     intervaltree 3.2.1
     Jinja2 3.1.6
-    lxml 6.0.2
-    platformdirs 4.9.6
+    lxml 6.1.1
+    natsort 8.4.0
+    platformdirs 4.10.0
     pycountry 24.6.1
     PyYAML 6.0.3
     requests 2.33.1
-    wcwidth 0.7.0
+    wcwidth 0.8.1
 -->
 <link href="draft-irtf-cfrg-fiat-shamir.xml" rel="alternate" type="application/rfc+xml">
 <link href="#copyright" rel="license">
@@ -1049,7 +1050,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù</td>
-<td class="center">Expires 14 December 2026</td>
+<td class="center">Expires 21 December 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1062,12 +1063,12 @@ svg {
 <dd class="internet-draft">draft-irtf-cfrg-fiat-shamir-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-06-12" class="published">12 June 2026</time>
+<time datetime="2026-06-19" class="published">19 June 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-12-14">14 December 2026</time></dd>
+<dd class="expires"><time datetime="2026-12-21">21 December 2026</time></dd>
 <dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
@@ -1118,7 +1119,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 14 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 21 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1196,7 +1197,7 @@ svg {
                 <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="auto internal xref">4.1</a>.  <a href="#name-encoding-into-byte-strings" class="internal xref">Encoding into byte strings</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1.2.1">
-                    <p id="section-toc.1-1.4.2.1.2.1.1"><a href="#section-4.1.1" class="auto internal xref">4.1.1</a>.  <a href="#name-variable-length-byte-string" class="internal xref">Variable-length byte strings</a></p>
+                    <p id="section-toc.1-1.4.2.1.2.1.1"><a href="#section-4.1.1" class="auto internal xref">4.1.1</a>.  <a href="#name-byte-strings" class="internal xref">Byte strings</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1.2.2">
                     <p id="section-toc.1-1.4.2.1.2.2.1"><a href="#section-4.1.2" class="auto internal xref">4.1.2</a>.  <a href="#name-sequences-and-tuples" class="internal xref">Sequences and tuples</a></p>
@@ -1205,7 +1206,10 @@ svg {
                     <p id="section-toc.1-1.4.2.1.2.3.1"><a href="#section-4.1.3" class="auto internal xref">4.1.3</a>.  <a href="#name-unsigned-integers" class="internal xref">Unsigned integers</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1.2.4">
-                    <p id="section-toc.1-1.4.2.1.2.4.1"><a href="#section-4.1.4" class="auto internal xref">4.1.4</a>.  <a href="#name-elliptic-curve-group-elemen" class="internal xref">Elliptic curve group elements</a></p>
+                    <p id="section-toc.1-1.4.2.1.2.4.1"><a href="#section-4.1.4" class="auto internal xref">4.1.4</a>.  <a href="#name-field-elements" class="internal xref">Field elements</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1.2.5">
+                    <p id="section-toc.1-1.4.2.1.2.5.1"><a href="#section-4.1.5" class="auto internal xref">4.1.5</a>.  <a href="#name-elliptic-curve-group-elemen" class="internal xref">Elliptic curve group elements</a></p>
 </li>
                 </ul>
 </li>
@@ -1219,7 +1223,7 @@ svg {
                     <p id="section-toc.1-1.4.2.2.2.2.1"><a href="#section-4.2.2" class="auto internal xref">4.2.2</a>.  <a href="#name-unsigned-integers-2" class="internal xref">Unsigned integers</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.2.2.3">
-                    <p id="section-toc.1-1.4.2.2.2.3.1"><a href="#section-4.2.3" class="auto internal xref">4.2.3</a>.  <a href="#name-elliptic-curve-scalar-field" class="internal xref">Elliptic curve scalar field</a></p>
+                    <p id="section-toc.1-1.4.2.2.2.3.1"><a href="#section-4.2.3" class="auto internal xref">4.2.3</a>.  <a href="#name-field-elements-2" class="internal xref">Field elements</a></p>
 </li>
                 </ul>
 </li>
@@ -1246,7 +1250,7 @@ svg {
                 <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="auto internal xref">6.2</a>.  <a href="#name-deserialization" class="internal xref">Deserialization</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2.2.1">
-                    <p id="section-toc.1-1.6.2.2.2.1.1"><a href="#section-6.2.1" class="auto internal xref">6.2.1</a>.  <a href="#name-byte-strings" class="internal xref">Byte strings</a></p>
+                    <p id="section-toc.1-1.6.2.2.2.1.1"><a href="#section-6.2.1" class="auto internal xref">6.2.1</a>.  <a href="#name-byte-strings-2" class="internal xref">Byte strings</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2.2.2">
                     <p id="section-toc.1-1.6.2.2.2.2.1"><a href="#section-6.2.2" class="auto internal xref">6.2.2</a>.  <a href="#name-sequences-and-tuples-2" class="internal xref">Sequences and tuples</a></p>
@@ -1255,7 +1259,10 @@ svg {
                     <p id="section-toc.1-1.6.2.2.2.3.1"><a href="#section-6.2.3" class="auto internal xref">6.2.3</a>.  <a href="#name-unsigned-integers-3" class="internal xref">Unsigned integers</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2.2.4">
-                    <p id="section-toc.1-1.6.2.2.2.4.1"><a href="#section-6.2.4" class="auto internal xref">6.2.4</a>.  <a href="#name-group-elements" class="internal xref">Group elements</a></p>
+                    <p id="section-toc.1-1.6.2.2.2.4.1"><a href="#section-6.2.4" class="auto internal xref">6.2.4</a>.  <a href="#name-field-elements-3" class="internal xref">Field elements</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2.2.5">
+                    <p id="section-toc.1-1.6.2.2.2.5.1"><a href="#section-6.2.5" class="auto internal xref">6.2.5</a>.  <a href="#name-elliptic-curve-group-element" class="internal xref">Elliptic-curve group elements</a></p>
 </li>
                 </ul>
 </li>
@@ -1532,7 +1539,7 @@ svg {
                 <text x="280" y="548">.</text>
                 <text x="552" y="548">.</text>
                 <text x="280" y="564">.</text>
-                <text x="552" y="564">v</text>
+                <text x="552" y="564">.</text>
                 <text x="280" y="580">prover_msg[k-1]</text>
                 <text x="408" y="596">encode[k-1]</text>
                 <text x="548" y="596">Absorb</text>
@@ -1555,25 +1562,25 @@ svg {
 <figure id="figure-2">
         <div id="section-1-11.1">
           <div class="alignLeft art-svg artwork" id="section-1-11.1.1">
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="880" width="592" viewBox="0 0 592 880" class="diagram" text-anchor="middle" font-family="monospace" font-size="13px" stroke-linecap="round">
-              <path d="M 8,32 L 8,864" fill="none" stroke="black"></path>
-              <path d="M 24,816 L 24,848" fill="none" stroke="black"></path>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="864" width="592" viewBox="0 0 592 864" class="diagram" text-anchor="middle" font-family="monospace" font-size="13px" stroke-linecap="round">
+              <path d="M 8,32 L 8,848" fill="none" stroke="black"></path>
+              <path d="M 24,800 L 24,832" fill="none" stroke="black"></path>
               <path d="M 128,208 L 128,240" fill="none" stroke="black"></path>
               <path d="M 128,288 L 128,320" fill="none" stroke="black"></path>
               <path d="M 128,448 L 128,480" fill="none" stroke="black"></path>
-              <path d="M 136,640 L 136,672" fill="none" stroke="black"></path>
+              <path d="M 136,624 L 136,656" fill="none" stroke="black"></path>
               <path d="M 152,368 L 152,400" fill="none" stroke="black"></path>
               <path d="M 152,528 L 152,560" fill="none" stroke="black"></path>
-              <path d="M 168,720 L 168,752" fill="none" stroke="black"></path>
+              <path d="M 168,704 L 168,736" fill="none" stroke="black"></path>
               <path d="M 224,208 L 224,240" fill="none" stroke="black"></path>
               <path d="M 224,288 L 224,320" fill="none" stroke="black"></path>
               <path d="M 224,448 L 224,480" fill="none" stroke="black"></path>
-              <path d="M 232,640 L 232,672" fill="none" stroke="black"></path>
+              <path d="M 232,624 L 232,656" fill="none" stroke="black"></path>
               <path d="M 248,368 L 248,400" fill="none" stroke="black"></path>
               <path d="M 248,528 L 248,560" fill="none" stroke="black"></path>
-              <path d="M 264,720 L 264,752" fill="none" stroke="black"></path>
-              <path d="M 296,640 L 296,672" fill="none" stroke="black"></path>
-              <path d="M 296,720 L 296,752" fill="none" stroke="black"></path>
+              <path d="M 264,704 L 264,736" fill="none" stroke="black"></path>
+              <path d="M 296,624 L 296,656" fill="none" stroke="black"></path>
+              <path d="M 296,704 L 296,736" fill="none" stroke="black"></path>
               <path d="M 312,128 L 312,160" fill="none" stroke="black"></path>
               <path d="M 312,208 L 312,240" fill="none" stroke="black"></path>
               <path d="M 312,288 L 312,320" fill="none" stroke="black"></path>
@@ -1585,17 +1592,17 @@ svg {
               <path d="M 344,328 L 344,360" fill="none" stroke="black"></path>
               <path d="M 344,408 L 344,440" fill="none" stroke="black"></path>
               <path d="M 344,488 L 344,520" fill="none" stroke="black"></path>
-              <path d="M 344,680 L 344,712" fill="none" stroke="black"></path>
+              <path d="M 344,664 L 344,696" fill="none" stroke="black"></path>
               <path d="M 368,128 L 368,160" fill="none" stroke="black"></path>
-              <path d="M 368,640 L 368,672" fill="none" stroke="black"></path>
-              <path d="M 376,720 L 376,752" fill="none" stroke="black"></path>
+              <path d="M 368,624 L 368,656" fill="none" stroke="black"></path>
+              <path d="M 376,704 L 376,736" fill="none" stroke="black"></path>
               <path d="M 384,208 L 384,240" fill="none" stroke="black"></path>
               <path d="M 384,288 L 384,320" fill="none" stroke="black"></path>
               <path d="M 384,448 L 384,480" fill="none" stroke="black"></path>
               <path d="M 392,368 L 392,400" fill="none" stroke="black"></path>
               <path d="M 392,528 L 392,560" fill="none" stroke="black"></path>
-              <path d="M 568,816 L 568,848" fill="none" stroke="black"></path>
-              <path d="M 584,32 L 584,864" fill="none" stroke="black"></path>
+              <path d="M 568,800 L 568,832" fill="none" stroke="black"></path>
+              <path d="M 584,32 L 584,848" fill="none" stroke="black"></path>
               <path d="M 8,32 L 584,32" fill="none" stroke="black"></path>
               <path d="M 312,128 L 368,128" fill="none" stroke="black"></path>
               <path d="M 112,144 L 304,144" fill="none" stroke="black"></path>
@@ -1630,22 +1637,22 @@ svg {
               <path d="M 256,544 L 304,544" fill="none" stroke="black"></path>
               <path d="M 152,560 L 248,560" fill="none" stroke="black"></path>
               <path d="M 312,560 L 392,560" fill="none" stroke="black"></path>
-              <path d="M 136,640 L 232,640" fill="none" stroke="black"></path>
-              <path d="M 296,640 L 368,640" fill="none" stroke="black"></path>
-              <path d="M 16,656 L 128,656" fill="none" stroke="black"></path>
-              <path d="M 240,656 L 288,656" fill="none" stroke="black"></path>
-              <path d="M 136,672 L 232,672" fill="none" stroke="black"></path>
-              <path d="M 296,672 L 368,672" fill="none" stroke="black"></path>
-              <path d="M 168,720 L 264,720" fill="none" stroke="black"></path>
-              <path d="M 296,720 L 376,720" fill="none" stroke="black"></path>
-              <path d="M 24,736 L 160,736" fill="none" stroke="black"></path>
-              <path d="M 272,736 L 288,736" fill="none" stroke="black"></path>
-              <path d="M 168,752 L 264,752" fill="none" stroke="black"></path>
-              <path d="M 296,752 L 376,752" fill="none" stroke="black"></path>
-              <path d="M 24,816 L 568,816" fill="none" stroke="black"></path>
-              <path d="M 24,848 L 568,848" fill="none" stroke="black"></path>
-              <path d="M 8,864 L 584,864" fill="none" stroke="black"></path>
-              <polygon class="arrowhead" points="352,712 340,706.4 340,717.6" fill="black" transform="rotate(90,344,712)"></polygon>
+              <path d="M 136,624 L 232,624" fill="none" stroke="black"></path>
+              <path d="M 296,624 L 368,624" fill="none" stroke="black"></path>
+              <path d="M 16,640 L 128,640" fill="none" stroke="black"></path>
+              <path d="M 240,640 L 288,640" fill="none" stroke="black"></path>
+              <path d="M 136,656 L 232,656" fill="none" stroke="black"></path>
+              <path d="M 296,656 L 368,656" fill="none" stroke="black"></path>
+              <path d="M 168,704 L 264,704" fill="none" stroke="black"></path>
+              <path d="M 296,704 L 376,704" fill="none" stroke="black"></path>
+              <path d="M 24,720 L 160,720" fill="none" stroke="black"></path>
+              <path d="M 272,720 L 288,720" fill="none" stroke="black"></path>
+              <path d="M 168,736 L 264,736" fill="none" stroke="black"></path>
+              <path d="M 296,736 L 376,736" fill="none" stroke="black"></path>
+              <path d="M 24,800 L 568,800" fill="none" stroke="black"></path>
+              <path d="M 24,832 L 568,832" fill="none" stroke="black"></path>
+              <path d="M 8,848 L 584,848" fill="none" stroke="black"></path>
+              <polygon class="arrowhead" points="352,696 340,690.4 340,701.6" fill="black" transform="rotate(90,344,696)"></polygon>
               <polygon class="arrowhead" points="352,520 340,514.4 340,525.6" fill="black" transform="rotate(90,344,520)"></polygon>
               <polygon class="arrowhead" points="352,440 340,434.4 340,445.6" fill="black" transform="rotate(90,344,440)"></polygon>
               <polygon class="arrowhead" points="352,360 340,354.4 340,365.6" fill="black" transform="rotate(90,344,360)"></polygon>
@@ -1655,15 +1662,15 @@ svg {
               <polygon class="arrowhead" points="312,304 300,298.4 300,309.6" fill="black" transform="rotate(0,304,304)"></polygon>
               <polygon class="arrowhead" points="312,224 300,218.4 300,229.6" fill="black" transform="rotate(0,304,224)"></polygon>
               <polygon class="arrowhead" points="312,144 300,138.4 300,149.6" fill="black" transform="rotate(0,304,144)"></polygon>
-              <polygon class="arrowhead" points="296,656 284,650.4 284,661.6" fill="black" transform="rotate(0,288,656)"></polygon>
-              <polygon class="arrowhead" points="280,736 268,730.4 268,741.6" fill="black" transform="rotate(180,272,736)"></polygon>
+              <polygon class="arrowhead" points="296,640 284,634.4 284,645.6" fill="black" transform="rotate(0,288,640)"></polygon>
+              <polygon class="arrowhead" points="280,720 268,714.4 268,725.6" fill="black" transform="rotate(180,272,720)"></polygon>
               <polygon class="arrowhead" points="264,544 252,538.4 252,549.6" fill="black" transform="rotate(180,256,544)"></polygon>
               <polygon class="arrowhead" points="264,384 252,378.4 252,389.6" fill="black" transform="rotate(180,256,384)"></polygon>
-              <polygon class="arrowhead" points="136,656 124,650.4 124,661.6" fill="black" transform="rotate(0,128,656)"></polygon>
+              <polygon class="arrowhead" points="136,640 124,634.4 124,645.6" fill="black" transform="rotate(0,128,640)"></polygon>
               <polygon class="arrowhead" points="128,464 116,458.4 116,469.6" fill="black" transform="rotate(0,120,464)"></polygon>
               <polygon class="arrowhead" points="128,304 116,298.4 116,309.6" fill="black" transform="rotate(0,120,304)"></polygon>
               <polygon class="arrowhead" points="128,224 116,218.4 116,229.6" fill="black" transform="rotate(0,120,224)"></polygon>
-              <polygon class="arrowhead" points="32,736 20,730.4 20,741.6" fill="black" transform="rotate(180,24,736)"></polygon>
+              <polygon class="arrowhead" points="32,720 20,714.4 20,725.6" fill="black" transform="rotate(180,24,720)"></polygon>
               <polygon class="arrowhead" points="32,544 20,538.4 20,549.6" fill="black" transform="rotate(180,24,544)"></polygon>
               <polygon class="arrowhead" points="32,384 20,378.4 20,389.6" fill="black" transform="rotate(180,24,384)"></polygon>
               <g class="text">
@@ -1697,25 +1704,27 @@ svg {
                 <text x="80" y="532">verifier_msg[2]</text>
                 <text x="200" y="548">decode[2]</text>
                 <text x="352" y="548">Squeeze</text>
+                <text x="72" y="580">.</text>
                 <text x="344" y="580">.</text>
+                <text x="72" y="596">.</text>
                 <text x="344" y="596">.</text>
+                <text x="72" y="612">.</text>
                 <text x="344" y="612">.</text>
-                <text x="344" y="628">v</text>
-                <text x="64" y="644">prover_msg[k]</text>
-                <text x="184" y="660">encode[k]</text>
-                <text x="332" y="660">Absorb</text>
-                <text x="80" y="724">verifier_msg[k]</text>
-                <text x="216" y="740">decode[k]</text>
-                <text x="336" y="740">Squeeze</text>
-                <text x="28" y="788">3.</text>
-                <text x="64" y="788">check</text>
-                <text x="100" y="788">IP</text>
-                <text x="152" y="788">decision:</text>
-                <text x="80" y="836">Interactive</text>
-                <text x="164" y="836">Verifier</text>
-                <text x="244" y="836">(instance,</text>
-                <text x="352" y="836">prover_msg[..],</text>
-                <text x="488" y="836">verifier_msg[..])</text>
+                <text x="64" y="628">prover_msg[k]</text>
+                <text x="184" y="644">encode[k]</text>
+                <text x="332" y="644">Absorb</text>
+                <text x="80" y="708">verifier_msg[k]</text>
+                <text x="216" y="724">decode[k]</text>
+                <text x="336" y="724">Squeeze</text>
+                <text x="28" y="772">3.</text>
+                <text x="64" y="772">check</text>
+                <text x="100" y="772">IP</text>
+                <text x="152" y="772">decision:</text>
+                <text x="80" y="820">Interactive</text>
+                <text x="164" y="820">Verifier</text>
+                <text x="244" y="820">(instance,</text>
+                <text x="352" y="820">prover_msg[..],</text>
+                <text x="488" y="820">verifier_msg[..])</text>
               </g>
             </svg><a href="#section-1-11.1.1" class="pilcrow">¶</a>
 </div>
@@ -1741,7 +1750,8 @@ svg {
         </h3>
 <p id="section-2.1-1">A byte is an 8-bit unsigned integer (an octet), and a <strong>byte string</strong> is a finite sequence of bytes. An <code>N</code>-byte string is a byte string of length <code>N</code>. The empty byte string is written <code>""</code>; <code>x || y</code> is the concatenation of the byte strings <code>x</code> and <code>y</code>. <code>zeros(N)</code> denotes the <code>N</code>-byte string of zero bytes.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
 <p id="section-2.1-2"><code>I2OSP(n, w)</code> and <code>OS2IP(x)</code> are the primitives defined in Section 4 of <span>[<a href="#RFC8017" class="cite xref">RFC8017</a>]</span>. <code>I2OSP(n, w)</code> converts a non-negative integer <code>n</code> less than <code>256^w</code> into a <code>w</code>-byte, big-endian byte string. <code>OS2IP(x)</code> converts a byte string <code>x</code> into a non-negative integer using the big-endian byte order.<a href="#section-2.1-2" class="pilcrow">¶</a></p>
-<p id="section-2.1-3">A byte string <code>x</code> is a <strong>prefix</strong> of a byte string <code>y</code> if <code>y == x || z</code> for some byte string <code>z</code> (even empty). An encoding is <strong>prefix-free</strong> if, for any two distinct values, the encoding of one is never a prefix of the encoding of the other. A simple prefix-free encoding of a byte string <code>b</code> is <code>I2OSP(len(b), 4) || b</code> as described in <a href="#varlen-encoding" class="auto internal xref">Section 4.1.1</a>.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
+<p id="section-2.1-3">The set of integers between <code>0</code> and <code>N-1</code> is denoted <code>[0, N)</code>.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
+<p id="section-2.1-4">A byte string <code>x</code> is a <strong>prefix</strong> of a byte string <code>y</code> if <code>y == x || z</code> for some byte string <code>z</code> (even empty). An encoding is <strong>prefix-free</strong> if, for any two distinct values, the encoding of one is never a prefix of the encoding of the other. A simple prefix-free encoding of a byte string <code>b</code> is <code>I2OSP(len(b), 4) || b</code> as described in <a href="#varlen-encoding" class="auto internal xref">Section 4.1.1</a>.<a href="#section-2.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="duplex-sponge-interface">
@@ -1758,12 +1768,13 @@ svg {
         <h3 id="name-proof-systems-terminology">
 <a href="#section-2.3" class="section-number selfRef">2.3. </a><a href="#name-proof-systems-terminology" class="section-name selfRef">Proof systems terminology</a>
         </h3>
-<p id="section-2.3-1">A <strong>prover message</strong> is a message sent by the interactive prover, and a <strong>verifier message</strong> is a message sent by the interactive verifier (a uniformly random value, since the protocol is public-coin). A message can be a value of any type for which a codec (<a href="#codecs" class="auto internal xref">Section 4</a>) is defined, such as a byte string, an unsigned integer, or a group element. The <strong>transcript</strong> is the ordered sequence of prover and verifier messages.<a href="#section-2.3-1" class="pilcrow">¶</a></p>
-<p id="section-2.3-2">The <strong>instance</strong> specifies the statement being proven and is held by both the prover and the verifier.<a href="#section-2.3-2" class="pilcrow">¶</a></p>
-<p id="section-2.3-3">The <strong>witness</strong> is the prover's private input. It is known only to the prover and is never revealed. It appears neither in the transcript nor in the NARG string.<a href="#section-2.3-3" class="pilcrow">¶</a></p>
-<p id="section-2.3-4">For an NP language, the instance is a word, the witness is proof of its membership in the language, and the resulting non-interactive argument proves that the instance is indeed in the language. This claim is also referred to as the <strong>statement</strong>. Proof systems might support different statements or express the same language in different ways.<a href="#section-2.3-4" class="pilcrow">¶</a></p>
-<p id="section-2.3-5">The <strong>NARG string</strong> (non-interactive argument string) is the serialized output of the non-interactive prover.<a href="#section-2.3-5" class="pilcrow">¶</a></p>
-<p id="section-2.3-6">The notation in this document is for an interactive argument with <code>k</code> rounds in which the prover moves first and the verifier moves last. Other types of interactions can be expressed in the same notation by setting the unused messages to the empty string: a protocol whose verifier moves first (such as a batch argument) sets its first prover message to <code>""</code>, and one whose prover moves last (such as a sigma protocol) sets its final verifier message to <code>""</code>. Prover and verifier round messages <code>2</code>, ..., <code>k-1</code> <strong>MUST</strong> be non-empty.<a href="#section-2.3-6" class="pilcrow">¶</a></p>
+<p id="section-2.3-1">The <strong>session identifier</strong> is a 32-byte string that identifies the application context and the specific non-interactive argument in use; it is held by both the prover and the verifier (see <a href="#session-id" class="auto internal xref">Section 5.1</a>).<a href="#section-2.3-1" class="pilcrow">¶</a></p>
+<p id="section-2.3-2">A <strong>prover message</strong> is a message sent by the interactive prover, and a <strong>verifier message</strong> is a message sent by the interactive verifier (a uniformly random value, since the protocol is public-coin). A message can be a value of any type for which a codec (<a href="#codecs" class="auto internal xref">Section 4</a>) is defined, such as a byte string, an unsigned integer, or a group element. The <strong>transcript</strong> is the ordered sequence of prover and verifier messages.<a href="#section-2.3-2" class="pilcrow">¶</a></p>
+<p id="section-2.3-3">The <strong>instance</strong> specifies the statement being proven and is held by both the prover and the verifier.<a href="#section-2.3-3" class="pilcrow">¶</a></p>
+<p id="section-2.3-4">The <strong>witness</strong> is the prover's private input. It is known only to the prover and is never revealed. It appears neither in the transcript nor in the NARG string.<a href="#section-2.3-4" class="pilcrow">¶</a></p>
+<p id="section-2.3-5">For an NP language, the instance is a word, the witness is proof of its membership in the language, and the resulting non-interactive argument proves that the instance is indeed in the language. This claim is also referred to as the <strong>statement</strong>. Proof systems might support different statements or express the same language in different ways.<a href="#section-2.3-5" class="pilcrow">¶</a></p>
+<p id="section-2.3-6">The <strong>NARG string</strong> (non-interactive argument string) is the serialized output of the non-interactive prover.<a href="#section-2.3-6" class="pilcrow">¶</a></p>
+<p id="section-2.3-7">The notation in this document is for an interactive argument with <code>k</code> rounds in which the prover moves first and the verifier moves last. Other types of interactions can be expressed in the same notation by setting the unused messages to the empty string: a protocol whose verifier moves first (such as a batch argument) sets its first prover message to <code>""</code>, and one whose prover moves last (such as a sigma protocol) sets its final verifier message to <code>""</code>. Prover and verifier round messages <code>2</code>, ..., <code>k-1</code> <strong>MUST</strong> be non-empty.<a href="#section-2.3-7" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="codec-and-serialization">
@@ -1781,7 +1792,7 @@ svg {
             <p id="section-2.4-3.2.1"><strong>Decoding</strong> converts the bytes squeezed from the sponge into a uniformly-distributed verifier message (<a href="#decoding" class="auto internal xref">Section 4.2</a>).<a href="#section-2.4-3.2.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-2.4-4"><strong>Serialization</strong> (<a href="#narg-string" class="auto internal xref">Section 6</a>) is the pair of maps between prover messages and the NARG string:<a href="#section-2.4-4" class="pilcrow">¶</a></p>
+<p id="section-2.4-4"><strong>Serialization</strong> (<a href="#narg-string" class="auto internal xref">Section 6</a>) is concerned with mapping prover messages to and from the NARG string:<a href="#section-2.4-4" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-2.4-5.1">
             <p id="section-2.4-5.1.1"><strong>Serialization</strong> writes the prover messages into the NARG string produced by the non-interactive prover.<a href="#section-2.4-5.1.1" class="pilcrow">¶</a></p>
@@ -1790,7 +1801,7 @@ svg {
             <p id="section-2.4-5.2.1"><strong>Deserialization</strong> reads the prover messages back from the NARG string, and returns an error if the message is invalid.<a href="#section-2.4-5.2.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-2.4-6">For a prover message the serialized bytes coincide with the encoded bytes (<a href="#serialization" class="auto internal xref">Section 6.1</a>), but the two serve different purposes: encoding is constrained for the security of the transformation (it is prefix-free), while deserialization is constrained to make parsing of the NARG string unambiguous (trailing or invalid byte strings are rejected).<a href="#section-2.4-6" class="pilcrow">¶</a></p>
+<p id="section-2.4-6">For a prover message, the serialized bytes coincide with the encoded bytes (<a href="#serialization" class="auto internal xref">Section 6.1</a>). However, codecs and serialization serve different purposes. Codecs must maintain the soundness of the transformation, whereas deserialization keeps the NARG string unambiguous and rejects malformed proofs (see <a href="#decoding" class="auto internal xref">Section 4.2</a> and <a href="#deserialization" class="auto internal xref">Section 6.2</a>).<a href="#section-2.4-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1818,7 +1829,7 @@ svg {
             <p id="section-3.1-2.3.1"><code>Squeeze(n) -&gt; buf</code>: produce <code>n</code> bytes from the state.<a href="#section-3.1-2.3.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-3.1-3">The sponge interface does not encode message boundaries, as messages can be absorbed incrementally: <code>Absorb(x)</code> followed by <code>Absorb(y)</code> is equivalent to <code>Absorb(x || y)</code>. The output of <code>Squeeze(n)</code> is uniformly distributed over <code>n</code>-byte strings and depends on the session identifier and on every byte absorbed before the call. Consecutive <code>Squeeze</code> calls continue one output stream, while any intervening <code>Absorb</code> starts a fresh one.<a href="#section-3.1-3" class="pilcrow">¶</a></p>
+<p id="section-3.1-3">The sponge interface does not encode message boundaries, as messages can be absorbed incrementally: <code>Absorb(x)</code> followed by <code>Absorb(y)</code> is equivalent to <code>Absorb(x || y)</code>. The output of <code>Squeeze(n)</code> is uniformly distributed over <code>n</code>-byte strings and depends on the session identifier, and on every byte absorbed before the call. Consecutive <code>Squeeze</code> calls continue one output stream, while any intervening <code>Absorb</code> starts a fresh one.<a href="#section-3.1-3" class="pilcrow">¶</a></p>
 <p id="section-3.1-4">For all duplex sponges, <code>Squeeze(n)</code>, <code>Absorb("")</code>, <code>Squeeze(n)</code> can return the same <code>n</code> bytes twice. An empty absorb therefore <strong>MUST NOT</strong> be relied on to separate two challenges. See <a href="#proof-systems-terminology" class="auto internal xref">Section 2.3</a> for the length requirements of prover messages.<a href="#section-3.1-4" class="pilcrow">¶</a></p>
 <p id="section-3.1-5">Guidance on how to produce a 32-byte <code>session_id</code> is given in <a href="#session-id" class="auto internal xref">Section 5.1</a>; its security requirements in <a href="#indifferentiability-of-the-hash-function" class="auto internal xref">Section 8.8</a>.<a href="#section-3.1-5" class="pilcrow">¶</a></p>
 </section>
@@ -1828,7 +1839,7 @@ svg {
         <h3 id="name-shake128-duplex-sponge">
 <a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-shake128-duplex-sponge" class="section-name selfRef">SHAKE128 duplex sponge</a>
         </h3>
-<p id="section-3.2-1">In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the <code>Keccak-f[1600]</code> permutation: SHAKE128 and SHAKE256. Four other fixed-length hash-function instances (SHA3-224, SHA3-256, SHA3-384, and SHA3-512) are also defined but are out of scope for this document. A SHAKE is an XOF defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance strengths for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of <span>[<a href="#SHA3" class="cite xref">SHA3</a>]</span>). This instantiation targets 128-bit security.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.2-1">In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the <code>Keccak-f</code> permutation: SHAKE128 and SHAKE256. Four other fixed-length hash-function instances (SHA3-224, SHA3-256, SHA3-384, and SHA3-512) are also defined but are out of scope for this document. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance strengths for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of <span>[<a href="#SHA3" class="cite xref">SHA3</a>]</span>). This instantiation targets 128-bit security.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
 <p id="section-3.2-2">Viewed as a duplex sponge, the SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of <code>R = 168</code> bytes and a capacity of 32 bytes (256 bits). This instantiation is equivalent to invoking the SHAKE128 XOF on the concatenation of the session identifier, the encoded instance, and the encoded prover messages. That is, the <code>i</code>-th verifier message (for <code>1 &lt;= i &lt;= k</code>) of byte length <code>len_i</code> is computed as:<a href="#section-3.2-2" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3.2-3">
 <pre>
@@ -1929,7 +1940,6 @@ Output: a uniformly-distributed random n-byte string
           <p id="section-4-2.2.1">Decoding converts squeezed bytes into verifier messages. Decoding <strong>MUST</strong> preserve the uniform distribution (up to a small codec error).<a href="#section-4-2.2.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
-<p id="section-4-3">Codecs serve a different purpose than proof serialization, which is described in <a href="#serialization" class="auto internal xref">Section 6.1</a>.<a href="#section-4-3" class="pilcrow">¶</a></p>
 <div id="encoding-bytes">
 <section id="section-4.1">
         <h3 id="name-encoding-into-byte-strings">
@@ -1938,20 +1948,32 @@ Output: a uniformly-distributed random n-byte string
 <p id="section-4.1-1">All encoding functions <strong>MUST</strong> be prefix-free.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
 <div id="varlen-encoding">
 <section id="section-4.1.1">
-          <h4 id="name-variable-length-byte-string">
-<a href="#section-4.1.1" class="section-number selfRef">4.1.1. </a><a href="#name-variable-length-byte-string" class="section-name selfRef">Variable-length byte strings</a>
+          <h4 id="name-byte-strings">
+<a href="#section-4.1.1" class="section-number selfRef">4.1.1. </a><a href="#name-byte-strings" class="section-name selfRef">Byte strings</a>
           </h4>
-<p id="section-4.1.1-1">A byte string of fewer than 2^32 bytes is encoded as its byte length (via <code>I2OSP</code>), followed by its bytes. The length prefix makes the encoding prefix-free.<a href="#section-4.1.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.1.1-1">Encoding of a byte string is the identity function.<a href="#section-4.1.1-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.1.1-2">
 <pre>
 EncodeBytes(s)
 
-Input: s, a N-byte string
+Input: s, an N-byte string
 
-Output: out, a (N+4)-byte string
+Output: out, an N-byte string
+
+1. return s
+</pre><a href="#section-4.1.1-2" class="pilcrow">¶</a>
+</div>
+<p id="section-4.1.1-3">If the byte string has length less than 2^32 bytes, but its length is not known during initialization, it can be encoded as a prefix-free string by prefixing its length via <code>I2OSP</code>.<a href="#section-4.1.1-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.1.1-4">
+<pre>
+EncodeVarLenString(s)
+
+Input: s, an N-byte string
+
+Output: out, an (N+4)-byte string
 
 1. return I2OSP(len(s), 4) || s
-</pre><a href="#section-4.1.1-2" class="pilcrow">¶</a>
+</pre><a href="#section-4.1.1-4" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
@@ -1963,36 +1985,64 @@ Output: out, a (N+4)-byte string
 <p id="section-4.1.2-1">A fixed-length array or a tuple is encoded as the concatenation of the encodings of its elements, with no separators.<a href="#section-4.1.2-1" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="encoding-scalars">
+<div id="encoding-uint">
 <section id="section-4.1.3">
           <h4 id="name-unsigned-integers">
 <a href="#section-4.1.3" class="section-number selfRef">4.1.3. </a><a href="#name-unsigned-integers" class="section-name selfRef">Unsigned integers</a>
           </h4>
-<p id="section-4.1.3-1">This section specifies the <strong>default</strong> encoding of an integer modulo <code>M</code>. When the integer is a component of a type that already has a specified serialization, that serialization <strong>MUST</strong> be used instead, and it <strong>MUST</strong> itself be prefix-free. The encoding below is chosen to coincide with the serializations of most standards; where it does not, the type's own serialization should be preferred.<a href="#section-4.1.3-1" class="pilcrow">¶</a></p>
-<p id="section-4.1.3-2">For instance, a scalar field element of an elliptic curve is serialized to a canonical <code>Ns</code>-byte string using the group's scalar field serialization function. For most prime-order elliptic-curve groups, this serialization is <code>EncodeScalar</code> as described below.<a href="#section-4.1.3-2" class="pilcrow">¶</a></p>
-<p id="section-4.1.3-3">An integer modulo <code>M</code> is represented by its unique integer representative in the range <code>[0, M)</code> and encoded via <code>I2OSP</code>.<a href="#section-4.1.3-3" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-4.1.3-4">
+<p id="section-4.1.3-1">An integer modulo <code>M</code> is represented by its unique integer representative in the range <code>[0, M)</code> and encoded via <code>I2OSP</code>.<a href="#section-4.1.3-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.1.3-2">
 <pre>
-EncodeScalar(x, M)
+EncodeUint(x, M)
 
 Inputs:
 - x, an integer modulo M
 - M, the order of the integer ring
 
-Output: out, a Ns-byte string
+Output: out, an Ns-byte string
 
 1. assert 0 &lt;= x &lt; M
 2. return I2OSP(x, Ns)
-</pre><a href="#section-4.1.3-4" class="pilcrow">¶</a>
+</pre><a href="#section-4.1.3-2" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
-<div id="elliptic-curve-group-elements">
+<div id="encoding-field">
 <section id="section-4.1.4">
-          <h4 id="name-elliptic-curve-group-elemen">
-<a href="#section-4.1.4" class="section-number selfRef">4.1.4. </a><a href="#name-elliptic-curve-group-elemen" class="section-name selfRef">Elliptic curve group elements</a>
+          <h4 id="name-field-elements">
+<a href="#section-4.1.4" class="section-number selfRef">4.1.4. </a><a href="#name-field-elements" class="section-name selfRef">Field elements</a>
           </h4>
-<p id="section-4.1.4-1">A group element is serialized to a canonical <code>Ne</code>-byte string using the group's element-serialization function. For most prime-order elliptic-curve groups, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>. Each group element has exactly one <code>Ne</code>-byte representation. The value of <code>Ne</code> and the concrete conversion are fixed by the ciphersuite.<a href="#section-4.1.4-1" class="pilcrow">¶</a></p>
+<p id="section-4.1.4-1">This section specifies the <em>default</em> encoding of a finite field of order <code>q = p^m</code>, where <code>p</code> is the prime characteristic and <code>m &gt;= 1</code> is the extension degree.<a href="#section-4.1.4-1" class="pilcrow">¶</a></p>
+<p id="section-4.1.4-2">If the finite field already has specified serialization and deserialization functions, the specified serialization and deserialization primitives <strong>SHOULD</strong> be used instead, and they <strong>MUST</strong> themselves be prefix-free. The encoding below is chosen to coincide with the serializations of most standards; where it does not, the type's own serialization should be preferred. For instance, a prime-order scalar field element of an elliptic curve is serialized to a canonical <code>Ns</code>-byte string using the group's scalar field serialization function. For most prime-order elliptic-curve groups, this serialization is <code>EncodeUint</code> as described below.<a href="#section-4.1.4-2" class="pilcrow">¶</a></p>
+<p id="section-4.1.4-3">With respect to a fixed basis, a field element is represented by its <code>m</code> coordinates in the prime field, each an integer between <code>[0, p)</code>. It is encoded as the concatenation of the per-coordinate encodings produced by <code>EncodeUint</code> (<a href="#encoding-uint" class="auto internal xref">Section 4.1.3</a>) with modulus <code>p</code>. Let <code>Ns</code> be the smallest integer with <code>256^Ns &gt;= p</code>; a field element encodes to <code>m * Ns</code> bytes.<a href="#section-4.1.4-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.1.4-4">
+<pre>
+EncodeField(a, p, m)
+
+Inputs:
+- a, an element of the field of order p^m, given by its
+     coordinates (a[0], ..., a[m-1]) over the prime field
+- p, the prime characteristic of the field
+- m, the extension degree
+
+Output: out, an (m * Ns)-byte string
+
+1. out = ""
+2. for i in 0, ..., m-1:
+3.    out = out || EncodeUint(a[i], p)
+4. return out
+</pre><a href="#section-4.1.4-4" class="pilcrow">¶</a>
+</div>
+<p id="section-4.1.4-5">Note that a prime field is the case <code>m = 1</code>, in which case <code>EncodeField</code> is equivalent to <code>EncodeUint</code>.<a href="#section-4.1.4-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="elliptic-curve-group-elements">
+<section id="section-4.1.5">
+          <h4 id="name-elliptic-curve-group-elemen">
+<a href="#section-4.1.5" class="section-number selfRef">4.1.5. </a><a href="#name-elliptic-curve-group-elemen" class="section-name selfRef">Elliptic curve group elements</a>
+          </h4>
+<p id="section-4.1.5-1">A group element is serialized to a canonical <code>Ne</code>-byte string using the group's element-serialization function.<a href="#section-4.1.5-1" class="pilcrow">¶</a></p>
+<p id="section-4.1.5-2">For most prime-order elliptic-curve groups, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>. Each group element has exactly one <code>Ne</code>-byte representation. The value of <code>Ne</code> and the concrete conversion are fixed by the ciphersuite.<a href="#section-4.1.5-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2003,7 +2053,7 @@ Output: out, a Ns-byte string
 <a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-decoding-from-byte-strings" class="section-name selfRef">Decoding from byte strings</a>
         </h3>
 <p id="section-4.2-1">Decoding converts a uniformly-distributed <code>Squeeze</code> output into a verifier message. Each verifier message type fixes the number of bytes to squeeze.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
-<p id="section-4.2-2">Decoding is not serialization, and need not be injective; the requirement is that it be <em>distribution-preserving</em>: if its input is a uniformly random byte string, then its output is (statistically close to) uniformly distributed over the verifier message type.<a href="#section-4.2-2" class="pilcrow">¶</a></p>
+<p id="section-4.2-2">Decoding is not deserialization, and need not invert encoding nor even be injective; its only requirement is to be <em>distribution-preserving</em>: if its input is a uniformly random byte string, then its output is (statistically close to) uniformly distributed over the verifier message type.<a href="#section-4.2-2" class="pilcrow">¶</a></p>
 <div id="byte-arrays">
 <section id="section-4.2.1">
           <h4 id="name-byte-arrays">
@@ -2026,7 +2076,7 @@ Output: out, a byte string of length N
 </div>
 </section>
 </div>
-<div id="decoding-scalars">
+<div id="decoding-uint">
 <section id="section-4.2.2">
           <h4 id="name-unsigned-integers-2">
 <a href="#section-4.2.2" class="section-number selfRef">4.2.2. </a><a href="#name-unsigned-integers-2" class="section-name selfRef">Unsigned integers</a>
@@ -2034,7 +2084,7 @@ Output: out, a byte string of length N
 <p id="section-4.2.2-1">To sample a uniformly random element modulo <code>M</code> of <code>Ns</code> bytes (that is, the smallest integer <code>Ns</code> with <code>256^Ns &gt;= M</code>), squeeze <code>Ns + 32</code> bytes by interpreting them as a big-endian non-negative integer via <code>OS2IP</code>, and reduce modulo <code>M</code>.<a href="#section-4.2.2-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.2.2-2">
 <pre>
-DecodeScalar(buf, M)
+DecodeUint(buf, M)
 
 Inputs:
 - buf, a byte string of length Ns + 32
@@ -2063,12 +2113,31 @@ In such cases, applications <strong>MAY</strong> use an alternative decoding fun
 <p id="section-4.2.2-6">Similar requirements and a longer discussion are available in <span>[<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>, Section 5.<a href="#section-4.2.2-6" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="elliptic-curve-scalar-field">
+<div id="decoding-field">
 <section id="section-4.2.3">
-          <h4 id="name-elliptic-curve-scalar-field">
-<a href="#section-4.2.3" class="section-number selfRef">4.2.3. </a><a href="#name-elliptic-curve-scalar-field" class="section-name selfRef">Elliptic curve scalar field</a>
+          <h4 id="name-field-elements-2">
+<a href="#section-4.2.3" class="section-number selfRef">4.2.3. </a><a href="#name-field-elements-2" class="section-name selfRef">Field elements</a>
           </h4>
-<p id="section-4.2.3-1">A scalar field element is decoded via <code>DecodeScalar</code> in <a href="#decoding-scalars" class="auto internal xref">Section 4.2.2</a>.<a href="#section-4.2.3-1" class="pilcrow">¶</a></p>
+<p id="section-4.2.3-1">A field element of a field of order <code>p^m</code> is decoded coordinate by coordinate: each of its <code>m</code> prime-field coordinates is decoded via <code>DecodeUint</code> (<a href="#decoding-uint" class="auto internal xref">Section 4.2.2</a>) with modulus <code>p</code>. With <code>Ns</code> as in <a href="#encoding-field" class="auto internal xref">Section 4.1.4</a>, this consumes <code>m * (Ns + 32)</code> bytes. A prime field is the case <code>m = 1</code>.<a href="#section-4.2.3-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.2.3-2">
+<pre>
+DecodeField(buf, p, m)
+
+Inputs:
+- buf, a byte string of length m * (Ns + 32)
+- p, the prime characteristic of the field
+- m, the extension degree
+
+Output: out, an element of the field of order p^m, given by its
+        coordinates (a[0], ..., a[m-1]) over the prime field
+
+1. fail if len(buf) != m * (Ns + 32)
+2. for i in 0, ..., m-1:
+3.    chunk = buf[i * (Ns + 32) : (i + 1) * (Ns + 32)]
+4.    a[i] = DecodeUint(chunk, p)
+5. return (a[0], ..., a[m-1])
+</pre><a href="#section-4.2.3-2" class="pilcrow">¶</a>
+</div>
 </section>
 </div>
 </section>
@@ -2086,20 +2155,23 @@ In such cases, applications <strong>MAY</strong> use an alternative decoding fun
         <h3 id="name-session-identifiers">
 <a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-session-identifiers" class="section-name selfRef">Session identifiers</a>
         </h3>
-<p id="section-5.1-1">The session identifier is a 32-byte string that identifies the application context.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
-<p id="section-5.1-2">For a duplex sponge operating over bytes, the procedure <code>DeriveSessionID</code> allows producing a secure session identifier provided the input tag satisfies the following security requirements:<a href="#section-5.1-2" class="pilcrow">¶</a></p>
+<p id="section-5.1-1">The session identifier is a 32-byte string that identifies the context in which the non-interactive argument is being done.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+<p id="section-5.1-2">For a duplex sponge operating over bytes, the session identifier is derived from a <code>tag</code> (a variable-length byte string) via the procedure <code>DeriveSessionID</code>. The tag has the following security requirements:<a href="#section-5.1-2" class="pilcrow">¶</a></p>
 <ol start="1" type="1" class="normal type-1" id="section-5.1-3">
 <li id="section-5.1-3.1">
-            <p id="section-5.1-3.1.1">the tag <strong>MUST</strong> uniquely identify the <strong>non-interactive argument</strong> used, including the IP (interactive protocol), the types of prover and verifier messages, the hash suite, the language associated to the interactive argument, and the codecs used.<a href="#section-5.1-3.1.1" class="pilcrow">¶</a></p>
+            <p id="section-5.1-3.1.1">the tag <strong>MUST</strong> uniquely identify the <strong>non-interactive argument</strong> used, including the interactive argument system, the types of prover and verifier messages, the hash suite, and the language associated with the interactive argument.<a href="#section-5.1-3.1.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-5.1-3.2">
-            <p id="section-5.1-3.2.1">the tag <strong>MUST</strong> contain contextual information about where the proof is made (e.g. a URL, or a timestamp).<a href="#section-5.1-3.2.1" class="pilcrow">¶</a></p>
+            <p id="section-5.1-3.2.1">the tag <strong>MUST</strong> uniquely identify the <strong>codecs</strong> used: the order and types of encodings and decodings at each round.<a href="#section-5.1-3.2.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-5.1-3.3">
-            <p id="section-5.1-3.3.1">the tag <strong>SHOULD</strong> begin with a fixed identification string that is unique to the application.<a href="#section-5.1-3.3.1" class="pilcrow">¶</a></p>
+            <p id="section-5.1-3.3.1">the tag <strong>MUST</strong> contain contextual information about where the proof is made (e.g. a URL, or a timestamp).<a href="#section-5.1-3.3.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-5.1-3.4">
-            <p id="section-5.1-3.4.1">the tag <strong>SHOULD</strong> include a version number.<a href="#section-5.1-3.4.1" class="pilcrow">¶</a></p>
+            <p id="section-5.1-3.4.1">the tag <strong>SHOULD</strong> begin with a fixed identification string that is unique to the application.<a href="#section-5.1-3.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.1-3.5">
+            <p id="section-5.1-3.5.1">the tag <strong>SHOULD</strong> include a version number.<a href="#section-5.1-3.5.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
 <div class="alignLeft art-text artwork" id="section-5.1-4">
@@ -2120,10 +2192,10 @@ Output: session_id, a 32-byte string
 <p id="section-5.1-6">As an example, consider a fictional application named Foo that implements sigma protocols over elliptic curves for encrypted messages shared during a time epoch <code>tt</code>. A reasonable choice of tag is:<a href="#section-5.1-6" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-5.1-7">
 <pre>
-FOO-SV{xx}-{tt}-DSFS-{hashID}-SIGMA-PROOFS-{yy}
+FOO-SV{xx}-{tttt}-DSFS-{hashID}-SIGMA-PROOFS-{yy}
 </pre><a href="#section-5.1-7" class="pilcrow">¶</a>
 </div>
-<p id="section-5.1-8">where <code>xx</code> is the two-digit number indicating the version, <code>yy</code> is the two-digit number indicating the elliptic-curve ciphersuite, <code>hashID</code> is the hash identifier, and <code>tt</code> is the epoch identifier.<a href="#section-5.1-8" class="pilcrow">¶</a></p>
+<p id="section-5.1-8">where <code>xx</code> is the two-digit number indicating the version, <code>yy</code> is the two-digit number indicating the elliptic-curve ciphersuite, <code>hashID</code> is the hash identifier, and <code>tttt</code> a 32-bit integer identifying the epoch.<a href="#section-5.1-8" class="pilcrow">¶</a></p>
 <p id="section-5.1-9">As another example, consider a fictional application named Bar that implements an ad-hoc zero-knowledge virtual machine for correct execution of circuits. A reasonable choice of tag is<a href="#section-5.1-9" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-5.1-10">
 <pre>
@@ -2131,7 +2203,7 @@ BAR-COM{cc}
 </pre><a href="#section-5.1-10" class="pilcrow">¶</a>
 </div>
 <p id="section-5.1-11">where <code>{cc}</code> is the commit hash of the associated version of the cryptographic specification of the protocol.<a href="#section-5.1-11" class="pilcrow">¶</a></p>
-<p id="section-5.1-12">Yet another reasonable choice for the session identifier is to append a description of the proof system together with the length of each prover and verifier message, after the version string. For instance:<a href="#section-5.1-12" class="pilcrow">¶</a></p>
+<p id="section-5.1-12">Yet another reasonable choice for the session identifier is to append a description of the interactive argument system together with the length of each prover and verifier message, after the version string. For instance:<a href="#section-5.1-12" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-5.1-13">
 <pre>
 BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-message-S1challenge
@@ -2172,11 +2244,11 @@ BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-message-S1challenge
 <a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-deserialization" class="section-name selfRef">Deserialization</a>
         </h3>
 <p id="section-6.2-1">Deserialization of the NARG string consists in reading the prover messages and computing the inverse of the serialization procedure: each message is read by consuming a fixed number of bytes, determined by its type and the instance, and advancing past them.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
-<p id="section-6.2-2">Verification <strong>MUST</strong> fail if any of the prover messages cannot be deserialized successfully. After the last expected prover message has been read, the verifier <strong>MUST</strong> verify that no bytes remain. Bytes that are never read or that are decoded despite being invalid will defeat strong simulation extractability: an adversary will be able to malleate a valid proof to obtain a second, distinct accepting proof for the same statement.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
+<p id="section-6.2-2">Verification <strong>MUST</strong> fail if any of the prover messages cannot be deserialized successfully. After the last expected prover message has been read, the verifier <strong>MUST</strong> verify that no bytes remain. Bytes that are never read or that are decoded despite being invalid will cause the proof to be malleable: an adversary will be able to malleate a valid proof to obtain a second, distinct accepting proof for the same statement.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
 <div id="byte-strings">
 <section id="section-6.2.1">
-          <h4 id="name-byte-strings">
-<a href="#section-6.2.1" class="section-number selfRef">6.2.1. </a><a href="#name-byte-strings" class="section-name selfRef">Byte strings</a>
+          <h4 id="name-byte-strings-2">
+<a href="#section-6.2.1" class="section-number selfRef">6.2.1. </a><a href="#name-byte-strings-2" class="section-name selfRef">Byte strings</a>
           </h4>
 <p id="section-6.2.1-1">Read a 4-byte length <code>N</code> via <code>OS2IP</code>, then read the next <code>N</code> bytes.<a href="#section-6.2.1-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-6.2.1-2">
@@ -2185,7 +2257,7 @@ DeserializeString(input)
 
 Input: input, the unread remainder of the NARG string
 
-Output: b, a N-byte string
+Output: b, an N-byte string
 
 1. fail if len(input) &lt; 4
 2. N = OS2IP(input[0:4])
@@ -2210,18 +2282,25 @@ Output: b, a N-byte string
           <h4 id="name-unsigned-integers-3">
 <a href="#section-6.2.3" class="section-number selfRef">6.2.3. </a><a href="#name-unsigned-integers-3" class="section-name selfRef">Unsigned integers</a>
           </h4>
-<p id="section-6.2.3-1">This section specifies the <strong>default</strong> deserialization of an integer modulo <code>M</code>. When the integer is a component of a type that already has a specified deserialization, that deserialization <strong>MUST</strong> be used instead. As with encoding (<a href="#encoding-scalars" class="auto internal xref">Section 4.1.3</a>), the default below is chosen to coincide with the deserializations of most standards; where it does not, the type's own deserialization governs.<a href="#section-6.2.3-1" class="pilcrow">¶</a></p>
-<p id="section-6.2.3-2">Read the next <code>Ns</code> bytes and interpret them as a big-endian integer <code>m = OS2IP(.)</code>. If <code>m &gt;= M</code>, fail: non-canonical encodings of field elements <strong>MUST</strong> be rejected. The value returned is <code>m</code>.<a href="#section-6.2.3-2" class="pilcrow">¶</a></p>
+<p id="section-6.2.3-1">Read the next <code>Ns</code> bytes and interpret them as a big-endian integer <code>m = OS2IP(.)</code>. If <code>m &gt;= M</code>, fail: non-canonical encodings of field elements <strong>MUST</strong> be rejected. The value returned is <code>m</code>.<a href="#section-6.2.3-1" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="group-elements">
+<div id="field-elements">
 <section id="section-6.2.4">
-          <h4 id="name-group-elements">
-<a href="#section-6.2.4" class="section-number selfRef">6.2.4. </a><a href="#name-group-elements" class="section-name selfRef">Group elements</a>
+          <h4 id="name-field-elements-3">
+<a href="#section-6.2.4" class="section-number selfRef">6.2.4. </a><a href="#name-field-elements-3" class="section-name selfRef">Field elements</a>
           </h4>
-<p id="section-6.2.4-1">Read the next <code>Ne</code> bytes and convert them to a group element using the group's element-deserialization function.
-Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation steps and fail unless the input is the canonical encoding of a valid group element.<a href="#section-6.2.4-1" class="pilcrow">¶</a></p>
-<p id="section-6.2.4-2">For example, for elliptic curves defined in <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>, decoding is the Octet-String-to-Elliptic-Curve-Point conversion, which checks that the encoding is well-formed and that the point lies on the curve, and returns "invalid" otherwise. Membership in the subgroup used for cryptographic operations is not checked by this conversion: it is implied for curves of prime order, but requires an explicit check when the cofactor is greater than one.<a href="#section-6.2.4-2" class="pilcrow">¶</a></p>
+<p id="section-6.2.4-1">This section specifies the default deserialization of an integer modulo <code>M</code>. When the integer is a component of a type that already has a specified deserialization, that deserialization <strong>MUST</strong> be used instead. As with encoding (<a href="#encoding-uint" class="auto internal xref">Section 4.1.3</a>), the default below is chosen to coincide with the deserializations of most standards; where it does not, the type's own deserialization governs.<a href="#section-6.2.4-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="elliptic-curve-group-elements-1">
+<section id="section-6.2.5">
+          <h4 id="name-elliptic-curve-group-element">
+<a href="#section-6.2.5" class="section-number selfRef">6.2.5. </a><a href="#name-elliptic-curve-group-element" class="section-name selfRef">Elliptic-curve group elements</a>
+          </h4>
+<p id="section-6.2.5-1">Read the next <code>Ne</code> bytes and convert them to a group element using the group's element-deserialization function.
+Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation steps and fail unless the input is the canonical encoding of a valid group element.<a href="#section-6.2.5-1" class="pilcrow">¶</a></p>
+<p id="section-6.2.5-2">For example, for elliptic curves defined in <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>, decoding is the Octet-String-to-Elliptic-Curve-Point conversion, which checks that the encoding is well-formed and that the point lies on the curve, and returns "invalid" otherwise. Membership in the subgroup used for cryptographic operations is not checked by this conversion: it is implied for curves of prime order, but requires an explicit check when the cofactor is greater than one.<a href="#section-6.2.5-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2234,7 +2313,7 @@ Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation
 <a href="#section-7" class="section-number selfRef">7. </a><a href="#name-efficiency-considerations" class="section-name selfRef">Efficiency considerations</a>
       </h2>
 <p id="section-7-1">Batch encoding/decoding algorithms should be preferred when available, because they amortize per-element cost over a whole sequence. For example, serializing or deserializing a batch of compressed elliptic-curve points requires only one modular inversion for the entire batch (via Montgomery's trick) rather than one per point, which is the dominant cost in point (de)compression.<a href="#section-7-1" class="pilcrow">¶</a></p>
-<p id="section-7-2">The state of the duplex sponge after <code>Init(session_id)</code> (see <a href="#session-id" class="auto internal xref">Section 5.1</a>) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of it instead of re-initializing the duplex sponge. In the SHAKE128 instantiation, where the padded session identifier fills exactly one rate block (<a href="#init" class="auto internal xref">Section 3.2.1</a>), this saves one invocation of the permutation function permutation per execution, and amortizes the cost of <code>DeriveSessionID</code> when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing <code>encode[0](instance)</code>.<a href="#section-7-2" class="pilcrow">¶</a></p>
+<p id="section-7-2"><code>Init(session_id)</code> (see <a href="#session-id" class="auto internal xref">Section 5.1</a>) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of the duplex sponge state, instead of initializing it every time. In the SHAKE128 instantiation, where the padded session identifier fills exactly one rate block (<a href="#init" class="auto internal xref">Section 3.2.1</a>), this saves one invocation of the permutation function per execution, and amortizes the cost of <code>DeriveSessionID</code> when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing <code>encode[0](instance)</code>.<a href="#section-7-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="security-considerations">
@@ -2284,7 +2363,7 @@ Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation
         <h3 id="name-soundness">
 <a href="#section-8.5" class="section-number selfRef">8.5. </a><a href="#name-soundness" class="section-name selfRef">Soundness</a>
         </h3>
-<p id="section-8.5-1">If the interactive proof is state-restoration sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without a corresponding witness existing (in the random oracle model).<a href="#section-8.5-1" class="pilcrow">¶</a></p>
+<p id="section-8.5-1">If the interactive proof is state-restoration sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without the corresponding statement being true (in the random oracle model).<a href="#section-8.5-1" class="pilcrow">¶</a></p>
 <p id="section-8.5-2">Soundness and knowledge soundness carry over to the non-interactive argument, with an additive soundness loss quadratic in the number of queries the adversary makes to the random oracle <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>.<a href="#section-8.5-2" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2295,7 +2374,7 @@ Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation
         </h3>
 <p id="section-8.6-1">If the interactive proof is honest-verifier zero-knowledge, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid.<a href="#section-8.6-1" class="pilcrow">¶</a></p>
 <p id="section-8.6-2">The additive zero-knowledge loss introduced by the transformation is linear in the number of queries the adversary makes to the random oracle <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>.<a href="#section-8.6-2" class="pilcrow">¶</a></p>
-<p id="section-8.6-3">Zero-knowledge holds only when the prover draws fresh commitment randomness for each proof from a cryptographically secure entropy source, as noted in <a href="#introduction" class="auto internal xref">Section 1</a>. Reusing the same randomness (or correlated randomness) across two proofs will compromise zero-knowledge. Implementations <strong>SHOULD</strong> sample different random coins for each proof using the operating system's secure entropy source.<a href="#section-8.6-3" class="pilcrow">¶</a></p>
+<p id="section-8.6-3">Zero-knowledge holds only when the prover draws fresh randomness for each proof from a cryptographically secure entropy source, as noted in <a href="#introduction" class="auto internal xref">Section 1</a>. Reusing the same randomness (or correlated randomness) across two proofs will compromise zero-knowledge. Implementations <strong>SHOULD</strong> sample different random coins for each proof using the operating system's secure entropy source.<a href="#section-8.6-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quantum-adversaries">
@@ -2322,8 +2401,8 @@ Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation
 <a href="#section-8.9" class="section-number selfRef">8.9. </a><a href="#name-instance-encoding" class="section-name selfRef">Instance encoding</a>
         </h3>
 <p id="section-8.9-1">Incorrect encoding of the instance has historically led to a number of critical security vulnerabilities, often grouped under the term <em>weak Fiat-Shamir transformation</em> <span>[<a href="#BPW16" class="cite xref">BPW16</a>]</span>. In each of them, the cryptographic hash function was not provided the full statement being proven. A malicious prover then can compute the verifier message first, and choose the omitted part of the instance afterwards so that the verification equation is satisfied on a statement whose witness it does not hold.<a href="#section-8.9-1" class="pilcrow">¶</a></p>
-<p id="section-8.9-2">One such example is in <span>[<a href="#BPW16" class="cite xref">BPW16</a>]</span>. A Chaum-Pedersen proof of equality for an instance <code>(G, H, X, Y)</code> proves knowledge of a witness <code>x</code> such that <code>X = x * G</code> and <code>Y = x * H</code>. The prover sends commitments <code>(A, B)</code>, obtains a challenge <code>c</code>, and replies with a scalar <code>f</code>; the verifier accepts when <code>f * G == A + c * X</code> and <code>f * H == B + c * Y</code>. Suppose the challenge <code>c</code> is derived by absorbing only the commitments <code>(A, B)</code>, leaving the statement <code>(G, H, X, Y)</code> out of the transcript. A malicious prover can pick <code>A</code>, <code>B</code>, <code>H</code>, and <code>f</code> at random, derive <code>c</code>, and only then set <code>X</code> and <code>Y</code> to the unique values that satisfy the two equations. Verification passes, yet no single <code>x</code> satisfies both <code>X = x * G</code> and <code>Y = x * H</code>: a false statement has been proven. Other examples are available in <span>[<a href="#DMWG23" class="cite xref">DMWG23</a>]</span>, for a range of different applications.<a href="#section-8.9-2" class="pilcrow">¶</a></p>
-<p id="section-8.9-3">All security guarantees are conditioned on the instance being part of the relation being proven. The Fiat-Shamir transformation does not verify that the statement being proven is well-formed, or valid. If the inputs provided are outside the relation, no security guarantee is provided.<a href="#section-8.9-3" class="pilcrow">¶</a></p>
+<p id="section-8.9-2">One such example is in <span>[<a href="#BPW16" class="cite xref">BPW16</a>]</span>. A Chaum-Pedersen proof of equality for an instance <code>(G, H, X, Y)</code> proves knowledge of a witness <code>x</code> such that <code>X = x * G</code> and <code>Y = x * H</code>. The prover sends commitments <code>(A, B)</code>, obtains a challenge <code>c</code>, and replies with a scalar <code>f</code>. The verifier accepts if the verification equations hold: <code>f * G == A + c * X</code> and <code>f * H == B + c * Y</code>. Suppose the challenge <code>c</code> is derived only by absorbing <code>(A, B)</code> and omitting the instance <code>(G, H, X, Y)</code>. A malicious prover can pick <code>A</code>, <code>B</code>, <code>H</code>, and <code>f</code> at random, derive <code>c</code>, and then set <code>X</code> and <code>Y</code> to satisfy the verification equations. Verification passes, yet no single <code>x</code> satisfies both <code>X = x * G</code> and <code>Y = x * H</code>. Thus, a false statement has been proven. Other examples are available in <span>[<a href="#DMWG23" class="cite xref">DMWG23</a>]</span>, for a range of different applications.<a href="#section-8.9-2" class="pilcrow">¶</a></p>
+<p id="section-8.9-3">All security guarantees are conditioned on the instance being part of the relation being proven. The Fiat-Shamir transformation does not verify that the statement being proven is well-formed, or valid. If the instance or the witness provided as input are not in the relation (e.g. they are malformed), the output is undefined and no security guarantee is provided.<a href="#section-8.9-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="implementation-guidance">
@@ -2331,8 +2410,8 @@ Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation
         <h3 id="name-implementation-guidance">
 <a href="#section-8.10" class="section-number selfRef">8.10. </a><a href="#name-implementation-guidance" class="section-name selfRef">Implementation guidance</a>
         </h3>
-<p id="section-8.10-1">The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities, especially due to incorrect implementations involving out-of-order, or missing prover messages.<a href="#section-8.10-1" class="pilcrow">¶</a></p>
-<p id="section-8.10-2">Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. We recommend negative testing, to help exercise the rejection paths on which soundness depends. Implementations should check that tampering with a valid NARG string causes verification to fail, for example by flipping, appending, or prepending bytes, and by replacing each prover message in turn with a different value.<a href="#section-8.10-2" class="pilcrow">¶</a></p>
+<p id="section-8.10-1">The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities, especially due to incorrect implementations involving out-of-order (or missing) prover messages.<a href="#section-8.10-1" class="pilcrow">¶</a></p>
+<p id="section-8.10-2">Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes, and by replacing each prover message in turn with a different value.<a href="#section-8.10-2" class="pilcrow">¶</a></p>
 <p id="section-8.10-3">Absorbing a prover message and serializing it to (or reading it from) the NARG string <strong>SHOULD</strong> be coupled, to prevent prover messages from being hashed without being serialized, or from being skipped or reordered.<a href="#section-8.10-3" class="pilcrow">¶</a></p>
 <p id="section-8.10-4">A sequential transcript interface is <strong>RECOMMENDED</strong>: implementations are encouraged to expose two directed state machines<a href="#section-8.10-4" class="pilcrow">¶</a></p>
 <ul class="normal">
