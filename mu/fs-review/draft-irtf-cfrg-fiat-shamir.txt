@@ -617,11 +617,10 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    serialization is EncodeUint as described below.
 
    With respect to a fixed basis, a field element is represented by its
-   m coordinates in the prime field, each an integer between [0, p).  It
-   is encoded as the concatenation of the per-coordinate encodings
-   produced by EncodeUint (Section 4.1.3) with modulus p.  Let Ns be the
-   smallest integer with 256^Ns >= p; a field element encodes to m * Ns
-   bytes.
+   m coordinates in the prime field, each an integer in [0, p).  It is
+   encoded as the concatenation of the per-coordinate encodings produced
+   by EncodeUint (Section 4.1.3) with modulus p.  Let Ns be the smallest
+   integer with 256^Ns >= p; a field element encodes to m * Ns bytes.
 
    EncodeField(a, p, m)
 
@@ -751,7 +750,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 5.1.  Session identifiers
 
    The session identifier is a 32-byte string that identifies the
-   context in which the non-interactive argument is being done.
+   context in which the non-interactive argument is used.
 
    For a duplex sponge operating over bytes, the session identifier is
    derived from a tag (a variable-length byte string) via the procedure
@@ -789,14 +788,15 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    As an example, consider a fictional application named Foo that
    implements sigma protocols over elliptic curves for encrypted
-   messages shared during a time epoch tt.  A reasonable choice of tag
+   messages shared during a time epoch tttt.  A reasonable choice of tag
    is:
 
    FOO-SV{xx}-{tttt}-DSFS-{hashID}-SIGMA-PROOFS-{yy}
 
    where xx is the two-digit number indicating the version, yy is the
    two-digit number indicating the elliptic-curve ciphersuite, hashID is
-   the hash identifier, and tttt a 32-bit integer identifying the epoch.
+   the hash identifier, and tttt is a 32-bit integer identifying the
+   epoch.
 
    As another example, consider a fictional application named Bar that
    implements an ad-hoc zero-knowledge virtual machine for correct
@@ -902,8 +902,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    4. b = input[4 : 4 + N]
    5. return b
 
-   This consumes 4 + N bytes of the NARG string, otherwise fails.  The
-   value decoded is the resulting byte string.
+   This consumes 4 + N bytes of the NARG string, and fails if fewer
+   bytes remain.  The value decoded is the resulting byte string.
 
 6.2.2.  Sequences and tuples
 
