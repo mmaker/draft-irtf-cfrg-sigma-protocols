@@ -924,12 +924,12 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
 7.  Efficiency considerations
 
-   Batch encoding/decoding algorithms should be preferred when
-   available, because they amortize per-element cost over a whole
-   sequence.  For example, serializing or deserializing a batch of
-   compressed elliptic-curve points requires only one modular inversion
-   for the entire batch (via Montgomery's trick) rather than one per
-   point, which is the dominant cost in point (de)compression.
+   For both codecs and serialization, batch algorithms should be
+   preferred when available, because they amortize per-element cost over
+   a whole sequence.  For example, serializing or deserializing a batch
+   of compressed elliptic-curve points requires only one modular
+   inversion for the entire batch (via Montgomery's trick) rather than
+   one per point, which is the dominant cost in point (de)compression.
 
    Init(session_id) (see Section 5.1) can be precomputed.
    Implementations can therefore start each prover and verifier
