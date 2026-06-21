@@ -864,4 +864,4 @@ This document has no IANA actions.
 
 # Test Vectors
 
-{::include ./poc/vectors/duplexSpongeVectors.txt}
+{::include ./poc/vectors/fiatShamirVectors.txt}
