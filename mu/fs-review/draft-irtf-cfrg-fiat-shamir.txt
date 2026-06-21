@@ -4,8 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                              19 June 2026
-Expires: 21 December 2026
+Intended status: Informational                              21 June 2026
+Expires: 23 December 2026
 
 
                        Fiat-Shamir Transformation
@@ -55,7 +55,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 21 December 2026.
+   This Internet-Draft will expire on 23 December 2026.
 
 Copyright Notice
 
@@ -113,12 +113,12 @@ Table of Contents
      8.2.  Constant-time requirements
      8.3.  Session identifiers
      8.4.  Security of the transformation
-     8.5.  Soundness
-     8.6.  Zero-Knowledge
-     8.7.  Quantum adversaries
-     8.8.  Indifferentiability of the hash function
-     8.9.  Instance encoding
-     8.10. Implementation guidance
+       8.4.1.  Soundness
+       8.4.2.  Zero-Knowledge
+       8.4.3.  Quantum adversaries
+       8.4.4.  Indifferentiability of the hash function
+     8.5.  Instance encoding
+     8.6.  Implementation guidance
    9.  IANA Considerations
    10. References
      10.1.  Normative References
@@ -148,7 +148,8 @@ Table of Contents
    _non-interactive argument_ (NARG) string.  The verifier recomputes
    the same verifier messages from the NARG string and checks the
    interactive verifier's decision.  The resulting argument is secure in
-   the random oracle model.
+   the random oracle model, where the hash function is treated as an
+   ideal random function (see Section 8.4.4).
 
    This document describes the duplex sponge Fiat-Shamir transformation,
    and in particular:
@@ -305,8 +306,21 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    A byte is an 8-bit unsigned integer (an octet), and a *byte string*
    is a finite sequence of bytes.  An N-byte string is a byte string of
    length N.  The empty byte string is written ""; x || y is the
-   concatenation of the byte strings x and y. zeros(N) denotes the
-   N-byte string of zero bytes.
+   concatenation of the byte strings x and y. len(x) denotes the length
+   in bytes of the byte string x. zeros(N) denotes the N-byte string of
+   zero bytes.
+
+   Byte strings are indexed from zero.  For integers 0 <= i <= j <=
+   len(x), x[i : j] denotes the (j - i)-byte substring of x consisting
+   of the bytes at positions i, i+1, ..., j-1.  In particular, x[0 : N]
+   is the first N bytes of x, x[i : i] is the empty byte string "", and
+   x[0 : len(x)] is x itself.
+
+   A byte string x is a *prefix* of a byte string y if y == x || z for
+   some byte string z (even empty).  An encoding is *prefix-free* if,
+   for any two distinct values, the encoding of one is never a prefix of
+   the encoding of the other.  A simple prefix-free encoding of a byte
+   string b is I2OSP(len(b), 4) || b as described in Section 4.1.1.
 
    I2OSP(n, w) and OS2IP(x) are the primitives defined in Section 4 of
    [RFC8017].  I2OSP(n, w) converts a non-negative integer n less than
@@ -315,12 +329,6 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    order.
 
    The set of integers between 0 and N-1 is denoted [0, N).
-
-   A byte string x is a *prefix* of a byte string y if y == x || z for
-   some byte string z (even empty).  An encoding is *prefix-free* if,
-   for any two distinct values, the encoding of one is never a prefix of
-   the encoding of the other.  A simple prefix-free encoding of a byte
-   string b is I2OSP(len(b), 4) || b as described in Section 4.1.1.
 
 2.2.  Duplex sponge interface
 
@@ -356,10 +364,12 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    message can be a value of any type for which a codec (Section 4) is
    defined, such as a byte string, an unsigned integer, or a group
    element.  The *transcript* is the ordered sequence of prover and
-   verifier messages.
+   verifier messages.  In particular, the transcript does _not_ include
+   the session identifier.
 
    The *instance* specifies the statement being proven and is held by
-   both the prover and the verifier.
+   both the prover and the verifier.  The (encoded) instance *MUST* be
+   non-empty.
 
    The *witness* is the prover's private input.  It is known only to the
    prover and is never revealed.  It appears neither in the transcript
@@ -433,20 +443,20 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    *  Squeeze(n) -> buf: produce n bytes from the state.
 
    The sponge interface does not encode message boundaries, as messages
-   can be absorbed incrementally: Absorb(x) followed by Absorb(y) is
-   equivalent to Absorb(x || y).  The output of Squeeze(n) is uniformly
-   distributed over n-byte strings and depends on the session
-   identifier, and on every byte absorbed before the call.  Consecutive
-   Squeeze calls continue one output stream, while any intervening
-   Absorb starts a fresh one.
+   can be absorbed incrementally: Absorb(x) followed by Absorb(y) (with
+   no Squeeze in between) is equivalent to Absorb(x || y).  The output
+   of Squeeze(n) is uniformly distributed over n-byte strings and
+   depends on the session identifier, and on every byte absorbed before
+   the call.  Consecutive Squeeze calls continue one output stream,
+   while any intervening Absorb starts a fresh one.
 
    For all duplex sponges, Squeeze(n), Absorb(""), Squeeze(n) can return
    the same n bytes twice.  An empty absorb therefore *MUST NOT* be
-   relied on to separate two challenges.  See Section 2.3 for the length
-   requirements of prover messages.
+   relied on to produce two different random n-byte strings.  See
+   Section 2.3 for the length requirements of round messages.
 
    Guidance on how to produce a 32-byte session_id is given in
-   Section 5.1; its security requirements in Section 8.8.
+   Section 5.1; its security requirements in Section 8.4.4.
 
 3.2.  SHAKE128 duplex sponge
 
@@ -530,7 +540,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    1. if state.reader == None:
    2.    state.reader = state.ctx.Copy().Finalize()
-   3. return state.reader.read(n)
+   3. return state.reader.Read(n)
 
    Consecutive Squeeze calls with no intervening Absorb continue the
    same output stream, and any Absorb restarts the stream at offset zero
@@ -598,6 +608,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    1. assert 0 <= x < M
    2. return I2OSP(x, Ns)
+
+   where Ns is the smallest integer with 256^Ns >= M.
 
 4.1.4.  Field elements
 
@@ -708,7 +720,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    *  The function *MUST* have bias less than the soundness error of the
       interactive argument.
 
-   *  The function *MUST NOT* use rejection sampling.
+   *  The function *SHOULD NOT* use rejection sampling (see
+      Section 8.2).
 
    *  The function *SHOULD* be amenable to straight-line
       implementations.
@@ -720,9 +733,9 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    A field element of a field of order p^m is decoded coordinate by
    coordinate: each of its m prime-field coordinates is decoded via
-   DecodeUint (Section 4.2.2) with modulus p.  With Ns as in
-   Section 4.1.4, this consumes m * (Ns + 32) bytes.  A prime field is
-   the case m = 1.
+   DecodeUint (Section 4.2.2) with modulus p, starting from the least-
+   signigicant.  With Ns as in Section 4.1.4, this consumes m * (Ns +
+   32) bytes.  A prime field is the case m = 1.
 
    DecodeField(buf, p, m)
 
@@ -739,6 +752,20 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    3.    chunk = buf[i * (Ns + 32) : (i + 1) * (Ns + 32)]
    4.    a[i] = DecodeUint(chunk, p)
    5. return (a[0], ..., a[m-1])
+
+   For m = 1, DecodeField is DecodeUint, and the same efficiency remarks
+   apply: when log2(p) is significantly smaller than 256 or p is a power
+   of two, applications *MAY* substitute a more efficient alternative,
+   subject to the same security requirements described in Section 4.2.2.
+
+   For m > 1, decoding relies on 32 * m additional randomness bytes.
+   Applications with big-integer arithmetic available *MAY* use a more
+   randomness-efficient decoding algorithm, by instead sampling Nm + 32
+   bytes, where Nm is the smallest integer with 256^Nm >= p^m,
+   interpreting them as an integer via OS2IP, reducing modulo p^m, and
+   recovering the coordinates (a[0], ..., a[m-1]) as the base-p digits
+   of the result.  This consumes Nm + 32 bytes, with the same 2^-256
+   bias bound.
 
 5.  Initialization
 
@@ -765,7 +792,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
        types of encodings and decodings at each round.
 
    3.  the tag *MUST* contain contextual information about where the
-       proof is made (e.g. a URL, or a timestamp).
+       proof is made (e.g. a URL to identify the application namespace,
+       a timestamp to prevent replay attacks).
 
    4.  the tag *SHOULD* begin with a fixed identification string that is
        unique to the application.
@@ -783,8 +811,11 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    2. duplex_sponge.Absorb(tag)
    3. return duplex_sponge.Squeeze(32)
 
-   The 32-byte string "irtf-cfrg-fiat-shamir/session-id" is a domain
-   separator for this derivation.
+   Above, DS denotes the duplex sponge instantiation in use (Section 3,
+   for example the SHAKE128 duplex sponge of Section 3.2), and DS.Init,
+   DS.Absorb, and DS.Squeeze are its operations.  The 32-byte string
+   "irtf-cfrg-fiat-shamir/session-id" is a domain separator for this
+   derivation.
 
    As an example, consider a fictional application named Foo that
    implements sigma protocols over elliptic curves for encrypted
@@ -831,17 +862,60 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    The instance is the first value absorbed into the sponge after
    Init(session_id) and before any prover message.  The prover and
    verifier *MUST* absorb encode[0](instance), where encode[0] is the
-   first encoding map.  While the session identifier of the previous
-   section Section 5.1 fixes the language, the instance selects one of
-   its members.
+   first encoding map.  The encoded instance *MUST* be non-empty.  While
+   the session identifier of the previous section Section 5.1 fixes the
+   language, the instance selects one of its members.
 
    As for every encoding map, encode[0] *MUST* be prefix-free, else a
    malicious prover may be able to satisfy the verification equations on
-   a statement it cannot prove (see Section 8.9).  The encoding map
+   a statement it cannot prove (see Section 8.5).  The encoding map
    encode[0] *SHOULD* reuse the encodings of Section 4.1.
 
-   Omitting public statement data from the sponge compromises soundness
-   of the proof system.  See Section 8.9.
+   As an example, the sumcheck relation for multilinear polynomials in N
+   variables over p^m committed with the polynomial commitment scheme
+   COM is the pair:
+
+   *  instance (N, C, S): N is the number of variables, C the
+      commitment, and S the target sum;
+
+   *  witness (F, r), the multilinear polynomial in N variables and r
+      the commitment opening information.
+
+   such that:
+
+   COM.Open(C, F, r)  = 1,
+   sum(F(b1, ..., bN) for b1, ..., bN in {0, 1}) = S
+
+   A valid instance encoding function is:
+
+   EncodeField(S, p, m) || EncodeUint(N, 2^32) || COM.Serialize(C)
+
+   where COM.Serialize is the commitment-serialization function of the
+   scheme COM (the opening check COM.Open is used above).
+
+   As an example, in the discrete logarithm setting, the Chaum-Pedersen
+   relation over an additive elliptic curve group with generators G, H
+   (for which the relative discrete logarithm is not known) is the pair:
+
+   *  instance (C, D) are Pedersen commitments
+
+   *  witness (x, r, s) scalar field elements with x the commitment
+      message and r, s independent random commitment openings
+
+   such that
+
+   C = xG + rH, D = xG + sH.
+
+   A valid instance encoding function is:
+
+   enc(G) || enc(H) || enc(C) || enc(D)
+
+   where enc is the group element-serialization function described in
+   Section 4.1.5.
+
+   Omitting public statement data (for instance, N in the first example
+   or the group generators G, H in the second) from the sponge can
+   compromise soundness of the proof system.  See Section 8.5.
 
 6.  Non-interactive argument string
 
@@ -897,7 +971,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    Output: b, an N-byte string
 
    1. fail if len(input) < 4
-   2. N = OS2IP(input[0:4])
+   2. N = OS2IP(input[0 : 4])
    3. fail if len(input) - 4 < N
    4. b = input[4 : 4 + N]
    5. return b
@@ -913,9 +987,26 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
 6.2.3.  Unsigned integers
 
-   Read the next Ns bytes and interpret them as a big-endian integer m =
-   OS2IP(.).  If m >= M, fail: non-canonical integer encodings *MUST* be
-   rejected.  The value returned is m.
+   Read the next Ns bytes, with Ns as in Section 4.1.3, and interpret
+   them as a big-endian integer x = OS2IP(.).  If x >= M, fail: non-
+   canonical integer encodings *MUST* be rejected.  The value returned
+   is x.  This is the inverse of EncodeUint (Section 4.1.3).
+
+   DeserializeUint(input, M)
+
+   Inputs:
+   - input, the unread remainder of the NARG string
+   - M, the modulus
+
+   Output: x, an integer in the range [0, M)
+
+   1. fail if len(input) < Ns
+   2. x = OS2IP(input[0 : Ns])
+   3. fail if x >= M
+   4. return x
+
+   This consumes Ns bytes of the NARG string.  It fails if fewer bytes
+   remain, or if the integer read is not in the range [0, M).
 
 6.2.4.  Field elements
 
@@ -923,7 +1014,26 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    coordinate: read m * Ns bytes, with Ns as in Section 4.1.4, and
    deserialize each Ns-byte coordinate as an integer modulo p using the
    unsigned-integer deserialization above.  A prime field is the case m
-   = 1.
+   = 1.  This is the inverse of EncodeField (Section 4.1.4).
+
+   DeserializeField(input, p, m)
+
+   Inputs:
+   - input, the unread remainder of the NARG string
+   - p, the prime characteristic of the field
+   - m, the extension degree
+
+   Output: a, an element of the field of order p^m, given by its
+           coordinates (a[0], ..., a[m-1]) over the prime field
+
+   1. fail if len(input) < m * Ns
+   2. for i in 0, ..., m-1:
+   3.    chunk = input[i * Ns : (i + 1) * Ns]
+   4.    a[i] = DeserializeUint(chunk, p)
+   5. return (a[0], ..., a[m-1])
+
+   This consumes m * Ns bytes of the NARG string, and fails if fewer
+   bytes remain or if any coordinate is non-canonical.
 
    If the field type already has specified serialization and
    deserialization functions, those *MUST* be used instead (see
@@ -997,7 +1107,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    For example, in the case of keyed-verification anonymous credentials,
    the zero-knowledge verifier will compute an instance that depends on
-   the issuer's secret key and as such the instance is not meant to be
+   the issuer's secret key and therefore the instance is not meant to be
    public.
 
 8.3.  Session identifiers
@@ -1023,7 +1133,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    statement being proven is true, then the resulting non-interactive
    argument string is valid.
 
-8.5.  Soundness
+8.4.1.  Soundness
 
    If the interactive proof is state-restoration sound, then so is the
    non-interactive proof.  In particular, valid proofs cannot be
@@ -1034,7 +1144,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    argument, with an additive soundness loss quadratic in the number of
    queries the adversary makes to the random oracle [CO25].
 
-8.6.  Zero-Knowledge
+8.4.2.  Zero-Knowledge
 
    If the interactive proof is honest-verifier zero-knowledge, then so
    is the non-interactive proof.  In particular, the resulting argument
@@ -1052,7 +1162,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    *SHOULD* sample different random coins for each proof using the
    operating system's secure entropy source.
 
-8.7.  Quantum adversaries
+8.4.3.  Quantum adversaries
 
    If the interactive proof is state-restoration sound against quantum
    adversaries, then the non-interactive proof after the Fiat-Shamir
@@ -1062,7 +1172,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    The loss introduced by a quantum adversary is polynomial (larger than
    quadratic) in the number of quantum random-oracle queries.
 
-8.8.  Indifferentiability of the hash function
+8.4.4.  Indifferentiability of the hash function
 
    The random oracle instantiation *MUST* be extraction-friendly and
    simulation-friendly indifferentiable to preserve soundness and zero-
@@ -1074,7 +1184,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    different hash construction *SHOULD NOT* be substituted on the
    strength of indifferentiability alone.
 
-8.9.  Instance encoding
+8.5.  Instance encoding
 
    Incorrect encoding of the instance has historically led to a number
    of critical security vulnerabilities, often grouped under the term
@@ -1105,7 +1215,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    (e.g. they are malformed), the output is undefined and no security
    guarantee is provided.
 
-8.10.  Implementation guidance
+8.6.  Implementation guidance
 
    The Fiat-Shamir transformation has historically led to a number of
    critical security vulnerabilities, especially due to incorrect
