@@ -861,3 +861,7 @@ The NARG string must be treated as untrusted input. Therefore, non-interactive v
 This document has no IANA actions.
 
 --- back
+
+# Test Vectors
+
+{::include ./poc/vectors/fiatShamirVectors.txt}
