@@ -110,7 +110,7 @@ It specifies how the hash function is employed, how prover messages are encoded 
 
 A public-coin interactive protocol is an exchange of messages between a prover and a verifier in which every verifier message is a uniformly random value sampled independently of the protocol state.
 
-The Fiat-Shamir transformation removes interaction from a public-coin interactive argument by relying on a cryptographic hash function. The non-interactive prover derives each verifier message on its own via a hash function, and serializes the protocol transcript into a *non-interactive argument* (NARG) string. The verifier recomputes the same verifier messages from the NARG string and checks the interactive verifier's decision. The resulting argument is secure in the random oracle model.
+The Fiat-Shamir transformation removes interaction from a public-coin interactive argument by relying on a cryptographic hash function. The non-interactive prover derives each verifier message on its own via a hash function, and serializes the protocol transcript into a *non-interactive argument* (NARG) string. The verifier recomputes the same verifier messages from the NARG string and checks the interactive verifier's decision. The resulting argument is secure in the random oracle model, where the hash function is treated as an ideal random function (see {{indifferentiability-of-the-hash-function}}).
 
 This document describes the duplex sponge Fiat-Shamir transformation, and in particular:
 
@@ -247,13 +247,15 @@ The following notation is used throughout this document.
 
 ## Bytes and integers
 
-A byte is an 8-bit unsigned integer (an octet), and a **byte string** is a finite sequence of bytes. An `N`-byte string is a byte string of length `N`. The empty byte string is written `""`; `x || y` is the concatenation of the byte strings `x` and `y`. `zeros(N)` denotes the `N`-byte string of zero bytes.
+A byte is an 8-bit unsigned integer (an octet), and a **byte string** is a finite sequence of bytes. An `N`-byte string is a byte string of length `N`. The empty byte string is written `""`; `x || y` is the concatenation of the byte strings `x` and `y`. `len(x)` denotes the length in bytes of the byte string `x`. `zeros(N)` denotes the `N`-byte string of zero bytes.
+
+Byte strings are indexed from zero. For integers `0 <= i <= j <= len(x)`, `x[i : j]` denotes the `(j - i)`-byte substring of `x` consisting of the bytes at positions `i, i+1, ..., j-1`. In particular, `x[0 : N]` is the first `N` bytes of `x`, `x[i : i]` is the empty byte string `""`, and `x[0 : len(x)]` is `x` itself.
+
+A byte string `x` is a **prefix** of a byte string `y` if `y == x || z` for some byte string `z` (even empty). An encoding is **prefix-free** if, for any two distinct values, the encoding of one is never a prefix of the encoding of the other. A simple prefix-free encoding of a byte string `b` is `I2OSP(len(b), 4) || b` as described in {{encoding-varlen-string}}.
 
 `I2OSP(n, w)` and `OS2IP(x)` are the primitives defined in Section 4 of {{!RFC8017}}. `I2OSP(n, w)` converts a non-negative integer `n` less than `256^w` into a `w`-byte, big-endian byte string. `OS2IP(x)` converts a byte string `x` into a non-negative integer using the big-endian byte order.
 
 The set of integers between `0` and `N-1` is denoted `[0, N)`.
-
-A byte string `x` is a **prefix** of a byte string `y` if `y == x || z` for some byte string `z` (even empty). An encoding is **prefix-free** if, for any two distinct values, the encoding of one is never a prefix of the encoding of the other. A simple prefix-free encoding of a byte string `b` is `I2OSP(len(b), 4) || b` as described in {{varlen-encoding}}.
 
 ## Duplex sponge interface
 
@@ -265,9 +267,9 @@ The interface generalizes the **sponge** {{SPONGE}}, which maps a variable-lengt
 
 The **session identifier** is a 32-byte string that identifies the application context and the specific non-interactive argument in use; it is held by both the prover and the verifier (see {{session-id}}).
 
-A **prover message** is a message sent by the interactive prover, and a **verifier message** is a message sent by the interactive verifier (a uniformly random value, since the protocol is public-coin). A message can be a value of any type for which a codec ({{codecs}}) is defined, such as a byte string, an unsigned integer, or a group element. The **transcript** is the ordered sequence of prover and verifier messages.
+A **prover message** is a message sent by the interactive prover, and a **verifier message** is a message sent by the interactive verifier (a uniformly random value, since the protocol is public-coin). A message can be a value of any type for which a codec ({{codecs}}) is defined, such as a byte string, an unsigned integer, or a group element. The **transcript** is the ordered sequence of prover and verifier messages. In particular, the transcript does _not_ include the session identifier.
 
-The **instance** specifies the statement being proven and is held by both the prover and the verifier.
+The **instance** specifies the statement being proven and is held by both the prover and the verifier. The (encoded) instance **MUST** be non-empty.
 
 The **witness** is the prover's private input. It is known only to the prover and is never revealed. It appears neither in the transcript nor in the NARG string.
 
@@ -305,9 +307,9 @@ Prover and verifier messages are handled via three operations:
 - `Absorb(x)`: absorb the byte string `x` into the state.
 - `Squeeze(n) -> buf`: produce `n` bytes from the state.
 
-The sponge interface does not encode message boundaries, as messages can be absorbed incrementally: `Absorb(x)` followed by `Absorb(y)` is equivalent to `Absorb(x || y)`. The output of `Squeeze(n)` is uniformly distributed over `n`-byte strings and depends on the session identifier, and on every byte absorbed before the call. Consecutive `Squeeze` calls continue one output stream, while any intervening `Absorb` starts a fresh one.
+The sponge interface does not encode message boundaries, as messages can be absorbed incrementally: `Absorb(x)` followed by `Absorb(y)` (with no `Squeeze` in between) is equivalent to `Absorb(x || y)`. The output of `Squeeze(n)` is uniformly distributed over `n`-byte strings and depends on the session identifier, and on every byte absorbed before the call. Consecutive `Squeeze` calls continue one output stream, while any intervening `Absorb` starts a fresh one.
 
-For all duplex sponges, `Squeeze(n)`, `Absorb("")`, `Squeeze(n)` can return the same `n` bytes twice. An empty absorb therefore **MUST NOT** be relied on to separate two challenges. See {{proof-systems-terminology}} for the length requirements of prover messages.
+For all duplex sponges, `Squeeze(n)`, `Absorb("")`, `Squeeze(n)` can return the same `n` bytes twice. An empty absorb therefore **MUST NOT** be relied on to produce two different random n-byte strings. See {{proof-systems-terminology}} for the length requirements of round messages.
 
 Guidance on how to produce a 32-byte `session_id` is given in {{session-id}}; its security requirements in {{indifferentiability-of-the-hash-function}}.
 
@@ -379,7 +381,7 @@ Output: a uniformly-distributed random n-byte string
 
 1. if state.reader == None:
 2.    state.reader = state.ctx.Copy().Finalize()
-3. return state.reader.read(n)
+3. return state.reader.Read(n)
 ~~~
 
 Consecutive `Squeeze` calls with no intervening `Absorb` continue the same output stream, and any `Absorb` restarts the stream at offset zero (see {{shake128-absorb}}). The `Copy().Finalize()` in `Squeeze` realizes this without consuming the absorbing state: squeezed bytes are never fed back into the state.
@@ -395,7 +397,7 @@ A codec is a set of functions that map prover and verifier messages to the hash 
 
 All encoding functions **MUST** be prefix-free.
 
-### Byte strings {#varlen-encoding}
+### Byte strings {#encoding-varlen-string}
 
 Encoding of a byte string is the identity function.
 
@@ -442,6 +444,7 @@ Output: out, an Ns-byte string
 2. return I2OSP(x, Ns)
 ~~~
 
+where `Ns` is the smallest integer with `256^Ns >= M`.
 
 ### Field elements {#encoding-field}
 
@@ -470,7 +473,7 @@ Output: out, an (m * Ns)-byte string
 
 Note that a prime field is the case `m = 1`, in which case `EncodeField` is equivalent to `EncodeUint`.
 
-### Elliptic curve group elements
+### Elliptic curve group elements {#encoding-ec-point}
 
 A group element is serialized to a canonical `Ne`-byte string using the group's element-serialization function.
 
@@ -522,14 +525,14 @@ In two cases this approach is inefficient: if `log2(M)` is significantly smaller
 In such cases, applications **MAY** use an alternative decoding function, provided it meets the following security requirements:
 
 -  The function **MUST** have bias less than the soundness error of the interactive argument.
--  The function **MUST NOT** use rejection sampling.
+-  The function **SHOULD NOT** use rejection sampling (see {{constant-time}}).
 -  The function **SHOULD** be amenable to straight-line implementations.
 
 Similar requirements and a longer discussion are available in {{?RFC9380}}, Section 5.
 
 ### Field elements {#decoding-field}
 
-A field element of a field of order `p^m` is decoded coordinate by coordinate: each of its `m` prime-field coordinates is decoded via `DecodeUint` ({{decoding-uint}}) with modulus `p`. With `Ns` as in {{encoding-field}}, this consumes `m * (Ns + 32)` bytes. A prime field is the case `m = 1`.
+A field element of a field of order `p^m` is decoded coordinate by coordinate: each of its `m` prime-field coordinates is decoded via `DecodeUint` ({{decoding-uint}}) with modulus `p`, starting from the least-signigicant. With `Ns` as in {{encoding-field}}, this consumes `m * (Ns + 32)` bytes. A prime field is the case `m = 1`.
 
 ~~~
 DecodeField(buf, p, m)
@@ -549,6 +552,10 @@ Output: out, an element of the field of order p^m, given by its
 5. return (a[0], ..., a[m-1])
 ~~~
 
+For `m = 1`, `DecodeField` is `DecodeUint`, and the same efficiency remarks apply: when `log2(p)` is significantly smaller than 256 or `p` is a power of two, applications **MAY** substitute a more efficient alternative, subject to the same security requirements described in {{decoding-uint}}.
+
+For `m > 1`, decoding relies on `32 * m` additional randomness bytes. Applications with big-integer arithmetic available **MAY** use a more randomness-efficient decoding algorithm, by instead sampling `Nm + 32` bytes, where `Nm` is the smallest integer with `256^Nm >= p^m`, interpreting them as an integer via `OS2IP`, reducing modulo `p^m`, and recovering the coordinates `(a[0], ..., a[m-1])` as the base-`p` digits of the result. This consumes `Nm + 32` bytes, with the same `2^-256` bias bound.
+
 # Initialization
 
 Before any prover message is processed, both parties start the duplex sponge with the session identifier ({{session-id}}), and then the instance ({{instance}}). Neither of the two is part of the NARG string: the verifier holds both as its own inputs.
@@ -561,7 +568,7 @@ For a duplex sponge operating over bytes, the session identifier is derived from
 
 1. the tag **MUST** uniquely identify the **non-interactive argument** used, including the interactive argument system, the types of prover and verifier messages, the hash suite, and the language associated with the interactive argument.
 2. the tag **MUST** uniquely identify the **codecs** used: the order and types of encodings and decodings at each round.
-3. the tag **MUST** contain contextual information about where the proof is made (e.g. a URL, or a timestamp).
+3. the tag **MUST** contain contextual information about where the proof is made (e.g. a URL to identify the application namespace, a timestamp to prevent replay attacks).
 4. the tag **SHOULD** begin with a fixed identification string that is unique to the application.
 5. the tag **SHOULD** include a version number.
 
@@ -578,7 +585,7 @@ Output: session_id, a 32-byte string
 3. return duplex_sponge.Squeeze(32)
 ~~~
 
-The 32-byte string `"irtf-cfrg-fiat-shamir/session-id"` is a domain separator for this derivation.
+Above, `DS` denotes the duplex sponge instantiation in use ({{hash-instantiations}}, for example the SHAKE128 duplex sponge of {{shake128}}), and `DS.Init`, `DS.Absorb`, and `DS.Squeeze` are its operations. The 32-byte string `"irtf-cfrg-fiat-shamir/session-id"` is a domain separator for this derivation.
 
 As an example, consider a fictional application named Foo that implements sigma protocols over elliptic curves for encrypted messages shared during a time epoch `tttt`. A reasonable choice of tag is:
 
@@ -608,11 +615,51 @@ where `xx` is the two-digit version number, `hashID` is the hash identifier, and
 
 The instance is input to the non-interactive prover and the non-interactive verifier; it fixes the specific statement being proven.
 
-The instance is the first value absorbed into the sponge after `Init(session_id)` and before any prover message. The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map. While the session identifier of the previous section {{session-id}} fixes the language, the instance selects one of its members.
+The instance is the first value absorbed into the sponge after `Init(session_id)` and before any prover message. The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map.
+The encoded instance **MUST** be non-empty. While the session identifier of the previous section {{session-id}} fixes the language, the instance selects one of its members.
 
 As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the encodings of {{encoding-bytes}}.
 
-Omitting public statement data from the sponge compromises soundness of the proof system. See {{instance-encoding}}.
+As an example, the sumcheck relation for multilinear polynomials in `N` variables over `p^m` committed with the polynomial commitment scheme `COM` is the pair:
+
+- instance `(N, C, S)`: `N` is the number of variables, `C` the commitment, and `S` the target sum;
+- witness `(F, r)`, the multilinear polynomial in `N` variables and `r` the commitment opening information.
+
+such that:
+
+~~~
+COM.Open(C, F, r)  = 1,
+sum(F(b1, ..., bN) for b1, ..., bN in {0, 1}) = S
+~~~
+
+A valid instance encoding function is:
+
+~~~
+EncodeField(S, p, m) || EncodeUint(N, 2^32) || COM.Serialize(C)
+~~~
+
+where `COM.Serialize` is the commitment-serialization function of the scheme `COM` (the opening check `COM.Open` is used above).
+
+As an example, in the discrete logarithm setting, the Chaum-Pedersen relation over an additive elliptic curve group with generators `G`, `H` (for which the relative discrete logarithm is not known) is the pair:
+
+- instance `(C, D)` are Pedersen commitments
+- witness `(x, r, s)` scalar field elements with `x` the commitment message and `r`, `s` independent random commitment openings
+
+such that
+
+~~~
+C = xG + rH, D = xG + sH.
+~~~
+
+A valid instance encoding function is:
+
+~~~
+enc(G) || enc(H) || enc(C) || enc(D)
+~~~
+
+where `enc` is the group element-serialization function described in {{encoding-ec-point}}.
+
+Omitting public statement data (for instance, `N` in the first example or the group generators `G`, `H` in the second) from the sponge can compromise soundness of the proof system. See {{instance-encoding}}.
 
 # Non-interactive argument string {#narg-string}
 
@@ -628,7 +675,7 @@ Verification **MUST** fail if any of the prover messages cannot be deserialized 
 
 ### Byte strings {#deserialize-byte-strings}
 
-An `N`-byte string whose length is known from its type and the instance is deserialized by reading that many bytes. This is the inverse of `EncodeBytes` ({{varlen-encoding}}).
+An `N`-byte string whose length is known from its type and the instance is deserialized by reading that many bytes. This is the inverse of `EncodeBytes` ({{encoding-varlen-string}}).
 
 ~~~
 DeserializeBytes(input, N)
@@ -646,7 +693,7 @@ Output: b, an N-byte string
 
 This consumes `N` bytes of the NARG string, and fails if fewer bytes remain.
 
-A byte string whose length is not known in advance is deserialized by reading a 4-byte length `N` via `OS2IP`, then reading the next `N` bytes; this is the inverse of `EncodeVarLenString` ({{varlen-encoding}}).
+A byte string whose length is not known in advance is deserialized by reading a 4-byte length `N` via `OS2IP`, then reading the next `N` bytes; this is the inverse of `EncodeVarLenString` ({{encoding-varlen-string}}).
 
 ~~~
 DeserializeVarLenString(input)
@@ -656,7 +703,7 @@ Input: input, the unread remainder of the NARG string
 Output: b, an N-byte string
 
 1. fail if len(input) < 4
-2. N = OS2IP(input[0:4])
+2. N = OS2IP(input[0 : 4])
 3. fail if len(input) - 4 < N
 4. b = input[4 : 4 + N]
 5. return b
@@ -670,11 +717,48 @@ Deserialize each element in order. Fail if any element fails to deserialize. The
 
 ### Unsigned integers
 
-Read the next `Ns` bytes and interpret them as a big-endian integer `m = OS2IP(.)`. If `m >= M`, fail: non-canonical integer encodings **MUST** be rejected. The value returned is `m`.
+Read the next `Ns` bytes, with `Ns` as in {{encoding-uint}}, and interpret them as a big-endian integer `x = OS2IP(.)`. If `x >= M`, fail: non-canonical integer encodings **MUST** be rejected. The value returned is `x`. This is the inverse of `EncodeUint` ({{encoding-uint}}).
+
+~~~
+DeserializeUint(input, M)
+
+Inputs:
+- input, the unread remainder of the NARG string
+- M, the modulus
+
+Output: x, an integer in the range [0, M)
+
+1. fail if len(input) < Ns
+2. x = OS2IP(input[0 : Ns])
+3. fail if x >= M
+4. return x
+~~~
+
+This consumes `Ns` bytes of the NARG string. It fails if fewer bytes remain, or if the integer read is not in the range `[0, M)`.
 
 ### Field elements
 
-A field element of a field of order `p^m` is deserialized coordinate by coordinate: read `m * Ns` bytes, with `Ns` as in {{encoding-field}}, and deserialize each `Ns`-byte coordinate as an integer modulo `p` using the unsigned-integer deserialization above. A prime field is the case `m = 1`.
+A field element of a field of order `p^m` is deserialized coordinate by coordinate: read `m * Ns` bytes, with `Ns` as in {{encoding-field}}, and deserialize each `Ns`-byte coordinate as an integer modulo `p` using the unsigned-integer deserialization above. A prime field is the case `m = 1`. This is the inverse of `EncodeField` ({{encoding-field}}).
+
+~~~
+DeserializeField(input, p, m)
+
+Inputs:
+- input, the unread remainder of the NARG string
+- p, the prime characteristic of the field
+- m, the extension degree
+
+Output: a, an element of the field of order p^m, given by its
+        coordinates (a[0], ..., a[m-1]) over the prime field
+
+1. fail if len(input) < m * Ns
+2. for i in 0, ..., m-1:
+3.    chunk = input[i * Ns : (i + 1) * Ns]
+4.    a[i] = DeserializeUint(chunk, p)
+5. return (a[0], ..., a[m-1])
+~~~
+
+This consumes `m * Ns` bytes of the NARG string, and fails if fewer bytes remain or if any coordinate is non-canonical.
 
 If the field type already has specified serialization and deserialization functions, those **MUST** be used instead (see {{encoding-field}}). As with encoding, the default is chosen to coincide with the deserializations of most standards; where it does not, the type's own deserialization governs.
 
@@ -701,11 +785,11 @@ While encoding maps are never inverted during the protocol, the security proof r
 
 Decoding preserves the uniform distribution only when its input is uniform. Verifier messages **MUST** therefore be derived from `Squeeze` output and never from prover-controlled or otherwise non-uniform bytes: decoding a non-uniform input yields a verifier message that is distinguishable from uniform, which would break the public-coin property the transformation depends on.
 
-## Constant-time requirements
+## Constant-time requirements {#constant-time}
 
 While the protocol operates on "public coins", the instance can contain private information, such as verification keys not meant to be shared, or messages meant to be private between prover and verifier. Therefore, constant-time implementation of all the functions in this document is **RECOMMENDED**, to avoid leaking information via side channels.
 
-For example, in the case of keyed-verification anonymous credentials, the zero-knowledge verifier will compute an instance that depends on the issuer's secret key and as such the instance is not meant to be public.
+For example, in the case of keyed-verification anonymous credentials, the zero-knowledge verifier will compute an instance that depends on the issuer's secret key and therefore the instance is not meant to be public.
 
 ## Session identifiers
 
@@ -719,13 +803,13 @@ The Fiat-Shamir transformation carries over the soundness and zero-knowledge pro
 
 Completeness of the non-interactive argument is preserved: if the statement being proven is true, then the resulting non-interactive argument string is valid.
 
-## Soundness
+### Soundness
 
 If the interactive proof is state-restoration sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without the corresponding statement being true (in the random oracle model).
 
 Soundness and knowledge soundness carry over to the non-interactive argument, with an additive soundness loss quadratic in the number of queries the adversary makes to the random oracle {{CO25}}.
 
-## Zero-Knowledge
+### Zero-Knowledge
 
 If the interactive proof is honest-verifier zero-knowledge, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid.
 
@@ -733,13 +817,13 @@ The additive zero-knowledge loss introduced by the transformation is linear in t
 
 Zero-knowledge holds only when the prover draws fresh randomness for each proof from a cryptographically secure entropy source, as noted in {{introduction}}. Reusing the same randomness (or correlated randomness) across two proofs will compromise zero-knowledge. Implementations **SHOULD** sample different random coins for each proof using the operating system's secure entropy source.
 
-## Quantum adversaries
+### Quantum adversaries
 
 If the interactive proof is state-restoration sound against quantum adversaries, then the non-interactive proof after the Fiat-Shamir transformation in the random oracle model is also secure against quantum adversaries.
 
 The loss introduced by a quantum adversary is polynomial (larger than quadratic) in the number of quantum random-oracle queries.
 
-## Indifferentiability of the hash function
+### Indifferentiability of the hash function
 
 The random oracle instantiation **MUST** be extraction-friendly and simulation-friendly indifferentiable to preserve soundness and zero-knowledge of the transformation.
 
@@ -779,6 +863,5 @@ This document has no IANA actions.
 --- back
 
 # Test Vectors
-
 
 {::include ./poc/vectors/duplexSpongeVectors.txt}
