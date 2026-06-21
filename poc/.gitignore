@@ -1,1 +1,3 @@
 *.py
+!gen_fiat_shamir_vectors.py
+!gen_sigma_protocols_vectors.py

@@ -1,0 +1,262 @@
+## Squeeze 32 bytes immediately after initialization
+~~~
+Id = fiat-shamir/t01_init_squeeze
+Ciphersuite = SHAKE128
+Category = Duplex sponge
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - squeeze 32
+Output =
+  63e1b3543377fab6fb8cf0f7698a9980ca0211d5bc4aba213dd7a6ef7dd63cfa
+~~~
+
+## Absorb a message, then squeeze 64 bytes
+~~~
+Id = fiat-shamir/t02_absorb_squeeze
+Ciphersuite = SHAKE128
+Category = Duplex sponge
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 68656c6c6f20776f726c64
+  - squeeze 64
+Output =
+  f627ff348dfee50d2aa5918a2621a0c1daf74c7ef930d49b5ea6eae73455e8c7
+  56d433cbde0ade711bdd55d7ed5de38bb9adea8b2eec4402a0df090c16371413
+~~~
+
+## Absorbing in parts equals absorbing all at once
+~~~
+Id = fiat-shamir/t03_absorb_split
+Ciphersuite = SHAKE128
+Category = Duplex sponge
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 6162
+  - absorb 63
+  - squeeze 32
+Output =
+  a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1dd9e41
+~~~
+
+## Consecutive squeezes continue a single output stream
+~~~
+Id = fiat-shamir/t04_stream
+Ciphersuite = SHAKE128
+Category = Duplex sponge
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 616263
+  - squeeze 16
+  - squeeze 16
+Output =
+  a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1dd9e41
+~~~
+
+## Absorbing after a squeeze restarts the output stream
+~~~
+Id = fiat-shamir/t05_restart_after_absorb
+Ciphersuite = SHAKE128
+Category = Duplex sponge
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 68656c6c6f20
+  - squeeze 16
+  - absorb 776f726c64
+  - squeeze 48
+Output =
+  123662f71d38deaa65b229a6d8ecc9d8f627ff348dfee50d2aa5918a2621a0c1
+  daf74c7ef930d49b5ea6eae73455e8c756d433cbde0ade711bdd55d7ed5de38b
+~~~
+
+## Squeeze, absorb more input, then squeeze again
+~~~
+Id = fiat-shamir/t06_interleave
+Ciphersuite = SHAKE128
+Category = Duplex sponge
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 00010203040506070809
+  - squeeze 16
+  - absorb 6d6f72652064617461
+  - squeeze 16
+Output =
+  2da3c7e3a65c6e92901e8b668c43917eb9f02e9988e66d5ce2fbd833a0ecb93e
+~~~
+
+## Absorb and squeeze spanning multiple Keccak blocks
+~~~
+Id = fiat-shamir/t07_multiblock
+Ciphersuite = SHAKE128
+Category = Duplex sponge
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb ababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    bababababababababababababababababababababababababab
+  - squeeze 600
+Output =
+  d0dc63443a117b76b09845af3347a6dbc29d0ff381ad093e3cfea3a326abbd0d
+  a81bfc7dd6220f785900a6d04d508439cc65107c8eb75909f277a6f2740ae55f
+  c684b851b66662c22252b6bb8028b5f7402b0beafb391835613a6c3d8116323d
+  bdcb4494a198ae886821fca3d2af345227ea06c5c2cdb131c90d3fe58eedf090
+  a55bb5a8edc614ab99da6c4ed8fe95a6c289c18dc61918a9abaa4f3ed2358711
+  7ced29b33bfb87351d4ffc562add96d384fffbcb7cfb4d4d2125bf809cb85b33
+  a3f9b7541c5d3d3f435f7d0a837f92f6878276ca3c833ecc1691f923602e9b8c
+  8adb9528d8857d7189384eabbab50f0706b82b53db1c92857c2aa84a3527ce4b
+  fcfbdbe02ad953b8517c4b91d36b45f81df67e10e4e9a7c7c064aa9e7f593710
+  10eab4fd71c7aebcf00a793e469a78c658dd9f2c1d5ed2e3110939c11e916c1f
+  51c47553b1bbceeea92649c9bcc7e5538dab18ca95c298b540b6798c065cd2b4
+  13fe3915534a5dc6e7100e012b8c53fccc1018cc24570ca09c8e1c8f6e4e523d
+  db7b6dcf313b6e98bb4abc94b8063eac8fdbbce945c35dd021a91e8227aeb165
+  02a5a6e9e1d85fbd13b6e1e523e8a24040bbb9ddab5e29315780a57d9ef0d758
+  b66e0076704f456dec1fc11577fe3644e53ff70a99a912758c289f225ad64e24
+  6af9d895d91e6972b18421ccaa2aed6f843870b9dda07d1e975e51c04d58e7ba
+  d60c0b8934fec80d4468816793879bc34d831e2689b77525439837fd15f797ed
+  3b78ccdfdec6a5574111de3e243464c77c1d7fa76fb170e3722315e70fbf855a
+  33281e8b6c15029202d0bb34749b962cc314515c748b74f4
+~~~
+
+## Derive a session identifier from an application tag
+~~~
+Id = fiat-shamir/t08_derive_sid
+Ciphersuite = SHAKE128
+Category = Session identifiers
+Tag = 696e7465726f702d746573742d763030
+Output =
+  b508aca89eecac56cd33e4a28f817f43f849d035922f354173ae8466628308cf
+~~~
+
+## Length-prefixed byte-string encoding (EncodeVarLenString)
+~~~
+Id = fiat-shamir/t09_encode_varlen
+Ciphersuite = any (ciphersuite-independent)
+Category = Codecs
+Input = 70726f6f66
+Output = 0000000570726f6f66
+~~~
+
+## Fixed-width unsigned-integer encoding (EncodeUint)
+~~~
+Id = fiat-shamir/t10_encode_uint
+Ciphersuite = P-256
+Category = Codecs
+Value = 3735928559
+Modulus =
+  ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
+Output =
+  00000000000000000000000000000000000000000000000000000000deadbeef
+~~~
+
+## Squeeze a challenge scalar, then reduce it (DecodeUint)
+~~~
+Id = fiat-shamir/t11_decode_uint
+Ciphersuite = SHAKE128 / P-256
+Category = Codecs
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 00000008696e7374616e6365
+  - squeeze 64
+Output =
+  177efbafc28fc74895861272346b4312e3e44d74846cddd7e63e3d1f5cfa7424
+  3c10dc1a5d50d6b9f47db43283665d9f8c375dff506b40b589a1fe1756d830cd
+Challenge =
+  af921d1cbd761e445516672631af5f570f1d0d384ab98f4648365422c8986c3f
+~~~
+
+## Minimal non-interactive argument: commit, challenge, respond
+~~~
+Id = fiat-shamir/t12_narg
+Ciphersuite = SHAKE128 / P-256
+Category = Non-interactive argument
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Instance = 7465737420696e7374616e6365
+Message = 636f6d6d69746d656e74
+Challenge =
+  bca4b4215092d4f7f9d7a09a26b828f135eb929a3b6ccb9692f4b8b86e6ddb73
+Response =
+  35ee1c65f1b87ee5ed86e1ce74287ad427f4c273641725b9d16a94a3528347bc
+Narg =
+  0000000a636f6d6d69746d656e7435ee1c65f1b87ee5ed86e1ce74287ad427f4
+  c273641725b9d16a94a3528347bc
+~~~
+
+## Reject a non-interactive argument with a trailing byte
+~~~
+Id = fiat-shamir/t13a_trailing
+Ciphersuite = SHAKE128 / P-256
+Category = Non-interactive argument (negative)
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Instance = 7465737420696e7374616e6365
+TamperedNarg =
+  0000000a636f6d6d69746d656e7435ee1c65f1b87ee5ed86e1ce74287ad427f4
+  c273641725b9d16a94a3528347bc00
+Result = reject
+~~~
+
+## Reject a truncated non-interactive argument
+~~~
+Id = fiat-shamir/t13b_truncated
+Ciphersuite = SHAKE128 / P-256
+Category = Non-interactive argument (negative)
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Instance = 7465737420696e7374616e6365
+TamperedNarg =
+  0000000a636f6d6d69746d656e7435ee1c65f1b87ee5ed86e1ce74287ad427f4
+  c273641725b9d16a94a3528347
+Result = reject
+~~~
+
+## Reject a non-canonical scalar (integer equal to the modulus)
+~~~
+Id = fiat-shamir/t13c_noncanonical
+Ciphersuite = SHAKE128 / P-256
+Category = Non-interactive argument (negative)
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Instance = 7465737420696e7374616e6365
+TamperedNarg =
+  0000000a636f6d6d69746d656e74ffffffff00000000ffffffffffffffffbce6
+  faada7179e84f3b9cac2fc632551
+Result = reject
+~~~
+
+## Reject a corrupted byte-string length prefix
+~~~
+Id = fiat-shamir/t13d_badlen
+Ciphersuite = SHAKE128 / P-256
+Category = Non-interactive argument (negative)
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Instance = 7465737420696e7374616e6365
+TamperedNarg =
+  0000000b636f6d6d69746d656e7435ee1c65f1b87ee5ed86e1ce74287ad427f4
+  c273641725b9d16a94a3528347bc
+Result = reject
+~~~
+
