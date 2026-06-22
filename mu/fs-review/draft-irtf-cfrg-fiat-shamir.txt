@@ -4,8 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                              21 June 2026
-Expires: 23 December 2026
+Intended status: Informational                              22 June 2026
+Expires: 24 December 2026
 
 
                        Fiat-Shamir Transformation
@@ -55,7 +55,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 23 December 2026.
+   This Internet-Draft will expire on 24 December 2026.
 
 Copyright Notice
 
@@ -113,7 +113,7 @@ Table of Contents
      8.2.  Constant-time requirements
      8.3.  Session identifiers
      8.4.  Security of the transformation
-       8.4.1.  Soundness
+       8.4.1.  Knowledge soundness
        8.4.2.  Zero-Knowledge
        8.4.3.  Quantum adversaries
        8.4.4.  Indifferentiability of the hash function
@@ -1142,16 +1142,16 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    statement being proven is true, then the resulting non-interactive
    argument string is valid.
 
-8.4.1.  Soundness
+8.4.1.  Knowledge soundness
 
-   If the interactive proof is state-restoration sound, then so is the
-   non-interactive proof.  In particular, valid proofs cannot be
-   generated without the corresponding statement being true (in the
+   If the interactive proof is state-restoration knowledge sound, then
+   so is the non-interactive proof.  In particular, valid proofs cannot
+   be generated without the corresponding statement being true (in the
    random oracle model).
 
-   Soundness and knowledge soundness carry over to the non-interactive
-   argument, with an additive soundness loss quadratic in the number of
-   queries the adversary makes to the random oracle [CO25].
+   Knowledge soundness carries over to the non-interactive argument,
+   with a loss error quadratic in the number of queries the adversary
+   makes to the random oracle [CO25].
 
 8.4.2.  Zero-Knowledge
 
