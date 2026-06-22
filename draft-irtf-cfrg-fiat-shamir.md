@@ -803,11 +803,11 @@ The Fiat-Shamir transformation carries over the soundness and zero-knowledge pro
 
 Completeness of the non-interactive argument is preserved: if the statement being proven is true, then the resulting non-interactive argument string is valid.
 
-### Soundness
+### Knowledge soundness
 
-If the interactive proof is state-restoration sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without the corresponding statement being true (in the random oracle model).
+If the interactive proof is state-restoration knowledge sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without the corresponding statement being true (in the random oracle model).
 
-Soundness and knowledge soundness carry over to the non-interactive argument, with an additive soundness loss quadratic in the number of queries the adversary makes to the random oracle {{CO25}}.
+Knowledge soundness carries over to the non-interactive argument, with a loss error quadratic in the number of queries the adversary makes to the random oracle {{CO25}}.
 
 ### Zero-Knowledge
 
