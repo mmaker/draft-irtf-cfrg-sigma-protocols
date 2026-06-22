@@ -33,7 +33,7 @@ informative:
   SHA3:
     title: "SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions"
     target: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
-  CDS94:
+  CramerDS94:
     title: "Proofs of Partial Knowledge and Simplified Design of Witness Hiding Protocols"
     target: https://doi.org/10.1007/3-540-48658-5_19
     date: 1994
@@ -233,7 +233,7 @@ Batch verification is OPTIONAL. Implementations SHOULD perform each `V_i` indepe
 
 If batch verification is required, the batch challenge `beta` SHOULD be sampled from true randomness local to the verifier. A verifier-sampled `beta` is sufficient for soundness regardless of what the prover sent, because the prover cannot predict it. The coefficient field from which `beta` is sampled MUST be large enough that the failure probability of the random-linear-combination check is negligible; in typical prime-order group settings, `beta` is sampled from the scalar field used by the verification equations. Sampling `beta` from a small range weakens the batch check even when the sample is random.
 
-If neither of the above is acceptable, for example when no source of randomness is available to the verifier and the speed of batch verification is highly desirable, then `beta` can be derived via the Fiat-Shamir transformation as described in {{deterministic-batch-verification}}.
+If neither of the above is acceptable, for example when no source of randomness is available to the verifier and the speed of batch verification is highly desirable, then `beta` SHOULD be derived via the Fiat-Shamir transformation as described in {{deterministic-batch-verification}}.
 
 ## Deterministic batch verification {#deterministic-batch-verification}
 
