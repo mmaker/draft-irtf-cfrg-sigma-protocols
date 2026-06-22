@@ -259,7 +259,7 @@ The set of integers between `0` and `N-1` is denoted `[0, N)`.
 
 ## Duplex sponge interface
 
-The Fiat-Shamir transformation is built on a cryptographic hash function, modeled as a random oracle. Rather than computing a single fixed-length digest, this document uses the hash function through a stateful interface called a **duplex sponge** (defined in {{hash-instantiations}}), which `Absorb`s prover messages into an evolving internal state and `Squeeze`s from that state the bytes from which verifier challenges are derived.
+The Fiat-Shamir transformation is built on a cryptographic hash function, modeled as a random oracle. Rather than computing a single fixed-length digest, this document uses the hash function through a stateful interface called a **duplex sponge** (defined in {{hash-instantiations}}), which `Absorb`s prover messages into an evolving internal state and `Squeeze`s from that state the bytes from which verifier messages are derived.
 
 The interface generalizes the **sponge** {{SPONGE}}, which maps a variable-length input to a variable-length output by absorbing all of its input and then squeezing all of its output, to the **duplex** setting {{DUPLEX}}, in which absorbing and squeezing may be arbitrarily interleaved over a single retained state. The state is split into a **rate**, the portion through which bytes are absorbed and squeezed, and a **capacity**, which is never read or written directly and whose size sets the security level. Security relies on the capacity. The properties a concrete instantiation must satisfy for this to hold, and the resulting security loss, are given in {{security-considerations}} and analyzed in {{CO25}}.
 
@@ -281,12 +281,12 @@ The notation in this document is for an interactive argument with `k` rounds in 
 
 ## Codec and serialization
 
-A prover message is processed in two independent ways: it is absorbed into the hash function to derive the verifier's challenges, and it is written into the NARG string sent to the verifier. This document keeps the two separate.
+A prover message is processed in two independent ways: it is absorbed into the hash function to derive the verifier messages, and it is written into the NARG string sent to the verifier. This document keeps the two separate.
 
 A **codec** ({{codecs}}) is the pair of maps between messages and the hash function's alphabet (bytes, in this document):
 
-- **Encoding** converts the instance and each prover message into the bytes absorbed by the sponge ({{encoding-bytes}}).
-- **Decoding** converts the bytes squeezed from the sponge into a uniformly-distributed verifier message ({{decoding}}).
+- **Encoding** converts the instance and each prover message into the bytes absorbed by the duplex sponge ({{encoding-bytes}}).
+- **Decoding** converts the bytes squeezed from the duplex sponge into a uniformly-distributed verifier message ({{decoding}}).
 
 **Serialization** ({{narg-string}}) is concerned with mapping prover messages to and from the NARG string:
 
@@ -304,10 +304,10 @@ This section lists the duplex sponge instantiations provided in this document.
 Prover and verifier messages are handled via three operations:
 
 - `Init(session_id) -> state`: create a new duplex sponge state, seeded by the 32-byte string `session_id`.
-- `Absorb(x)`: absorb the byte string `x` into the state.
-- `Squeeze(n) -> buf`: produce `n` bytes from the state.
+- `Absorb(x)`: absorb `x` into the state.
+- `Squeeze(n) -> buf`: produce `n` elements from the state.
 
-The sponge interface does not require padding, and messages can be absorbed incrementally: `Absorb(x)` followed by `Absorb(y)` (with no `Squeeze` in between) is equivalent to `Absorb(x || y)`. The output of `Squeeze(n)` is uniformly distributed over `n`-byte strings, and consecutive `Squeeze` calls continue one output stream.
+In the duplex sponge interface, messages can be absorbed incrementally: `Absorb(x)` followed by `Absorb(y)` (with no `Squeeze` in between) is equivalent to `Absorb(x || y)`. The output of `Squeeze(n)` is uniformly distributed, and consecutive `Squeeze` calls continue one output stream.
 
 Guidance on how to produce a 32-byte `session_id` is given in {{session-id}}; its security requirements in {{indifferentiability-of-the-hash-function}}.
 
@@ -366,7 +366,7 @@ Inputs:
 
 ### Squeeze
 
-Returns the next `n` bytes of the SHAKE128 output stream computed over the absorbed input. If the sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a SHAKE128 XOF reader. Consecutive `Squeeze` calls **continue** the same SHAKE128 output stream.
+Returns the next `n` bytes of the SHAKE128 output stream computed over the absorbed input. If the duplex sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a SHAKE128 XOF reader. Consecutive `Squeeze` calls **continue** the same SHAKE128 output stream.
 
 ~~~
 Squeeze(state, n)
@@ -387,7 +387,7 @@ Output: a uniformly-distributed random n-byte string
 
 A codec is a set of functions that map prover and verifier messages to the hash function's alphabet:
 
-- Encoding converts prover messages into the bytes absorbed by the sponge. Encoding functions **MUST** be prefix-free.
+- Encoding converts prover messages into the bytes absorbed by the duplex sponge. Encoding functions **MUST** be prefix-free.
 - Decoding converts squeezed bytes into verifier messages. Decoding **MUST** preserve the uniform distribution (up to a small codec error).
 
 ## Encoding into byte strings {#encoding-bytes}
@@ -603,23 +603,23 @@ where `{cc}` is the commit hash of the associated version of the cryptographic s
 Yet another reasonable choice for the session identifier is to append a description of the interactive argument system together with the length of each prover and verifier message, after the version string. For instance:
 
 ~~~
-BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-message-S1challenge
+BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-messageS1challenge
 ~~~
 
-where `xx` is the two-digit version number, `hashID` is the hash identifier, and `ff` is the two-digit identifier of the finite field over which the proof is computed. The suffix `A2round-message-S1challenge` describes one sumcheck round (the pattern repeats each round): the prover absorbs (`A`) two field elements `round-message`, and the verifier squeezes (`S`) one field element `challenge`. This is similar to the SAFE API {{SAFE}} *IO pattern*, which is checked by the prover and verifier during execution.
+where `xx` is the two-digit version number, `hashID` is the hash identifier, and `ff` is the two-digit identifier of the finite field over which the proof is computed. The suffix `A2round-messageS1challenge` describes one sumcheck round (the pattern repeats each round): the prover absorbs (`A`) two field elements `round-message`, and the verifier squeezes (`S`) one field element `challenge`. This is similar to the SAFE API {{SAFE}} *IO pattern*, which is checked by the prover and verifier during execution.
 
 ## Instance
 
 The instance is input to the non-interactive prover and the non-interactive verifier; it fixes the specific statement being proven.
 
-The instance is the first value absorbed into the sponge after `Init(session_id)` and before any prover message. The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map.
+The instance is the first value absorbed after `Init(session_id)` and before any prover message. The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map.
 The encoded instance **MUST** be non-empty. While the session identifier of the previous section {{session-id}} fixes the language, the instance selects one of its members.
 
 As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the encodings of {{encoding-bytes}}.
 
 As an example, the sumcheck relation for multilinear polynomials in `N` variables over `p^m` committed with the polynomial commitment scheme `COM` is the pair:
 
-- instance `(N, C, S)`: `N` is the number of variables, `C` the commitment, and `S` the target sum;
+- instance `(S, N, C)`: `N` is the number of variables, `C` the commitment, and `S` the target sum;
 - witness `(F, r)`, the multilinear polynomial in `N` variables and `r` the commitment opening information.
 
 such that:
@@ -656,7 +656,7 @@ enc(G) || enc(H) || enc(C) || enc(D)
 
 where `enc` is the group element-serialization function described in {{encoding-ec-point}}.
 
-Omitting public statement data (for instance, `N` in the first example or the group generators `G`, `H` in the second) from the sponge can compromise soundness of the proof system. See {{instance-encoding}}.
+Omitting public statement data (for instance, `N` in the first example or the group generators `G`, `H` in the second) from the encoded instance can compromise soundness of the proof system. See {{instance-encoding}}.
 
 # Non-interactive argument string {#narg-string}
 
@@ -824,7 +824,7 @@ The loss introduced by a quantum adversary is polynomial (larger than quadratic)
 
 The random oracle instantiation **MUST** be extraction-friendly and simulation-friendly indifferentiable to preserve soundness and zero-knowledge of the transformation.
 
-To provide soundness and zero-knowledge, stronger capabilities than indifferentiability are needed {{CO25}}. Implementers do not need these notions to use the transformation, but they are the reason a different hash construction **SHOULD NOT** be substituted on the strength of indifferentiability alone.
+To provide knowledge soundness and zero-knowledge, stronger capabilities than indifferentiability are needed {{CO25}}. Implementers do not need these notions to use the transformation, but they are the reason a different hash construction **SHOULD NOT** be substituted on the strength of indifferentiability alone.
 
 ## Instance encoding
 
