@@ -33,6 +33,17 @@ informative:
   SHA3:
     title: "SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions"
     target: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
+  CramerDS94:
+    title: "Proofs of Partial Knowledge and Simplified Design of Witness Hiding Protocols"
+    target: https://doi.org/10.1007/3-540-48658-5_19
+    date: 1994
+    author:
+    -
+      fullname: Ronald Cramer
+    -
+      fullname: Ivan Damgård
+    -
+      fullname: Berry Schoenmakers
 
 --- abstract
 
@@ -203,60 +214,65 @@ We describe noninteractive sigma protocol instances for combinations of protocol
         Codec = Bls12381Codec
         Hash = KeccakDuplexSponge
 
-# Aggregated Verifier Checks
+# Batch verification of verifier checks
 
-Sigma protocol verifiers typically perform several algebraic checks, for example group equalities of the form `s_i * G == R_i + c_i * P_i`. Implementations often aggregate these checks into a single multi-scalar multiplication by taking a random linear combination with powers of a fresh randomizer `beta`:
+Sigma protocol verifiers typically perform several algebraic checks, for example group equalities of the form `s_i * G == R_i + c_i * P_i`. Batch verification replaces these checks with a single multi-scalar multiplication by taking a random linear combination with powers of a fresh batch challenge `beta`:
 
     sum_{i=1..n} beta^i * V_i == 0
 
 where `V_1, ..., V_n` are the individual verification equations rewritten so that each holds if and only if `V_i` evaluates to the group identity.
 
-The aggregated check is sound only when `beta` is unpredictable to the prover at the time every value appearing in `V_1, ..., V_n` is fixed. Failure to enforce this is a recurring source of soundness vulnerabilities.
+The batch check is sound only when `beta` is unpredictable to the prover at the time every value appearing in `V_1, ..., V_n` is fixed. Failure to enforce this is a recurring source of soundness vulnerabilities.
 
+The batch verification is used when the verifier has multiple verification equations and wants to improve verification performance, including equations from rows of a single linear-relation proof, checks from a compound or disjunctive proof, or equations from multiple independently produced proof transcripts, with assumption that all equations are interpreted in the same algebraic setting.
+
+This section specifies verifier-side batch verification only; pre-batching instances before proving changes the statement being proven and is a separate construction.
 ## Recommendation
 
-Implementations SHOULD NOT aggregate verifier checks. Performing each `V_i` independently eliminates an entire class of transcript-management errors at the cost of verifier performance only. For most applications the unaggregated verifier is preferable, and the performance gap is small in absolute terms.
+Batch verification is OPTIONAL. Implementations SHOULD perform each `V_i` independently by default. Independent verification eliminates an entire class of challenge-derivation errors at the cost of verifier performance only. For most applications the unbatched verifier is preferable, and the performance gap is small in absolute terms.
 
-If aggregation is required, the aggregation randomizer `beta` SHOULD be sampled from true randomness local to the verifier. A verifier-sampled `beta` is sufficient for soundness regardless of what the prover sent, because the prover cannot predict it.
+If batch verification is required, the batch challenge `beta` SHOULD be sampled from true randomness local to the verifier. A verifier-sampled `beta` is sufficient for soundness regardless of what the prover sent, because the prover cannot predict it. The coefficient field from which `beta` is sampled MUST be large enough that the failure probability of the random-linear-combination check is negligible; in typical prime-order group settings, `beta` is sampled from the scalar field used by the verification equations. Sampling `beta` from a small range weakens the batch check even when the sample is random.
 
-If neither of the above is acceptable, for example when no source of randomness is available to the verifier and the speedup from aggregation is highly desirable, then `beta` MUST be derived via the Fiat-Shamir transformation as described in {{deterministic-aggregation}}.
+If neither of the above is acceptable, for example when no source of randomness is available to the verifier and the speed of batch verification is highly desirable, then `beta` SHOULD be derived via the Fiat-Shamir transformation as described in {{deterministic-batch-verification}}.
 
-## Deterministic aggregation {#deterministic-aggregation}
+## Deterministic batch verification {#deterministic-batch-verification}
 
-When `beta` is derived via Fiat-Shamir, the duplex sponge state used to squeeze `beta` MUST first absorb every value that appears in any of the aggregated equations `V_1, ..., V_n`. If any such value is absorbed after `beta` is squeezed, or is never absorbed at all, a malicious prover can adaptively choose that value as a function of `beta`. This adaptivity is sufficient to forge a proof that satisfies the aggregated check while violating one or more of the underlying `V_i`.
+When `beta` is derived via Fiat-Shamir, the duplex sponge state used to squeeze `beta` MUST first absorb every value that appears in any of the equations `V_1, ..., V_n`. This generally requires absorbing more values than were absorbed before the preceding protocol verifier challenge(s), because `beta` must also bind values that are fixed later, such as prover responses and prover-supplied sub-challenges. If any such value is absorbed after `beta` is squeezed, or is never absorbed at all, a malicious prover can adaptively choose that value as a function of `beta`. This adaptivity is sufficient to forge a proof that satisfies the batch check while violating one or more of the underlying `V_i`.
 
-The duplex sponge state from which `beta` is derived is in general not the same as the state from which the main verifier challenge is derived. The main challenge is computed from the prover's first message and must precede the prover's response, since an honest prover computes the response as a function of the main challenge. The aggregation randomizer `beta`, by contrast, is computed from the entire proof, including the prover's response and any prover-supplied sub-challenges, and is squeezed after all such values have been absorbed.
+The duplex sponge state from which `beta` is derived is in general not the same as the state from which the protocol verifier challenge(s) are derived. The protocol verifier challenge(s) are computed from the prover's first message and must precede the prover's response, since an honest prover computes the response as a function of those challenge(s).
+
+The batch challenge `beta`, by contrast, is computed from the entire proof, including the prover's response and any prover-supplied sub-challenges, and is squeezed after all such values have been absorbed. Equivalently, `beta` can be viewed as an additional verifier challenge placed after the prover's response; in the non-interactive verifier it is derived locally and is not added to the proof string.
 
 ## Common pitfalls
 
-*Prover-supplied challenges in disjunctive protocols*. In sigma OR proofs and other disjunctive constructions, part of the challenge is generated by the prover rather than the verifier: the prover picks `c_2` and sets `c_1 = e - c_2`, sending `(c_1, c_2)` alongside the response. Implementations sometimes assume that because `e` was derived from the transcript, the prover-supplied share `c_2` is transitively bound. It is not: the prover commits to `c_2` only after seeing `e`, and `c_2` therefore behaves as an additional prover-controlled input. When the verifier subsequently aggregates checks using a randomizer `beta` derived from a transcript state that does not absorb `c_2`, the prover can choose `c_2` after observing `beta` and balance the aggregated equation regardless of the validity of either disjunct.
+*Prover-supplied challenges in disjunctive protocols*. In sigma OR proofs and other disjunctive constructions such as proofs of partial knowledge {{CramerDS94}}, part of the challenge is generated by the prover rather than the verifier: the prover picks `c_2` and sets `c_1 = e - c_2`, sending `(c_1, c_2)` alongside the response. Implementations sometimes assume that because `e` was derived from the Fiat-Shamir sponge state, the prover-supplied share `c_2` is already covered by that challenge derivation. It is not: the prover commits to `c_2` only after seeing `e`, and `c_2` therefore behaves as an additional prover-controlled input. When the verifier subsequently batches checks using a challenge `beta` derived from a challenge-derivation state that does not absorb `c_2`, the prover can choose `c_2` after observing `beta` and balance the batched equation regardless of the validity of either disjunct.
 
-*Prover responses omitted from the aggregation transcript*. A second common pattern is to derive both the main challenge and `beta` from the transcript state taken immediately after absorbing the commitment, without re-absorbing the response before squeezing `beta`. The main challenge correctly excludes the response, since the honest prover computes the response as a function of the main challenge. The randomizer `beta`, however, must include it. If `beta` is squeezed without absorbing the response, the prover can adaptively choose the response as a function of `beta` so that the aggregated equation cancels even though the per-instance equations do not hold individually.
+*Prover responses omitted from the batch-challenge derivation*. A second common pattern is to derive both the protocol verifier challenge(s) and `beta` from the challenge-derivation state taken immediately after absorbing the commitment, without re-absorbing the response before squeezing `beta`. The protocol verifier challenge(s) correctly exclude the response, since the honest prover computes the response as a function of those challenge(s). The batch challenge `beta`, however, must include it. If `beta` is squeezed without absorbing the response, the prover can adaptively choose the response as a function of `beta` so that the batched equation cancels even though the per-instance equations do not hold individually.
 
 ## Construction
 
-The following procedure illustrates the correct transcript discipline when both a main challenge and an aggregation randomizer are derived deterministically.
+The following procedure illustrates the correct challenge-derivation discipline when both the protocol verifier challenge(s) and the batch challenge are derived deterministically.
 
-    def aggregated_verify(self, commitment, subchallenges, response):
+    def batch_verify(self, commitment, subchallenges, response):
         # Bind the prover's first message.
         self.codec.prover_message(self.state, commitment)
 
-        # Squeeze the main challenge.  It MUST NOT depend on the
+        # Squeeze the protocol verifier challenge.  It MUST NOT depend on the
         # response or on any prover-supplied sub-challenges.
         challenge = self.codec.verifier_challenge(self.state)
 
-        # Absorb every value that appears in any aggregated check,
+        # Absorb every value that appears in any batched check,
         # including prover-supplied sub-challenges and the response.
         self.codec.prover_message(self.state, subchallenges)
         self.codec.prover_message(self.state, response)
 
-        # Squeeze the aggregation randomizer.
+        # Squeeze the batch challenge.
         beta = self.codec.verifier_challenge(self.state)
 
-        return self.sigma_protocol.aggregated_check(
+        return self.sigma_protocol.batched_check(
             commitment, challenge, subchallenges, response, beta)
 
-The main challenge is constrained by what the honest prover can know at commitment time, whereas `beta` is constrained by what the verifier checks. The two constraints are different, and the duplex sponge state at each squeeze MUST reflect the corresponding constraint.
+Protocol verifier challenge derivation is constrained by what the honest prover can know at commitment time, whereas `beta` is constrained by what the verifier checks. The two constraints are different, and the duplex sponge state at each squeeze MUST reflect the corresponding constraint.
 
 # Codec for Schnorr proofs {#group-prove}
 
