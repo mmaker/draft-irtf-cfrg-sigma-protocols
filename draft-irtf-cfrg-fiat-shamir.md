@@ -619,7 +619,7 @@ As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious
 
 As an example, the sumcheck relation for multilinear polynomials in `N` variables over `p^m` committed with the polynomial commitment scheme `COM` is the pair:
 
-- instance `(N, C, S)`: `N` is the number of variables, `C` the commitment, and `S` the target sum;
+- instance `(S, N, C)`: `N` is the number of variables, `C` the commitment, and `S` the target sum;
 - witness `(F, r)`, the multilinear polynomial in `N` variables and `r` the commitment opening information.
 
 such that:
