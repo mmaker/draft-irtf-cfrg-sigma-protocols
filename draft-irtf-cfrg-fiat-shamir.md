@@ -285,8 +285,8 @@ A prover message is processed in two independent ways: it is absorbed into the h
 
 A **codec** ({{codecs}}) is the pair of maps between messages and the hash function's alphabet (bytes, in this document):
 
-- **Encoding** converts the instance and each prover message into the bytes absorbed by the sponge ({{encoding-bytes}}).
-- **Decoding** converts the bytes squeezed from the sponge into a uniformly-distributed verifier message ({{decoding}}).
+- **Encoding** converts the instance and each prover message into the bytes absorbed by the duplex sponge ({{encoding-bytes}}).
+- **Decoding** converts the bytes squeezed from the duplex sponge into a uniformly-distributed verifier message ({{decoding}}).
 
 **Serialization** ({{narg-string}}) is concerned with mapping prover messages to and from the NARG string:
 
@@ -366,7 +366,7 @@ Inputs:
 
 ### Squeeze
 
-Returns the next `n` bytes of the SHAKE128 output stream computed over the absorbed input. If the sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a SHAKE128 XOF reader. Consecutive `Squeeze` calls **continue** the same SHAKE128 output stream.
+Returns the next `n` bytes of the SHAKE128 output stream computed over the absorbed input. If the duplex sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a SHAKE128 XOF reader. Consecutive `Squeeze` calls **continue** the same SHAKE128 output stream.
 
 ~~~
 Squeeze(state, n)
@@ -387,7 +387,7 @@ Output: a uniformly-distributed random n-byte string
 
 A codec is a set of functions that map prover and verifier messages to the hash function's alphabet:
 
-- Encoding converts prover messages into the bytes absorbed by the sponge. Encoding functions **MUST** be prefix-free.
+- Encoding converts prover messages into the bytes absorbed by the duplex sponge. Encoding functions **MUST** be prefix-free.
 - Decoding converts squeezed bytes into verifier messages. Decoding **MUST** preserve the uniform distribution (up to a small codec error).
 
 ## Encoding into byte strings {#encoding-bytes}
@@ -612,7 +612,7 @@ where `xx` is the two-digit version number, `hashID` is the hash identifier, and
 
 The instance is input to the non-interactive prover and the non-interactive verifier; it fixes the specific statement being proven.
 
-The instance is the first value absorbed into the sponge after `Init(session_id)` and before any prover message. The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map.
+The instance is the first value absorbed after `Init(session_id)` and before any prover message. The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map.
 The encoded instance **MUST** be non-empty. While the session identifier of the previous section {{session-id}} fixes the language, the instance selects one of its members.
 
 As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the encodings of {{encoding-bytes}}.
@@ -656,7 +656,7 @@ enc(G) || enc(H) || enc(C) || enc(D)
 
 where `enc` is the group element-serialization function described in {{encoding-ec-point}}.
 
-Omitting public statement data (for instance, `N` in the first example or the group generators `G`, `H` in the second) from the sponge can compromise soundness of the proof system. See {{instance-encoding}}.
+Omitting public statement data (for instance, `N` in the first example or the group generators `G`, `H` in the second) from the encoded instance can compromise soundness of the proof system. See {{instance-encoding}}.
 
 # Non-interactive argument string {#narg-string}
 
