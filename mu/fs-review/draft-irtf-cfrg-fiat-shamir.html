@@ -1847,13 +1847,13 @@ svg {
             <p id="section-3.1-2.1.1"><code>Init(session_id) -&gt; state</code>: create a new duplex sponge state, seeded by the 32-byte string <code>session_id</code>.<a href="#section-3.1-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-3.1-2.2">
-            <p id="section-3.1-2.2.1"><code>Absorb(x)</code>: absorb the byte string <code>x</code> into the state.<a href="#section-3.1-2.2.1" class="pilcrow">¶</a></p>
+            <p id="section-3.1-2.2.1"><code>Absorb(x)</code>: absorb <code>x</code> into the state.<a href="#section-3.1-2.2.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-3.1-2.3">
-            <p id="section-3.1-2.3.1"><code>Squeeze(n) -&gt; buf</code>: produce <code>n</code> bytes from the state.<a href="#section-3.1-2.3.1" class="pilcrow">¶</a></p>
+            <p id="section-3.1-2.3.1"><code>Squeeze(n) -&gt; buf</code>: produce <code>n</code> elements from the state.<a href="#section-3.1-2.3.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-3.1-3">The sponge interface does not require padding, and messages can be absorbed incrementally: <code>Absorb(x)</code> followed by <code>Absorb(y)</code> (with no <code>Squeeze</code> in between) is equivalent to <code>Absorb(x || y)</code>. The output of <code>Squeeze(n)</code> is uniformly distributed over <code>n</code>-byte strings, and consecutive <code>Squeeze</code> calls continue one output stream.<a href="#section-3.1-3" class="pilcrow">¶</a></p>
+<p id="section-3.1-3">In the duplex sponge interface, messages can be absorbed incrementally: <code>Absorb(x)</code> followed by <code>Absorb(y)</code> (with no <code>Squeeze</code> in between) is equivalent to <code>Absorb(x || y)</code>. The output of <code>Squeeze(n)</code> is uniformly distributed, and consecutive <code>Squeeze</code> calls continue one output stream.<a href="#section-3.1-3" class="pilcrow">¶</a></p>
 <p id="section-3.1-4">Guidance on how to produce a 32-byte <code>session_id</code> is given in <a href="#session-id" class="auto internal xref">Section 5.1</a>; its security requirements in <a href="#indifferentiability-of-the-hash-function" class="auto internal xref">Section 8.4.4</a>.<a href="#section-3.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2232,10 +2232,10 @@ BAR-COM{cc}
 <p id="section-5.1-12">Yet another reasonable choice for the session identifier is to append a description of the interactive argument system together with the length of each prover and verifier message, after the version string. For instance:<a href="#section-5.1-12" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-5.1-13">
 <pre>
-BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-message-S1challenge
+BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-messageS1challenge
 </pre><a href="#section-5.1-13" class="pilcrow">¶</a>
 </div>
-<p id="section-5.1-14">where <code>xx</code> is the two-digit version number, <code>hashID</code> is the hash identifier, and <code>ff</code> is the two-digit identifier of the finite field over which the proof is computed. The suffix <code>A2round-message-S1challenge</code> describes one sumcheck round (the pattern repeats each round): the prover absorbs (<code>A</code>) two field elements <code>round-message</code>, and the verifier squeezes (<code>S</code>) one field element <code>challenge</code>. This is similar to the SAFE API <span>[<a href="#SAFE" class="cite xref">SAFE</a>]</span> <em>IO pattern</em>, which is checked by the prover and verifier during execution.<a href="#section-5.1-14" class="pilcrow">¶</a></p>
+<p id="section-5.1-14">where <code>xx</code> is the two-digit version number, <code>hashID</code> is the hash identifier, and <code>ff</code> is the two-digit identifier of the finite field over which the proof is computed. The suffix <code>A2round-messageS1challenge</code> describes one sumcheck round (the pattern repeats each round): the prover absorbs (<code>A</code>) two field elements <code>round-message</code>, and the verifier squeezes (<code>S</code>) one field element <code>challenge</code>. This is similar to the SAFE API <span>[<a href="#SAFE" class="cite xref">SAFE</a>]</span> <em>IO pattern</em>, which is checked by the prover and verifier during execution.<a href="#section-5.1-14" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="instance">
@@ -2250,7 +2250,7 @@ The encoded instance <strong>MUST</strong> be non-empty. While the session ident
 <p id="section-5.2-4">As an example, the sumcheck relation for multilinear polynomials in <code>N</code> variables over <code>p^m</code> committed with the polynomial commitment scheme <code>COM</code> is the pair:<a href="#section-5.2-4" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.2-5.1">
-            <p id="section-5.2-5.1.1">instance <code>(N, C, S)</code>: <code>N</code> is the number of variables, <code>C</code> the commitment, and <code>S</code> the target sum;<a href="#section-5.2-5.1.1" class="pilcrow">¶</a></p>
+            <p id="section-5.2-5.1.1">instance <code>(S, N, C)</code>: <code>N</code> is the number of variables, <code>C</code> the commitment, and <code>S</code> the target sum;<a href="#section-5.2-5.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-5.2-5.2">
             <p id="section-5.2-5.2.1">witness <code>(F, r)</code>, the multilinear polynomial in <code>N</code> variables and <code>r</code> the commitment opening information.<a href="#section-5.2-5.2.1" class="pilcrow">¶</a></p>

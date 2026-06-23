@@ -448,15 +448,15 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    *  Init(session_id) -> state: create a new duplex sponge state,
       seeded by the 32-byte string session_id.
 
-   *  Absorb(x): absorb the byte string x into the state.
+   *  Absorb(x): absorb x into the state.
 
-   *  Squeeze(n) -> buf: produce n bytes from the state.
+   *  Squeeze(n) -> buf: produce n elements from the state.
 
-   The sponge interface does not require padding, and messages can be
-   absorbed incrementally: Absorb(x) followed by Absorb(y) (with no
-   Squeeze in between) is equivalent to Absorb(x || y).  The output of
-   Squeeze(n) is uniformly distributed over n-byte strings, and
-   consecutive Squeeze calls continue one output stream.
+   In the duplex sponge interface, messages can be absorbed
+   incrementally: Absorb(x) followed by Absorb(y) (with no Squeeze in
+   between) is equivalent to Absorb(x || y).  The output of Squeeze(n)
+   is uniformly distributed, and consecutive Squeeze calls continue one
+   output stream.
 
    Guidance on how to produce a 32-byte session_id is given in
    Section 5.1; its security requirements in Section 8.4.4.
@@ -842,14 +842,14 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    length of each prover and verifier message, after the version string.
    For instance:
 
-   BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-message-S1challenge
+   BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-messageS1challenge
 
    where xx is the two-digit version number, hashID is the hash
    identifier, and ff is the two-digit identifier of the finite field
-   over which the proof is computed.  The suffix A2round-message-
-   S1challenge describes one sumcheck round (the pattern repeats each
-   round): the prover absorbs (A) two field elements round-message, and
-   the verifier squeezes (S) one field element challenge.  This is
+   over which the proof is computed.  The suffix A2round-
+   messageS1challenge describes one sumcheck round (the pattern repeats
+   each round): the prover absorbs (A) two field elements round-message,
+   and the verifier squeezes (S) one field element challenge.  This is
    similar to the SAFE API [SAFE] _IO pattern_, which is checked by the
    prover and verifier during execution.
 
@@ -874,7 +874,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    variables over p^m committed with the polynomial commitment scheme
    COM is the pair:
 
-   *  instance (N, C, S): N is the number of variables, C the
+   *  instance (S, N, C): N is the number of variables, C the
       commitment, and S the target sum;
 
    *  witness (F, r), the multilinear polynomial in N variables and r
