@@ -304,10 +304,10 @@ This section lists the duplex sponge instantiations provided in this document.
 Prover and verifier messages are handled via three operations:
 
 - `Init(session_id) -> state`: create a new duplex sponge state, seeded by the 32-byte string `session_id`.
-- `Absorb(x)`: absorb the byte string `x` into the state.
-- `Squeeze(n) -> buf`: produce `n` bytes from the state.
+- `Absorb(x)`: absorb `x` into the state.
+- `Squeeze(n) -> buf`: produce `n` elements from the state.
 
-The sponge interface does not require padding, and messages can be absorbed incrementally: `Absorb(x)` followed by `Absorb(y)` (with no `Squeeze` in between) is equivalent to `Absorb(x || y)`. The output of `Squeeze(n)` is uniformly distributed over `n`-byte strings, and consecutive `Squeeze` calls continue one output stream.
+In the duplex sponge interface, messages can be absorbed incrementally: `Absorb(x)` followed by `Absorb(y)` (with no `Squeeze` in between) is equivalent to `Absorb(x || y)`. The output of `Squeeze(n)` is uniformly distributed, and consecutive `Squeeze` calls continue one output stream.
 
 Guidance on how to produce a 32-byte `session_id` is given in {{session-id}}; its security requirements in {{indifferentiability-of-the-hash-function}}.
 
