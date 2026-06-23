@@ -307,9 +307,7 @@ Prover and verifier messages are handled via three operations:
 - `Absorb(x)`: absorb the byte string `x` into the state.
 - `Squeeze(n) -> buf`: produce `n` bytes from the state.
 
-The sponge interface does not encode message boundaries, as messages can be absorbed incrementally: `Absorb(x)` followed by `Absorb(y)` (with no `Squeeze` in between) is equivalent to `Absorb(x || y)`. The output of `Squeeze(n)` is uniformly distributed over `n`-byte strings and depends on the session identifier, and on every byte absorbed before the call. Consecutive `Squeeze` calls continue one output stream, while any intervening `Absorb` starts a fresh one.
-
-For all duplex sponges, `Squeeze(n)`, `Absorb("")`, `Squeeze(n)` can return the same `n` bytes twice. An empty absorb therefore **MUST NOT** be relied on to produce two different random n-byte strings. See {{proof-systems-terminology}} for the length requirements of round messages.
+The sponge interface does not require padding, and messages can be absorbed incrementally: `Absorb(x)` followed by `Absorb(y)` (with no `Squeeze` in between) is equivalent to `Absorb(x || y)`. The output of `Squeeze(n)` is uniformly distributed over `n`-byte strings, and consecutive `Squeeze` calls continue one output stream.
 
 Guidance on how to produce a 32-byte `session_id` is given in {{session-id}}; its security requirements in {{indifferentiability-of-the-hash-function}}.
 
@@ -351,7 +349,7 @@ Output: a duplex sponge state
 
 ### Absorb {#shake128-absorb}
 
-Feed a byte string `x` into the state.
+Feed a byte string `x` into the state. Absorbing the empty string leaves the state unchanged.
 
 ~~~
 Absorb(state, x)
@@ -361,8 +359,9 @@ Inputs:
 - state, a duplex sponge state
 - x, a byte array
 
-1. state.reader = None
-2. state.ctx.Update(x)
+1. state.ctx.Update(x)
+2. if len(x) != 0:
+3.    state.reader = None
 ~~~
 
 ### Squeeze
@@ -383,8 +382,6 @@ Output: a uniformly-distributed random n-byte string
 2.    state.reader = state.ctx.Copy().Finalize()
 3. return state.reader.Read(n)
 ~~~
-
-Consecutive `Squeeze` calls with no intervening `Absorb` continue the same output stream, and any `Absorb` restarts the stream at offset zero (see {{shake128-absorb}}). The `Copy().Finalize()` in `Squeeze` realizes this without consuming the absorbing state: squeezed bytes are never fed back into the state.
 
 # Codecs
 
