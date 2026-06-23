@@ -347,7 +347,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    fixed-length digest, this document uses the hash function through a
    stateful interface called a *duplex sponge* (defined in Section 3),
    which Absorbs prover messages into an evolving internal state and
-   Squeezes from that state the bytes from which verifier challenges are
+   Squeezes from that state the bytes from which verifier messages are
    derived.
 
    The interface generalizes the *sponge* [SPONGE], which maps a
@@ -1177,11 +1177,11 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    simulation-friendly indifferentiable to preserve soundness and zero-
    knowledge of the transformation.
 
-   To provide soundness and zero-knowledge, stronger capabilities than
-   indifferentiability are needed [CO25].  Implementers do not need
-   these notions to use the transformation, but they are the reason a
-   different hash construction *SHOULD NOT* be substituted on the
-   strength of indifferentiability alone.
+   To provide knowledge soundness and zero-knowledge, stronger
+   capabilities than indifferentiability are needed [CO25].
+   Implementers do not need these notions to use the transformation, but
+   they are the reason a different hash construction *SHOULD NOT* be
+   substituted on the strength of indifferentiability alone.
 
 8.5.  Instance encoding
 
