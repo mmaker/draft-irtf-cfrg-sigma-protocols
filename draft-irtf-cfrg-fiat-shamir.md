@@ -259,7 +259,7 @@ The set of integers between `0` and `N-1` is denoted `[0, N)`.
 
 ## Duplex sponge interface
 
-The Fiat-Shamir transformation is built on a cryptographic hash function, modeled as a random oracle. Rather than computing a single fixed-length digest, this document uses the hash function through a stateful interface called a **duplex sponge** (defined in {{hash-instantiations}}), which `Absorb`s prover messages into an evolving internal state and `Squeeze`s from that state the bytes from which verifier challenges are derived.
+The Fiat-Shamir transformation is built on a cryptographic hash function, modeled as a random oracle. Rather than computing a single fixed-length digest, this document uses the hash function through a stateful interface called a **duplex sponge** (defined in {{hash-instantiations}}), which `Absorb`s prover messages into an evolving internal state and `Squeeze`s from that state the bytes from which verifier messages are derived.
 
 The interface generalizes the **sponge** {{SPONGE}}, which maps a variable-length input to a variable-length output by absorbing all of its input and then squeezing all of its output, to the **duplex** setting {{DUPLEX}}, in which absorbing and squeezing may be arbitrarily interleaved over a single retained state. The state is split into a **rate**, the portion through which bytes are absorbed and squeezed, and a **capacity**, which is never read or written directly and whose size sets the security level. Security relies on the capacity. The properties a concrete instantiation must satisfy for this to hold, and the resulting security loss, are given in {{security-considerations}} and analyzed in {{CO25}}.
 
@@ -281,7 +281,7 @@ The notation in this document is for an interactive argument with `k` rounds in 
 
 ## Codec and serialization
 
-A prover message is processed in two independent ways: it is absorbed into the hash function to derive the verifier's challenges, and it is written into the NARG string sent to the verifier. This document keeps the two separate.
+A prover message is processed in two independent ways: it is absorbed into the hash function to derive the verifier messages, and it is written into the NARG string sent to the verifier. This document keeps the two separate.
 
 A **codec** ({{codecs}}) is the pair of maps between messages and the hash function's alphabet (bytes, in this document):
 
