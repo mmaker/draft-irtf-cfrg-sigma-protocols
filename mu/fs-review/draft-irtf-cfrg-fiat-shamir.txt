@@ -407,7 +407,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 2.4.  Codec and serialization
 
    A prover message is processed in two independent ways: it is absorbed
-   into the hash function to derive the verifier's challenges, and it is
+   into the hash function to derive the verifier messages, and it is
    written into the NARG string sent to the verifier.  This document
    keeps the two separate.
 
