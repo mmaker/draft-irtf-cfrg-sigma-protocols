@@ -313,9 +313,9 @@ Guidance on how to produce a 32-byte `session_id` is given in {{session-id}}; it
 
 ## SHAKE128 duplex sponge {#shake128}
 
-In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the `Keccak-f` permutation: SHAKE128 and SHAKE256. Four other fixed-length hash-function instances (SHA3-224, SHA3-256, SHA3-384, and SHA3-512) are also defined but are out of scope for this document. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance strengths for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of {{SHA3}}). This instantiation targets 128-bit security.
+In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the `Keccak-f` permutation: SHAKE128 and SHAKE256. Four other fixed-length hash-function instances (SHA3-224, SHA3-256, SHA3-384, and SHA3-512) are also defined but are out of scope for this document. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of {{SHA3}}). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits).
 
-Viewed as a duplex sponge, the SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits). This instantiation is equivalent to invoking the SHAKE128 XOF on the concatenation of the session identifier, the encoded instance, and the encoded prover messages. That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
+This instantiation is equivalent to invoking the SHAKE128 XOF on the concatenation of the session identifier, the encoded instance, and the encoded prover messages. That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
 
 ~~~
 verifier_msg[i] := decode[i](SHAKE128(
@@ -383,6 +383,80 @@ Output: a uniformly-distributed random n-byte string
 3. return state.reader.Read(n)
 ~~~
 
+## TurboSHAKE128 duplex sponge {#turboshake128}
+
+TurboSHAKE128 {{!RFC9861}} is an eXtendable-Output Function (XOF) built on the round-reduced `Keccak-p[1600, 12]` permutation.  Its state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an `n`-byte output string, respectively (see Appendix A.1 of {{SHA3}}). This instantiation targets 128-bit security.
+
+This instantiation is equivalent to invoking the TurboSHAKE128 XOF  as `TurboSHAKE128(M, D, L)`, where `M` is the concatenation of the session identifier, the encoded instance, and the encoded prover messages, `D` (the domain-separation byte in the range `0x01` to `0x7F`) is fixed to `D = 0x1F`, the default value of {{!RFC9861}}, and `L` is the desired output length in bytes ({{!RFC9861}}).
+
+That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
+
+~~~
+verifier_msg[i] := decode[i](TurboSHAKE128(
+                       session_id || zeros(R - 32)
+                       || encode[0](instance)
+                       || encode[1](prover_msg[1])
+                       || ...
+                       || encode[i](prover_msg[i]),
+                   0x1F, len_i))
+~~~
+
+The session identifier is padded with `R - 32 = 136` zero bytes so that the instance and prover messages begin on a fresh rate-block boundary (see {{turboshake128-init}}).
+
+### Init {#turboshake128-init}
+
+Seed the state by absorbing the session identifier, padded with zeros to fill the rate (the remaining `R - 32 = 136` bytes).
+The zeros are ordinary input absorbed before the standard TurboSHAKE128 padding.
+
+~~~
+Init(session_id)
+
+Input: session_id, a byte array
+
+Output: a duplex sponge state
+
+1. assert len(session_id) == 32
+2. ctx = TurboSHAKE128.New(D = 0x1F)
+3. ctx.Update(session_id || zeros(R - 32))
+4. return state := (ctx, reader = None)
+~~~
+
+### Absorb {#turboshake128-absorb}
+
+Feed a byte string `x` into the state. Absorbing the empty string leaves the state unchanged.
+
+~~~
+Absorb(state, x)
+
+Inputs:
+
+- state, a duplex sponge state
+- x, a byte array
+
+1. state.ctx.Update(x)
+2. if len(x) != 0:
+3.    state.reader = None
+~~~
+
+### Squeeze {#turboshake128-squeeze}
+
+Returns the next `n` bytes of the TurboSHAKE128 output stream computed over the absorbed input. If the duplex sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a TurboSHAKE128 XOF reader. Consecutive `Squeeze` calls **continue** the same TurboSHAKE128 output stream.
+
+~~~
+Squeeze(state, n)
+
+Inputs:
+
+- state, the duplex sponge state
+- n, the number of bytes to be squeezed
+
+Output: a uniformly-distributed random n-byte string
+
+1. if state.reader == None:
+2.    state.reader = state.ctx.Copy().Finalize()
+3. return state.reader.Read(n)
+~~~
+
 # Codecs
 
 A codec is a set of functions that map prover and verifier messages to the hash function's alphabet:
@@ -396,7 +470,7 @@ All encoding functions **MUST** be prefix-free.
 
 ### Byte strings {#encoding-varlen-string}
 
-Encoding of a byte string is the identity function.
+Encoding of a `N`-byte string is the identity function.
 
 ~~~
 EncodeBytes(s)
@@ -408,7 +482,7 @@ Output: out, an N-byte string
 1. return s
 ~~~
 
-If the byte string has length less than 2^32 bytes, but its length is not known during initialization, it can be encoded as a prefix-free string by prefixing its length via `I2OSP`.
+If the byte string has length less than 2^32 bytes, but its length is not known during initialization, a prefix-free encoding is given by
 
 ~~~
 EncodeVarLenString(s)
@@ -780,7 +854,7 @@ This section contains additional security considerations about the Fiat-Shamir t
 
 While encoding maps are never inverted during the protocol, the security proof relies on a left inverse existing and being efficiently computable: the knowledge-soundness extractor uses it to recover prover messages from the absorbed bytes {{CO25}}.
 
-Decoding preserves the uniform distribution only when its input is uniform. Verifier messages **MUST** therefore be derived from `Squeeze` output and never from prover-controlled or otherwise non-uniform bytes: decoding a non-uniform input yields a verifier message that is distinguishable from uniform, which would break the public-coin property the transformation depends on.
+Decoding preserves the uniform distribution only when its input is uniform. Verifier messages **MUST** therefore be derived from `Squeeze` output and never from prover-controlled, or non-uniform bytes: decoding a non-uniform input yields a verifier message that is distinguishable from uniform, which would break the public-coin property the transformation depends on.
 
 ## Constant-time requirements {#constant-time}
 
