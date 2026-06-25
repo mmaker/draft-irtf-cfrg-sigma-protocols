@@ -1050,7 +1050,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù</td>
-<td class="center">Expires 25 December 2026</td>
+<td class="center">Expires 27 December 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1063,12 +1063,12 @@ svg {
 <dd class="internet-draft">draft-irtf-cfrg-fiat-shamir-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-06-23" class="published">23 June 2026</time>
+<time datetime="2026-06-25" class="published">25 June 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-12-25">25 December 2026</time></dd>
+<dd class="expires"><time datetime="2026-12-27">27 December 2026</time></dd>
 <dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
@@ -1119,7 +1119,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 25 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 27 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1185,6 +1185,20 @@ svg {
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2.2.3">
                     <p id="section-toc.1-1.3.2.2.2.3.1"><a href="#section-3.2.3" class="auto internal xref">3.2.3</a>.  <a href="#name-squeeze" class="internal xref">Squeeze</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3">
+                <p id="section-toc.1-1.3.2.3.1"><a href="#section-3.3" class="auto internal xref">3.3</a>.  <a href="#name-turboshake128-duplex-sponge" class="internal xref">TurboSHAKE128 duplex sponge</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.1">
+                    <p id="section-toc.1-1.3.2.3.2.1.1"><a href="#section-3.3.1" class="auto internal xref">3.3.1</a>.  <a href="#name-init-2" class="internal xref">Init</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.2">
+                    <p id="section-toc.1-1.3.2.3.2.2.1"><a href="#section-3.3.2" class="auto internal xref">3.3.2</a>.  <a href="#name-absorb-2" class="internal xref">Absorb</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.3">
+                    <p id="section-toc.1-1.3.2.3.2.3.1"><a href="#section-3.3.3" class="auto internal xref">3.3.3</a>.  <a href="#name-squeeze-2" class="internal xref">Squeeze</a></p>
 </li>
                 </ul>
 </li>
@@ -1810,10 +1824,10 @@ svg {
 <p id="section-2.4-2">A <strong>codec</strong> (<a href="#codecs" class="auto internal xref">Section 4</a>) is the pair of maps between messages and the hash function's alphabet (bytes, in this document):<a href="#section-2.4-2" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-2.4-3.1">
-            <p id="section-2.4-3.1.1"><strong>Encoding</strong> converts the instance and each prover message into the bytes absorbed by the sponge (<a href="#encoding-bytes" class="auto internal xref">Section 4.1</a>).<a href="#section-2.4-3.1.1" class="pilcrow">¶</a></p>
+            <p id="section-2.4-3.1.1"><strong>Encoding</strong> converts the instance and each prover message into the bytes absorbed by the duplex sponge (<a href="#encoding-bytes" class="auto internal xref">Section 4.1</a>).<a href="#section-2.4-3.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-2.4-3.2">
-            <p id="section-2.4-3.2.1"><strong>Decoding</strong> converts the bytes squeezed from the sponge into a uniformly-distributed verifier message (<a href="#decoding" class="auto internal xref">Section 4.2</a>).<a href="#section-2.4-3.2.1" class="pilcrow">¶</a></p>
+            <p id="section-2.4-3.2.1"><strong>Decoding</strong> converts the bytes squeezed from the duplex sponge into a uniformly-distributed verifier message (<a href="#decoding" class="auto internal xref">Section 4.2</a>).<a href="#section-2.4-3.2.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
 <p id="section-2.4-4"><strong>Serialization</strong> (<a href="#narg-string" class="auto internal xref">Section 6</a>) is concerned with mapping prover messages to and from the NARG string:<a href="#section-2.4-4" class="pilcrow">¶</a></p>
@@ -1862,8 +1876,8 @@ svg {
         <h3 id="name-shake128-duplex-sponge">
 <a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-shake128-duplex-sponge" class="section-name selfRef">SHAKE128 duplex sponge</a>
         </h3>
-<p id="section-3.2-1">In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the <code>Keccak-f</code> permutation: SHAKE128 and SHAKE256. Four other fixed-length hash-function instances (SHA3-224, SHA3-256, SHA3-384, and SHA3-512) are also defined but are out of scope for this document. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance strengths for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of <span>[<a href="#SHA3" class="cite xref">SHA3</a>]</span>). This instantiation targets 128-bit security.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
-<p id="section-3.2-2">Viewed as a duplex sponge, the SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of <code>R = 168</code> bytes and a capacity of 32 bytes (256 bits). This instantiation is equivalent to invoking the SHAKE128 XOF on the concatenation of the session identifier, the encoded instance, and the encoded prover messages. That is, the <code>i</code>-th verifier message (for <code>1 &lt;= i &lt;= k</code>) of byte length <code>len_i</code> is computed as:<a href="#section-3.2-2" class="pilcrow">¶</a></p>
+<p id="section-3.2-1">In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the <code>Keccak-f</code> permutation: SHAKE128 and SHAKE256. Four other fixed-length hash-function instances (SHA3-224, SHA3-256, SHA3-384, and SHA3-512) are also defined but are out of scope for this document. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of <span>[<a href="#SHA3" class="cite xref">SHA3</a>]</span>). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of <code>R = 168</code> bytes and a capacity of 32 bytes (256 bits).<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.2-2">This instantiation is equivalent to invoking the SHAKE128 XOF on the concatenation of the session identifier, the encoded instance, and the encoded prover messages. That is, the <code>i</code>-th verifier message (for <code>1 &lt;= i &lt;= k</code>) of byte length <code>len_i</code> is computed as:<a href="#section-3.2-2" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3.2-3">
 <pre>
 verifier_msg[i] := decode[i](SHAKE128(
@@ -1926,7 +1940,7 @@ Inputs:
           <h4 id="name-squeeze">
 <a href="#section-3.2.3" class="section-number selfRef">3.2.3. </a><a href="#name-squeeze" class="section-name selfRef">Squeeze</a>
           </h4>
-<p id="section-3.2.3-1">Returns the next <code>n</code> bytes of the SHAKE128 output stream computed over the absorbed input. If the sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a SHAKE128 XOF reader. Consecutive <code>Squeeze</code> calls <strong>continue</strong> the same SHAKE128 output stream.<a href="#section-3.2.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.2.3-1">Returns the next <code>n</code> bytes of the SHAKE128 output stream computed over the absorbed input. If the duplex sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a SHAKE128 XOF reader. Consecutive <code>Squeeze</code> calls <strong>continue</strong> the same SHAKE128 output stream.<a href="#section-3.2.3-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3.2.3-2">
 <pre>
 Squeeze(state, n)
@@ -1947,6 +1961,97 @@ Output: a uniformly-distributed random n-byte string
 </div>
 </section>
 </div>
+<div id="turboshake128">
+<section id="section-3.3">
+        <h3 id="name-turboshake128-duplex-sponge">
+<a href="#section-3.3" class="section-number selfRef">3.3. </a><a href="#name-turboshake128-duplex-sponge" class="section-name selfRef">TurboSHAKE128 duplex sponge</a>
+        </h3>
+<p id="section-3.3-1">TurboSHAKE128 <span>[<a href="#RFC9861" class="cite xref">RFC9861</a>]</span> is an eXtendable-Output Function (XOF) built on the round-reduced <code>Keccak-p[1600, 12]</code> permutation.  Its state is a 200-byte (1600-bit) string, split into a rate of <code>R = 168</code> bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an <code>n</code>-byte output string, respectively (see Appendix A.1 of <span>[<a href="#SHA3" class="cite xref">SHA3</a>]</span>). This instantiation targets 128-bit security.<a href="#section-3.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.3-2">This instantiation is equivalent to invoking the TurboSHAKE128 XOF  as <code>TurboSHAKE128(M, D, L)</code>, where <code>M</code> is the concatenation of the session identifier, the encoded instance, and the encoded prover messages, <code>D</code> (the domain-separation byte in the range <code>0x01</code> to <code>0x7F</code>) is fixed to <code>D = 0x1F</code>, the default value of <span>[<a href="#RFC9861" class="cite xref">RFC9861</a>]</span>, and <code>L</code> is the desired output length in bytes (<span>[<a href="#RFC9861" class="cite xref">RFC9861</a>]</span>).<a href="#section-3.3-2" class="pilcrow">¶</a></p>
+<p id="section-3.3-3">That is, the <code>i</code>-th verifier message (for <code>1 &lt;= i &lt;= k</code>) of byte length <code>len_i</code> is computed as:<a href="#section-3.3-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.3-4">
+<pre>
+verifier_msg[i] := decode[i](TurboSHAKE128(
+                       session_id || zeros(R - 32)
+                       || encode[0](instance)
+                       || encode[1](prover_msg[1])
+                       || ...
+                       || encode[i](prover_msg[i]),
+                   0x1F, len_i))
+</pre><a href="#section-3.3-4" class="pilcrow">¶</a>
+</div>
+<p id="section-3.3-5">The session identifier is padded with <code>R - 32 = 136</code> zero bytes so that the instance and prover messages begin on a fresh rate-block boundary (see <a href="#turboshake128-init" class="auto internal xref">Section 3.3.1</a>).<a href="#section-3.3-5" class="pilcrow">¶</a></p>
+<div id="turboshake128-init">
+<section id="section-3.3.1">
+          <h4 id="name-init-2">
+<a href="#section-3.3.1" class="section-number selfRef">3.3.1. </a><a href="#name-init-2" class="section-name selfRef">Init</a>
+          </h4>
+<p id="section-3.3.1-1">Seed the state by absorbing the session identifier, padded with zeros to fill the rate (the remaining <code>R - 32 = 136</code> bytes).
+The zeros are ordinary input absorbed before the standard TurboSHAKE128 padding.<a href="#section-3.3.1-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.3.1-2">
+<pre>
+Init(session_id)
+
+Input: session_id, a byte array
+
+Output: a duplex sponge state
+
+1. assert len(session_id) == 32
+2. ctx = TurboSHAKE128.New(D = 0x1F)
+3. ctx.Update(session_id || zeros(R - 32))
+4. return state := (ctx, reader = None)
+</pre><a href="#section-3.3.1-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="turboshake128-absorb">
+<section id="section-3.3.2">
+          <h4 id="name-absorb-2">
+<a href="#section-3.3.2" class="section-number selfRef">3.3.2. </a><a href="#name-absorb-2" class="section-name selfRef">Absorb</a>
+          </h4>
+<p id="section-3.3.2-1">Feed a byte string <code>x</code> into the state. Absorbing the empty string leaves the state unchanged.<a href="#section-3.3.2-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.3.2-2">
+<pre>
+Absorb(state, x)
+
+Inputs:
+
+- state, a duplex sponge state
+- x, a byte array
+
+1. state.ctx.Update(x)
+2. if len(x) != 0:
+3.    state.reader = None
+</pre><a href="#section-3.3.2-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="turboshake128-squeeze">
+<section id="section-3.3.3">
+          <h4 id="name-squeeze-2">
+<a href="#section-3.3.3" class="section-number selfRef">3.3.3. </a><a href="#name-squeeze-2" class="section-name selfRef">Squeeze</a>
+          </h4>
+<p id="section-3.3.3-1">Returns the next <code>n</code> bytes of the TurboSHAKE128 output stream computed over the absorbed input. If the duplex sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a TurboSHAKE128 XOF reader. Consecutive <code>Squeeze</code> calls <strong>continue</strong> the same TurboSHAKE128 output stream.<a href="#section-3.3.3-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.3.3-2">
+<pre>
+Squeeze(state, n)
+
+Inputs:
+
+- state, the duplex sponge state
+- n, the number of bytes to be squeezed
+
+Output: a uniformly-distributed random n-byte string
+
+1. if state.reader == None:
+2.    state.reader = state.ctx.Copy().Finalize()
+3. return state.reader.Read(n)
+</pre><a href="#section-3.3.3-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
 </section>
 </div>
 <div id="codecs">
@@ -1957,7 +2062,7 @@ Output: a uniformly-distributed random n-byte string
 <p id="section-4-1">A codec is a set of functions that map prover and verifier messages to the hash function's alphabet:<a href="#section-4-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-4-2.1">
-          <p id="section-4-2.1.1">Encoding converts prover messages into the bytes absorbed by the sponge. Encoding functions <strong>MUST</strong> be prefix-free.<a href="#section-4-2.1.1" class="pilcrow">¶</a></p>
+          <p id="section-4-2.1.1">Encoding converts prover messages into the bytes absorbed by the duplex sponge. Encoding functions <strong>MUST</strong> be prefix-free.<a href="#section-4-2.1.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-4-2.2">
           <p id="section-4-2.2.1">Decoding converts squeezed bytes into verifier messages. Decoding <strong>MUST</strong> preserve the uniform distribution (up to a small codec error).<a href="#section-4-2.2.1" class="pilcrow">¶</a></p>
@@ -1974,7 +2079,7 @@ Output: a uniformly-distributed random n-byte string
           <h4 id="name-byte-strings">
 <a href="#section-4.1.1" class="section-number selfRef">4.1.1. </a><a href="#name-byte-strings" class="section-name selfRef">Byte strings</a>
           </h4>
-<p id="section-4.1.1-1">Encoding of a byte string is the identity function.<a href="#section-4.1.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.1.1-1">Encoding of a <code>N</code>-byte string is the identity function.<a href="#section-4.1.1-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.1.1-2">
 <pre>
 EncodeBytes(s)
@@ -1986,7 +2091,7 @@ Output: out, an N-byte string
 1. return s
 </pre><a href="#section-4.1.1-2" class="pilcrow">¶</a>
 </div>
-<p id="section-4.1.1-3">If the byte string has length less than 2^32 bytes, but its length is not known during initialization, it can be encoded as a prefix-free string by prefixing its length via <code>I2OSP</code>.<a href="#section-4.1.1-3" class="pilcrow">¶</a></p>
+<p id="section-4.1.1-3">If the byte string has length less than 2^32 bytes, but its length is not known during initialization, a prefix-free encoding is given by<a href="#section-4.1.1-3" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.1.1-4">
 <pre>
 EncodeVarLenString(s)
@@ -2244,7 +2349,7 @@ BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-messageS1challenge
 <a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-instance" class="section-name selfRef">Instance</a>
         </h3>
 <p id="section-5.2-1">The instance is input to the non-interactive prover and the non-interactive verifier; it fixes the specific statement being proven.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
-<p id="section-5.2-2">The instance is the first value absorbed into the sponge after <code>Init(session_id)</code> and before any prover message. The prover and verifier <strong>MUST</strong> absorb <code>encode[0](instance)</code>, where <code>encode[0]</code> is the first encoding map.
+<p id="section-5.2-2">The instance is the first value absorbed after <code>Init(session_id)</code> and before any prover message. The prover and verifier <strong>MUST</strong> absorb <code>encode[0](instance)</code>, where <code>encode[0]</code> is the first encoding map.
 The encoded instance <strong>MUST</strong> be non-empty. While the session identifier of the previous section <a href="#session-id" class="auto internal xref">Section 5.1</a> fixes the language, the instance selects one of its members.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
 <p id="section-5.2-3">As for every encoding map, <code>encode[0]</code> <strong>MUST</strong> be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see <a href="#instance-encoding" class="auto internal xref">Section 8.5</a>). The encoding map <code>encode[0]</code> <strong>SHOULD</strong> reuse the encodings of <a href="#encoding-bytes" class="auto internal xref">Section 4.1</a>.<a href="#section-5.2-3" class="pilcrow">¶</a></p>
 <p id="section-5.2-4">As an example, the sumcheck relation for multilinear polynomials in <code>N</code> variables over <code>p^m</code> committed with the polynomial commitment scheme <code>COM</code> is the pair:<a href="#section-5.2-4" class="pilcrow">¶</a></p>
@@ -2292,7 +2397,7 @@ enc(G) || enc(H) || enc(C) || enc(D)
 </pre><a href="#section-5.2-16" class="pilcrow">¶</a>
 </div>
 <p id="section-5.2-17">where <code>enc</code> is the group element-serialization function described in <a href="#encoding-ec-point" class="auto internal xref">Section 4.1.5</a>.<a href="#section-5.2-17" class="pilcrow">¶</a></p>
-<p id="section-5.2-18">Omitting public statement data (for instance, <code>N</code> in the first example or the group generators <code>G</code>, <code>H</code> in the second) from the sponge can compromise soundness of the proof system. See <a href="#instance-encoding" class="auto internal xref">Section 8.5</a>.<a href="#section-5.2-18" class="pilcrow">¶</a></p>
+<p id="section-5.2-18">Omitting public statement data (for instance, <code>N</code> in the first example or the group generators <code>G</code>, <code>H</code> in the second) from the encoded instance can compromise soundness of the proof system. See <a href="#instance-encoding" class="auto internal xref">Section 8.5</a>.<a href="#section-5.2-18" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2455,7 +2560,7 @@ Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation
 <a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-codecs-2" class="section-name selfRef">Codecs</a>
         </h3>
 <p id="section-8.1-1">While encoding maps are never inverted during the protocol, the security proof relies on a left inverse existing and being efficiently computable: the knowledge-soundness extractor uses it to recover prover messages from the absorbed bytes <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
-<p id="section-8.1-2">Decoding preserves the uniform distribution only when its input is uniform. Verifier messages <strong>MUST</strong> therefore be derived from <code>Squeeze</code> output and never from prover-controlled or otherwise non-uniform bytes: decoding a non-uniform input yields a verifier message that is distinguishable from uniform, which would break the public-coin property the transformation depends on.<a href="#section-8.1-2" class="pilcrow">¶</a></p>
+<p id="section-8.1-2">Decoding preserves the uniform distribution only when its input is uniform. Verifier messages <strong>MUST</strong> therefore be derived from <code>Squeeze</code> output and never from prover-controlled, or non-uniform bytes: decoding a non-uniform input yields a verifier message that is distinguishable from uniform, which would break the public-coin property the transformation depends on.<a href="#section-8.1-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="constant-time">
@@ -2586,6 +2691,10 @@ Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation
 <dt id="RFC8174">[RFC8174]</dt>
         <dd>
 <span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9861">[RFC9861]</dt>
+        <dd>
+<span class="refTitle">"*** BROKEN REFERENCE ***"</span>. </dd>
 <dd class="break"></dd>
 <dt id="SEC1">[SEC1]</dt>
         <dd>
