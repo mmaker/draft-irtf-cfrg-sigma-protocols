@@ -1,0 +1,34 @@
+[
+  {
+    "Id": "fiat-shamir/codec/encode_varlen",
+    "Name": "encode_varlen",
+    "Title": "Length-prefixed byte-string encoding (EncodeVarLenString)",
+    "Function": "EncodeVarLenString",
+    "Input": "70726f6f66",
+    "Output": "0000000570726f6f66"
+  },
+  {
+    "Id": "fiat-shamir/codec/encode_uint",
+    "Name": "encode_uint",
+    "Title": "Fixed-width unsigned-integer encoding (EncodeUint)",
+    "Function": "EncodeUint",
+    "Group": "P-256",
+    "Modulus": "ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551",
+    "Value": "deadbeef",
+    "Output": "00000000000000000000000000000000000000000000000000000000deadbeef"
+  },
+  {
+    "Id": "fiat-shamir/codec/deserialize_field",
+    "Name": "deserialize_field",
+    "Title": "Deserialize a canonical degree-2 field element (DeserializeField)",
+    "Function": "DeserializeField",
+    "Group": "P-256",
+    "Modulus": "ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551",
+    "ExtensionDegree": 2,
+    "Input": "00000000000000000000000000000000000000000000000000000000deadbeefffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632550",
+    "Coordinates": [
+      "00000000000000000000000000000000000000000000000000000000deadbeef",
+      "ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632550"
+    ]
+  }
+]

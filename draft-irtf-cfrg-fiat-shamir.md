@@ -595,23 +595,23 @@ Output: out, a byte string of length N
 
 ### Unsigned integers {#decoding-uint}
 
-To sample a uniformly random element modulo `M` of `Ns` bytes (that is, the smallest integer `Ns` with `256^Ns >= M`), squeeze `Ns + 32` bytes by interpreting them as a big-endian non-negative integer via `OS2IP`, and reduce modulo `M`.
+To sample a uniformly random element modulo `M` of `Ns` bytes (that is, the smallest integer `Ns` with `256^Ns >= M`), squeeze `Ns + 16` bytes by interpreting them as a big-endian non-negative integer via `OS2IP`, and reduce modulo `M`.
 
 ~~~
 DecodeUint(buf, M)
 
 Inputs:
 
-- buf, a byte string of length Ns + 32
+- buf, a byte string of length Ns + 16
 - M, the modulus
 
 Output: out, an integer in the range [0, M)
 
-1. fail if len(buf) != Ns + 32
+1. fail if len(buf) != Ns + 16
 2. return OS2IP(buf) mod M
 ~~~
 
-The 32 extra bytes (256 bits) ensure that the statistical distance between the reduced value and the uniform distribution over `[0, M)` is at most `2^-256`, which is cryptographically negligible. More generally, sampling `Ns + n` bytes bounds the bias to `2^-8n`.
+The 16 extra bytes bound the statistical distance between the reduced value and the uniform distribution over `[0, M)` to `2^-128`, matching {{Section 5 of ?RFC9380}}. More generally, sampling `Ns + n` extra bytes bounds the bias to `2^-8n`; an instantiation targeting a security level of `k` bits **SHOULD** squeeze `k/8` extra bytes.
 
 In three cases this approach is inefficient: if `log2(M)` is significantly smaller than `8 * Ns`, if `M` is a power of two, and if `M` is only slightly below a power of `256` (for example, the secp256k1 scalar field order) where squeezing just `Ns` bytes and reducing with a single conditional subtraction already has bias below `2^-128`.
 In such cases, applications **MAY** use an alternative decoding function, provided it meets the following security requirements:
@@ -624,30 +624,30 @@ Similar requirements and a longer discussion are available in {{Section 5 of ?RF
 
 ### Field elements {#decoding-field}
 
-A field element of a field of order `p^m` is decoded coordinate by coordinate: each of its `m` prime-field coordinates is decoded via `DecodeUint` ({{decoding-uint}}) with modulus `p`, starting from the least-significant. With `Ns` as in {{encoding-field}}, this consumes `m * (Ns + 32)` bytes. A prime field is the case `m = 1`.
+A field element of a field of order `p^m` is decoded coordinate by coordinate: each of its `m` prime-field coordinates is decoded via `DecodeUint` ({{decoding-uint}}) with modulus `p`, starting from the least-significant. With `Ns` as in {{encoding-field}}, this consumes `m * (Ns + 16)` bytes. A prime field is the case `m = 1`.
 
 ~~~
 DecodeField(buf, p, m)
 
 Inputs:
 
-- buf, a byte string of length m * (Ns + 32)
+- buf, a byte string of length m * (Ns + 16)
 - p, the prime characteristic of the field
 - m, the extension degree
 
 Output: out, an element of the field of order p^m, given by its
         coordinates (a[0], ..., a[m-1]) over the prime field
 
-1. fail if len(buf) != m * (Ns + 32)
+1. fail if len(buf) != m * (Ns + 16)
 2. for i in 0, ..., m-1:
-3.    chunk = buf[i * (Ns + 32) : (i + 1) * (Ns + 32)]
+3.    chunk = buf[i * (Ns + 16) : (i + 1) * (Ns + 16)]
 4.    a[i] = DecodeUint(chunk, p)
 5. return (a[0], ..., a[m-1])
 ~~~
 
 For `m = 1`, `DecodeField` is `DecodeUint`, and the same efficiency remarks apply: when `log2(p)` is significantly smaller than 256 or `p` is a power of two, applications **MAY** substitute a more efficient alternative, subject to the same security requirements described in {{decoding-uint}}.
 
-For `m > 1`, decoding relies on `32 * m` additional randomness bytes. Applications with big-integer arithmetic available **MAY** use a more randomness-efficient decoding algorithm, by instead sampling `Nm + 32` bytes, where `Nm` is the smallest integer with `256^Nm >= p^m`, interpreting them as an integer via `OS2IP`, reducing modulo `p^m`, and recovering the coordinates `(a[0], ..., a[m-1])` as the base-`p` digits of the result. This consumes `Nm + 32` bytes, with the same `2^-256` bias bound.
+For `m > 1`, decoding relies on `16 * m` additional randomness bytes. Applications with big-integer arithmetic available **MAY** use a more randomness-efficient decoding algorithm, by instead sampling `Nm + 16` bytes, where `Nm` is the smallest integer with `256^Nm >= p^m`, interpreting them as an integer via `OS2IP`, reducing modulo `p^m`, and recovering the coordinates `(a[0], ..., a[m-1])` as the base-`p` digits of the result. This consumes `Nm + 16` bytes, with the same `2^-128` bias bound.
 
 # Initialization
 
@@ -953,4 +953,16 @@ This document has no IANA actions.
 
 # Test Vectors
 
-{::include ./poc/vectors/fiatShamirVectors.txt}
+The vectors are grouped into three suites. The codec suite is hash-independent; the SHAKE128 and TurboSHAKE128 suites exercise the duplex sponge of {{suite-shake128}} and {{suite-turboshake128}} respectively, and carry the same vector names, differing only in the hash and the resulting bytes.
+
+## Codec test vectors
+
+{::include ./poc/vectors/fiatShamirCodecVectors.txt}
+
+## SHAKE128 test vectors
+
+{::include ./poc/vectors/fiatShamirShake128Vectors.txt}
+
+## TurboSHAKE128 test vectors
+
+{::include ./poc/vectors/fiatShamirTurboShake128Vectors.txt}

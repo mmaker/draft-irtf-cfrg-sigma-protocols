@@ -1,0 +1,34 @@
+### Length-prefixed byte-string encoding (EncodeVarLenString)
+~~~
+Id = fiat-shamir/codec/encode_varlen
+Function = EncodeVarLenString
+Input = 70726f6f66
+Output = 0000000570726f6f66
+~~~
+
+### Fixed-width unsigned-integer encoding (EncodeUint)
+~~~
+Id = fiat-shamir/codec/encode_uint
+Function = EncodeUint
+Modulus =
+  ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
+Value = deadbeef
+Output =
+  00000000000000000000000000000000000000000000000000000000deadbeef
+~~~
+
+### Deserialize a canonical degree-2 field element (DeserializeField)
+~~~
+Id = fiat-shamir/codec/deserialize_field
+Function = DeserializeField
+Modulus =
+  ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
+ExtensionDegree = 2
+Input =
+  00000000000000000000000000000000000000000000000000000000deadbeef
+  ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632550
+Coordinates =
+  - 00000000000000000000000000000000000000000000000000000000deadbeef
+  - ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632550
+~~~
+

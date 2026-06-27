@@ -1,0 +1,196 @@
+### Squeeze 32 bytes immediately after initialization
+~~~
+Id = fiat-shamir/turboshake128/init_squeeze
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - squeeze 32
+Output =
+  7ad8a3af35a3083c055e4a953ff001cdd9eeb1198f4be7a3a9ec5a209434619b
+~~~
+
+### Absorb a message, then squeeze 64 bytes
+~~~
+Id = fiat-shamir/turboshake128/absorb_squeeze
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 68656c6c6f20776f726c64
+  - squeeze 64
+Output =
+  8b804d7a8c524c242a94e86f7ddfec329d90e29c1f584a98812e63029a0bdb07
+  5b12c545bf9e2aa17c88673b6d9df4b08e728dc47f7d7094cee59a0d7d989634
+~~~
+
+### Absorbing in parts equals absorbing all at once
+~~~
+Id = fiat-shamir/turboshake128/absorb_split
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 6162
+  - absorb 63
+  - squeeze 32
+Output =
+  51acee1ee6f0c6a0c5a33b625ac9eaea54bc6b9b1cb85f9b2ef843e73631792e
+~~~
+
+### Consecutive squeezes continue a single output stream
+~~~
+Id = fiat-shamir/turboshake128/stream
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 616263
+  - squeeze 16
+  - squeeze 16
+Output =
+  51acee1ee6f0c6a0c5a33b625ac9eaea54bc6b9b1cb85f9b2ef843e73631792e
+~~~
+
+### Empty absorb
+~~~
+Id = fiat-shamir/turboshake128/empty_absorb
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 616263
+  - squeeze 32
+  - absorb ""
+  - squeeze 32
+Output =
+  51acee1ee6f0c6a0c5a33b625ac9eaea54bc6b9b1cb85f9b2ef843e73631792e
+  599e1dfb1bf60638046f82f5bfa28bcfcabf1404b200647d184ead03e51fbf01
+~~~
+
+### Squeeze, absorb more input, then squeeze again
+~~~
+Id = fiat-shamir/turboshake128/interleave
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 00010203040506070809
+  - squeeze 16
+  - absorb 6d6f72652064617461
+  - squeeze 16
+Output =
+  f2745534347564bed146c95655122f14636bcc58f768296be8494208db29b6be
+~~~
+
+### Absorb and squeeze multiple blocks
+~~~
+Id = fiat-shamir/turboshake128/multiblock
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb ababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    bababababababababababababababababababababababababab
+  - squeeze 600
+Output =
+  0ef6787d725638e19364c25a2ba879af55a4e1c97bff52919e64cd37a218db44
+  a475f9d7ef0e88d87b443fe6590f12fc90c41c546c92cbeb3480e679d6e1ea37
+  fc1e10e3e41b15e80aea4745ad9ad31c22857ae360fb66848daab7df8f6135ef
+  cc940c4cc6431617cca6c05aa9b8bdf041538206ef912c0861dc07e219875509
+  24c848cb788532637cf6e7fb1a3ea233fc335077e4910e8d7da15fe89250f284
+  58ec17ecf448e05cf660ca4ffd1fdcb4379570d3a871aa759bb4d763d60d3e1b
+  36ab8efcd8cd6fcca8fa67a5071ab21a1d31e4610f7ca8825b5e81f22433c495
+  862b642c009823c312fd60fcdcd888af9c6c554da3a370946fa7bfa66ac54480
+  b9a36d73fa6ee73ccb78b425de22814667742864608a06fa7534b053a68905ff
+  532089b6fc0d597671ae4da685b96b1ac5d2513c0fc944d11155ed43461559a1
+  2b984fb0cb45b105d9f2391a137d104f7da6c82fcfe375143bf512824685913f
+  2bf61613b1a2a8f55f86d1282aa36c02384381335927259361c9e5875dbe1314
+  af82aa65264ff009f525d4f0aedcf80cb908e308132113311d0e9a6783f27a13
+  93ae28c10914018e263020dc97f219ebdae4118a79c318bef2d3766452075e35
+  79f4b1cddbb80a5bca83a2f1fbec44e9d487925ba23cbfce111ba865e0fdb164
+  589c66cbb757865d1bfb4540c01dece5b4180eef4262efc24c4ae3f76c4497a5
+  3fb7f38a0de18a7053ab59b59b180ad53e3d2318661783682298d54b9f9ee6e3
+  3b2be660295ccdd7d6cc976e21827c66880a0fbcc202743cd1ea0b7351755ee4
+  b8a0b140bbc4f6a45eb6b05798721094cebe00e08f4f7bde
+~~~
+
+### Derive a session identifier from an application tag
+~~~
+Id = fiat-shamir/turboshake128/derive_sid
+Function = DeriveSessionID
+Hash = TurboSHAKE128
+Tag = 696e7465726f702d746573742d763030
+Output =
+  4326208c9e56ae847be9356ca7c4447c752a9d7326a44a6cbee0c0dfc69505ac
+~~~
+
+### Squeeze and reduce a P-256 scalar challenge (DecodeUint)
+~~~
+Id = fiat-shamir/turboshake128/decode_uint
+Function = DecodeUint
+Hash = TurboSHAKE128
+Modulus =
+  ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 00000008696e7374616e6365
+  - squeeze 48
+Output =
+  0ace7c861bc8703d4201ccb5feafcd188808e1fc972de466d4455d6d7ec905a8
+  7c00f9654c3cde03ada2364e88010355
+Challenge =
+  62f6db4c28d15798c99d435334c068ee6ebdbd0e487b36903e7d5e597511578d
+~~~
+
+### One round of the sumcheck protocol: round polynomial, challenge, reduced claim
+~~~
+Id = fiat-shamir/turboshake128/sumcheck
+Function = Sumcheck
+Hash = TurboSHAKE128
+Modulus =
+  ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+ContextTag = 73756d636865636b
+Degree = 2
+ClaimedSum =
+  5927eee1956b1e9eb1180eb49eea59cee1241c4536f33b2a4582d6743ff53a57
+Coefficients =
+  - 040d4c06738a450a6b22e213350a3c201cdb6dbf77f7240e3dc396d6d9daf7a0
+  - 51fb1ed7a4f12558d6b6f0237c4d7876fbc6ac77e0d68fa196fd56efc489e023
+  - ff1237fc09656f32041b5a6ab8886917688d8efc0d4601f126b81c99c4189045
+Challenge =
+  f20409dcc275d204579dec790136a2d272dfc1f5941260127ddd332faf2250e3
+ReducedClaim =
+  e92b0ea702a4176e87a48b1f9f39297a3a3b88ca33e73d98f2d094bbbf7445f6
+Narg =
+  040d4c06738a450a6b22e213350a3c201cdb6dbf77f7240e3dc396d6d9daf7a0
+  51fb1ed7a4f12558d6b6f0237c4d7876fbc6ac77e0d68fa196fd56efc489e023
+  ff1237fc09656f32041b5a6ab8886917688d8efc0d4601f126b81c99c4189045
+~~~
+
