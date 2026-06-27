@@ -320,8 +320,8 @@ This section lists the duplex sponge instantiations provided in this document.
 Prover and verifier messages are handled via three operations:
 
 - `Init(session_id) -> state`: create a new duplex sponge state, seeded by the 32-byte string `session_id`.
-- `Absorb(x)`: absorb `x` into the state.
-- `Squeeze(n) -> buf`: produce `n` elements from the state.
+- `Absorb(state, x)`: absorb `x` into the state.
+- `Squeeze(state, n) -> buf`: produce `n` elements from the state.
 
 In the duplex sponge interface, messages can be absorbed incrementally: `Absorb(x)` followed by `Absorb(y)` (with no `Squeeze` in between) is equivalent to `Absorb(x || y)`. The output of `Squeeze(n)` is uniformly distributed, and consecutive `Squeeze` calls continue one output stream.
 
@@ -959,4 +959,16 @@ This document has no IANA actions.
 
 # Test Vectors
 
-{::include ./poc/vectors/fiatShamirVectors.txt}
+The vectors are grouped into three suites. The codec suite is hash-independent; the SHAKE128 and TurboSHAKE128 suites exercise the duplex sponge of {{suite-shake128}} and {{suite-turboshake128}} respectively, and carry the same vector names, differing only in the hash and the resulting bytes.
+
+## Codec test vectors
+
+{::include ./poc/vectors/fiatShamirCodecVectors.txt}
+
+## SHAKE128 test vectors
+
+{::include ./poc/vectors/fiatShamirShake128Vectors.txt}
+
+## TurboSHAKE128 test vectors
+
+{::include ./poc/vectors/fiatShamirTurboShake128Vectors.txt}

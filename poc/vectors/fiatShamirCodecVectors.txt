@@ -1,0 +1,36 @@
+### Length-prefixed byte-string encoding (EncodeVarLenString)
+~~~
+Name = encode_varlen
+Function = EncodeVarLenString
+Input = 70726f6f66
+Output = 0000000570726f6f66
+~~~
+
+### Fixed-width unsigned-integer encoding (EncodeUint)
+~~~
+Name = encode_uint
+Function = EncodeUint
+Group = P-256
+Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
+632551
+Value = deadbeef
+Output = 00000000000000000000000000000000000000000000000000000000de
+adbeef
+~~~
+
+### Deserialize a canonical degree-2 field element (DeserializeField)
+~~~
+Name = deserialize_field
+Function = DeserializeField
+Group = P-256
+Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
+632551
+ExtensionDegree = 2
+Input = 00000000000000000000000000000000000000000000000000000000dead
+beefffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632550
+Coordinates = 000000000000000000000000000000000000000000000000000000
+00deadbeef
+Coordinates = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9ca
+c2fc632550
+~~~
+
