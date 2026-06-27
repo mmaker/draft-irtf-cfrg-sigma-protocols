@@ -27,12 +27,12 @@ author:
     email: "cathieyun@gmail.com"
 
 normative:
-
-informative:
   fiat-shamir:
     title: "draft-irtf-cfrg-fiat-shamir"
     date: false
     target: https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-cfrg-fiat-shamir.html
+
+informative:
   SP800:
     title: "Recommendations for Discrete Logarithm-based Cryptography"
     target: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-186.pdf
@@ -141,9 +141,15 @@ The interactive protocol has the following three-message flow:
 
 The prover keeps `prover_state` private between the first and third messages. The public transcript checked by the verifier is `(commitment, challenge, response)`.
 
- One of the advantages of Sigma Protocols is their composability, which enables the construction of more complex protocols. A classic example is the OR composition {{CramerDS94}}. Given a Sigma Protocol for N relations, it is possible to prove knowledge of one of N witnesses for those relations. The composed sigma protocols can be made non-interactive using the Fiat-Shamir transformation {{Cramer97}}. However, such compositions must be handled carefully to preserve security properties as discussed in {{security-considerations}}.
+ One of the advantages of Sigma Protocols is their composability, which enables the construction of more complex protocols. A classic example is the OR composition {{CramerDS94}}. Given a Sigma Protocol for `N` relations, it is possible to prove knowledge of one of  `N` witnesses for those relations. The composed sigma protocols can be made non-interactive using the Fiat-Shamir transformation {{Cramer97}}. However, such compositions must be handled carefully to preserve security properties as discussed in {{security-considerations}}.
 
-## Core interface
+# Terminology and conventions in this document
+
+The key words "**MUST**", "**MUST NOT**", "**REQUIRED**", "**SHALL**", "**SHALL NOT**", "**SHOULD**", "**SHOULD NOT**", "**RECOMMENDED**", "**NOT RECOMMENDED**", "**MAY**", and "**OPTIONAL**" in this document are to be interpreted as described in BCP 14 {{!RFC2119}} {{!RFC8174}} when, and only when, they appear in all capitals, as shown here.
+
+The following notation is used throughout this document.
+
+# Core interface {#core-interface}
 
 The public functions are obtained relying on an internal structure containing the definition of a Sigma Protocol.
 
@@ -191,7 +197,7 @@ The abstraction `SigmaProtocol` allows implementing different types of statement
 
 
 
-### Randomized algorithms {#rng-definition}
+## Randomized algorithms {#rng-definition}
 
 The generation of proofs involves randomized algorithms that take as
 input a source of randomness, denoted as `rng`.
@@ -385,7 +391,7 @@ Group elements, being part of the instance, can later be set using the function 
     1. for index, element in elements:
     2.   self.linear_map.group_elements[index] = element
 
-#### Constraint enforcing
+#### Enforcing constraints
 
     append_equation(self, lhs, rhs)
 
@@ -404,6 +410,40 @@ Group elements, being part of the instance, can later be set using the function 
     1. linear_combination = LinearMap.LinearCombination(scalar_indices=[x[0] for x in rhs], element_indices=[x[1] for x in rhs])
     2. self.linear_map.append(linear_combination)
     3. self._image.append(lhs)
+
+### Serializing linear relations {#serialize-linear-relations}
+
+A `LinearRelation` is serialized as a sparse matrix in row-major order, followed by the group elements of the instance. The sparse matrix lists the constraints (equations) in the order they were appended; each constraint is given as the index of its image (left-hand side) element, the number of terms on its right-hand side, and the `(scalar index, element index)` pairs of those terms ({{linear-map}}). The serialized group elements of the linear map are then appended.
+
+Counts and indices are encoded as 4-byte big-endian unsigned integers via `I2OSP` ({{fiat-shamir}}); each such value MUST be less than `2^32`. The procedure assumes every group element of the relation has been set ({{group-abstraction}}).
+
+    SerializeLinearRelation(relation)
+
+    Input:
+
+    - relation, a LinearRelation whose group elements have all been set
+
+    Output:
+
+    - a byte string
+
+    Procedure:
+
+     1. linear_map = relation.linear_map
+     2. constraints = linear_map.linear_combinations
+     3. out = I2OSP(len(constraints), 4)
+     4. for i in range(len(constraints)):
+     5.     out = out || I2OSP(relation.image[i], 4)
+     6.     terms = constraints[i]
+     7.     out = out || I2OSP(len(terms.scalar_indices), 4)
+     8.     for j in range(len(terms.scalar_indices)):
+     9.         out = out || I2OSP(terms.scalar_indices[j], 4)
+    10.         out = out || I2OSP(terms.element_indices[j], 4)
+    11. return out || Group.serialize(linear_map.group_elements)
+
+Here `relation.image[i]` is the index of the image (left-hand side) element of the `i`-th constraint, and each right-hand side term `(scalar_indices[j], element_indices[j])` pairs a scalar (witness) index ({{witness}}) with a group-element index. Only scalar variables that appear in at least one term are referenced by the encoding: scalar variables that were allocated but never used in a constraint are not statement components and are not represented.
+
+The encoding binds the entire statement: the shape of the linear map (the number of constraints and the indices wired into each one) together with every group element of the instance. For a fixed relation the output has a fixed length, so it is non-empty and prefix-free, as required of the instance encoding by {{fiat-shamir}}.
 
 ### Core protocol
 
@@ -538,6 +578,187 @@ This ciphersuite uses P-256 {{SP800}} for the Group.
 - `serialize(s)`: Relies on the Field-Element-to-Octet-String conversion according to {{SEC1}}; `Ns = 32`.
 - `deserialize(buf)`: Reads the byte array `buf` in chunks of 32 bytes using Octet-String-to-Field-Element from {{SEC1}}. This function can fail if the input does not represent a Scalar in the range `[0, G.Order() - 1]`.
 
+# Non-interactive Sigma Protocols {#non-interactive}
+
+The Fiat-Shamir transformation of {{fiat-shamir}} applied to Sigma Protocols yields a non-interactive zero-knowledge argument of knowledge.
+
+Sigma protocols have `k=2` rounds and `verifier_message[2] = ""`. No encoding map is provided for the response message from the prover.
+
+The Fiat-Shamir transformation is equivalent to:
+
+~~~
+verifier_msg[i] := DecodeField(TurboSHAKE128(
+                       session_id || zeros(R - 32)
+                       || encode[0](instance)
+                       || encode[1](prover_msg[1])
+                       || ...
+                       || encode[i](prover_msg[i]),
+                   0x1F, Ns + 32))
+~~~
+
+## Tag and session identifier {#sigma-tag}
+
+Both parties derive a 32-byte string `session_id` from a `tag` using `DeriveSessionID` of {{fiat-shamir}}, and initialize their state from it ({{non-interactive}}).
+
+The `tag` must satisfy the security requirements of {{fiat-shamir}}. Some examples are provided in {{fiat-shamir}}.
+
+As an example, consider a fictional application named Foo. A reasonable choice of tag is: for a _batchable proof_ NARG identifier is:
+
+~~~
+FOO-{xx}-{tttt}-DSFS-{hashID}-SIGMA-PROOFS-{yy}
+~~~
+
+where `xx` is the two-digit number indicating the version, `yy` is the two-digit number indicating the elliptic-curve ciphersuite, `hashID` is the hash identifier, and `tttt` is a 32-bit integer identifying the epoch.
+
+As another example,  example for a _compact proof_ NARG identifier to:
+
+~~~
+FOO-{xx}-{tttt}-CMPT-{hashID}-SIGMA-PROOFS-{yy}
+~~~
+
+where `xx` is the two-digit number indicating the version, `yy` is the two-digit number indicating the elliptic-curve ciphersuite, `hashID` is the hash identifier, and `tttt` is a 32-bit integer identifying the epoch as above.
+
+## Codecs {#sigma-mapping}
+
+The codecs of {{fiat-shamir}} are instantiated as follows.
+
+### Instance encoding {#sigma-instance-encoding}
+
+The instance encoding `encode[0]` is the serialization of the linear map and the image, produced by `SerializeLinearRelation` ({{serialize-linear-relations}}).
+
+~~~
+encode[0](instance)
+
+Input: instance, a linear relation
+
+Output: a byte string
+
+
+return SerializeLinearRelation(instance)
+~~~
+
+
+### Commitment encoding
+
+The commitment encoding `encode[1]` is the encoding of the serialized group elements, seen as a fixed-length sequence of messages.
+
+~~~
+Group.serialize(commitment)
+~~~
+
+
+## Challenge decoding {#sigma-challenge-decoding}
+
+The challenge decoding `decode[1]` is the procedure `DecodeField` of {{fiat-shamir}}.
+
+~~~
+decode[1](s)
+
+Input: a (Ns + 32)-byte string
+
+Output: a scalar field element
+
+DecodeField(s, p, m)
+~~~
+
+
+The challenge is a scalar in `[0, p)`, where `p` is the group order ({{group-abstraction}}). It is derived by squeezing `Ns + 32` bytes from the sponge and reducing them modulo `p`, as in the unsigned-integer decoding of {{fiat-shamir}}; `Ns` is the scalar byte length of the ciphersuite ({{ciphersuites}}). The 32 extra bytes bound the distance from uniform by at most `2^-256`.
+
+    DecodeChallenge(hash_state)
+
+    Output: a scalar in the range [0, p)
+
+    1. uniform_bytes = hash_state.Squeeze(Ns + 32)
+    2. return OS2IP(uniform_bytes) mod p
+
+The challenge ranges over the full scalar field. The knowledge-soundness error of the transformation is governed by the size of this challenge set ({{sigma-ni-security}}); the challenge MUST NOT be truncated to fewer bits, as that would lower soundness.
+
+## Non-interactive argument string serialization {#sigma-narg}
+
+Two serialization flavors are possible for Sigma Protocols:
+
+- A **batchable proof** serializes the prover messages `(commitment, response)`, as in {{fiat-shamir}}, and it permits batch verification of several proofs at once. The final proof is `Ne * num_equations + Ns * num_scalars` bytes.
+- A **compact proof** serializes `(challenge, response)`. It is whenever the commitment (`num_constraints` group elements) is larger than a single challenge scalar, which is the common case. The final proof is `(Ns + 1) * num_scalars` byte long.
+
+## Batchable
+
+A **batchable** proof serializes the prover messages in order, `serialize(commitment) || serialize(response)`, and is exactly the NARG string of the generic transformation ({{fiat-shamir}}). Because the commitment is present, a verifier can batch the group verification equations of several proofs, for example by testing a single random linear combination of them.
+
+~~~
+    prove_batchable(self, witness, rng)
+
+    Procedure:
+
+    1. (commitment, challenge, response) = self._prove(witness, rng)
+    2. return self.protocol.serialize_commitment(commitment)
+              || self.protocol.serialize_response(response)
+~~~
+
+The verifier is assumed to have run `init` with the same `session_id` and `instance`. Let `Ne` and `Ns` be the element and scalar byte lengths of the ciphersuite ({{ciphersuites}}).
+
+~~~
+verify_batchable(session_id, instance, proof)
+
+    Output: a boolean indicating whether the proof is valid
+
+    Procedure:
+
+    1. Nc = self.protocol.instance.linear_map.num_constraints * Ne
+    2. Nr = self.protocol.instance.linear_map.num_scalars * Ns
+    3. fail if len(proof) != Nc + Nr
+    4. commitment = Group.deserialize(proof[0 : Nc])
+    5. response = Scalar.deserialize(proof[Nc : Nc + Nr])
+    6. self.hash_state.Absorb(self.protocol.serialize_commitment(commitment))
+    7. challenge = DecodeChallenge(self.hash_state)
+    8. return self.protocol.verifier(commitment, challenge, response)
+~~~
+
+## Compact
+
+A **compact** proof serializes `serialize(challenge) || serialize(response)`. Because the challenge is a verifier message, a compact proof is **not** the NARG string of the generic transformation; it is a Sigma-specific encoding enabled by the simulator `simulate_commitment` ({{core-interface}}), with which the verifier recomputes the commitment from the challenge and response. (The term "compact" here is unrelated to the *compressed* Sigma Protocols of {{AttemaCK21}}.)
+
+Both verifiers MUST reject any proof whose length differs from the expected length, so that no trailing bytes remain (cf. the deserialization requirements of {{fiat-shamir}}). Deserialization of group elements and scalars performs the canonical-encoding and membership checks of {{group-abstraction}} and fails on malformed input.
+
+
+
+    _prove(self, witness, rng)
+
+    Inputs:
+
+    - witness, the prover's secret witness
+    - rng, a cryptographically secure random number generator ({{rng-definition}})
+
+    Outputs:
+
+    - the transcript (commitment, challenge, response)
+
+    Procedure:
+
+    1. (commitment, prover_state) = self.protocol.prover_commit(witness, rng)
+    2. self.hash_state.Absorb(self.protocol.serialize_commitment(commitment))
+    3. challenge = DecodeChallenge(self.hash_state)
+    4. response = self.protocol.prover_response(prover_state, challenge)
+    5. return (commitment, challenge, response)
+
+## Security considerations for the transformation {#sigma-ni-security}
+
+The non-interactive argument inherits the soundness and zero-knowledge guarantees analyzed in {{fiat-shamir}}; the following points are specific to this instantiation and complement {{security-considerations}}.
+
+- **Security level.** The knowledge-soundness error is governed by the size of the challenge set, the full scalar field of order `p`, together with the random-oracle loss analyzed in {{fiat-shamir}}. A group whose order has about `2 * lambda` bits targets `lambda`-bit security; for example, a 256-bit group targets roughly 128-bit security. The challenge MUST range over the full field ({{sigma-challenge-decoding}}).
+- **Instance binding.** Soundness holds only if the encoded instance binds the entire statement ({{sigma-instance-encoding}}); omitting any generator or image element is a weak Fiat-Shamir vulnerability.
+- **Verifier input validation.** The NARG string is untrusted input. Verifiers MUST enforce the exact expected length (no trailing bytes), reject non-canonical scalar and point encodings, and perform the ciphersuite's point validation, including a subgroup-membership check when the group cofactor is greater than one ({{group-abstraction}}, {{fiat-shamir}}). For compact proofs, the verifier MUST recompute the challenge and compare it before accepting.
+- **Prover randomness.** Zero-knowledge requires fresh randomness for each proof; reusing or correlating nonces across proofs can leak the witness ({{core-interface}}, {{fiat-shamir}}).
+- **Post-quantum.** The hardness of the proved relation rests on the discrete logarithm problem, so these proofs are not post-quantum sound; see {{post-quantum-security-considerations}}.
+
+## Ciphersuites {#ni-ciphersuites}
+
+A non-interactive ciphersuite combines the `SchnorrProof` of {{sigma-protocol-group}}, a prime-order group ({{ciphersuites}}), and a duplex sponge ({{fiat-shamir}}). The proofs in this document use the SHAKE128 duplex sponge, giving the identifiers used by the test vectors:
+
+- `sigma-proofs_Shake128_P256`: `SchnorrProof` over P-256, with the SHAKE128 duplex sponge.
+- `sigma-proofs_Shake128_BLS12381`: `SchnorrProof` over BLS12-381 (G1), with the SHAKE128 duplex sponge.
+
+The ciphersuite identifier is a natural component of the protocol identifier ({{fiat-shamir}}), since it fixes the group, the codecs, and the hash instantiation.
+
 # Security Considerations {#security-considerations}
 
 Interactive Sigma Protocols have the following properties:
@@ -561,7 +782,7 @@ The prover's control flow and memory access patterns are typically influenced by
 To prevent side-channel leakage of witness information, which may reveal private values, it is important that the implementation of underlying group and field operations are constant-time. Operations such as modular reduction, scalar multiplication, random value generation, and all other group and field operations are required to be constant-time especially when working with inputs which are private to prevent side-channel attacks which may reveal their values. In some cases, such as keyed-verification credentials, also the verifier must be constant-time.
 Implementations MUST securely delete prover state as soon as it is no longer needed, and SHOULD minimize the lifetime of sensitive material (witness and instance), explicitly zeroize temporary buffers after proof generation, use secure de-allocation mechanisms when available, and reduce exposure in crash dumps, swap/page files, and diagnostic logging.
 
-# Post-Quantum Security Considerations
+# Post-Quantum Security Considerations {#post-quantum-security-considerations}
 
 The zero-knowledge proofs described in this document provide statistical zero-knowledge and statistical soundness properties when modeled in the random oracle model.
 
