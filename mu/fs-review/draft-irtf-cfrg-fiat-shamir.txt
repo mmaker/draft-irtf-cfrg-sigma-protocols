@@ -4,8 +4,9 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                              25 June 2026
-Expires: 27 December 2026
+Intended status: Informational                                    C. Yun
+Expires: 29 December 2026                                    Apple, Inc.
+                                                            27 June 2026
 
 
                        Fiat-Shamir Transformation
@@ -55,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 27 December 2026.
+   This Internet-Draft will expire on 29 December 2026.
 
 Copyright Notice
 
@@ -147,25 +148,34 @@ Table of Contents
      A.15. Reject a byte-string length prefix larger than the input
      A.16. One round of the sumcheck protocol: round polynomial,
             challenge, reduced claim
-   Author's Address
+   Authors' Addresses
 
 1.  Introduction
 
-   A public-coin interactive protocol is an exchange of messages between
-   a prover and a verifier in which every verifier message is a
-   uniformly random value sampled independently of the protocol state.
+   The Fiat-Shamir transformation removes interaction from a _public-
+   coin_ interactive argument by relying on a cryptographic hash
+   function.  The non-interactive prover derives each verifier message
+   on its own via a hash function, and serializes the protocol
+   transcript into a _non-interactive argument_ (NARG) string.  The
+   verifier recomputes the same verifier messages from the NARG string
+   and checks the interactive verifier's decision.  The resulting
+   argument is secure in the random oracle model, where the hash
+   function is treated as an ideal random function (see Section 8.4.4).
 
-   The Fiat-Shamir transformation removes interaction from a public-coin
-   interactive argument by relying on a cryptographic hash function.
-   The non-interactive prover derives each verifier message on its own
-   via a hash function, and serializes the protocol transcript into a
-   _non-interactive argument_ (NARG) string.  The verifier recomputes
-   the same verifier messages from the NARG string and checks the
-   interactive verifier's decision.  The resulting argument is secure in
-   the random oracle model, where the hash function is treated as an
-   ideal random function (see Section 8.4.4).
+   Many non-interactive arguments apply the Fiat-Shamir transformation
+   to a public-coin interactive proof, yet each protocol re-specifies it
+   from scratch, duplicating the security analysis and reopening the
+   same bugs.  It is notoriously easy to get the Fiat-Shamir
+   transformation wrong, introducing critical security bugs [BPW16],
+   [DMWG23], [FROZENHEART], [SOLANA-ZK].  The verifier's challenges must
+   be derived by hashing the statement and every preceding prover
+   message, and the encoding of prover messages (for instance, field
+   elements and group elements) is part of the transformation's security
+   boundary.  For example, a non-injective encoding (a point and its
+   negation) can allow distinct transcripts to produce the same
+   challenge, making proofs malleable.
 
-   This document describes the duplex sponge Fiat-Shamir transformation,
+   This document specifies the duplex sponge Fiat-Shamir transformation,
    and in particular:
 
    *  a non-interactive argument prover (NARG prover), and
@@ -346,9 +356,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
 2.2.  Duplex sponge interface
 
-   The Fiat-Shamir transformation is built on a cryptographic hash
-   function, modeled as a random oracle.  Rather than computing a single
-   fixed-length digest, this document uses the hash function through a
+   The Fiat-Shamir transformation relies on a cryptographic hash
+   function, modeled as a random oracle.  This is implemented as a
    stateful interface called a *duplex sponge* (defined in Section 3),
    which Absorbs prover messages into an evolving internal state and
    Squeezes from that state the bytes from which verifier messages are
@@ -358,13 +367,12 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    variable-length input to a variable-length output by absorbing all of
    its input and then squeezing all of its output, to the *duplex*
    setting [DUPLEX], in which absorbing and squeezing may be arbitrarily
-   interleaved over a single retained state.  The state is split into a
-   *rate*, the portion through which bytes are absorbed and squeezed,
-   and a *capacity*, which is never read or written directly and whose
-   size sets the security level.  Security relies on the capacity.  The
-   properties a concrete instantiation must satisfy for this to hold,
-   and the resulting security loss, are given in Section 8 and analyzed
-   in [CO25].
+   interleaved while retaining the same state.  The state is split into
+   a *rate*, the portion through which bytes are absorbed and squeezed,
+   and a *capacity*, which is never read or written directly.  Security
+   relies on the size of the capacity.  The properties a concrete
+   instantiation must satisfy for this to hold, and the resulting
+   security loss, are given in Section 8 and analyzed in [CO25].
 
 2.3.  Proof systems terminology
 
@@ -374,12 +382,12 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    A *prover message* is a message sent by the interactive prover, and a
    *verifier message* is a message sent by the interactive verifier (a
-   uniformly random value, since the protocol is public-coin).  A
-   message can be a value of any type for which a codec (Section 4) is
-   defined, such as a byte string, an unsigned integer, or a group
-   element.  The *transcript* is the ordered sequence of prover and
-   verifier messages.  In particular, the transcript does _not_ include
-   the session identifier.
+   uniformly random value, sometimes called _challenge_).  A message can
+   be a value of any type for which a codec (Section 4) is defined, such
+   as a byte string, an unsigned integer, or a group element.  The
+   *transcript* is the ordered sequence of prover and verifier messages.
+   In particular, the transcript does _not_ include the session
+   identifier.
 
    The *instance* specifies the statement being proven and is held by
    both the prover and the verifier.  The (encoded) instance *MUST* be
@@ -557,15 +565,15 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    200-byte (1600-bit) string, split into a rate of R = 168 bytes and a
    capacity of 32 bytes (256 bits).  The corresponding collision and
    second-preimage-resistance are min(n/2,128) and min(n,128) bits for
-   an n-byte output string, respectively (see Appendix A.1 of [SHA3]).
-   This instantiation targets 128-bit security.
+   an n-byte output string, respectively (see [RFC9861]).  This
+   instantiation targets 128-bit security.
 
    This instantiation is equivalent to invoking the TurboSHAKE128 XOF as
    TurboSHAKE128(M, D, L), where M is the concatenation of the session
    identifier, the encoded instance, and the encoded prover messages, D
    (the domain-separation byte in the range 0x01 to 0x7F) is fixed to D
-   = 0x1F, the default value of [RFC9861], and L is the desired output
-   length in bytes ([RFC9861]).
+   = 0x1F, the default value, and L is the desired output length in
+   bytes [RFC9861].
 
    That is, the i-th verifier message (for 1 <= i <= k) of byte length
    len_i is computed as:
@@ -609,7 +617,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    Inputs:
 
    - state, a duplex sponge state
-   - x, a byte array
+   - x, a byte string
 
    1. state.ctx.Update(x)
    2. if len(x) != 0:
@@ -664,8 +672,16 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    1. return s
 
-   If the byte string has length less than 2^32 bytes, but its length is
-   not known during initialization, a prefix-free encoding is given by
+   EncodeBytes carries no length information of its own: it is the
+   identity.  It is therefore prefix-free only when N is fixed and known
+   by the message's type and the instance, that is: prover and verifier
+   both agree on N before the NARG string is parsed (see Section 6.2.1).
+   On such a fixed-length domain the identity is prefix-free as required
+   by Section 4.1.
+
+   When the length is not fixed in advance, EncodeBytes *MUST NOT* be
+   used.  Instead, when the length is below 2^32 bytes, a prefix-free
+   encoding is given by
 
    EncodeVarLenString(s)
 
@@ -688,6 +704,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    EncodeUint(x, M)
 
    Inputs:
+
    - x, an integer modulo M
    - M, the order of the integer ring
 
@@ -704,16 +721,21 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    order q = p^m, where p is the prime characteristic and m >= 1 is the
    extension degree.
 
-   If the finite field already has specified serialization and
-   deserialization functions, the specified serialization and
-   deserialization primitives *SHOULD* be used instead, and they *MUST*
-   themselves be prefix-free.  The encoding below is chosen to coincide
-   with the serializations of most standards; where it does not, the
-   type's own serialization should be preferred.  For instance, a prime-
-   order scalar field element of an elliptic curve is serialized to a
-   canonical Ns-byte string using the group's scalar field serialization
-   function.  For most prime-order elliptic-curve groups, this
-   serialization is EncodeUint as described below.
+   If the field already has a canonical serialization fixed by a
+   standard, that serialization *SHOULD* be used in place of the default
+   specified below, and it *MUST* be prefix-free.  The default below
+   encodes each prime-field coordinate as a fixed-width big-endian
+   integer via EncodeUint (Section 4.1.3), and is chosen to coincide
+   with the serialization of most standardized fields.
+
+   For example, P-256 and BLS12-381 serialize each scalar field element
+   as per EncodeUint.  Curve25519 and Ed25519 ([RFC7748], [RFC8032]) and
+   ristretto255 ([RFC9496]), serialize each element as a fixed-width
+   little-endian integer.  For these fields the little-endian
+   serialization *MUST* be used in place.  When the chosen field
+   serialization departs from the above rule, that choice is part of the
+   codec identity and *MUST* be reflected in the session tag (see
+   Section 5.1).
 
    With respect to a fixed basis, a field element is represented by its
    m coordinates in the prime field, each an integer in [0, p).  It is
@@ -724,6 +746,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    EncodeField(a, p, m)
 
    Inputs:
+
    - a, an element of the field of order p^m, given by its
         coordinates (a[0], ..., a[m-1]) over the prime field
    - p, the prime characteristic of the field
@@ -741,13 +764,20 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
 4.1.5.  Elliptic curve group elements
 
-   A group element is serialized to a canonical Ne-byte string using the
-   group's element-serialization function.
+   A group element is encoded using the group's element-serialization
+   function.
 
-   For most prime-order elliptic-curve groups, this is the compressed
-   Elliptic-Curve-Point-to-Octet-String conversion of [SEC1].  Each
-   group element has exactly one Ne-byte representation.  The value of
-   Ne and the concrete conversion are fixed by the ciphersuite.
+   For many prime-order elliptic-curve groups, this is the compressed
+   Elliptic-Curve-Point-to-Octet-String conversion of [SEC1].  All non-
+   trivial group elements have exactly one Ne-byte representation.  The
+   value of Ne and the concrete conversion are fixed by the ciphersuite.
+
+   The [SEC1] encoding of the identity element (the single byte 0x00) is
+   prefix-free with respect to the Ne-byte encodings of all other
+   points.  However, implementations *SHOULD* reject identity elements
+   from prover messages to facilitate deserialization (Section 6.2).
+   The ristretto255 and decaf448 [RFC9496] identity encodings have a
+   distinct, fixed-length Ne-byte encoding.
 
 4.2.  Decoding from byte strings
 
@@ -768,6 +798,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    DecodeBytes(buf, N)
 
    Inputs:
+
    - buf, a byte string
    - N, the expected byte length
 
@@ -779,29 +810,34 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 4.2.2.  Unsigned integers
 
    To sample a uniformly random element modulo M of Ns bytes (that is,
-   the smallest integer Ns with 256^Ns >= M), squeeze Ns + 32 bytes by
+   the smallest integer Ns with 256^Ns >= M), squeeze Ns + 16 bytes by
    interpreting them as a big-endian non-negative integer via OS2IP, and
    reduce modulo M.
 
    DecodeUint(buf, M)
 
    Inputs:
-   - buf, a byte string of length Ns + 32
+
+   - buf, a byte string of length Ns + 16
    - M, the modulus
 
    Output: out, an integer in the range [0, M)
 
-   1. fail if len(buf) != Ns + 32
+   1. fail if len(buf) != Ns + 16
    2. return OS2IP(buf) mod M
 
-   The 32 extra bytes (256 bits) ensure that the statistical distance
-   between the reduced value and the uniform distribution over [0, M) is
-   at most 2^-256, which is cryptographically negligible.  More
-   generally, sampling Ns + n bytes bounds the bias to 2^-8n.
+   The 16 extra bytes bound the statistical distance between the reduced
+   value and the uniform distribution over [0, M) to 2^-128, matching
+   Section 5 of [RFC9380].  More generally, sampling Ns + n extra bytes
+   bounds the bias to 2^-8n; an instantiation targeting a security level
+   of k bits *SHOULD* squeeze k/8 extra bytes.
 
-   In two cases this approach is inefficient: if log2(M) is
-   significantly smaller than 256, and if M is a 2-power.  In such
-   cases, applications *MAY* use an alternative decoding function,
+   In three cases this approach is inefficient: if log2(M) is
+   significantly smaller than 8 * Ns, if M is a power of two, and if M
+   is only slightly below a power of 256 (for example, the secp256k1
+   scalar field order) where squeezing just Ns bytes and reducing with a
+   single conditional subtraction already has bias below 2^-128.  In
+   such cases, applications *MAY* use an alternative decoding function,
    provided it meets the following security requirements:
 
    *  The function *MUST* have bias less than the soundness error of the
@@ -814,29 +850,30 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
       implementations.
 
    Similar requirements and a longer discussion are available in
-   [RFC9380], Section 5.
+   Section 5 of [RFC9380].
 
 4.2.3.  Field elements
 
    A field element of a field of order p^m is decoded coordinate by
    coordinate: each of its m prime-field coordinates is decoded via
    DecodeUint (Section 4.2.2) with modulus p, starting from the least-
-   signigicant.  With Ns as in Section 4.1.4, this consumes m * (Ns +
-   32) bytes.  A prime field is the case m = 1.
+   significant.  With Ns as in Section 4.1.4, this consumes m * (Ns +
+   16) bytes.  A prime field is the case m = 1.
 
    DecodeField(buf, p, m)
 
    Inputs:
-   - buf, a byte string of length m * (Ns + 32)
+
+   - buf, a byte string of length m * (Ns + 16)
    - p, the prime characteristic of the field
    - m, the extension degree
 
    Output: out, an element of the field of order p^m, given by its
            coordinates (a[0], ..., a[m-1]) over the prime field
 
-   1. fail if len(buf) != m * (Ns + 32)
+   1. fail if len(buf) != m * (Ns + 16)
    2. for i in 0, ..., m-1:
-   3.    chunk = buf[i * (Ns + 32) : (i + 1) * (Ns + 32)]
+   3.    chunk = buf[i * (Ns + 16) : (i + 1) * (Ns + 16)]
    4.    a[i] = DecodeUint(chunk, p)
    5. return (a[0], ..., a[m-1])
 
@@ -845,30 +882,45 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    of two, applications *MAY* substitute a more efficient alternative,
    subject to the same security requirements described in Section 4.2.2.
 
-   For m > 1, decoding relies on 32 * m additional randomness bytes.
+   For m > 1, decoding relies on 16 * m additional randomness bytes.
    Applications with big-integer arithmetic available *MAY* use a more
-   randomness-efficient decoding algorithm, by instead sampling Nm + 32
+   randomness-efficient decoding algorithm, by instead sampling Nm + 16
    bytes, where Nm is the smallest integer with 256^Nm >= p^m,
    interpreting them as an integer via OS2IP, reducing modulo p^m, and
    recovering the coordinates (a[0], ..., a[m-1]) as the base-p digits
-   of the result.  This consumes Nm + 32 bytes, with the same 2^-256
+   of the result.  This consumes Nm + 16 bytes, with the same 2^-128
    bias bound.
 
 5.  Initialization
 
    Before any prover message is processed, both parties start the duplex
    sponge with the session identifier (Section 5.1), and then the
-   instance (Section 5.2).  Neither of the two is part of the NARG
+   instance (Section 5.2).
+
+   Neither the session identifier nor the instance is part of the NARG
    string: the verifier holds both as its own inputs.
 
 5.1.  Session identifiers
 
    The session identifier is a 32-byte string that identifies the
-   context in which the non-interactive argument is used.
+   context in which the non-interactive argument is used.  An
+   application *MAY* set it to any 32-byte string it derives by its own
+   unambiguous means; the procedure DeriveSessionID below is the
+   *RECOMMENDED* way to obtain one from a human-meaningful tag.
 
    For a duplex sponge operating over bytes, the session identifier is
-   derived from a tag (a variable-length byte string) via the procedure
-   DeriveSessionID.  The tag has the following security requirements:
+   derived from a tag via the procedure DeriveSessionID.  The tag is a
+   byte string whose encoding as a sequence of bytes *MUST* be specified
+   unambiguously, so that every implementation reproduces identical
+   bytes.  A printable US-ASCII string without null termination is the
+   *RECOMMENDED* rendering: it keeps the tag inspectable in
+   specifications, test vectors, and logs, and it is safe to pass
+   through interfaces that treat the tag as a null-terminated string.
+   For these reasons the tag *SHOULD NOT* contain a zero byte (in
+   particular, it *SHOULD NOT* be terminated by a 0x00 byte) and, when
+   it is textual, *SHOULD NOT* begin with a byte-order mark.
+
+   The tag has the following security requirements:
 
    1.  the tag *MUST* uniquely identify the *non-interactive argument*
        used, including the interactive argument system, the types of
@@ -876,7 +928,11 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
        associated with the interactive argument.
 
    2.  the tag *MUST* uniquely identify the *codecs* used: the order and
-       types of encodings and decodings at each round.
+       types of encodings and decodings at each round.  For example,
+       implementations that serialize the same field with a different
+       byte order must derive different session identifiers, so a proof
+       produced under one fails to verify under the other rather than
+       being silently accepted.
 
    3.  the tag *MUST* contain contextual information about where the
        proof is made (e.g. a URL to identify the application namespace,
@@ -889,8 +945,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    DeriveSessionID(tag)
 
-   Inputs:
-   - tag, an application-chosen byte string
+   Input: tag, an application-chosen byte string (see above)
 
    Output: session_id, a 32-byte string
 
@@ -913,8 +968,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    where xx is the two-digit number indicating the version, yy is the
    two-digit number indicating the elliptic-curve ciphersuite, hashID is
-   the hash identifier, and tttt is a 32-bit integer identifying the
-   epoch.
+   the hash identifier, and tttt is the epoch number written in decimal
+   US-ASCII digits.
 
    As another example, consider a fictional application named Bar that
    implements an ad-hoc zero-knowledge virtual machine for correct
@@ -962,8 +1017,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    variables over p^m committed with the polynomial commitment scheme
    COM is the pair:
 
-   *  instance (S, N, C): N is the number of variables, C the
-      commitment, and S the target sum;
+   *  instance (S, C): C the commitment, and S the target sum;
 
    *  witness (F, r), the multilinear polynomial in N variables and r
       the commitment opening information.
@@ -1028,13 +1082,13 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
 6.2.1.  Byte strings
 
-   An N-byte string whose length is known from its type and the instance
-   is deserialized by reading that many bytes.  This is the inverse of
-   EncodeBytes (Section 4.1.1).
+   An N-byte string whose length is known by the message's type and the
+   instance, deserialization reads N bytes.
 
    DeserializeBytes(input, N)
 
    Inputs:
+
    - input, the unread remainder of the NARG string
    - N, the expected byte length
 
@@ -1044,8 +1098,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    2. b = input[0 : N]
    3. return b
 
-   This consumes N bytes of the NARG string, and fails if fewer bytes
-   remain.
+   DeserializeBytes is the inverse of EncodeBytes (Section 4.1.1), and
+   consumes N bytes of the NARG string, and fails if fewer bytes remain.
 
    A byte string whose length is not known in advance is deserialized by
    reading a 4-byte length N via OS2IP, then reading the next N bytes;
@@ -1082,6 +1136,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    DeserializeUint(input, M)
 
    Inputs:
+
    - input, the unread remainder of the NARG string
    - M, the modulus
 
@@ -1106,6 +1161,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    DeserializeField(input, p, m)
 
    Inputs:
+
    - input, the unread remainder of the NARG string
    - p, the prime characteristic of the field
    - m, the extension degree
@@ -1132,49 +1188,51 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    Read the next Ne bytes and convert them to a group element using the
    group's element-deserialization function.  Deserialization *MUST*
-   perform the ciphersuite's input-validation steps and fail unless the
-   input is the canonical encoding of a valid group element.
+   perform the ciphersuite's input-validation steps, *SHOULD* reject the
+   identity element (Section 4.1.5), and fail unless the input is the
+   canonical encoding of a valid group element.
 
-   For example, for elliptic curves defined in [SEC1], decoding is the
+   Note that for elliptic curves defined in [SEC1], decoding is the
    Octet-String-to-Elliptic-Curve-Point conversion, which checks that
    the encoding is well-formed and that the point lies on the curve, and
-   returns "invalid" otherwise.  Membership in the subgroup used for
-   cryptographic operations is not checked by this conversion: it is
-   implied for curves of prime order, but requires an explicit check
-   when the cofactor is greater than one.
+   returns "invalid" otherwise.  The single-byte 0x00 encoding of the
+   identity is not a valid Ne-byte input and *SHOULD* be rejected.
 
 7.  Efficiency considerations
 
    For both codecs and serialization, batch algorithms should be
    preferred when available, because they amortize per-element cost over
-   a whole sequence.  For example, serializing or deserializing a batch
-   of compressed elliptic-curve points requires only one modular
-   inversion for the entire batch (via Montgomery's trick) rather than
-   one per point, which is the dominant cost in point (de)compression.
+   a whole sequence.  For example, serializing a batch of compressed
+   elliptic-curve points requires only one modular inversion for the
+   entire batch (via Montgomery's trick) rather than one per point, the
+   dominant cost in point compression.  Deserialization does not batch
+   in the same way, since point decompression requires a per-element
+   square root.
 
    Init(session_id) (see Section 5.1) can be precomputed.
    Implementations can therefore start each prover and verifier
    execution from a copy of the duplex sponge state, instead of
-   initializing it every time.  In the SHAKE128 instantiation, where the
+   initializing it every time.  In the Section 3.2 and Section 3.3, the
    padded session identifier fills exactly one rate block
-   (Section 3.2.1), this saves one invocation of the permutation
-   function per execution, and amortizes the cost of DeriveSessionID
-   when the session identifier is derived from a tag.  The same
-   observation extends to longer shared prefixes: proofs for the same
-   instance can additionally start from a stored copy of the state
-   obtained after absorbing encode[0](instance).
+   (Section 3.2.1), saving one invocation of the permutation function
+   per execution.  Similarly, DeriveSessionID can be precomputed when
+   the session identifier is derived from a tag.  The same observation
+   extends to longer shared prefixes: proofs for the same instance can
+   additionally start from a stored copy of the state obtained after
+   absorbing encode[0](instance).
 
 8.  Security considerations
 
    This section contains additional security considerations about the
-   Fiat-Shamir transformation as described in this document.
+   Fiat-Shamir transformation.
 
 8.1.  Codecs
 
-   While encoding maps are never inverted during the protocol, the
-   security proof relies on a left inverse existing and being
-   efficiently computable: the knowledge-soundness extractor uses it to
-   recover prover messages from the absorbed bytes [CO25].
+   Encoding maps are inverted only in the security analysis (by the
+   knowledge extractor), never by the prover or verifier.  The proof
+   relies on a left inverse existing and being efficiently computable,
+   which the knowledge-soundness extractor uses to recover prover
+   messages from the absorbed bytes [CO25].
 
    Decoding preserves the uniform distribution only when its input is
    uniform.  Verifier messages *MUST* therefore be derived from Squeeze
@@ -1288,12 +1346,12 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    obtains a challenge c, and replies with a scalar f.  The verifier
    accepts if the verification equations hold: f * G == A + c * X and f
    * H == B + c * Y.  Suppose the challenge c is derived only by
-   absorbing (A, B) and omitting the instance (G, H, X, Y).  A malicious
-   prover can pick A, B, H, and f at random, derive c, and then set X
-   and Y to satisfy the verification equations.  Verification passes,
-   yet no single x satisfies both X = x * G and Y = x * H.  Thus, a
-   false statement has been proven.  Other examples are available in
-   [DMWG23], for a range of different applications.
+   absorbing (A, B) and omitting the instance (G, H, X, Y) (cf
+   Section 8.5).  A malicious prover can pick A, B, H, and f at random,
+   derive c, and then set X and Y to satisfy the verification equations.
+   Verification passes, yet no single x satisfies both X = x * G and Y =
+   x * H.  A false statement has been proven.  Other examples are
+   available in [DMWG23].
 
    All security guarantees are conditioned on the instance being part of
    the relation being proven.  The Fiat-Shamir transformation does not
@@ -1316,30 +1374,13 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    prover message in turn with a different value.
 
    Absorbing a prover message and serializing it to (or reading it from)
-   the NARG string *SHOULD* be coupled, to prevent prover messages from
-   being hashed without being serialized, or from being skipped or
-   reordered.
-
-   A sequential transcript interface is *RECOMMENDED*: implementations
-   are encouraged to expose two directed state machines
-
-   *  (instance, witness) -> prove -> proof, and
-
-   *  (instance, proof) -> verify -> accept/reject
-
-   where the proof object is a byte string.
-
-   Particular care must be taken when building a proof object that is
-   only later serialized into a NARG string: its fields are randomly
-   addressable, making them prone to out-of-order or partial access to
-   prover messages, which can in turn compromise soundness of the
-   resulting non-interactive argument.  A sequential interface, by
-   contrast, enforces in-order processing.  An end-of-input check is
-   necessary to prevent malleability.
+   the NARG string should be performed within the same function call, to
+   ensure that prover messages are both hashed and serialized, and to
+   prevent them from being skipped or reordered.
 
    The NARG string must be treated as untrusted input.  Therefore, non-
-   interactive verifiers *MUST NOT* assume that length indicators are
-   honest, that integers fall within their expected range, or that the
+   interactive verifiers *MUST* check that length indicators are
+   correct, that integers fall within their expected range, and that the
    proof length is correct.  For example, in Section 6.2.1 the length
    prefix of a byte string is attacker-controlled, and can be as large
    as 2^32 - 1, so computing 4 + N can overflow 32-bit integers.
@@ -1366,7 +1407,10 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
 
-   [RFC9861]  "*** BROKEN REFERENCE ***".
+   [RFC9861]  Viguier, B., Wong, D., Ed., Van Assche, G., Ed., Dang, Q.,
+              Ed., and J. Daemen, Ed., "KangarooTwelve and TurboSHAKE",
+              RFC 9861, DOI 10.17487/RFC9861, October 2025,
+              <https://www.rfc-editor.org/rfc/rfc9861>.
 
    [SEC1]     Standards for Efficient Cryptography Group (SECG), "SEC 1:
               Elliptic Curve Cryptography",
@@ -1397,14 +1441,38 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
               Encryption and Other Applications", 2011,
               <https://keccak.team/files/SpongeDuplex.pdf>.
 
+   [FROZENHEART]
+              Trail of Bits, "The Frozen Heart Vulnerability in PlonK",
+              2022, <https://blog.trailofbits.com/2022/04/18/the-frozen-
+              heart-vulnerability-in-plonk/>.
+
+   [RFC7748]  Langley, A., Hamburg, M., and S. Turner, "Elliptic Curves
+              for Security", RFC 7748, DOI 10.17487/RFC7748, January
+              2016, <https://www.rfc-editor.org/rfc/rfc7748>.
+
+   [RFC8032]  Josefsson, S. and I. Liusvaara, "Edwards-Curve Digital
+              Signature Algorithm (EdDSA)", RFC 8032,
+              DOI 10.17487/RFC8032, January 2017,
+              <https://www.rfc-editor.org/rfc/rfc8032>.
+
    [RFC9380]  Faz-Hernandez, A., Scott, S., Sullivan, N., Wahby, R. S.,
               and C. A. Wood, "Hashing to Elliptic Curves", RFC 9380,
               DOI 10.17487/RFC9380, August 2023,
               <https://www.rfc-editor.org/rfc/rfc9380>.
 
+   [RFC9496]  de Valence, H., Grigg, J., Hamburg, M., Lovecruft, I.,
+              Tankersley, G., and F. Valsorda, "The ristretto255 and
+              decaf448 Groups", RFC 9496, DOI 10.17487/RFC9496, December
+              2023, <https://www.rfc-editor.org/rfc/rfc9496>.
+
    [SAFE]     Aumasson, J., Khovratovich, D., Mennink, B., and P. Quine,
               "SAFE: Sponge API for Field Elements", 2023,
               <https://eprint.iacr.org/2023/522>.
+
+   [SOLANA-ZK]
+              Solana Foundation, "Post-Mortem: ZK ElGamal Proof Program
+              Bug", 2025,
+              <https://solana.com/news/post-mortem-may-2-2025>.
 
    [SPONGE]   Bertoni, G., Daemen, J., Peeters, M., and G. V. Assche,
               "Cryptographic Sponge Functions", 2011,
@@ -1626,8 +1694,13 @@ A.16.  One round of the sumcheck protocol: round polynomial, challenge,
    c7b4dee2cda42e18debc6c5a39236863588791a4f52c6e2d365a62c750ed6f85d68f
    0c1234ae10af6efe063232824344047f6c4635321088c623a7f97fb75edf7f3
 
-Author's Address
+Authors' Addresses
 
    Michele Orrù
    CNRS
    Email: m@orru.net
+
+
+   Cathie Yun
+   Apple, Inc.
+   Email: cathieyun@gmail.com
