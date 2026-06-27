@@ -1,7 +1,8 @@
-## Squeeze 32 bytes immediately after initialization
+### Squeeze 32 bytes immediately after initialization
 ~~~
-Id = fiat-shamir/init_squeeze
-Ciphersuite = SHAKE128
+Id = fiat-shamir/shake128/init_squeeze
+Function = DuplexSponge
+Hash = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -10,10 +11,11 @@ Output =
   63e1b3543377fab6fb8cf0f7698a9980ca0211d5bc4aba213dd7a6ef7dd63cfa
 ~~~
 
-## Absorb a message, then squeeze 64 bytes
+### Absorb a message, then squeeze 64 bytes
 ~~~
-Id = fiat-shamir/absorb_squeeze
-Ciphersuite = SHAKE128
+Id = fiat-shamir/shake128/absorb_squeeze
+Function = DuplexSponge
+Hash = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -24,10 +26,11 @@ Output =
   56d433cbde0ade711bdd55d7ed5de38bb9adea8b2eec4402a0df090c16371413
 ~~~
 
-## Absorbing in parts equals absorbing all at once
+### Absorbing in parts equals absorbing all at once
 ~~~
-Id = fiat-shamir/absorb_split
-Ciphersuite = SHAKE128
+Id = fiat-shamir/shake128/absorb_split
+Function = DuplexSponge
+Hash = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -38,10 +41,11 @@ Output =
   a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1dd9e41
 ~~~
 
-## Consecutive squeezes continue a single output stream
+### Consecutive squeezes continue a single output stream
 ~~~
-Id = fiat-shamir/stream
-Ciphersuite = SHAKE128
+Id = fiat-shamir/shake128/stream
+Function = DuplexSponge
+Hash = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -52,26 +56,28 @@ Output =
   a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1dd9e41
 ~~~
 
-## An empty absorb is a no-op and does not restart the output stream
+### Empty absorb
 ~~~
-Id = fiat-shamir/empty_absorb
-Ciphersuite = SHAKE128
+Id = fiat-shamir/shake128/empty_absorb
+Function = DuplexSponge
+Hash = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-Operation1 = absorb:616263 (ASCII "abc")
-Operation2 = squeeze:32
-Output1 =
+Operations =
+  - absorb 616263
+  - squeeze 32
+  - absorb ""
+  - squeeze 32
+Output =
   a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1dd9e41
-Operation3 = absorb:"" (zero bytes)
-Operation4 = squeeze:32
-Output2 =
   d88e36c20e053248b90967a90051ba319688a10783c2ce174602eccc02e8d1a6
 ~~~
 
-## Squeeze, absorb more input, then squeeze again
+### Squeeze, absorb more input, then squeeze again
 ~~~
-Id = fiat-shamir/interleave
-Ciphersuite = SHAKE128
+Id = fiat-shamir/shake128/interleave
+Function = DuplexSponge
+Hash = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -83,10 +89,11 @@ Output =
   2da3c7e3a65c6e92901e8b668c43917eb9f02e9988e66d5ce2fbd833a0ecb93e
 ~~~
 
-## Absorb and squeeze multiple blocks
+### Absorb and squeeze multiple blocks
 ~~~
-Id = fiat-shamir/multiblock
-Ciphersuite = SHAKE128
+Id = fiat-shamir/shake128/multiblock
+Function = DuplexSponge
+Hash = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -131,112 +138,59 @@ Output =
   33281e8b6c15029202d0bb34749b962cc314515c748b74f4
 ~~~
 
-## Derive a session identifier from an application tag
+### Derive a session identifier from an application tag
 ~~~
-Id = fiat-shamir/derive_sid
-Ciphersuite = SHAKE128
+Id = fiat-shamir/shake128/derive_sid
+Function = DeriveSessionID
+Hash = SHAKE128
 Tag = 696e7465726f702d746573742d763030
 Output =
   b508aca89eecac56cd33e4a28f817f43f849d035922f354173ae8466628308cf
 ~~~
 
-## Length-prefixed byte-string encoding (EncodeVarLenString)
+### Squeeze and reduce a P-256 scalar challenge (DecodeUint)
 ~~~
-Id = fiat-shamir/encode_varlen
-Ciphersuite = any (ciphersuite-independent)
-Input = 70726f6f66
-Output = 0000000570726f6f66
-~~~
-
-## Fixed-width unsigned-integer encoding (EncodeUint)
-~~~
-Id = fiat-shamir/encode_uint
-Ciphersuite = P-256
-Value = 3735928559
+Id = fiat-shamir/shake128/decode_uint
+Function = DecodeUint
+Hash = SHAKE128
 Modulus =
   ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
-Output =
-  00000000000000000000000000000000000000000000000000000000deadbeef
-~~~
-
-## Squeeze a P-256 scalar (DecodeUint)
-~~~
-Id = fiat-shamir/decode_uint
-Ciphersuite = SHAKE128 / P-256
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
   - absorb 00000008696e7374616e6365
-  - squeeze 64
+  - squeeze 48
 Output =
   177efbafc28fc74895861272346b4312e3e44d74846cddd7e63e3d1f5cfa7424
-  3c10dc1a5d50d6b9f47db43283665d9f8c375dff506b40b589a1fe1756d830cd
+  3c10dc1a5d50d6b9f47db43283665d9f
 Challenge =
-  af921d1cbd761e445516672631af5f570f1d0d384ab98f4648365422c8986c3f
+  4469555175f8b49c04e9816d8179e412d68c01ee3683169e62c91c451cdd283a
 ~~~
 
-## Reject a malformed (truncated) field element
+### One round of the sumcheck protocol: round polynomial, challenge, reduced claim
 ~~~
-Id = fiat-shamir/reject_truncated
-Ciphersuite = P-256 scalar characteristic / m=2
-Input =
-  00000000000000000000000000000000000000000000000000000000deadbeef
-  ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
-Result = reject
-~~~
-
-## Reject a malformed (trailing bytes) field element
-~~~
-Id = fiat-shamir/reject_trailing
-Ciphersuite = P-256 scalar characteristic / m=2
-Input =
-  00000000000000000000000000000000000000000000000000000000deadbeef
-  ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632550
-  00
-Result = reject
-~~~
-
-## Reject a malformed (integer equal to the modulus) field element
-~~~
-Id = fiat-shamir/reject_noncanonical
-Ciphersuite = P-256 scalar characteristic / m=2
-Input =
+Id = fiat-shamir/shake128/sumcheck
+Function = Sumcheck
+Hash = SHAKE128
+Modulus =
   ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
-  ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632550
-Result = reject
-~~~
-
-## Reject a byte-string length prefix larger than the input
-~~~
-Id = fiat-shamir/reject_varlen_overflow
-Ciphersuite = any (ciphersuite-independent)
-Input = 0000000670726f6f66
-Result = reject
-~~~
-
-## One round of the sumcheck protocol: round polynomial, challenge, reduced claim
-~~~
-Id = fiat-shamir/sumcheck
-Ciphersuite = SHAKE128 / P-256
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 ContextTag = 73756d636865636b
 Degree = 2
 ClaimedSum =
-  0bd2cb0b0e848ad2f10565d04c6703cf60ee2d104103b5232e6a1e906285a3af
-Coefficient0 =
-  6691bd71f54c02fca4ee4f8af8d646ff356eb7e2d3a3c9329a98d3860732cc7b
-Coefficient1 =
-  4dee2cda42e18debc6c5a39236863588791a4f52c6e2d365a62c750ed6f85d68
-Coefficient2 =
-  f0c1234ae10af6efe063232824344047f6c4635321088c623a7f97fb75edf7f3
+  16378d9446c64875239e4c7c5c07e2e4516ab8f1d1106a90762fe83d6814dc5f
+Coefficients =
+  - 3352f9e4bd38fc21798a864d4e0ace1bfb9f29ca15f59dc5ef2cfb9fc2086644
+  - 6b217985d1da46a01d39b9617fce5d8005a7df7943988869b7ac55be7b700d16
+  - 44702043fa7a0993134f86804023e92c116b809208a4451fd3e3660264f72812
 Challenge =
-  612c1a1c6e069798a6df1a3e768549bc78e3bf85bd237cc0f3ea4d9d3b8b6f4a
+  ca999901d7c56015a876e539ab335f666e4513de7cd41274b2aa4971681e7704
 ReducedClaim =
-  0741e58fe67af478b9cb568d509a45f0c88e20275e8b5e1a788acc3835ca1c30
+  fe9bb9b628bf6a0a47f998fdf41349fb6549f6497ef2106578d556c9c8e42ee0
 Narg =
-  6691bd71f54c02fca4ee4f8af8d646ff356eb7e2d3a3c9329a98d3860732cc7b
-  4dee2cda42e18debc6c5a39236863588791a4f52c6e2d365a62c750ed6f85d68
-  f0c1234ae10af6efe063232824344047f6c4635321088c623a7f97fb75edf7f3
+  3352f9e4bd38fc21798a864d4e0ace1bfb9f29ca15f59dc5ef2cfb9fc2086644
+  6b217985d1da46a01d39b9617fce5d8005a7df7943988869b7ac55be7b700d16
+  44702043fa7a0993134f86804023e92c116b809208a4451fd3e3660264f72812
 ~~~
 
