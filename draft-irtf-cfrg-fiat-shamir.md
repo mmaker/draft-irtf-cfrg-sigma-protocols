@@ -109,6 +109,16 @@ informative:
       - fullname: "Dmitry Khovratovich"
       - fullname: "Bart Mennink"
       - fullname: "Porçu Quine"
+  GNARK-OOM:
+    title: "GHSA-cph5-3pgr-c82g: gnark vulnerable to out-of-memory crash during deserialization of untrusted keys"
+    target: https://github.com/Consensys/gnark/security/advisories/GHSA-cph5-3pgr-c82g
+    date: 2024
+    author:
+      - org: "Consensys"
+  CVE-2024-42461:
+    title: "CVE-2024-42461: ECDSA signature malleability from BER-encoded signatures in the elliptic package"
+    target: https://nvd.nist.gov/vuln/detail/CVE-2024-42461
+    date: 2024
 
 --- abstract
 
@@ -316,10 +326,10 @@ This section lists the duplex sponge instantiations provided in this document.
 Prover and verifier messages are handled via three operations:
 
 - `Init(session_id) -> state`: create a new duplex sponge state, seeded by the 32-byte string `session_id`.
-- `Absorb(state, x)`: absorb `x` into the state.
-- `Squeeze(state, n) -> buf`: produce `n` elements from the state.
+- `state.Absorb(x)`: absorb `x` into the state.
+- `state.Squeeze(n) -> buf`: produce `n` bytes from the state.
 
-In the duplex sponge interface, messages can be absorbed incrementally: `Absorb(x)` followed by `Absorb(y)` (with no `Squeeze` in between) is equivalent to `Absorb(x || y)`. The output of `Squeeze(n)` is uniformly distributed, and consecutive `Squeeze` calls continue one output stream.
+In the duplex sponge interface, messages can be absorbed incrementally: `state.Absorb(x)` followed by `state.Absorb(y)` (with no `state.Squeeze` in between) is equivalent to `state.Absorb(x || y)`. The output of `state.Squeeze(n)` is uniformly distributed, and consecutive `state.Squeeze` calls continue one output stream.
 
 Guidance on how to produce a 32-byte `session_id` is given in {{session-id}}; its security requirements in {{indifferentiability-of-the-hash-function}}.
 
@@ -364,11 +374,10 @@ Output: a duplex sponge state
 Feed a byte string `x` into the state. Absorbing the empty string leaves the state unchanged.
 
 ~~~
-Absorb(state, x)
+state.Absorb(x)
 
-Inputs:
+Input:
 
-- state, a duplex sponge state
 - x, a byte array
 
 1. state.ctx.Update(x)
@@ -381,11 +390,10 @@ Inputs:
 Returns the next `n` bytes of the SHAKE128 output stream computed over the absorbed input. If the duplex sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a SHAKE128 XOF reader. Consecutive `Squeeze` calls **continue** the same SHAKE128 output stream.
 
 ~~~
-Squeeze(state, n)
+state.Squeeze(n)
 
-Inputs:
+Input:
 
-- state, the duplex sponge state
 - n, the number of bytes to be squeezed
 
 Output: a uniformly-distributed random n-byte string
@@ -438,11 +446,10 @@ Output: a duplex sponge state
 Feed a byte string `x` into the state. Absorbing the empty string leaves the state unchanged.
 
 ~~~
-Absorb(state, x)
+state.Absorb(x)
 
-Inputs:
+Input:
 
-- state, a duplex sponge state
 - x, a byte string
 
 1. state.ctx.Update(x)
@@ -455,11 +462,10 @@ Inputs:
 Returns the next `n` bytes of the TurboSHAKE128 output stream computed over the absorbed input. If the duplex sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a TurboSHAKE128 XOF reader. Consecutive `Squeeze` calls **continue** the same TurboSHAKE128 output stream.
 
 ~~~
-Squeeze(state, n)
+state.Squeeze(n)
 
-Inputs:
+Input:
 
-- state, the duplex sponge state
 - n, the number of bytes to be squeezed
 
 Output: a uniformly-distributed random n-byte string
@@ -659,7 +665,9 @@ Neither the session identifier nor the instance is part of the NARG string: the 
 
 The session identifier is a 32-byte string that identifies the context in which the non-interactive argument is used. An application **MAY** set it to any 32-byte string it derives by its own unambiguous means; the procedure `DeriveSessionID` below is the **RECOMMENDED** way to obtain one from a human-meaningful `tag`.
 
-For a duplex sponge operating over bytes, the session identifier is derived from a `tag` via the procedure `DeriveSessionID`. The `tag` is a byte string whose encoding as a sequence of bytes **MUST** be specified unambiguously, so that every implementation reproduces identical bytes. A printable US-ASCII string without null termination is the **RECOMMENDED** rendering: it keeps the tag inspectable in specifications, test vectors, and logs, and it is safe to pass through interfaces that treat the tag as a null-terminated string. For these reasons the tag **SHOULD NOT** contain a zero byte (in particular, it **SHOULD NOT** be terminated by a `0x00` byte) and, when it is textual, **SHOULD NOT** begin with a byte-order mark.
+For a duplex sponge operating over bytes, the session identifier is derived from a `tag` via the procedure `DeriveSessionID`. The `tag` is a byte string whose encoding as a sequence of bytes **MUST** be specified unambiguously, so that every implementation reproduces identical bytes.  It is **RECOMMENDED** the `tag` be a US-ASCII string, without byte-order mark at the beginning, nor `0x00` byte termination.
+
+When the `tag` is composed of several fields (for example the components required below), those fields **MUST** be combined unambiguously, so that no two distinct tuples of field values yield the same byte string. Using fixed-width fields or an unambiguous delimiter is sufficient; concatenating variable-length fields without separation is not, because distinct tuples can collide (for example `("SV1", "22")` and `("SV12", "2")` both yield `SV122`), which would cause two different contexts to share a session identifier.
 
 The tag has the following security requirements:
 
@@ -681,7 +689,7 @@ Output: session_id, a 32-byte string
 3. return duplex_sponge.Squeeze(32)
 ~~~
 
-Above, `DS` denotes the duplex sponge instantiation in use ({{hash-instantiations}}, for example the SHAKE128 duplex sponge of {{suite-shake128}}), and `DS.Init`, `DS.Absorb`, and `DS.Squeeze` are its operations. The 32-byte string `"irtf-cfrg-fiat-shamir/session-id"` is a domain separator for this derivation.
+Above, `DS` denotes the duplex sponge instantiation in use ({{hash-instantiations}}, for example the SHAKE128 duplex sponge of {{suite-shake128}}): `DS.Init` constructs a fresh state, and `state.Absorb` and `state.Squeeze` are its operations. The 32-byte string `"irtf-cfrg-fiat-shamir/session-id"` is a domain separator for this derivation.
 
 As an example, consider a fictional application named Foo that implements sigma protocols over elliptic curves for encrypted messages shared during a time epoch `tttt`. A reasonable choice of tag is:
 
@@ -939,11 +947,11 @@ All security guarantees are conditioned on the instance being part of the relati
 
 The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities, especially due to incorrect implementations involving out-of-order (or missing) prover messages.
 
-Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes, and by replacing each prover message in turn with a different value.
+Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes {{CVE-2024-42461}}, and by replacing each prover message in turn with a different value.
 
 Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered.
 
-The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers **MUST** check that length indicators are correct, that integers fall within their expected range, and that the proof length is correct. For example, in {{deserialize-byte-strings}} the length prefix of a byte string is attacker-controlled, and can be as large as `2^32 - 1`, so computing `4 + N` can overflow 32-bit integers.
+The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers **MUST** check that length indicators are correct, that integers fall within their expected range, and that the proof length is correct. For example, in {{deserialize-byte-strings}} the length prefix of a byte string is attacker-controlled, and can be as large as `2^32 - 1`, so computing `4 + N` can overflow 32-bit integers. As another example, a crafted length indicator can make verification checks trivial, or exhaust memory on deserialization before any cryptographic check runs {{GNARK-OOM}}.
 
 # IANA Considerations
 
