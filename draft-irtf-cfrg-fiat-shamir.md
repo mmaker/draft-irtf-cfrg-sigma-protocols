@@ -113,6 +113,12 @@ informative:
       - fullname: "Dmitry Khovratovich"
       - fullname: "Bart Mennink"
       - fullname: "Porçu Quine"
+  GNARK-OOM:
+    title: "GHSA-cph5-3pgr-c82g: gnark vulnerable to out-of-memory crash during deserialization of untrusted keys"
+    target: https://github.com/Consensys/gnark/security/advisories/GHSA-cph5-3pgr-c82g
+    date: 2024
+    author:
+      - org: "Consensys"
 
 --- abstract
 
@@ -947,7 +953,7 @@ Test vectors can help confirm that honestly-generated proofs verify, but such te
 
 Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered.
 
-The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers **MUST** check that length indicators are correct, that integers fall within their expected range, and that the proof length is correct. For example, in {{deserialize-byte-strings}} the length prefix of a byte string is attacker-controlled, and can be as large as `2^32 - 1`, so computing `4 + N` can overflow 32-bit integers.
+The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers **MUST** check that length indicators are correct, that integers fall within their expected range, and that the proof length is correct. For example, in {{deserialize-byte-strings}} the length prefix of a byte string is attacker-controlled, and can be as large as `2^32 - 1`, so computing `4 + N` can overflow 32-bit integers. As another example, a crafted length indicator can make verification checks trivial, or exhaust memory on deserialization before any cryptographic check runs {{GNARK-OOM}}.
 
 # IANA Considerations
 
