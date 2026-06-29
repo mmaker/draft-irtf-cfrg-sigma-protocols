@@ -320,10 +320,10 @@ This section lists the duplex sponge instantiations provided in this document.
 Prover and verifier messages are handled via three operations:
 
 - `Init(session_id) -> state`: create a new duplex sponge state, seeded by the 32-byte string `session_id`.
-- `Absorb(state, x)`: absorb `x` into the state.
-- `Squeeze(state, n) -> buf`: produce `n` elements from the state.
+- `state.Absorb(x)`: absorb `x` into the state.
+- `state.Squeeze(n) -> buf`: produce `n` bytes from the state.
 
-In the duplex sponge interface, messages can be absorbed incrementally: `Absorb(x)` followed by `Absorb(y)` (with no `Squeeze` in between) is equivalent to `Absorb(x || y)`. The output of `Squeeze(n)` is uniformly distributed, and consecutive `Squeeze` calls continue one output stream.
+In the duplex sponge interface, messages can be absorbed incrementally: `state.Absorb(x)` followed by `state.Absorb(y)` (with no `state.Squeeze` in between) is equivalent to `state.Absorb(x || y)`. The output of `state.Squeeze(n)` is uniformly distributed, and consecutive `state.Squeeze` calls continue one output stream.
 
 Guidance on how to produce a 32-byte `session_id` is given in {{session-id}}; its security requirements in {{indifferentiability-of-the-hash-function}}.
 
@@ -368,11 +368,10 @@ Output: a duplex sponge state
 Feed a byte string `x` into the state. Absorbing the empty string leaves the state unchanged.
 
 ~~~
-Absorb(state, x)
+state.Absorb(x)
 
-Inputs:
+Input:
 
-- state, a duplex sponge state
 - x, a byte array
 
 1. state.ctx.Update(x)
@@ -385,11 +384,10 @@ Inputs:
 Returns the next `n` bytes of the SHAKE128 output stream computed over the absorbed input. If the duplex sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a SHAKE128 XOF reader. Consecutive `Squeeze` calls **continue** the same SHAKE128 output stream.
 
 ~~~
-Squeeze(state, n)
+state.Squeeze(n)
 
-Inputs:
+Input:
 
-- state, the duplex sponge state
 - n, the number of bytes to be squeezed
 
 Output: a uniformly-distributed random n-byte string
@@ -442,11 +440,10 @@ Output: a duplex sponge state
 Feed a byte string `x` into the state. Absorbing the empty string leaves the state unchanged.
 
 ~~~
-Absorb(state, x)
+state.Absorb(x)
 
-Inputs:
+Input:
 
-- state, a duplex sponge state
 - x, a byte string
 
 1. state.ctx.Update(x)
@@ -459,11 +456,10 @@ Inputs:
 Returns the next `n` bytes of the TurboSHAKE128 output stream computed over the absorbed input. If the duplex sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a TurboSHAKE128 XOF reader. Consecutive `Squeeze` calls **continue** the same TurboSHAKE128 output stream.
 
 ~~~
-Squeeze(state, n)
+state.Squeeze(n)
 
-Inputs:
+Input:
 
-- state, the duplex sponge state
 - n, the number of bytes to be squeezed
 
 Output: a uniformly-distributed random n-byte string
@@ -689,7 +685,7 @@ Output: session_id, a 32-byte string
 3. return duplex_sponge.Squeeze(32)
 ~~~
 
-Above, `DS` denotes the duplex sponge instantiation in use ({{hash-instantiations}}, for example the SHAKE128 duplex sponge of {{suite-shake128}}), and `DS.Init`, `DS.Absorb`, and `DS.Squeeze` are its operations. The 32-byte string `"irtf-cfrg-fiat-shamir/session-id"` is a domain separator for this derivation.
+Above, `DS` denotes the duplex sponge instantiation in use ({{hash-instantiations}}, for example the SHAKE128 duplex sponge of {{suite-shake128}}): `DS.Init` constructs a fresh state, and `state.Absorb` and `state.Squeeze` are its operations. The 32-byte string `"irtf-cfrg-fiat-shamir/session-id"` is a domain separator for this derivation.
 
 As an example, consider a fictional application named Foo that implements sigma protocols over elliptic curves for encrypted messages shared during a time epoch `tttt`. A reasonable choice of tag is:
 
