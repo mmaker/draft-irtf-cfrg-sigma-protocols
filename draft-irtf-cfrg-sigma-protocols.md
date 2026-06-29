@@ -994,7 +994,7 @@ is implemented using the SHAKE128 duplex sponge of {{fiat-shamir}},
 absorbing a seed of 32 bytes.
 The Seeded PRNG is for reproducible test vectors; production implementations MUST use a CSPRNG.
 
-Random scalars are generated squeezing `Ns + 32` bytes, seen as a big-endian positive integer and reduced modulo `p`, as in the unsigned-integer decoding of {{fiat-shamir}}.
+Random scalars are generated squeezing `Ns + 16` bytes, seen as a big-endian positive integer and reduced modulo `p`, as in the unsigned-integer decoding of {{fiat-shamir}}.
 
 ~~~
 class SeededPRNG:
@@ -1006,7 +1006,7 @@ class SeededPRNG:
 
     def random_scalar(self) -> Scalar:
         Ns = (self.order.bit_length() + 7) // 8
-        random_integer  = OS2IP(self.hash_state.squeeze(Ns + 32))
+        random_integer  = OS2IP(self.hash_state.squeeze(Ns + 16))
         return Scalar(random_integer % self.order)
 ~~~
 
