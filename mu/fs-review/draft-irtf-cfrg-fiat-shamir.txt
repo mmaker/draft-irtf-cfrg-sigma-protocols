@@ -1383,8 +1383,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    but such tests exercise only completeness.  Negative testing will
    help exercise the rejection paths too.  Some such examples are:
    tampering with a valid NARG string to cause verification to fail, by
-   flipping, appending, or prepending bytes, and by replacing each
-   prover message in turn with a different value.
+   flipping, appending, or prepending bytes [CVE-2024-42461], and by
+   replacing each prover message in turn with a different value.
 
    Absorbing a prover message and serializing it to (or reading it from)
    the NARG string should be performed within the same function call, to
@@ -1447,6 +1447,11 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    [CO25]     Chiesa, A. and M. Orrù, "A Fiat-Shamir Transformation From
               Duplex Sponges", 2025,
               <https://eprint.iacr.org/2025/536.pdf>.
+
+   [CVE-2024-42461]
+              "CVE-2024-42461: ECDSA signature malleability from BER-
+              encoded signatures in the elliptic package", 2024,
+              <https://nvd.nist.gov/vuln/detail/CVE-2024-42461>.
 
    [DMWG23]   Dao, Q., Miller, J., Wright, O., and P. Grubbs, "Weak
               Fiat-Shamir Attacks on Modern Proof Systems", 2023,

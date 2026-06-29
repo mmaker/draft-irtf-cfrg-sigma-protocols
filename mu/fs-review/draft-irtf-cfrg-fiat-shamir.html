@@ -2693,7 +2693,7 @@ Output: a, an element of the field of order p^m, given by its
 <a href="#section-8.6" class="section-number selfRef">8.6. </a><a href="#name-implementation-guidance" class="section-name selfRef">Implementation guidance</a>
         </h3>
 <p id="section-8.6-1">The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities, especially due to incorrect implementations involving out-of-order (or missing) prover messages.<a href="#section-8.6-1" class="pilcrow">¶</a></p>
-<p id="section-8.6-2">Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes, and by replacing each prover message in turn with a different value.<a href="#section-8.6-2" class="pilcrow">¶</a></p>
+<p id="section-8.6-2">Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes <span>[<a href="#CVE-2024-42461" class="cite xref">CVE-2024-42461</a>]</span>, and by replacing each prover message in turn with a different value.<a href="#section-8.6-2" class="pilcrow">¶</a></p>
 <p id="section-8.6-3">Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered.<a href="#section-8.6-3" class="pilcrow">¶</a></p>
 <p id="section-8.6-4">The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers <strong>MUST</strong> check that length indicators are correct, that integers fall within their expected range, and that the proof length is correct. For example, in <a href="#deserialize-byte-strings" class="auto internal xref">Section 6.2.1</a> the length prefix of a byte string is attacker-controlled, and can be as large as <code>2^32 - 1</code>, so computing <code>4 + N</code> can overflow 32-bit integers. As another example, a crafted length indicator can make verification checks trivial, or exhaust memory on deserialization before any cryptographic check runs <span>[<a href="#GNARK-OOM" class="cite xref">GNARK-OOM</a>]</span>.<a href="#section-8.6-4" class="pilcrow">¶</a></p>
 </section>
@@ -2759,6 +2759,10 @@ Output: a, an element of the field of order p^m, given by its
 <dt id="CO25">[CO25]</dt>
         <dd>
 <span class="refAuthor">Chiesa, A.</span> and <span class="refAuthor">M. Orrù</span>, <span class="refTitle">"A Fiat-Shamir Transformation From Duplex Sponges"</span>, <time datetime="2025" class="refDate">2025</time>, <span>&lt;<a href="https://eprint.iacr.org/2025/536.pdf">https://eprint.iacr.org/2025/536.pdf</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="CVE-2024-42461">[CVE-2024-42461]</dt>
+        <dd>
+<span class="refTitle">"CVE-2024-42461: ECDSA signature malleability from BER-encoded signatures in the elliptic package"</span>, <time datetime="2024" class="refDate">2024</time>, <span>&lt;<a href="https://nvd.nist.gov/vuln/detail/CVE-2024-42461">https://nvd.nist.gov/vuln/detail/CVE-2024-42461</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="DMWG23">[DMWG23]</dt>
         <dd>
