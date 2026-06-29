@@ -473,15 +473,15 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    *  Init(session_id) -> state: create a new duplex sponge state,
       seeded by the 32-byte string session_id.
 
-   *  Absorb(state, x): absorb x into the state.
+   *  state.Absorb(x): absorb x into the state.
 
-   *  Squeeze(state, n) -> buf: produce n elements from the state.
+   *  state.Squeeze(n) -> buf: produce n bytes from the state.
 
    In the duplex sponge interface, messages can be absorbed
-   incrementally: Absorb(x) followed by Absorb(y) (with no Squeeze in
-   between) is equivalent to Absorb(x || y).  The output of Squeeze(n)
-   is uniformly distributed, and consecutive Squeeze calls continue one
-   output stream.
+   incrementally: state.Absorb(x) followed by state.Absorb(y) (with no
+   state.Squeeze in between) is equivalent to state.Absorb(x || y).  The
+   output of state.Squeeze(n) is uniformly distributed, and consecutive
+   state.Squeeze calls continue one output stream.
 
    Guidance on how to produce a 32-byte session_id is given in
    Section 5.1; its security requirements in Section 8.4.4.
@@ -539,11 +539,10 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    Feed a byte string x into the state.  Absorbing the empty string
    leaves the state unchanged.
 
-   Absorb(state, x)
+   state.Absorb(x)
 
-   Inputs:
+   Input:
 
-   - state, a duplex sponge state
    - x, a byte array
 
    1. state.ctx.Update(x)
@@ -558,11 +557,10 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    reader.  Consecutive Squeeze calls *continue* the same SHAKE128
    output stream.
 
-   Squeeze(state, n)
+   state.Squeeze(n)
 
-   Inputs:
+   Input:
 
-   - state, the duplex sponge state
    - n, the number of bytes to be squeezed
 
    Output: a uniformly-distributed random n-byte string
@@ -625,11 +623,10 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    Feed a byte string x into the state.  Absorbing the empty string
    leaves the state unchanged.
 
-   Absorb(state, x)
+   state.Absorb(x)
 
-   Inputs:
+   Input:
 
-   - state, a duplex sponge state
    - x, a byte string
 
    1. state.ctx.Update(x)
@@ -644,11 +641,10 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    TurboSHAKE128 XOF reader.  Consecutive Squeeze calls *continue* the
    same TurboSHAKE128 output stream.
 
-   Squeeze(state, n)
+   state.Squeeze(n)
 
-   Inputs:
+   Input:
 
-   - state, the duplex sponge state
    - n, the number of bytes to be squeezed
 
    Output: a uniformly-distributed random n-byte string
@@ -971,10 +967,10 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    3. return duplex_sponge.Squeeze(32)
 
    Above, DS denotes the duplex sponge instantiation in use (Section 3,
-   for example the SHAKE128 duplex sponge of Section 3.2), and DS.Init,
-   DS.Absorb, and DS.Squeeze are its operations.  The 32-byte string
-   "irtf-cfrg-fiat-shamir/session-id" is a domain separator for this
-   derivation.
+   for example the SHAKE128 duplex sponge of Section 3.2): DS.Init
+   constructs a fresh state, and state.Absorb and state.Squeeze are its
+   operations.  The 32-byte string "irtf-cfrg-fiat-shamir/session-id" is
+   a domain separator for this derivation.
 
    As an example, consider a fictional application named Foo that
    implements sigma protocols over elliptic curves for encrypted
@@ -1400,7 +1396,10 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    correct, that integers fall within their expected range, and that the
    proof length is correct.  For example, in Section 6.2.1 the length
    prefix of a byte string is attacker-controlled, and can be as large
-   as 2^32 - 1, so computing 4 + N can overflow 32-bit integers.
+   as 2^32 - 1, so computing 4 + N can overflow 32-bit integers.  As
+   another example, a crafted length indicator can make verification
+   checks trivial, or exhaust memory on deserialization before any
+   cryptographic check runs [GNARK-OOM].
 
 9.  IANA Considerations
 
@@ -1462,6 +1461,13 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
               Trail of Bits, "The Frozen Heart Vulnerability in PlonK",
               2022, <https://blog.trailofbits.com/2022/04/18/the-frozen-
               heart-vulnerability-in-plonk/>.
+
+   [GNARK-OOM]
+              Consensys, "GHSA-cph5-3pgr-c82g: gnark vulnerable to out-
+              of-memory crash during deserialization of untrusted keys",
+              2024,
+              <https://github.com/Consensys/gnark/security/advisories/
+              GHSA-cph5-3pgr-c82g>.
 
    [RFC7748]  Langley, A., Hamburg, M., and S. Turner, "Elliptic Curves
               for Security", RFC 7748, DOI 10.17487/RFC7748, January
