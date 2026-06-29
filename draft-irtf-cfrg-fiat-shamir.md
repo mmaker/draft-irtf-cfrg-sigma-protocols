@@ -665,7 +665,9 @@ Neither the session identifier nor the instance is part of the NARG string: the 
 
 The session identifier is a 32-byte string that identifies the context in which the non-interactive argument is used. An application **MAY** set it to any 32-byte string it derives by its own unambiguous means; the procedure `DeriveSessionID` below is the **RECOMMENDED** way to obtain one from a human-meaningful `tag`.
 
-For a duplex sponge operating over bytes, the session identifier is derived from a `tag` via the procedure `DeriveSessionID`. The `tag` is a byte string whose encoding as a sequence of bytes **MUST** be specified unambiguously, so that every implementation reproduces identical bytes. A printable US-ASCII string without null termination is the **RECOMMENDED** rendering: it keeps the tag inspectable in specifications, test vectors, and logs, and it is safe to pass through interfaces that treat the tag as a null-terminated string. For these reasons the tag **SHOULD NOT** contain a zero byte (in particular, it **SHOULD NOT** be terminated by a `0x00` byte) and, when it is textual, **SHOULD NOT** begin with a byte-order mark.
+For a duplex sponge operating over bytes, the session identifier is derived from a `tag` via the procedure `DeriveSessionID`. The `tag` is a byte string whose encoding as a sequence of bytes **MUST** be specified unambiguously, so that every implementation reproduces identical bytes.  It is **RECOMMENDED** the `tag` be a US-ASCII string, without byte-order mark at the beginning, nor `0x00` byte termination.
+
+When the `tag` is composed of several fields (for example the components required below), those fields **MUST** be combined unambiguously, so that no two distinct tuples of field values yield the same byte string. Using fixed-width fields or an unambiguous delimiter is sufficient; concatenating variable-length fields without separation is not, because distinct tuples can collide (for example `("SV1", "22")` and `("SV12", "2")` both yield `SV122`), which would cause two different contexts to share a session identifier.
 
 The tag has the following security requirements:
 
