@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 29 December 2026                                    Apple, Inc.
-                                                            27 June 2026
+Expires: 31 December 2026                                    Apple, Inc.
+                                                            29 June 2026
 
 
                        Fiat-Shamir Transformation
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 29 December 2026.
+   This Internet-Draft will expire on 31 December 2026.
 
 Copyright Notice
 
@@ -129,25 +129,38 @@ Table of Contents
      10.1.  Normative References
      10.2.  Informative References
    Appendix A.  Test Vectors
-     A.1.  Squeeze 32 bytes immediately after initialization
-     A.2.  Absorb a message, then squeeze 64 bytes
-     A.3.  Absorbing in parts equals absorbing all at once
-     A.4.  Consecutive squeezes continue a single output stream
-     A.5.  An empty absorb is a no-op and does not restart the output
-            stream
-     A.6.  Squeeze, absorb more input, then squeeze again
-     A.7.  Absorb and squeeze multiple blocks
-     A.8.  Derive a session identifier from an application tag
-     A.9.  Length-prefixed byte-string encoding (EncodeVarLenString)
-     A.10. Fixed-width unsigned-integer encoding (EncodeUint)
-     A.11. Squeeze a P-256 scalar (DecodeUint)
-     A.12. Reject a malformed (truncated) field element
-     A.13. Reject a malformed (trailing bytes) field element
-     A.14. Reject a malformed (integer equal to the modulus) field
-            element
-     A.15. Reject a byte-string length prefix larger than the input
-     A.16. One round of the sumcheck protocol: round polynomial,
-            challenge, reduced claim
+     A.1.  Codec test vectors
+       A.1.1.  Length-prefixed byte-string encoding
+               (EncodeVarLenString)
+       A.1.2.  Fixed-width unsigned-integer encoding (EncodeUint)
+       A.1.3.  Deserialize a canonical degree-2 field element
+               (DeserializeField)
+     A.2.  SHAKE128 test vectors
+       A.2.1.  Squeeze 32 bytes immediately after initialization
+       A.2.2.  Absorb a message, then squeeze 64 bytes
+       A.2.3.  Absorbing in parts equals absorbing all at once
+       A.2.4.  Consecutive squeezes continue a single output stream
+       A.2.5.  Empty absorb
+       A.2.6.  Squeeze, absorb more input, then squeeze again
+       A.2.7.  Absorb and squeeze multiple blocks
+       A.2.8.  Derive a session identifier from an application tag
+       A.2.9.  Squeeze and reduce a P-256 scalar challenge
+               (DecodeUint)
+       A.2.10. One round of the sumcheck protocol: round polynomial,
+               challenge, reduced claim
+     A.3.  TurboSHAKE128 test vectors
+       A.3.1.  Squeeze 32 bytes immediately after initialization
+       A.3.2.  Absorb a message, then squeeze 64 bytes
+       A.3.3.  Absorbing in parts equals absorbing all at once
+       A.3.4.  Consecutive squeezes continue a single output stream
+       A.3.5.  Empty absorb
+       A.3.6.  Squeeze, absorb more input, then squeeze again
+       A.3.7.  Absorb and squeeze multiple blocks
+       A.3.8.  Derive a session identifier from an application tag
+       A.3.9.  Squeeze and reduce a P-256 scalar challenge
+               (DecodeUint)
+       A.3.10. One round of the sumcheck protocol: round polynomial,
+               challenge, reduced claim
    Authors' Addresses
 
 1.  Introduction
@@ -460,9 +473,9 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    *  Init(session_id) -> state: create a new duplex sponge state,
       seeded by the 32-byte string session_id.
 
-   *  Absorb(x): absorb x into the state.
+   *  Absorb(state, x): absorb x into the state.
 
-   *  Squeeze(n) -> buf: produce n elements from the state.
+   *  Squeeze(state, n) -> buf: produce n elements from the state.
 
    In the duplex sponge interface, messages can be absorbed
    incrementally: Absorb(x) followed by Absorb(y) (with no Squeeze in
@@ -912,13 +925,17 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    derived from a tag via the procedure DeriveSessionID.  The tag is a
    byte string whose encoding as a sequence of bytes *MUST* be specified
    unambiguously, so that every implementation reproduces identical
-   bytes.  A printable US-ASCII string without null termination is the
-   *RECOMMENDED* rendering: it keeps the tag inspectable in
-   specifications, test vectors, and logs, and it is safe to pass
-   through interfaces that treat the tag as a null-terminated string.
-   For these reasons the tag *SHOULD NOT* contain a zero byte (in
-   particular, it *SHOULD NOT* be terminated by a 0x00 byte) and, when
-   it is textual, *SHOULD NOT* begin with a byte-order mark.
+   bytes.  It is *RECOMMENDED* the tag be a US-ASCII string, without
+   byte-order mark at the beginning, nor 0x00 byte termination.
+
+   When the tag is composed of several fields (for example the
+   components required below), those fields *MUST* be combined
+   unambiguously, so that no two distinct tuples of field values yield
+   the same byte string.  Using fixed-width fields or an unambiguous
+   delimiter is sufficient; concatenating variable-length fields without
+   separation is not, because distinct tuples can collide (for example
+   ("SV1", "22") and ("SV12", "2") both yield SV122), which would cause
+   two different contexts to share a session identifier.
 
    The tag has the following security requirements:
 
@@ -1480,87 +1497,137 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
 Appendix A.  Test Vectors
 
-A.1.  Squeeze 32 bytes immediately after initialization
+   The vectors are grouped into three suites.  The codec suite is hash-
+   independent; the SHAKE128 and TurboSHAKE128 suites exercise the
+   duplex sponge of Section 3.2 and Section 3.3 respectively, and carry
+   the same vector names, differing only in the hash and the resulting
+   bytes.
+
+A.1.  Codec test vectors
+
+A.1.1.  Length-prefixed byte-string encoding (EncodeVarLenString)
+
+   Name = encode_varlen
+   Function = EncodeVarLenString
+   Input = 70726f6f66
+   Output = 0000000570726f6f66
+
+A.1.2.  Fixed-width unsigned-integer encoding (EncodeUint)
+
+   Name = encode_uint
+   Function = EncodeUint
+   Group = P-256
+   Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
+   632551
+   Value = deadbeef
+   Output = 00000000000000000000000000000000000000000000000000000000de
+   adbeef
+
+A.1.3.  Deserialize a canonical degree-2 field element
+        (DeserializeField)
+
+   Name = deserialize_field
+   Function = DeserializeField
+   Group = P-256
+   Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
+   632551
+   ExtensionDegree = 2
+   Input = 00000000000000000000000000000000000000000000000000000000dead
+   beefffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632550
+   Coordinates = 000000000000000000000000000000000000000000000000000000
+   00deadbeef
+   Coordinates = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9ca
+   c2fc632550
+
+A.2.  SHAKE128 test vectors
+
+A.2.1.  Squeeze 32 bytes immediately after initialization
 
    Name = init_squeeze
-   Ciphersuite = SHAKE128
+   Function = DuplexSponge
+   Hash = SHAKE128
    SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
    1c1d1e1f
-   Operation1 = squeeze:32
-   Output = 63e1b3543377fab6fb8cf0f7698a9980ca0211d5bc4aba213dd7a6ef7dd
-   63cfa
+   Operation = squeeze:32
+   Output = 63e1b3543377fab6fb8cf0f7698a9980ca0211d5bc4aba213dd7a6ef7d
+   d63cfa
 
-A.2.  Absorb a message, then squeeze 64 bytes
+A.2.2.  Absorb a message, then squeeze 64 bytes
 
    Name = absorb_squeeze
-   Ciphersuite = SHAKE128
+   Function = DuplexSponge
+   Hash = SHAKE128
    SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
    1c1d1e1f
-   Operation1 = absorb:68656c6c6f20776f726c64
-   Operation2 = squeeze:64
-   Output = f627ff348dfee50d2aa5918a2621a0c1daf74c7ef930d49b5ea6eae7345
-   5e8c756d433cbde0ade711bdd55d7ed5de38bb9adea8b2eec4402a0df090c1637141
-   3
+   Operation = absorb:68656c6c6f20776f726c64
+   Operation = squeeze:64
+   Output = f627ff348dfee50d2aa5918a2621a0c1daf74c7ef930d49b5ea6eae734
+   55e8c756d433cbde0ade711bdd55d7ed5de38bb9adea8b2eec4402a0df090c163714
+   13
 
-A.3.  Absorbing in parts equals absorbing all at once
+A.2.3.  Absorbing in parts equals absorbing all at once
 
    Name = absorb_split
-   Ciphersuite = SHAKE128
+   Function = DuplexSponge
+   Hash = SHAKE128
    SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
    1c1d1e1f
-   Operation1 = absorb:6162
-   Operation2 = absorb:63
-   Operation3 = squeeze:32
-   Output = a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1d
-   d9e41
+   Operation = absorb:6162
+   Operation = absorb:63
+   Operation = squeeze:32
+   Output = a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1
+   dd9e41
 
-A.4.  Consecutive squeezes continue a single output stream
+A.2.4.  Consecutive squeezes continue a single output stream
 
    Name = stream
-   Ciphersuite = SHAKE128
+   Function = DuplexSponge
+   Hash = SHAKE128
    SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
    1c1d1e1f
-   Operation1 = absorb:616263
-   Operation2 = squeeze:16
-   Operation3 = squeeze:16
-   Output = a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1d
-   d9e41
+   Operation = absorb:616263
+   Operation = squeeze:16
+   Operation = squeeze:16
+   Output = a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1
+   dd9e41
 
-A.5.  An empty absorb is a no-op and does not restart the output stream
+A.2.5.  Empty absorb
 
    Name = empty_absorb
-   Ciphersuite = SHAKE128
+   Function = DuplexSponge
+   Hash = SHAKE128
    SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
    1c1d1e1f
-   Operation1 = absorb:616263 (ASCII "abc")
-   Operation2 = squeeze:32
-   Output1 = a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1
-   dd9e41
-   Operation3 = absorb:"" (zero bytes)
-   Operation4 = squeeze:32
-   Output2 = d88e36c20e053248b90967a90051ba319688a10783c2ce174602eccc02
-   e8d1a6
+   Operation = absorb:616263
+   Operation = squeeze:32
+   Operation = absorb:""
+   Operation = squeeze:32
+   Output = a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1
+   dd9e41d88e36c20e053248b90967a90051ba319688a10783c2ce174602eccc02e8d1
+   a6
 
-A.6.  Squeeze, absorb more input, then squeeze again
+A.2.6.  Squeeze, absorb more input, then squeeze again
 
    Name = interleave
-   Ciphersuite = SHAKE128
+   Function = DuplexSponge
+   Hash = SHAKE128
    SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
    1c1d1e1f
-   Operation1 = absorb:00010203040506070809
-   Operation2 = squeeze:16
-   Operation3 = absorb:6d6f72652064617461
-   Operation4 = squeeze:16
-   Output = 2da3c7e3a65c6e92901e8b668c43917eb9f02e9988e66d5ce2fbd833a0e
-   cb93e
+   Operation = absorb:00010203040506070809
+   Operation = squeeze:16
+   Operation = absorb:6d6f72652064617461
+   Operation = squeeze:16
+   Output = 2da3c7e3a65c6e92901e8b668c43917eb9f02e9988e66d5ce2fbd833a0
+   ecb93e
 
-A.7.  Absorb and squeeze multiple blocks
+A.2.7.  Absorb and squeeze multiple blocks
 
    Name = multiblock
-   Ciphersuite = SHAKE128
+   Function = DuplexSponge
+   Hash = SHAKE128
    SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
    1c1d1e1f
-   Operation1 = absorb:abababababababababababababababababababababababab
+   Operation = absorb:abababababababababababababababababababababababab
    abababababababababababababababababababababababababababababababababab
    abababababababababababababababababababababababababababababababababab
    abababababababababababababababababababababababababababababababababab
@@ -1578,121 +1645,261 @@ A.7.  Absorb and squeeze multiple blocks
    abababababababababababababababababababababababababababababababababab
    abababababababababababababababababababababababababababababababababab
    abababababababababababababababababababababababababababababababab
-   Operation2 = squeeze:600
-   Output = d0dc63443a117b76b09845af3347a6dbc29d0ff381ad093e3cfea3a326a
-   bbd0da81bfc7dd6220f785900a6d04d508439cc65107c8eb75909f277a6f2740ae55
-   fc684b851b66662c22252b6bb8028b5f7402b0beafb391835613a6c3d8116323dbdc
-   b4494a198ae886821fca3d2af345227ea06c5c2cdb131c90d3fe58eedf090a55bb5a
-   8edc614ab99da6c4ed8fe95a6c289c18dc61918a9abaa4f3ed23587117ced29b33bf
-   b87351d4ffc562add96d384fffbcb7cfb4d4d2125bf809cb85b33a3f9b7541c5d3d3
-   f435f7d0a837f92f6878276ca3c833ecc1691f923602e9b8c8adb9528d8857d71893
-   84eabbab50f0706b82b53db1c92857c2aa84a3527ce4bfcfbdbe02ad953b8517c4b9
-   1d36b45f81df67e10e4e9a7c7c064aa9e7f59371010eab4fd71c7aebcf00a793e469
-   a78c658dd9f2c1d5ed2e3110939c11e916c1f51c47553b1bbceeea92649c9bcc7e55
-   38dab18ca95c298b540b6798c065cd2b413fe3915534a5dc6e7100e012b8c53fccc1
-   018cc24570ca09c8e1c8f6e4e523ddb7b6dcf313b6e98bb4abc94b8063eac8fdbbce
-   945c35dd021a91e8227aeb16502a5a6e9e1d85fbd13b6e1e523e8a24040bbb9ddab5
-   e29315780a57d9ef0d758b66e0076704f456dec1fc11577fe3644e53ff70a99a9127
-   58c289f225ad64e246af9d895d91e6972b18421ccaa2aed6f843870b9dda07d1e975
-   e51c04d58e7bad60c0b8934fec80d4468816793879bc34d831e2689b77525439837f
-   d15f797ed3b78ccdfdec6a5574111de3e243464c77c1d7fa76fb170e3722315e70fb
-   f855a33281e8b6c15029202d0bb34749b962cc314515c748b74f4
+   Operation = squeeze:600
+   Output = d0dc63443a117b76b09845af3347a6dbc29d0ff381ad093e3cfea3a326
+   abbd0da81bfc7dd6220f785900a6d04d508439cc65107c8eb75909f277a6f2740ae5
+   5fc684b851b66662c22252b6bb8028b5f7402b0beafb391835613a6c3d8116323dbd
+   cb4494a198ae886821fca3d2af345227ea06c5c2cdb131c90d3fe58eedf090a55bb5
+   a8edc614ab99da6c4ed8fe95a6c289c18dc61918a9abaa4f3ed23587117ced29b33b
+   fb87351d4ffc562add96d384fffbcb7cfb4d4d2125bf809cb85b33a3f9b7541c5d3d
+   3f435f7d0a837f92f6878276ca3c833ecc1691f923602e9b8c8adb9528d8857d7189
+   384eabbab50f0706b82b53db1c92857c2aa84a3527ce4bfcfbdbe02ad953b8517c4b
+   91d36b45f81df67e10e4e9a7c7c064aa9e7f59371010eab4fd71c7aebcf00a793e46
+   9a78c658dd9f2c1d5ed2e3110939c11e916c1f51c47553b1bbceeea92649c9bcc7e5
+   538dab18ca95c298b540b6798c065cd2b413fe3915534a5dc6e7100e012b8c53fccc
+   1018cc24570ca09c8e1c8f6e4e523ddb7b6dcf313b6e98bb4abc94b8063eac8fdbbc
+   e945c35dd021a91e8227aeb16502a5a6e9e1d85fbd13b6e1e523e8a24040bbb9ddab
+   5e29315780a57d9ef0d758b66e0076704f456dec1fc11577fe3644e53ff70a99a912
+   758c289f225ad64e246af9d895d91e6972b18421ccaa2aed6f843870b9dda07d1e97
+   5e51c04d58e7bad60c0b8934fec80d4468816793879bc34d831e2689b77525439837
+   fd15f797ed3b78ccdfdec6a5574111de3e243464c77c1d7fa76fb170e3722315e70f
+   bf855a33281e8b6c15029202d0bb34749b962cc314515c748b74f4
 
-A.8.  Derive a session identifier from an application tag
+A.2.8.  Derive a session identifier from an application tag
 
    Name = derive_sid
-   Ciphersuite = SHAKE128
+   Function = DeriveSessionID
+   Hash = SHAKE128
    Tag = 696e7465726f702d746573742d763030
-   Output = b508aca89eecac56cd33e4a28f817f43f849d035922f354173ae8466628
-   308cf
+   Output = b508aca89eecac56cd33e4a28f817f43f849d035922f354173ae846662
+   8308cf
 
-A.9.  Length-prefixed byte-string encoding (EncodeVarLenString)
-
-   Name = encode_varlen
-   Ciphersuite = any (ciphersuite-independent)
-   Input = 70726f6f66
-   Output = 0000000570726f6f66
-
-A.10.  Fixed-width unsigned-integer encoding (EncodeUint)
-
-   Name = encode_uint
-   Ciphersuite = P-256
-   Value = 3735928559
-   Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
-   632551
-   Output = 00000000000000000000000000000000000000000000000000000000dea
-   dbeef
-
-A.11.  Squeeze a P-256 scalar (DecodeUint)
+A.2.9.  Squeeze and reduce a P-256 scalar challenge (DecodeUint)
 
    Name = decode_uint
-   Ciphersuite = SHAKE128 / P-256
+   Function = DecodeUint
+   Hash = SHAKE128
+   Group = P-256
+   Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
+   632551
    SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
    1c1d1e1f
-   Operation1 = absorb:00000008696e7374616e6365
-   Operation2 = squeeze:64
-   Output = 177efbafc28fc74895861272346b4312e3e44d74846cddd7e63e3d1f5cf
-   a74243c10dc1a5d50d6b9f47db43283665d9f8c375dff506b40b589a1fe1756d830c
-   d
-   Challenge = af921d1cbd761e445516672631af5f570f1d0d384ab98f4648365422
-   c8986c3f
+   Operation = absorb:00000008696e7374616e6365
+   Operation = squeeze:48
+   Output = 177efbafc28fc74895861272346b4312e3e44d74846cddd7e63e3d1f5c
+   fa74243c10dc1a5d50d6b9f47db43283665d9f
+   Challenge = 4469555175f8b49c04e9816d8179e412d68c01ee3683169e62c91c45
+   1cdd283a
 
-A.12.  Reject a malformed (truncated) field element
-
-   Name = reject_truncated
-   Ciphersuite = P-256 scalar characteristic / m=2
-   Input = 00000000000000000000000000000000000000000000000000000000dead
-   beefffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
-   Result = reject
-
-A.13.  Reject a malformed (trailing bytes) field element
-
-   Name = reject_trailing
-   Ciphersuite = P-256 scalar characteristic / m=2
-   Input = 00000000000000000000000000000000000000000000000000000000dead
-   beefffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632550
-   00
-   Result = reject
-
-A.14.  Reject a malformed (integer equal to the modulus) field element
-
-   Name = reject_noncanonical
-   Ciphersuite = P-256 scalar characteristic / m=2
-   Input = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc63
-   2551ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632550
-   Result = reject
-
-A.15.  Reject a byte-string length prefix larger than the input
-
-   Name = reject_varlen_overflow
-   Ciphersuite = any (ciphersuite-independent)
-   Input = 0000000670726f6f66
-   Result = reject
-
-A.16.  One round of the sumcheck protocol: round polynomial, challenge,
-       reduced claim
+A.2.10.  One round of the sumcheck protocol: round polynomial,
+         challenge, reduced claim
 
    Name = sumcheck
-   Ciphersuite = SHAKE128 / P-256
+   Function = Sumcheck
+   Hash = SHAKE128
+   Group = P-256
+   Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
+   632551
    SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
    1c1d1e1f
    ContextTag = 73756d636865636b
    Degree = 2
-   ClaimedSum = 0bd2cb0b0e848ad2f10565d04c6703cf60ee2d104103b5232e6a1e9
-   06285a3af
-   Coefficient0 = 6691bd71f54c02fca4ee4f8af8d646ff356eb7e2d3a3c9329a98d
-   3860732cc7b
-   Coefficient1 = 4dee2cda42e18debc6c5a39236863588791a4f52c6e2d365a62c7
-   50ed6f85d68
-   Coefficient2 = f0c1234ae10af6efe063232824344047f6c4635321088c623a7f9
-   7fb75edf7f3
-   Challenge = 612c1a1c6e069798a6df1a3e768549bc78e3bf85bd237cc0f3ea4d9d
-   3b8b6f4a
-   ReducedClaim = 0741e58fe67af478b9cb568d509a45f0c88e20275e8b5e1a788ac
-   c3835ca1c30
-   Narg = 6691bd71f54c02fca4ee4f8af8d646ff356eb7e2d3a3c9329a98d3860732c
-   c7b4dee2cda42e18debc6c5a39236863588791a4f52c6e2d365a62c750ed6f85d68f
-   0c1234ae10af6efe063232824344047f6c4635321088c623a7f97fb75edf7f3
+   ClaimedSum = 16378d9446c64875239e4c7c5c07e2e4516ab8f1d1106a90762fe8
+   3d6814dc5f
+   Coefficients = 3352f9e4bd38fc21798a864d4e0ace1bfb9f29ca15f59dc5ef2c
+   fb9fc2086644
+   Coefficients = 6b217985d1da46a01d39b9617fce5d8005a7df7943988869b7ac
+   55be7b700d16
+   Coefficients = 44702043fa7a0993134f86804023e92c116b809208a4451fd3e3
+   660264f72812
+   Challenge = ca999901d7c56015a876e539ab335f666e4513de7cd41274b2aa4971
+   681e7704
+   ReducedClaim = fe9bb9b628bf6a0a47f998fdf41349fb6549f6497ef2106578d5
+   56c9c8e42ee0
+   Narg = 3352f9e4bd38fc21798a864d4e0ace1bfb9f29ca15f59dc5ef2cfb9fc208
+   66446b217985d1da46a01d39b9617fce5d8005a7df7943988869b7ac55be7b700d16
+   44702043fa7a0993134f86804023e92c116b809208a4451fd3e3660264f72812
+
+A.3.  TurboSHAKE128 test vectors
+
+A.3.1.  Squeeze 32 bytes immediately after initialization
+
+   Name = init_squeeze
+   Function = DuplexSponge
+   Hash = TurboSHAKE128
+   SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
+   1c1d1e1f
+   Operation = squeeze:32
+   Output = 7ad8a3af35a3083c055e4a953ff001cdd9eeb1198f4be7a3a9ec5a2094
+   34619b
+
+A.3.2.  Absorb a message, then squeeze 64 bytes
+
+   Name = absorb_squeeze
+   Function = DuplexSponge
+   Hash = TurboSHAKE128
+   SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
+   1c1d1e1f
+   Operation = absorb:68656c6c6f20776f726c64
+   Operation = squeeze:64
+   Output = 8b804d7a8c524c242a94e86f7ddfec329d90e29c1f584a98812e63029a
+   0bdb075b12c545bf9e2aa17c88673b6d9df4b08e728dc47f7d7094cee59a0d7d9896
+   34
+
+A.3.3.  Absorbing in parts equals absorbing all at once
+
+   Name = absorb_split
+   Function = DuplexSponge
+   Hash = TurboSHAKE128
+   SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
+   1c1d1e1f
+   Operation = absorb:6162
+   Operation = absorb:63
+   Operation = squeeze:32
+   Output = 51acee1ee6f0c6a0c5a33b625ac9eaea54bc6b9b1cb85f9b2ef843e736
+   31792e
+
+A.3.4.  Consecutive squeezes continue a single output stream
+
+   Name = stream
+   Function = DuplexSponge
+   Hash = TurboSHAKE128
+   SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
+   1c1d1e1f
+   Operation = absorb:616263
+   Operation = squeeze:16
+   Operation = squeeze:16
+   Output = 51acee1ee6f0c6a0c5a33b625ac9eaea54bc6b9b1cb85f9b2ef843e736
+   31792e
+
+A.3.5.  Empty absorb
+
+   Name = empty_absorb
+   Function = DuplexSponge
+   Hash = TurboSHAKE128
+   SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
+   1c1d1e1f
+   Operation = absorb:616263
+   Operation = squeeze:32
+   Operation = absorb:""
+   Operation = squeeze:32
+   Output = 51acee1ee6f0c6a0c5a33b625ac9eaea54bc6b9b1cb85f9b2ef843e736
+   31792e599e1dfb1bf60638046f82f5bfa28bcfcabf1404b200647d184ead03e51fbf
+   01
+
+A.3.6.  Squeeze, absorb more input, then squeeze again
+
+   Name = interleave
+   Function = DuplexSponge
+   Hash = TurboSHAKE128
+   SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
+   1c1d1e1f
+   Operation = absorb:00010203040506070809
+   Operation = squeeze:16
+   Operation = absorb:6d6f72652064617461
+   Operation = squeeze:16
+   Output = f2745534347564bed146c95655122f14636bcc58f768296be8494208db
+   29b6be
+
+A.3.7.  Absorb and squeeze multiple blocks
+
+   Name = multiblock
+   Function = DuplexSponge
+   Hash = TurboSHAKE128
+   SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
+   1c1d1e1f
+   Operation = absorb:abababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababababab
+   abababababababababababababababababababababababababababababababab
+   Operation = squeeze:600
+   Output = 0ef6787d725638e19364c25a2ba879af55a4e1c97bff52919e64cd37a2
+   18db44a475f9d7ef0e88d87b443fe6590f12fc90c41c546c92cbeb3480e679d6e1ea
+   37fc1e10e3e41b15e80aea4745ad9ad31c22857ae360fb66848daab7df8f6135efcc
+   940c4cc6431617cca6c05aa9b8bdf041538206ef912c0861dc07e21987550924c848
+   cb788532637cf6e7fb1a3ea233fc335077e4910e8d7da15fe89250f28458ec17ecf4
+   48e05cf660ca4ffd1fdcb4379570d3a871aa759bb4d763d60d3e1b36ab8efcd8cd6f
+   cca8fa67a5071ab21a1d31e4610f7ca8825b5e81f22433c495862b642c009823c312
+   fd60fcdcd888af9c6c554da3a370946fa7bfa66ac54480b9a36d73fa6ee73ccb78b4
+   25de22814667742864608a06fa7534b053a68905ff532089b6fc0d597671ae4da685
+   b96b1ac5d2513c0fc944d11155ed43461559a12b984fb0cb45b105d9f2391a137d10
+   4f7da6c82fcfe375143bf512824685913f2bf61613b1a2a8f55f86d1282aa36c0238
+   4381335927259361c9e5875dbe1314af82aa65264ff009f525d4f0aedcf80cb908e3
+   08132113311d0e9a6783f27a1393ae28c10914018e263020dc97f219ebdae4118a79
+   c318bef2d3766452075e3579f4b1cddbb80a5bca83a2f1fbec44e9d487925ba23cbf
+   ce111ba865e0fdb164589c66cbb757865d1bfb4540c01dece5b4180eef4262efc24c
+   4ae3f76c4497a53fb7f38a0de18a7053ab59b59b180ad53e3d2318661783682298d5
+   4b9f9ee6e33b2be660295ccdd7d6cc976e21827c66880a0fbcc202743cd1ea0b7351
+   755ee4b8a0b140bbc4f6a45eb6b05798721094cebe00e08f4f7bde
+
+A.3.8.  Derive a session identifier from an application tag
+
+   Name = derive_sid
+   Function = DeriveSessionID
+   Hash = TurboSHAKE128
+   Tag = 696e7465726f702d746573742d763030
+   Output = 4326208c9e56ae847be9356ca7c4447c752a9d7326a44a6cbee0c0dfc6
+   9505ac
+
+A.3.9.  Squeeze and reduce a P-256 scalar challenge (DecodeUint)
+
+   Name = decode_uint
+   Function = DecodeUint
+   Hash = TurboSHAKE128
+   Group = P-256
+   Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
+   632551
+   SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
+   1c1d1e1f
+   Operation = absorb:00000008696e7374616e6365
+   Operation = squeeze:48
+   Output = 0ace7c861bc8703d4201ccb5feafcd188808e1fc972de466d4455d6d7e
+   c905a87c00f9654c3cde03ada2364e88010355
+   Challenge = 62f6db4c28d15798c99d435334c068ee6ebdbd0e487b36903e7d5e59
+   7511578d
+
+A.3.10.  One round of the sumcheck protocol: round polynomial,
+         challenge, reduced claim
+
+   Name = sumcheck
+   Function = Sumcheck
+   Hash = TurboSHAKE128
+   Group = P-256
+   Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
+   632551
+   SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
+   1c1d1e1f
+   ContextTag = 73756d636865636b
+   Degree = 2
+   ClaimedSum = 5927eee1956b1e9eb1180eb49eea59cee1241c4536f33b2a4582d6
+   743ff53a57
+   Coefficients = 040d4c06738a450a6b22e213350a3c201cdb6dbf77f7240e3dc3
+   96d6d9daf7a0
+   Coefficients = 51fb1ed7a4f12558d6b6f0237c4d7876fbc6ac77e0d68fa196fd
+   56efc489e023
+   Coefficients = ff1237fc09656f32041b5a6ab8886917688d8efc0d4601f126b8
+   1c99c4189045
+   Challenge = f20409dcc275d204579dec790136a2d272dfc1f5941260127ddd332f
+   af2250e3
+   ReducedClaim = e92b0ea702a4176e87a48b1f9f39297a3a3b88ca33e73d98f2d0
+   94bbbf7445f6
+   Narg = 040d4c06738a450a6b22e213350a3c201cdb6dbf77f7240e3dc396d6d9da
+   f7a051fb1ed7a4f12558d6b6f0237c4d7876fbc6ac77e0d68fa196fd56efc489e023
+   ff1237fc09656f32041b5a6ab8886917688d8efc0d4601f126b81c99c4189045
 
 Authors' Addresses
 
