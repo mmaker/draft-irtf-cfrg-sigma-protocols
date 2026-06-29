@@ -44,6 +44,22 @@ normative:
         ins: Standards for Efficient Cryptography Group (SECG)
 
 informative:
+  FIPS203:
+    title: "Module-Lattice-Based Key-Encapsulation Mechanism Standard"
+    target: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf
+    date: 2024
+    seriesinfo:
+      "FIPS": "203"
+    author:
+      - org: "National Institute of Standards and Technology (NIST)"
+  FIPS204:
+    title: "Module-Lattice-Based Digital Signature Standard"
+    target: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf
+    date: 2024
+    seriesinfo:
+      "FIPS": "204"
+    author:
+      - org: "National Institute of Standards and Technology (NIST)"
   CO25:
     title: "A Fiat-Shamir Transformation From Duplex Sponges"
     target: https://eprint.iacr.org/2025/536.pdf
@@ -277,9 +293,44 @@ A byte is an 8-bit unsigned integer (an octet), and a **byte string** is a finit
 
 Byte strings are indexed from zero. For integers `0 <= i <= j <= len(x)`, `x[i : j]` denotes the `(j - i)`-byte substring of `x` consisting of the bytes at positions `i, i+1, ..., j-1`. In particular, `x[0 : N]` is the first `N` bytes of `x`, `x[i : i]` is the empty byte string `""`, and `x[0 : len(x)]` is `x` itself.
 
-A byte string `x` is a **prefix** of a byte string `y` if `y == x || z` for some byte string `z` (even empty). An encoding is **prefix-free** if, for any two distinct values, the encoding of one is never a prefix of the encoding of the other. A simple prefix-free encoding of a byte string `b` is `I2OSP(len(b), 4) || b` as described in {{encoding-varlen-string}}.
+A byte string `x` is a **prefix** of a byte string `y` if `y == x || z` for some byte string `z` (even empty). An encoding is **prefix-free** if, for any two distinct values, the encoding of one is never a prefix of the encoding of the other. A simple prefix-free encoding of a byte string `b` is `LE(len(b), 4) || b` as described in {{encoding-varlen-string}}.
 
-`I2OSP(n, w)` and `OS2IP(x)` are the primitives defined in Section 4 of {{!RFC8017}}. `I2OSP(n, w)` converts a non-negative integer `n` less than `256^w` into a `w`-byte, big-endian byte string. `OS2IP(x)` converts a byte string `x` into a non-negative integer using the big-endian byte order.
+`LE(n, w)` and `LE2IP(x)` are the integer/byte-string conversion primitives used throughout this document, in little-endian byte order. `LE(n, w)` converts a non-negative integer `n` less than `256^w` into a `w`-byte, little-endian byte string, and fails if `n >= 256^w`. `LE2IP(x)` converts a byte string `x` into a non-negative integer using the little-endian byte order.
+
+~~~
+LE(n, w)
+
+Inputs:
+
+- n, a non-negative integer with 0 <= n < 256^w
+- w, the output length in bytes
+
+Output: out, a w-byte string
+
+1. fail if n < 0 or n >= 256^w
+2. out = zeros(w)
+3. for i in 0, ..., w-1:
+4.    out[i] = n mod 256
+5.    n = floor(n / 256)
+6. return out
+~~~
+
+~~~
+LE2IP(x)
+
+Input: x, a byte string of length w
+
+Output: n, a non-negative integer with 0 <= n < 256^w
+
+1. n = 0
+2. for i in 0, ..., len(x)-1:
+3.    n = n + x[i] * 256^i
+4. return n
+~~~
+
+`I2OSP(n, w)` and `OS2IP(x)` are the big-endian primitives defined in Section 4 of {{!RFC8017}}: `I2OSP(n, w)` converts a non-negative integer `n` less than `256^w` into a `w`-byte, big-endian byte string, and `OS2IP(x)` converts a byte string into a non-negative integer in big-endian order. This document uses them only where a field type's own standardized serialization fixes a big-endian byte order (see {{encoding-field}}). For every `n` and `w`, `LE(n, w)` is the byte reversal of `I2OSP(n, w)`, and `LE2IP(x)` equals `OS2IP(reverse(x))`.
+
+The `LE(n, w)` failure condition mirrors the `"integer too large"` error of `I2OSP` (Section 4.1 of {{!RFC8017}}): the value `n` must fit in the `w` bytes available, so for the common case `w = 32` the input must satisfy `n < 2^256`. Unlike the little-endian `IntegerToBytes` of Section 7.1 of {{FIPS204}}, `LE` does not silently reduce `n` modulo `256^w`; an out-of-range input is an error, never a truncation.
 
 The set of integers between `0` and `N-1` is denoted `[0, N)`.
 
@@ -515,7 +566,7 @@ Input: s, an N-byte string
 
 Output: out, an (N+4)-byte string
 
-1. return I2OSP(len(s), 4) || s
+1. return LE(len(s), 4) || s
 ~~~
 
 ### Sequences and tuples
@@ -524,7 +575,7 @@ A fixed-length array or a tuple is encoded as the concatenation of the encodings
 
 ### Unsigned integers {#encoding-uint}
 
-An integer modulo `M` is represented by its unique integer representative in the range `[0, M)` and encoded via `I2OSP`.
+An integer modulo `M` is represented by its unique integer representative in the range `[0, M)` and encoded via `LE`.
 
 ~~~
 EncodeUint(x, M)
@@ -537,7 +588,7 @@ Inputs:
 Output: out, an Ns-byte string
 
 1. assert 0 <= x < M
-2. return I2OSP(x, Ns)
+2. return LE(x, Ns)
 ~~~
 
 where `Ns` is the smallest integer with `256^Ns >= M`.
@@ -546,9 +597,9 @@ where `Ns` is the smallest integer with `256^Ns >= M`.
 
 This section specifies the _default_ encoding of a finite field of order `q = p^m`, where `p` is the prime characteristic and `m >= 1` is the extension degree.
 
-If the field already has a canonical serialization fixed by a standard, that serialization **SHOULD** be used in place of the default specified below, and it **MUST** be prefix-free. The default below encodes each prime-field coordinate as a fixed-width big-endian integer via `EncodeUint` ({{encoding-uint}}), and is chosen to coincide with the serialization of most standardized fields.
+If the field already has a canonical serialization fixed by a standard, that serialization **SHOULD** be used in place of the default specified below, and it **MUST** be prefix-free. The default below encodes each prime-field coordinate as a fixed-width little-endian integer via `EncodeUint` ({{encoding-uint}}).
 
-For example, P-256 and BLS12-381 serialize each scalar field element as per `EncodeUint`. Curve25519 and Ed25519 ({{?RFC7748}}, {{?RFC8032}}) and ristretto255 ({{?RFC9496}}), serialize each element as a fixed-width little-endian integer. For these fields the little-endian serialization **MUST** be used in place. When the chosen field serialization departs from the above rule, that choice is part of the codec identity and **MUST** be reflected in the session tag (see {{session-id}}).
+For example, Curve25519 {{?RFC7748}}, Ed25519 {{?RFC8032}}, ristretto255 {{Section 4.4 of ?RFC9496}} serialize field elements as a fixed-width little-endian integer  Similarly, in Section 7.1 of {{FIPS204}}, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 ({{SEC1}}) and BLS12-381 ({{?I-D.irtf-cfrg-pairing-friendly-curves}}) serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization **MUST** be used in place: a prime-field coordinate `x` in `[0, p)` is encoded as `I2OSP(x, Ns)`, with `Ns` the smallest integer such that `256^Ns >= p`, in place of the default `LE(x, Ns)`. As with the default, deserialization **MUST** reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than `p`). When the chosen field serialization departs from the above rule, that choice is part of the codec identity and **MUST** be reflected in the session tag (see {{session-id}}).
 
 With respect to a fixed basis, a field element is represented by its `m` coordinates in the prime field, each an integer in `[0, p)`. It is encoded as the concatenation of the per-coordinate encodings produced by `EncodeUint` ({{encoding-uint}}) with modulus `p`. Let `Ns` be the smallest integer with `256^Ns >= p`; a field element encodes to `m * Ns` bytes.
 
@@ -607,7 +658,7 @@ Output: out, a byte string of length N
 
 ### Unsigned integers {#decoding-uint}
 
-To sample a uniformly random element modulo `M` of `Ns` bytes (that is, the smallest integer `Ns` with `256^Ns >= M`), squeeze `Ns + 16` bytes by interpreting them as a big-endian non-negative integer via `OS2IP`, and reduce modulo `M`.
+To sample a uniformly random element modulo `M` of `Ns` bytes (that is, the smallest integer `Ns` with `256^Ns >= M`), squeeze `Ns + 16` bytes by interpreting them as a little-endian non-negative integer via `LE2IP`, and reduce modulo `M`.
 
 ~~~
 DecodeUint(buf, M)
@@ -620,7 +671,7 @@ Inputs:
 Output: out, an integer in the range [0, M)
 
 1. fail if len(buf) != Ns + 16
-2. return OS2IP(buf) mod M
+2. return LE2IP(buf) mod M
 ~~~
 
 The 16 extra bytes bound the statistical distance between the reduced value and the uniform distribution over `[0, M)` to `2^-128`, matching {{Section 5 of ?RFC9380}}. More generally, sampling `Ns + n` extra bytes bounds the bias to `2^-8n`; an instantiation targeting a security level of `k` bits **SHOULD** squeeze `k/8` extra bytes.
@@ -659,7 +710,7 @@ Output: out, an element of the field of order p^m, given by its
 
 For `m = 1`, `DecodeField` is `DecodeUint`, and the same efficiency remarks apply: when `log2(p)` is significantly smaller than 256 or `p` is a power of two, applications **MAY** substitute a more efficient alternative, subject to the same security requirements described in {{decoding-uint}}.
 
-For `m > 1`, decoding relies on `16 * m` additional randomness bytes. Applications with big-integer arithmetic available **MAY** use a more randomness-efficient decoding algorithm, by instead sampling `Nm + 16` bytes, where `Nm` is the smallest integer with `256^Nm >= p^m`, interpreting them as an integer via `OS2IP`, reducing modulo `p^m`, and recovering the coordinates `(a[0], ..., a[m-1])` as the base-`p` digits of the result. This consumes `Nm + 16` bytes, with the same `2^-128` bias bound.
+For `m > 1`, decoding relies on `16 * m` additional randomness bytes. Applications with big-integer arithmetic available **MAY** use a more randomness-efficient decoding algorithm, by instead sampling `Nm + 16` bytes, where `Nm` is the smallest integer with `256^Nm >= p^m`, interpreting them as an integer via `LE2IP`, reducing modulo `p^m`, and recovering the coordinates `(a[0], ..., a[m-1])` as the base-`p` digits of the result (least-significant digit first). This consumes `Nm + 16` bytes, with the same `2^-128` bias bound.
 
 # Initialization
 
@@ -804,7 +855,7 @@ Output: b, an N-byte string
 
 `DeserializeBytes` is the inverse of `EncodeBytes` ({{encoding-varlen-string}}), and consumes `N` bytes of the NARG string, and fails if fewer bytes remain.
 
-A byte string whose length is not known in advance is deserialized by reading a 4-byte length `N` via `OS2IP`, then reading the next `N` bytes; this is the inverse of `EncodeVarLenString` ({{encoding-varlen-string}}).
+A byte string whose length is not known in advance is deserialized by reading a 4-byte length `N` via `LE2IP`, then reading the next `N` bytes; this is the inverse of `EncodeVarLenString` ({{encoding-varlen-string}}).
 
 ~~~
 DeserializeVarLenString(input)
@@ -814,7 +865,7 @@ Input: input, the unread remainder of the NARG string
 Output: b, an N-byte string
 
 1. fail if len(input) < 4
-2. N = OS2IP(input[0 : 4])
+2. N = LE2IP(input[0 : 4])
 3. fail if len(input) - 4 < N
 4. b = input[4 : 4 + N]
 5. return b
@@ -828,7 +879,7 @@ Deserialize each element in order. Fail if any element fails to deserialize. The
 
 ### Unsigned integers
 
-Read the next `Ns` bytes, with `Ns` as in {{encoding-uint}}, and interpret them as a big-endian integer `x = OS2IP(.)`. If `x >= M`, fail: non-canonical integer encodings **MUST** be rejected. The value returned is `x`. This is the inverse of `EncodeUint` ({{encoding-uint}}).
+Read the next `Ns` bytes, with `Ns` as in {{encoding-uint}}, and interpret them as a little-endian integer `x = LE2IP(.)`. If `x >= M`, fail: non-canonical integer encodings **MUST** be rejected. The value returned is `x`. This is the inverse of `EncodeUint` ({{encoding-uint}}).
 
 ~~~
 DeserializeUint(input, M)
@@ -841,7 +892,7 @@ Inputs:
 Output: x, an integer in the range [0, M)
 
 1. fail if len(input) < Ns
-2. x = OS2IP(input[0 : Ns])
+2. x = LE2IP(input[0 : Ns])
 3. fail if x >= M
 4. return x
 ~~~
@@ -957,7 +1008,7 @@ Test vectors can help confirm that honestly-generated proofs verify, but such te
 
 Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered.
 
-The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers **MUST** check that length indicators are correct, that integers fall within their expected range, and that the proof length is correct. For example, in {{deserialize-byte-strings}} the length prefix of a byte string is attacker-controlled, and can be as large as `2^32 - 1`, so computing `4 + N` can overflow 32-bit integers. As another example, a crafted length indicator can make verification checks trivial, or exhaust memory on deserialization before any cryptographic check runs {{GNARK-OOM}}.
+The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers **MUST** check that length indicators are correct, that integers fall within their expected range, and that the proof length is correct. For example, in {{deserialize-byte-strings}} the 4-byte length prefix read by `LE2IP` in `DeserializeVarLenString` is attacker-controlled, and can be as large as `2^32 - 1`, so computing `4 + N` can overflow 32-bit integers. As another example, a crafted length indicator can make verification checks trivial, or exhaust memory on deserialization before any cryptographic check runs {{GNARK-OOM}}.
 
 # IANA Considerations
 
