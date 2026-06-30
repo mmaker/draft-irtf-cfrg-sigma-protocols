@@ -328,8 +328,6 @@ Output: n, a non-negative integer with 0 <= n < 256^w
 4. return n
 ~~~
 
-`I2OSP(n, w)` and `OS2IP(x)` are the big-endian primitives defined in Section 4 of {{!RFC8017}}.
-
 The set of integers between `0` and `N-1` is denoted `[0, N)`.
 
 ## Duplex sponge interface
