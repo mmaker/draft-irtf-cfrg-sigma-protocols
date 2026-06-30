@@ -87,7 +87,7 @@ NS = ((M - 1).bit_length() + 7) // 8  # scalar byte length Ns; 32 for this M
 # to 2^-128 (matching RFC 9380, Section 5).
 EXTRA = 16
 MODULUS = M.to_bytes(
-    NS, "big"
+    NS, "little"
 ).hex()  # P-256 order as Ns bytes, for the `Modulus` field
 
 # --- TurboSHAKE128 over Keccak-p[1600, 12] (RFC 9861) ---------------------
@@ -238,16 +238,16 @@ class Reject(Exception):
     """A NARG string failed to parse; the verifier rejects."""
 
 
-def encode_varlen(s):  # EncodeVarLenString: 4-byte big-endian length || bytes
-    return len(s).to_bytes(4, "big") + s
+def encode_varlen(s):  # EncodeVarLenString: 4-byte little-endian length || bytes
+    return len(s).to_bytes(4, "little") + s
 
 
-def encode_uint(x):  # EncodeUint: fixed-width big-endian integer mod M
-    return x.to_bytes(NS, "big")
+def encode_uint(x):  # EncodeUint: fixed-width little-endian integer mod M
+    return x.to_bytes(NS, "little")
 
 
 def decode_uint(buf):  # DecodeUint: oversampled reduction, bias <= 2^-128
-    return int.from_bytes(buf, "big") % M
+    return int.from_bytes(buf, "little") % M
 
 
 def encode_field(coordinates, p, m):
@@ -257,7 +257,7 @@ def encode_field(coordinates, p, m):
     ns = ((p - 1).bit_length() + 7) // 8
     if any(x < 0 or x >= p for x in coordinates):
         raise ValueError("field coordinate out of range")
-    return b"".join(x.to_bytes(ns, "big") for x in coordinates)
+    return b"".join(x.to_bytes(ns, "little") for x in coordinates)
 
 
 def decode_field(buf, p, m):
@@ -267,7 +267,7 @@ def decode_field(buf, p, m):
     if len(buf) != m * chunk_len:
         raise Reject
     return tuple(
-        int.from_bytes(buf[i * chunk_len : (i + 1) * chunk_len], "big") % p
+        int.from_bytes(buf[i * chunk_len : (i + 1) * chunk_len], "little") % p
         for i in range(m)
     )
 
@@ -280,7 +280,7 @@ def deserialize_field(buf, off, p, m):
         start = off + i * ns
         if len(buf) - start < ns:
             raise Reject
-        x = int.from_bytes(buf[start : start + ns], "big")
+        x = int.from_bytes(buf[start : start + ns], "little")
         if x >= p:
             raise Reject
         coordinates.append(x)
@@ -505,7 +505,7 @@ def emit_decode_uint(out, suite):
             "SessionId": hx(SID),
             "Operations": [absorb(encode_varlen(b"instance")), squeeze(NS + EXTRA)],
             "Output": hx(buf),
-            "Challenge": hx(decode_uint(buf).to_bytes(NS, "big")),
+            "Challenge": hx(decode_uint(buf).to_bytes(NS, "little")),
         }
     )
 
@@ -528,7 +528,7 @@ def emit_deserialize_field(out):
             "Modulus": MODULUS,
             "ExtensionDegree": field_m,
             "Input": hx(field_encoding),
-            "Coordinates": [hx(c.to_bytes(NS, "big")) for c in coords],
+            "Coordinates": [hx(c.to_bytes(NS, "little")) for c in coords],
         }
     )
 
@@ -563,10 +563,10 @@ def emit_sumcheck(out, suite):
             "SessionId": hx(SID),
             "ContextTag": hx(SUMCHECK_TAG),
             "Degree": degree,
-            "ClaimedSum": hx(claimed_sum.to_bytes(NS, "big")),
-            "Coefficients": [hx(c.to_bytes(NS, "big")) for c in coeffs],
-            "Challenge": hx(r.to_bytes(NS, "big")),
-            "ReducedClaim": hx(reduced_claim.to_bytes(NS, "big")),
+            "ClaimedSum": hx(claimed_sum.to_bytes(NS, "little")),
+            "Coefficients": [hx(c.to_bytes(NS, "little")) for c in coeffs],
+            "Challenge": hx(r.to_bytes(NS, "little")),
+            "ReducedClaim": hx(reduced_claim.to_bytes(NS, "little")),
             "Narg": hx(narg),
         }
     )

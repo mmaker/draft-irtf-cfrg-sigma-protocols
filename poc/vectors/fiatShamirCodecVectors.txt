@@ -3,7 +3,7 @@
 Id = fiat-shamir/codec/encode_varlen
 Function = EncodeVarLenString
 Input = 70726f6f66
-Output = 0000000570726f6f66
+Output = 0500000070726f6f66
 ~~~
 
 ### Fixed-width unsigned-integer encoding (EncodeUint)
@@ -11,10 +11,10 @@ Output = 0000000570726f6f66
 Id = fiat-shamir/codec/encode_uint
 Function = EncodeUint
 Modulus =
-  ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
+  512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
 Value = deadbeef
 Output =
-  00000000000000000000000000000000000000000000000000000000deadbeef
+  efbeadde00000000000000000000000000000000000000000000000000000000
 ~~~
 
 ### Deserialize a canonical degree-2 field element (DeserializeField)
@@ -22,13 +22,13 @@ Output =
 Id = fiat-shamir/codec/deserialize_field
 Function = DeserializeField
 Modulus =
-  ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
+  512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
 ExtensionDegree = 2
 Input =
-  00000000000000000000000000000000000000000000000000000000deadbeef
-  ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632550
+  efbeadde00000000000000000000000000000000000000000000000000000000
+  502563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
 Coordinates =
-  - 00000000000000000000000000000000000000000000000000000000deadbeef
-  - ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632550
+  - efbeadde00000000000000000000000000000000000000000000000000000000
+  - 502563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
 ~~~
 
