@@ -1466,7 +1466,7 @@ svg {
           <p id="section-1-7.3.1">a serialization and deserialization procedure for the NARG string produced by the prover (<a href="#narg-string" class="auto internal xref">Section 6</a>).<a href="#section-1-7.3.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
-<p id="section-1-8">This document specifies only byte-oriented hash functions, but this transformation generalizes to alphabets other than bytes (for example, prime-field elements); see <span>[<a href="#CO25" class="cite xref">CO25</a>]</span> for the general construction.<a href="#section-1-8" class="pilcrow">¶</a></p>
+<p id="section-1-8">This document specifies byte-oriented hash functions, but the transformation is well-suited to recursive proving, since the in-circuit cost of recomputing the Fiat-Shamir challenges is low, and  generalizes to other alphabets (for example, prime-field elements). It is compatible with arithmetization-friendly hash functions (e.g. Poseidon2 <span>[<a href="#POSEIDON2" class="cite xref">POSEIDON2</a>]</span>) that operate natively on field elements. See <span>[<a href="#CO25" class="cite xref">CO25</a>]</span> for the general construction.<a href="#section-1-8" class="pilcrow">¶</a></p>
 <p id="section-1-9">Other types of non-interactive transformations (with and without random oracles) are possible, but outside the scope of this specification.<a href="#section-1-9" class="pilcrow">¶</a></p>
 <span id="name-non-interactive-prover-for-"></span><div id="fig-fiat-shamir-prover">
 <figure id="figure-1">
@@ -2822,6 +2822,10 @@ Output: a, an element of the field of order p^m, given by its
 <dt id="I-D.irtf-cfrg-pairing-friendly-curves">[I-D.irtf-cfrg-pairing-friendly-curves]</dt>
         <dd>
 <span class="refAuthor">Sakemi, Y.</span>, <span class="refAuthor">Kanno, S.</span>, and <span class="refAuthor">R. S. Wahby</span>, <span class="refTitle">"Pairing-Friendly Curves"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-irtf-cfrg-pairing-friendly-curves-12</span>, <time datetime="2025-11-02" class="refDate">2 November 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-pairing-friendly-curves-12">https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-pairing-friendly-curves-12</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="POSEIDON2">[POSEIDON2]</dt>
+        <dd>
+<span class="refAuthor">Grassi, L.</span>, <span class="refAuthor">Khovratovich, D.</span>, and <span class="refAuthor">M. Schofnegger</span>, <span class="refTitle">"Poseidon2: A Faster Version of the Poseidon Hash Function"</span>, <time datetime="2023" class="refDate">2023</time>, <span>&lt;<a href="https://eprint.iacr.org/2023/323">https://eprint.iacr.org/2023/323</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC7748">[RFC7748]</dt>
         <dd>

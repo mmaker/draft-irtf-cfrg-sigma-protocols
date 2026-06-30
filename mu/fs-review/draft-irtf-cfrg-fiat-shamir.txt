@@ -210,10 +210,13 @@ Table of Contents
    *  a serialization and deserialization procedure for the NARG string
       produced by the prover (Section 6).
 
-   This document specifies only byte-oriented hash functions, but this
-   transformation generalizes to alphabets other than bytes (for
-   example, prime-field elements); see [CO25] for the general
-   construction.
+   This document specifies byte-oriented hash functions, but the
+   transformation is well-suited to recursive proving, since the in-
+   circuit cost of recomputing the Fiat-Shamir challenges is low, and
+   generalizes to other alphabets (for example, prime-field elements).
+   It is compatible with arithmetization-friendly hash functions (e.g.
+   Poseidon2 [POSEIDON2]) that operate natively on field elements.  See
+   [CO25] for the general construction.
 
    Other types of non-interactive transformations (with and without
    random oracles) are possible, but outside the scope of this
@@ -1532,6 +1535,11 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
               cfrg-pairing-friendly-curves-12, 2 November 2025,
               <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
               pairing-friendly-curves-12>.
+
+   [POSEIDON2]
+              Grassi, L., Khovratovich, D., and M. Schofnegger,
+              "Poseidon2: A Faster Version of the Poseidon Hash
+              Function", 2023, <https://eprint.iacr.org/2023/323>.
 
    [RFC7748]  Langley, A., Hamburg, M., and S. Turner, "Elliptic Curves
               for Security", RFC 7748, DOI 10.17487/RFC7748, January
