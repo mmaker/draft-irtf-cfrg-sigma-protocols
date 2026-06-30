@@ -522,9 +522,11 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    *  state.Squeeze(n) -> buf: produce n bytes from the state.
 
    In the duplex sponge interface, messages can be absorbed
-   incrementally: state.Absorb(x) followed by state.Absorb(y) (with no
-   state.Squeeze in between) is equivalent to state.Absorb(x || y).  The
-   output of state.Squeeze(n) is uniformly distributed, and consecutive
+   incrementally, and insert no separators: state.Absorb(x) followed by
+   state.Absorb(y) (with no state.Squeeze in between) is equivalent to
+   state.Absorb(x || y).
+
+   Each state.Squeeze(n) is uniformly distributed, and consecutive
    state.Squeeze calls continue one output stream.
 
    Guidance on how to produce a 32-byte session_id is given in
@@ -544,10 +546,11 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of
    R = 168 bytes and a capacity of 32 bytes (256 bits).
 
-   This instantiation is equivalent to invoking the SHAKE128 XOF on the
-   concatenation of the session identifier, the encoded instance, and
-   the encoded prover messages.  That is, the i-th verifier message (for
-   1 <= i <= k) of byte length len_i is computed as:
+   In this instantiation, every verifier message is the SHAKE128 XOF
+   evaluation over the session identifier, the encoded instance, and the
+   encoded prover messages up to end including the current round.  That
+   is, the i-th verifier message (for 1 <= i <= k) of byte length len_i
+   is computed as:
 
    verifier_msg[i] := decode[i](SHAKE128(
                           session_id || zeros(R - 32)
@@ -616,19 +619,20 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 3.3.  TurboSHAKE128 duplex sponge
 
    TurboSHAKE128 [RFC9861] is an eXtendable-Output Function (XOF) built
-   on the round-reduced Keccak-p[1600, 12] permutation.  Its state is a
-   200-byte (1600-bit) string, split into a rate of R = 168 bytes and a
-   capacity of 32 bytes (256 bits).  The corresponding collision and
-   second-preimage-resistance are min(n/2,128) and min(n,128) bits for
-   an n-byte output string, respectively (see [RFC9861]).  This
-   instantiation targets 128-bit security.
+   on Keccak-p[1600, 12], the Keccak-f[1600] permutation reduced to its
+   last 12 rounds.  Its state is a 200-byte (1600-bit) string, split
+   into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits).
+   The corresponding collision and second-preimage-resistance are
+   min(n/2,128) and min(n,128) bits for an n-byte output string,
+   respectively (see [RFC9861]).  This instantiation targets 128-bit
+   security.
 
-   This instantiation is equivalent to invoking the TurboSHAKE128 XOF as
-   TurboSHAKE128(M, D, L), where M is the concatenation of the session
-   identifier, the encoded instance, and the encoded prover messages, D
-   (the domain-separation byte in the range 0x01 to 0x7F) is fixed to D
-   = 0x1F, the default value, and L is the desired output length in
-   bytes [RFC9861].
+   In this instantiation, every verifier message is the TurboSHAKE128
+   XOF as TurboSHAKE128(M, D, L), where M is the concatenation of the
+   session identifier, the encoded instance, and the encoded prover
+   messages up to and including the current round, D (the domain-
+   separation byte in the range 0x01 to 0x7F) is fixed to D = 0x1F, the
+   default value, and L is the desired output length in bytes [RFC9861].
 
    That is, the i-th verifier message (for 1 <= i <= k) of byte length
    len_i is computed as:
@@ -1285,6 +1289,12 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    extends to longer shared prefixes: proofs for the same instance can
    additionally start from a stored copy of the state obtained after
    absorbing encode[0](instance).
+
+   XOF evaluations (Section 3.2, Section 3.3) without copying the XOF
+   state (see the notation ctx.Copy() in the pseudocode) will yield
+   identical bytes, but incur in a cost quadratic in the number of
+   rounds.  Implementations *SHOULD* instead maintain the incremental
+   duplex sponge state of Section 3.1.
 
 8.  Security considerations
 
