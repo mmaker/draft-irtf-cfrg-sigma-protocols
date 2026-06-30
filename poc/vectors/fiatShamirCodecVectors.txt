@@ -3,7 +3,7 @@
 Name = encode_varlen
 Function = EncodeVarLenString
 Input = 70726f6f66
-Output = 0000000570726f6f66
+Output = 0500000070726f6f66
 ~~~
 
 ### Fixed-width unsigned-integer encoding (EncodeUint)
@@ -11,11 +11,11 @@ Output = 0000000570726f6f66
 Name = encode_uint
 Function = EncodeUint
 Group = P-256
-Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
-632551
+Modulus = 512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ff
+ffffff
 Value = deadbeef
-Output = 00000000000000000000000000000000000000000000000000000000de
-adbeef
+Output = efbeadde00000000000000000000000000000000000000000000000000
+000000
 ~~~
 
 ### Deserialize a canonical degree-2 field element (DeserializeField)
@@ -23,14 +23,14 @@ adbeef
 Name = deserialize_field
 Function = DeserializeField
 Group = P-256
-Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
-632551
+Modulus = 512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ff
+ffffff
 ExtensionDegree = 2
-Input = 00000000000000000000000000000000000000000000000000000000dead
-beefffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632550
-Coordinates = 000000000000000000000000000000000000000000000000000000
-00deadbeef
-Coordinates = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9ca
-c2fc632550
+Input = efbeadde0000000000000000000000000000000000000000000000000000
+0000502563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
+Coordinates = efbeadde0000000000000000000000000000000000000000000000
+0000000000
+Coordinates = 502563fcc2cab9f3849e17a7adfae6bcffffffffffffffff000000
+00ffffffff
 ~~~
 
