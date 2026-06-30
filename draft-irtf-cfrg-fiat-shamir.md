@@ -120,6 +120,14 @@ informative:
     date: 2025
     author:
       - org: "Solana Foundation"
+  POSEIDON2:
+    title: "Poseidon2: A Faster Version of the Poseidon Hash Function"
+    target: https://eprint.iacr.org/2023/323
+    date: 2023
+    author:
+      - fullname: "Lorenzo Grassi"
+      - fullname: "Dmitry Khovratovich"
+      - fullname: "Markus Schofnegger"
   SAFE:
     title: "SAFE: Sponge API for Field Elements"
     target: https://eprint.iacr.org/2023/522
@@ -167,7 +175,7 @@ Both the non-interactive prover and verifier rely on:
 - a set of codecs, describing how each prover and verifier message talk to the duplex sponge ({{codecs}});
 - a serialization and deserialization procedure for the NARG string produced by the prover ({{narg-string}}).
 
-This document specifies only byte-oriented hash functions, but this transformation generalizes to alphabets other than bytes (for example, prime-field elements); see {{CO25}} for the general construction.
+This document specifies byte-oriented hash functions, but the transformation is well-suited to recursive proving, since the in-circuit cost of recomputing the Fiat-Shamir challenges is low, and  generalizes to other alphabets (for example, prime-field elements). It is compatible with arithmetization-friendly hash functions (e.g. Poseidon2 {{POSEIDON2}}) that operate natively on field elements. See {{CO25}} for the general construction.
 
 Other types of non-interactive transformations (with and without random oracles) are possible, but outside the scope of this specification.
 
