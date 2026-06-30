@@ -328,9 +328,7 @@ Output: n, a non-negative integer with 0 <= n < 256^w
 4. return n
 ~~~
 
-`I2OSP(n, w)` and `OS2IP(x)` are the big-endian primitives defined in Section 4 of {{!RFC8017}}: `I2OSP(n, w)` converts a non-negative integer `n` less than `256^w` into a `w`-byte, big-endian byte string, and `OS2IP(x)` converts a byte string into a non-negative integer in big-endian order. This document uses them only where a field type's own standardized serialization fixes a big-endian byte order (see {{encoding-field}}). For every `n` and `w`, `LE(n, w)` is the byte reversal of `I2OSP(n, w)`, and `LE2IP(x)` equals `OS2IP(reverse(x))`.
-
-The `LE(n, w)` failure condition mirrors the `"integer too large"` error of `I2OSP` (Section 4.1 of {{!RFC8017}}): the value `n` must fit in the `w` bytes available, so for the common case `w = 32` the input must satisfy `n < 2^256`. Unlike the little-endian `IntegerToBytes` of Section 7.1 of {{FIPS204}}, `LE` does not silently reduce `n` modulo `256^w`; an out-of-range input is an error, never a truncation.
+`I2OSP(n, w)` and `OS2IP(x)` are the big-endian primitives defined in Section 4 of {{!RFC8017}}.
 
 The set of integers between `0` and `N-1` is denoted `[0, N)`.
 
