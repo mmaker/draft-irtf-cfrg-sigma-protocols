@@ -384,7 +384,9 @@ Prover and verifier messages are handled via three operations:
 - `state.Absorb(x)`: absorb `x` into the state.
 - `state.Squeeze(n) -> buf`: produce `n` bytes from the state.
 
-In the duplex sponge interface, messages can be absorbed incrementally: `state.Absorb(x)` followed by `state.Absorb(y)` (with no `state.Squeeze` in between) is equivalent to `state.Absorb(x || y)`. The output of `state.Squeeze(n)` is uniformly distributed, and consecutive `state.Squeeze` calls continue one output stream.
+In the duplex sponge interface, messages can be absorbed incrementally, and insert no separators: `state.Absorb(x)` followed by `state.Absorb(y)` (with no `state.Squeeze` in between) is equivalent to `state.Absorb(x || y)`.
+
+Each `state.Squeeze(n)` is uniformly distributed, and consecutive `state.Squeeze` calls continue one output stream.
 
 Guidance on how to produce a 32-byte `session_id` is given in {{session-id}}; its security requirements in {{indifferentiability-of-the-hash-function}}.
 
@@ -392,7 +394,7 @@ Guidance on how to produce a 32-byte `session_id` is given in {{session-id}}; it
 
 In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the `Keccak-f` permutation: SHAKE128 and SHAKE256. Four other fixed-length hash-function instances (SHA3-224, SHA3-256, SHA3-384, and SHA3-512) are also defined but are out of scope for this document. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of {{SHA3}}). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits).
 
-This instantiation is equivalent to invoking the SHAKE128 XOF on the concatenation of the session identifier, the encoded instance, and the encoded prover messages. That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
+In this instantiation, every verifier message is the SHAKE128 XOF evaluation over the session identifier, the encoded instance, and the encoded prover messages up to end including the current round. That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
 
 ~~~
 verifier_msg[i] := decode[i](SHAKE128(
@@ -460,9 +462,9 @@ Output: a uniformly-distributed random n-byte string
 
 ## TurboSHAKE128 duplex sponge {#suite-turboshake128}
 
-TurboSHAKE128 {{!RFC9861}} is an eXtendable-Output Function (XOF) built on the round-reduced `Keccak-p[1600, 12]` permutation.  Its state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an `n`-byte output string, respectively (see {{!RFC9861}}). This instantiation targets 128-bit security.
+TurboSHAKE128 {{!RFC9861}} is an eXtendable-Output Function (XOF) built on `Keccak-p[1600, 12]`, the `Keccak-f[1600]` permutation reduced to its last 12 rounds.  Its state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an `n`-byte output string, respectively (see {{!RFC9861}}). This instantiation targets 128-bit security.
 
-This instantiation is equivalent to invoking the TurboSHAKE128 XOF as `TurboSHAKE128(M, D, L)`, where `M` is the concatenation of the session identifier, the encoded instance, and the encoded prover messages, `D` (the domain-separation byte in the range `0x01` to `0x7F`) is fixed to `D = 0x1F`, the default value, and `L` is the desired output length in bytes {{!RFC9861}}.
+In this instantiation, every verifier message is the TurboSHAKE128 XOF as `TurboSHAKE128(M, D, L)`, where `M` is the concatenation of the session identifier, the encoded instance, and the encoded prover messages up to and including the current round, `D` (the domain-separation byte in the range `0x01` to `0x7F`) is fixed to `D = 0x1F`, the default value, and `L` is the desired output length in bytes {{!RFC9861}}.
 
 That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
 
@@ -937,6 +939,8 @@ Note that for elliptic curves defined in {{SEC1}}, decoding is the Octet-String-
 For both codecs and serialization, batch algorithms should be preferred when available, because they amortize per-element cost over a whole sequence. For example, serializing a batch of compressed elliptic-curve points requires only one modular inversion for the entire batch (via Montgomery's trick) rather than one per point, the dominant cost in point compression. Deserialization does not batch in the same way, since point decompression requires a per-element square root.
 
 `Init(session_id)` (see {{session-id}}) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of the duplex sponge state, instead of initializing it every time. In the {{suite-shake128}} and {{suite-turboshake128}}, the padded session identifier fills exactly one rate block ({{init}}), saving one invocation of the permutation function per execution. Similarly, `DeriveSessionID` can be precomputed when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing `encode[0](instance)`.
+
+XOF evaluations ({{suite-shake128}}, {{suite-turboshake128}}) without copying the XOF state (see the notation `ctx.Copy()` in the pseudocode) will yield identical bytes, but incur in a cost quadratic in the number of rounds. Implementations **SHOULD** instead maintain the incremental duplex sponge state of {{interface}}.
 
 # Security considerations
 
