@@ -781,16 +781,16 @@ The encoded instance **MUST** be non-empty. While the session identifier of the 
 
 As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the encodings of {{encoding-bytes}}.
 
-As an example, the sumcheck relation for multilinear polynomials in `N` variables over `p^m` committed with the polynomial commitment scheme `COM` is the pair:
+As an example, the sumcheck relation for multilinear polynomials in `N` variables over the field of size `p^m`. For a polynomial committed using the polynomial commitment scheme `COM`, the relation consists of:
 
 - instance `(S, C)`: `C` the commitment, and `S` the target sum;
-- witness `(F, r)`, the multilinear polynomial in `N` variables and `r` the commitment opening information.
+- witness `(F, r)`: `F` is the multilinear polynomial in `N` variables, and `r` is the commitment opening information.
 
 such that:
 
 ~~~
 COM.Open(C, F, r)  = 1,
-sum(F(b1, ..., bN) for b1, ..., bN in {0, 1}) = S
+sum(F(b1, ..., bN) for (b1, ..., bN) in {0, 1}^N) = S
 ~~~
 
 A valid instance encoding function is:
@@ -801,7 +801,7 @@ EncodeField(S, p, m) || EncodeUint(N, 2^32) || COM.Serialize(C)
 
 where `COM.Serialize` is the commitment-serialization function of the scheme `COM` (the opening check `COM.Open` is used above).
 
-As an example, in the discrete logarithm setting, the Chaum-Pedersen relation over an additive elliptic curve group with generators `G`, `H` (for which the relative discrete logarithm is not known) is the pair:
+As another example, in the discrete logarithm setting, the Chaum-Pedersen relation over an additive elliptic curve group with generators `G`, `H` (for which the relative discrete logarithm is not known). The relation consists of:
 
 - instance `(C, D)` are Pedersen commitments
 - witness `(x, r, s)` scalar field elements with `x` the commitment message and `r`, `s` independent random commitment openings
@@ -820,7 +820,7 @@ enc(G) || enc(H) || enc(C) || enc(D)
 
 where `enc` is the group element-serialization function described in {{encoding-ec-point}}.
 
-Omitting public statement data (for instance, `N` in the first example or the group generators `G`, `H` in the second) from the encoded instance can compromise soundness of the proof system. See {{instance-encoding}}.
+Omitting public statement data from the transformation, such as `N` in the first example or the group generators `G`, `H` in the second, can can compromise soundness of the proof system. See {{instance-encoding}}.
 
 # Non-interactive argument string {#narg-string}
 
