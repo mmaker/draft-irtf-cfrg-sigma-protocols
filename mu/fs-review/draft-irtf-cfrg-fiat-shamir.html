@@ -1863,9 +1863,7 @@ Output: n, a non-negative integer with 0 &lt;= n &lt; 256^w
 4. return n
 </pre><a href="#section-2.1-6" class="pilcrow">¶</a>
 </div>
-<p id="section-2.1-7"><code>I2OSP(n, w)</code> and <code>OS2IP(x)</code> are the big-endian primitives defined in Section 4 of <span>[<a href="#RFC8017" class="cite xref">RFC8017</a>]</span>: <code>I2OSP(n, w)</code> converts a non-negative integer <code>n</code> less than <code>256^w</code> into a <code>w</code>-byte, big-endian byte string, and <code>OS2IP(x)</code> converts a byte string into a non-negative integer in big-endian order. This document uses them only where a field type's own standardized serialization fixes a big-endian byte order (see <a href="#encoding-field" class="auto internal xref">Section 4.1.4</a>). For every <code>n</code> and <code>w</code>, <code>LE(n, w)</code> is the byte reversal of <code>I2OSP(n, w)</code>, and <code>LE2IP(x)</code> equals <code>OS2IP(reverse(x))</code>.<a href="#section-2.1-7" class="pilcrow">¶</a></p>
-<p id="section-2.1-8">The <code>LE(n, w)</code> failure condition mirrors the <code>"integer too large"</code> error of <code>I2OSP</code> (Section 4.1 of <span>[<a href="#RFC8017" class="cite xref">RFC8017</a>]</span>): the value <code>n</code> must fit in the <code>w</code> bytes available, so for the common case <code>w = 32</code> the input must satisfy <code>n &lt; 2^256</code>. Unlike the little-endian <code>IntegerToBytes</code> of Section 7.1 of <span>[<a href="#FIPS204" class="cite xref">FIPS204</a>]</span>, <code>LE</code> does not silently reduce <code>n</code> modulo <code>256^w</code>; an out-of-range input is an error, never a truncation.<a href="#section-2.1-8" class="pilcrow">¶</a></p>
-<p id="section-2.1-9">The set of integers between <code>0</code> and <code>N-1</code> is denoted <code>[0, N)</code>.<a href="#section-2.1-9" class="pilcrow">¶</a></p>
+<p id="section-2.1-7">The set of integers between <code>0</code> and <code>N-1</code> is denoted <code>[0, N)</code>.<a href="#section-2.1-7" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="duplex-sponge-interface">
@@ -2759,10 +2757,6 @@ Output: a, an element of the field of order p^m, given by its
 <dt id="RFC2119">[RFC2119]</dt>
         <dd>
 <span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
-<dd class="break"></dd>
-<dt id="RFC8017">[RFC8017]</dt>
-        <dd>
-<span class="refAuthor">Moriarty, K., Ed.</span>, <span class="refAuthor">Kaliski, B.</span>, <span class="refAuthor">Jonsson, J.</span>, and <span class="refAuthor">A. Rusch</span>, <span class="refTitle">"PKCS #1: RSA Cryptography Specifications Version 2.2"</span>, <span class="seriesInfo">RFC 8017</span>, <span class="seriesInfo">DOI 10.17487/RFC8017</span>, <time datetime="2016-11" class="refDate">November 2016</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8017">https://www.rfc-editor.org/rfc/rfc8017</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
         <dd>

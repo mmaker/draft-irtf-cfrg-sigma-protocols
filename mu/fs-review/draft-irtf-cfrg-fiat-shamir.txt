@@ -393,22 +393,6 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    3.    n = n + x[i] * 256^i
    4. return n
 
-   I2OSP(n, w) and OS2IP(x) are the big-endian primitives defined in
-   Section 4 of [RFC8017]: I2OSP(n, w) converts a non-negative integer n
-   less than 256^w into a w-byte, big-endian byte string, and OS2IP(x)
-   converts a byte string into a non-negative integer in big-endian
-   order.  This document uses them only where a field type's own
-   standardized serialization fixes a big-endian byte order (see
-   Section 4.1.4).  For every n and w, LE(n, w) is the byte reversal of
-   I2OSP(n, w), and LE2IP(x) equals OS2IP(reverse(x)).
-
-   The LE(n, w) failure condition mirrors the "integer too large" error
-   of I2OSP (Section 4.1 of [RFC8017]): the value n must fit in the w
-   bytes available, so for the common case w = 32 the input must satisfy
-   n < 2^256.  Unlike the little-endian IntegerToBytes of Section 7.1 of
-   [FIPS204], LE does not silently reduce n modulo 256^w; an out-of-
-   range input is an error, never a truncation.
-
    The set of integers between 0 and N-1 is denoted [0, N).
 
 2.2.  Duplex sponge interface
@@ -1475,11 +1459,6 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
               Requirement Levels", BCP 14, RFC 2119,
               DOI 10.17487/RFC2119, March 1997,
               <https://www.rfc-editor.org/rfc/rfc2119>.
-
-   [RFC8017]  Moriarty, K., Ed., Kaliski, B., Jonsson, J., and A. Rusch,
-              "PKCS #1: RSA Cryptography Specifications Version 2.2",
-              RFC 8017, DOI 10.17487/RFC8017, November 2016,
-              <https://www.rfc-editor.org/rfc/rfc8017>.
 
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
