@@ -2435,20 +2435,20 @@ BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-messageS1challenge
 <p id="section-5.2-2">The instance is the first value absorbed after <code>Init(session_id)</code> and before any prover message. The prover and verifier <strong>MUST</strong> absorb <code>encode[0](instance)</code>, where <code>encode[0]</code> is the first encoding map.
 The encoded instance <strong>MUST</strong> be non-empty. While the session identifier of the previous section <a href="#session-id" class="auto internal xref">Section 5.1</a> fixes the language, the instance selects one of its members.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
 <p id="section-5.2-3">As for every encoding map, <code>encode[0]</code> <strong>MUST</strong> be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see <a href="#instance-encoding" class="auto internal xref">Section 8.5</a>). The encoding map <code>encode[0]</code> <strong>SHOULD</strong> reuse the encodings of <a href="#encoding-bytes" class="auto internal xref">Section 4.1</a>.<a href="#section-5.2-3" class="pilcrow">¶</a></p>
-<p id="section-5.2-4">As an example, the sumcheck relation for multilinear polynomials in <code>N</code> variables over <code>p^m</code> committed with the polynomial commitment scheme <code>COM</code> is the pair:<a href="#section-5.2-4" class="pilcrow">¶</a></p>
+<p id="section-5.2-4">As an example, the sumcheck relation for multilinear polynomials in <code>N</code> variables over the field of size <code>p^m</code>. For a polynomial committed using the polynomial commitment scheme <code>COM</code>, the relation consists of:<a href="#section-5.2-4" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.2-5.1">
             <p id="section-5.2-5.1.1">instance <code>(S, C)</code>: <code>C</code> the commitment, and <code>S</code> the target sum;<a href="#section-5.2-5.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-5.2-5.2">
-            <p id="section-5.2-5.2.1">witness <code>(F, r)</code>, the multilinear polynomial in <code>N</code> variables and <code>r</code> the commitment opening information.<a href="#section-5.2-5.2.1" class="pilcrow">¶</a></p>
+            <p id="section-5.2-5.2.1">witness <code>(F, r)</code>: <code>F</code> is the multilinear polynomial in <code>N</code> variables, and <code>r</code> is the commitment opening information.<a href="#section-5.2-5.2.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
 <p id="section-5.2-6">such that:<a href="#section-5.2-6" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-5.2-7">
 <pre>
 COM.Open(C, F, r)  = 1,
-sum(F(b1, ..., bN) for b1, ..., bN in {0, 1}) = S
+sum(F(b1, ..., bN) for (b1, ..., bN) in {0, 1}^N) = S
 </pre><a href="#section-5.2-7" class="pilcrow">¶</a>
 </div>
 <p id="section-5.2-8">A valid instance encoding function is:<a href="#section-5.2-8" class="pilcrow">¶</a></p>
@@ -2458,7 +2458,7 @@ EncodeField(S, p, m) || EncodeUint(N, 2^32) || COM.Serialize(C)
 </pre><a href="#section-5.2-9" class="pilcrow">¶</a>
 </div>
 <p id="section-5.2-10">where <code>COM.Serialize</code> is the commitment-serialization function of the scheme <code>COM</code> (the opening check <code>COM.Open</code> is used above).<a href="#section-5.2-10" class="pilcrow">¶</a></p>
-<p id="section-5.2-11">As an example, in the discrete logarithm setting, the Chaum-Pedersen relation over an additive elliptic curve group with generators <code>G</code>, <code>H</code> (for which the relative discrete logarithm is not known) is the pair:<a href="#section-5.2-11" class="pilcrow">¶</a></p>
+<p id="section-5.2-11">As another example, in the discrete logarithm setting, the Chaum-Pedersen relation over an additive elliptic curve group with generators <code>G</code>, <code>H</code> (for which the relative discrete logarithm is not known). The relation consists of:<a href="#section-5.2-11" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.2-12.1">
             <p id="section-5.2-12.1.1">instance <code>(C, D)</code> are Pedersen commitments<a href="#section-5.2-12.1.1" class="pilcrow">¶</a></p>
@@ -2480,7 +2480,7 @@ enc(G) || enc(H) || enc(C) || enc(D)
 </pre><a href="#section-5.2-16" class="pilcrow">¶</a>
 </div>
 <p id="section-5.2-17">where <code>enc</code> is the group element-serialization function described in <a href="#encoding-ec-point" class="auto internal xref">Section 4.1.5</a>.<a href="#section-5.2-17" class="pilcrow">¶</a></p>
-<p id="section-5.2-18">Omitting public statement data (for instance, <code>N</code> in the first example or the group generators <code>G</code>, <code>H</code> in the second) from the encoded instance can compromise soundness of the proof system. See <a href="#instance-encoding" class="auto internal xref">Section 8.5</a>.<a href="#section-5.2-18" class="pilcrow">¶</a></p>
+<p id="section-5.2-18">Omitting public statement data from the transformation, such as <code>N</code> in the first example or the group generators <code>G</code>, <code>H</code> in the second, can can compromise soundness of the proof system. See <a href="#instance-encoding" class="auto internal xref">Section 8.5</a>.<a href="#section-5.2-18" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>

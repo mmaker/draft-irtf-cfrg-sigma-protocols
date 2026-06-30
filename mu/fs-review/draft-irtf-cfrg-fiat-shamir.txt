@@ -1078,18 +1078,18 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    encode[0] *SHOULD* reuse the encodings of Section 4.1.
 
    As an example, the sumcheck relation for multilinear polynomials in N
-   variables over p^m committed with the polynomial commitment scheme
-   COM is the pair:
+   variables over the field of size p^m.  For a polynomial committed
+   using the polynomial commitment scheme COM, the relation consists of:
 
    *  instance (S, C): C the commitment, and S the target sum;
 
-   *  witness (F, r), the multilinear polynomial in N variables and r
-      the commitment opening information.
+   *  witness (F, r): F is the multilinear polynomial in N variables,
+      and r is the commitment opening information.
 
    such that:
 
    COM.Open(C, F, r)  = 1,
-   sum(F(b1, ..., bN) for b1, ..., bN in {0, 1}) = S
+   sum(F(b1, ..., bN) for (b1, ..., bN) in {0, 1}^N) = S
 
    A valid instance encoding function is:
 
@@ -1098,9 +1098,10 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    where COM.Serialize is the commitment-serialization function of the
    scheme COM (the opening check COM.Open is used above).
 
-   As an example, in the discrete logarithm setting, the Chaum-Pedersen
-   relation over an additive elliptic curve group with generators G, H
-   (for which the relative discrete logarithm is not known) is the pair:
+   As another example, in the discrete logarithm setting, the Chaum-
+   Pedersen relation over an additive elliptic curve group with
+   generators G, H (for which the relative discrete logarithm is not
+   known).  The relation consists of:
 
    *  instance (C, D) are Pedersen commitments
 
@@ -1118,9 +1119,9 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    where enc is the group element-serialization function described in
    Section 4.1.5.
 
-   Omitting public statement data (for instance, N in the first example
-   or the group generators G, H in the second) from the encoded instance
-   can compromise soundness of the proof system.  See Section 8.5.
+   Omitting public statement data from the transformation, such as N in
+   the first example or the group generators G, H in the second, can can
+   compromise soundness of the proof system.  See Section 8.5.
 
 6.  Non-interactive argument string
 
