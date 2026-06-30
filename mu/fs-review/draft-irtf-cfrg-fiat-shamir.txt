@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 31 December 2026                                    Apple, Inc.
-                                                            29 June 2026
+Expires: 1 January 2027                                      Apple, Inc.
+                                                            30 June 2026
 
 
                        Fiat-Shamir Transformation
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 31 December 2026.
+   This Internet-Draft will expire on 1 January 2027.
 
 Copyright Notice
 
@@ -357,13 +357,57 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    some byte string z (even empty).  An encoding is *prefix-free* if,
    for any two distinct values, the encoding of one is never a prefix of
    the encoding of the other.  A simple prefix-free encoding of a byte
-   string b is I2OSP(len(b), 4) || b as described in Section 4.1.1.
+   string b is LE(len(b), 4) || b as described in Section 4.1.1.
 
-   I2OSP(n, w) and OS2IP(x) are the primitives defined in Section 4 of
-   [RFC8017].  I2OSP(n, w) converts a non-negative integer n less than
-   256^w into a w-byte, big-endian byte string.  OS2IP(x) converts a
-   byte string x into a non-negative integer using the big-endian byte
-   order.
+   LE(n, w) and LE2IP(x) are the integer/byte-string conversion
+   primitives used throughout this document, in little-endian byte
+   order.  LE(n, w) converts a non-negative integer n less than 256^w
+   into a w-byte, little-endian byte string, and fails if n >= 256^w.
+   LE2IP(x) converts a byte string x into a non-negative integer using
+   the little-endian byte order.
+
+   LE(n, w)
+
+   Inputs:
+
+   - n, a non-negative integer with 0 <= n < 256^w
+   - w, the output length in bytes
+
+   Output: out, a w-byte string
+
+   1. fail if n < 0 or n >= 256^w
+   2. out = zeros(w)
+   3. for i in 0, ..., w-1:
+   4.    out[i] = n mod 256
+   5.    n = floor(n / 256)
+   6. return out
+
+   LE2IP(x)
+
+   Input: x, a byte string of length w
+
+   Output: n, a non-negative integer with 0 <= n < 256^w
+
+   1. n = 0
+   2. for i in 0, ..., len(x)-1:
+   3.    n = n + x[i] * 256^i
+   4. return n
+
+   I2OSP(n, w) and OS2IP(x) are the big-endian primitives defined in
+   Section 4 of [RFC8017]: I2OSP(n, w) converts a non-negative integer n
+   less than 256^w into a w-byte, big-endian byte string, and OS2IP(x)
+   converts a byte string into a non-negative integer in big-endian
+   order.  This document uses them only where a field type's own
+   standardized serialization fixes a big-endian byte order (see
+   Section 4.1.4).  For every n and w, LE(n, w) is the byte reversal of
+   I2OSP(n, w), and LE2IP(x) equals OS2IP(reverse(x)).
+
+   The LE(n, w) failure condition mirrors the "integer too large" error
+   of I2OSP (Section 4.1 of [RFC8017]): the value n must fit in the w
+   bytes available, so for the common case w = 32 the input must satisfy
+   n < 2^256.  Unlike the little-endian IntegerToBytes of Section 7.1 of
+   [FIPS204], LE does not silently reduce n modulo 256^w; an out-of-
+   range input is an error, never a truncation.
 
    The set of integers between 0 and N-1 is denoted [0, N).
 
@@ -698,7 +742,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    Output: out, an (N+4)-byte string
 
-   1. return I2OSP(len(s), 4) || s
+   1. return LE(len(s), 4) || s
 
 4.1.2.  Sequences and tuples
 
@@ -708,7 +752,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 4.1.3.  Unsigned integers
 
    An integer modulo M is represented by its unique integer
-   representative in the range [0, M) and encoded via I2OSP.
+   representative in the range [0, M) and encoded via LE.
 
    EncodeUint(x, M)
 
@@ -720,7 +764,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    Output: out, an Ns-byte string
 
    1. assert 0 <= x < M
-   2. return I2OSP(x, Ns)
+   2. return LE(x, Ns)
 
    where Ns is the smallest integer with 256^Ns >= M.
 
@@ -733,18 +777,25 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    If the field already has a canonical serialization fixed by a
    standard, that serialization *SHOULD* be used in place of the default
    specified below, and it *MUST* be prefix-free.  The default below
-   encodes each prime-field coordinate as a fixed-width big-endian
-   integer via EncodeUint (Section 4.1.3), and is chosen to coincide
-   with the serialization of most standardized fields.
+   encodes each prime-field coordinate as a fixed-width little-endian
+   integer via EncodeUint (Section 4.1.3).
 
-   For example, P-256 and BLS12-381 serialize each scalar field element
-   as per EncodeUint.  Curve25519 and Ed25519 ([RFC7748], [RFC8032]) and
-   ristretto255 ([RFC9496]), serialize each element as a fixed-width
-   little-endian integer.  For these fields the little-endian
-   serialization *MUST* be used in place.  When the chosen field
-   serialization departs from the above rule, that choice is part of the
-   codec identity and *MUST* be reflected in the session tag (see
-   Section 5.1).
+   For example, Curve25519 [RFC7748], Ed25519 [RFC8032], ristretto255
+   Section 4.4 of [RFC9496] serialize field elements as a fixed-width
+   little-endian integer Similarly, in Section 7.1 of [FIPS204], the
+   integer coordinates of lattice vectors are serialized by least-
+   significant-byte first.  Other standardized fields instead fix a big-
+   endian serialization: for example P-256 ([SEC1]) and BLS12-381
+   ([I-D.irtf-cfrg-pairing-friendly-curves]) serialize each scalar as a
+   fixed-width big-endian integer.  For such fields the big-endian
+   serialization *MUST* be used in place: a prime-field coordinate x in
+   [0, p) is encoded as I2OSP(x, Ns), with Ns the smallest integer such
+   that 256^Ns >= p, in place of the default LE(x, Ns).  As with the
+   default, deserialization *MUST* reject non-canonical encodings (a
+   coordinate is valid only if the decoded integer is less than p).
+   When the chosen field serialization departs from the above rule, that
+   choice is part of the codec identity and *MUST* be reflected in the
+   session tag (see Section 5.1).
 
    With respect to a fixed basis, a field element is represented by its
    m coordinates in the prime field, each an integer in [0, p).  It is
@@ -820,8 +871,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    To sample a uniformly random element modulo M of Ns bytes (that is,
    the smallest integer Ns with 256^Ns >= M), squeeze Ns + 16 bytes by
-   interpreting them as a big-endian non-negative integer via OS2IP, and
-   reduce modulo M.
+   interpreting them as a little-endian non-negative integer via LE2IP,
+   and reduce modulo M.
 
    DecodeUint(buf, M)
 
@@ -833,7 +884,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    Output: out, an integer in the range [0, M)
 
    1. fail if len(buf) != Ns + 16
-   2. return OS2IP(buf) mod M
+   2. return LE2IP(buf) mod M
 
    The 16 extra bytes bound the statistical distance between the reduced
    value and the uniform distribution over [0, M) to 2^-128, matching
@@ -895,10 +946,10 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    Applications with big-integer arithmetic available *MAY* use a more
    randomness-efficient decoding algorithm, by instead sampling Nm + 16
    bytes, where Nm is the smallest integer with 256^Nm >= p^m,
-   interpreting them as an integer via OS2IP, reducing modulo p^m, and
+   interpreting them as an integer via LE2IP, reducing modulo p^m, and
    recovering the coordinates (a[0], ..., a[m-1]) as the base-p digits
-   of the result.  This consumes Nm + 16 bytes, with the same 2^-128
-   bias bound.
+   of the result (least-significant digit first).  This consumes Nm + 16
+   bytes, with the same 2^-128 bias bound.
 
 5.  Initialization
 
@@ -1115,7 +1166,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    consumes N bytes of the NARG string, and fails if fewer bytes remain.
 
    A byte string whose length is not known in advance is deserialized by
-   reading a 4-byte length N via OS2IP, then reading the next N bytes;
+   reading a 4-byte length N via LE2IP, then reading the next N bytes;
    this is the inverse of EncodeVarLenString (Section 4.1.1).
 
    DeserializeVarLenString(input)
@@ -1125,7 +1176,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    Output: b, an N-byte string
 
    1. fail if len(input) < 4
-   2. N = OS2IP(input[0 : 4])
+   2. N = LE2IP(input[0 : 4])
    3. fail if len(input) - 4 < N
    4. b = input[4 : 4 + N]
    5. return b
@@ -1142,7 +1193,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 6.2.3.  Unsigned integers
 
    Read the next Ns bytes, with Ns as in Section 4.1.3, and interpret
-   them as a big-endian integer x = OS2IP(.).  If x >= M, fail: non-
+   them as a little-endian integer x = LE2IP(.).  If x >= M, fail: non-
    canonical integer encodings *MUST* be rejected.  The value returned
    is x.  This is the inverse of EncodeUint (Section 4.1.3).
 
@@ -1156,7 +1207,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    Output: x, an integer in the range [0, M)
 
    1. fail if len(input) < Ns
-   2. x = OS2IP(input[0 : Ns])
+   2. x = LE2IP(input[0 : Ns])
    3. fail if x >= M
    4. return x
 
@@ -1394,12 +1445,12 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    The NARG string must be treated as untrusted input.  Therefore, non-
    interactive verifiers *MUST* check that length indicators are
    correct, that integers fall within their expected range, and that the
-   proof length is correct.  For example, in Section 6.2.1 the length
-   prefix of a byte string is attacker-controlled, and can be as large
-   as 2^32 - 1, so computing 4 + N can overflow 32-bit integers.  As
-   another example, a crafted length indicator can make verification
-   checks trivial, or exhaust memory on deserialization before any
-   cryptographic check runs [GNARK-OOM].
+   proof length is correct.  For example, in Section 6.2.1 the 4-byte
+   length prefix read by LE2IP in DeserializeVarLenString is attacker-
+   controlled, and can be as large as 2^32 - 1, so computing 4 + N can
+   overflow 32-bit integers.  As another example, a crafted length
+   indicator can make verification checks trivial, or exhaust memory on
+   deserialization before any cryptographic check runs [GNARK-OOM].
 
 9.  IANA Considerations
 
@@ -1462,6 +1513,17 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
               Encryption and Other Applications", 2011,
               <https://keccak.team/files/SpongeDuplex.pdf>.
 
+   [FIPS203]  National Institute of Standards and Technology (NIST),
+              "Module-Lattice-Based Key-Encapsulation Mechanism
+              Standard", FIPS 203, 2024,
+              <https://nvlpubs.nist.gov/nistpubs/FIPS/
+              NIST.FIPS.203.pdf>.
+
+   [FIPS204]  National Institute of Standards and Technology (NIST),
+              "Module-Lattice-Based Digital Signature Standard",
+              FIPS 204, 2024, <https://nvlpubs.nist.gov/nistpubs/FIPS/
+              NIST.FIPS.204.pdf>.
+
    [FROZENHEART]
               Trail of Bits, "The Frozen Heart Vulnerability in PlonK",
               2022, <https://blog.trailofbits.com/2022/04/18/the-frozen-
@@ -1473,6 +1535,13 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
               2024,
               <https://github.com/Consensys/gnark/security/advisories/
               GHSA-cph5-3pgr-c82g>.
+
+   [I-D.irtf-cfrg-pairing-friendly-curves]
+              Sakemi, Y., Kanno, S., and R. S. Wahby, "Pairing-Friendly
+              Curves", Work in Progress, Internet-Draft, draft-irtf-
+              cfrg-pairing-friendly-curves-12, 2 November 2025,
+              <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
+              pairing-friendly-curves-12>.
 
    [RFC7748]  Langley, A., Hamburg, M., and S. Turner, "Elliptic Curves
               for Security", RFC 7748, DOI 10.17487/RFC7748, January

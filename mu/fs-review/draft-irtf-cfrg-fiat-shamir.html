@@ -1051,7 +1051,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù &amp; Yun</td>
-<td class="center">Expires 31 December 2026</td>
+<td class="center">Expires 1 January 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1064,12 +1064,12 @@ svg {
 <dd class="internet-draft">draft-irtf-cfrg-fiat-shamir-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-06-29" class="published">29 June 2026</time>
+<time datetime="2026-06-30" class="published">30 June 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-12-31">31 December 2026</time></dd>
+<dd class="expires"><time datetime="2027-01-01">1 January 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1124,7 +1124,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 31 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 1 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1828,9 +1828,44 @@ svg {
         </h3>
 <p id="section-2.1-1">A byte is an 8-bit unsigned integer (an octet), and a <strong>byte string</strong> is a finite sequence of bytes. An <code>N</code>-byte string is a byte string of length <code>N</code>. The empty byte string is written <code>""</code>; <code>x || y</code> is the concatenation of the byte strings <code>x</code> and <code>y</code>. <code>len(x)</code> denotes the length in bytes of the byte string <code>x</code>. <code>zeros(N)</code> denotes the <code>N</code>-byte string of zero bytes.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
 <p id="section-2.1-2">Byte strings are indexed from zero. For integers <code>0 &lt;= i &lt;= j &lt;= len(x)</code>, <code>x[i : j]</code> denotes the <code>(j - i)</code>-byte substring of <code>x</code> consisting of the bytes at positions <code>i, i+1, ..., j-1</code>. In particular, <code>x[0 : N]</code> is the first <code>N</code> bytes of <code>x</code>, <code>x[i : i]</code> is the empty byte string <code>""</code>, and <code>x[0 : len(x)]</code> is <code>x</code> itself.<a href="#section-2.1-2" class="pilcrow">¶</a></p>
-<p id="section-2.1-3">A byte string <code>x</code> is a <strong>prefix</strong> of a byte string <code>y</code> if <code>y == x || z</code> for some byte string <code>z</code> (even empty). An encoding is <strong>prefix-free</strong> if, for any two distinct values, the encoding of one is never a prefix of the encoding of the other. A simple prefix-free encoding of a byte string <code>b</code> is <code>I2OSP(len(b), 4) || b</code> as described in <a href="#encoding-varlen-string" class="auto internal xref">Section 4.1.1</a>.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
-<p id="section-2.1-4"><code>I2OSP(n, w)</code> and <code>OS2IP(x)</code> are the primitives defined in Section 4 of <span>[<a href="#RFC8017" class="cite xref">RFC8017</a>]</span>. <code>I2OSP(n, w)</code> converts a non-negative integer <code>n</code> less than <code>256^w</code> into a <code>w</code>-byte, big-endian byte string. <code>OS2IP(x)</code> converts a byte string <code>x</code> into a non-negative integer using the big-endian byte order.<a href="#section-2.1-4" class="pilcrow">¶</a></p>
-<p id="section-2.1-5">The set of integers between <code>0</code> and <code>N-1</code> is denoted <code>[0, N)</code>.<a href="#section-2.1-5" class="pilcrow">¶</a></p>
+<p id="section-2.1-3">A byte string <code>x</code> is a <strong>prefix</strong> of a byte string <code>y</code> if <code>y == x || z</code> for some byte string <code>z</code> (even empty). An encoding is <strong>prefix-free</strong> if, for any two distinct values, the encoding of one is never a prefix of the encoding of the other. A simple prefix-free encoding of a byte string <code>b</code> is <code>LE(len(b), 4) || b</code> as described in <a href="#encoding-varlen-string" class="auto internal xref">Section 4.1.1</a>.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
+<p id="section-2.1-4"><code>LE(n, w)</code> and <code>LE2IP(x)</code> are the integer/byte-string conversion primitives used throughout this document, in little-endian byte order. <code>LE(n, w)</code> converts a non-negative integer <code>n</code> less than <code>256^w</code> into a <code>w</code>-byte, little-endian byte string, and fails if <code>n &gt;= 256^w</code>. <code>LE2IP(x)</code> converts a byte string <code>x</code> into a non-negative integer using the little-endian byte order.<a href="#section-2.1-4" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-2.1-5">
+<pre>
+LE(n, w)
+
+Inputs:
+
+- n, a non-negative integer with 0 &lt;= n &lt; 256^w
+- w, the output length in bytes
+
+Output: out, a w-byte string
+
+1. fail if n &lt; 0 or n &gt;= 256^w
+2. out = zeros(w)
+3. for i in 0, ..., w-1:
+4.    out[i] = n mod 256
+5.    n = floor(n / 256)
+6. return out
+</pre><a href="#section-2.1-5" class="pilcrow">¶</a>
+</div>
+<div class="alignLeft art-text artwork" id="section-2.1-6">
+<pre>
+LE2IP(x)
+
+Input: x, a byte string of length w
+
+Output: n, a non-negative integer with 0 &lt;= n &lt; 256^w
+
+1. n = 0
+2. for i in 0, ..., len(x)-1:
+3.    n = n + x[i] * 256^i
+4. return n
+</pre><a href="#section-2.1-6" class="pilcrow">¶</a>
+</div>
+<p id="section-2.1-7"><code>I2OSP(n, w)</code> and <code>OS2IP(x)</code> are the big-endian primitives defined in Section 4 of <span>[<a href="#RFC8017" class="cite xref">RFC8017</a>]</span>: <code>I2OSP(n, w)</code> converts a non-negative integer <code>n</code> less than <code>256^w</code> into a <code>w</code>-byte, big-endian byte string, and <code>OS2IP(x)</code> converts a byte string into a non-negative integer in big-endian order. This document uses them only where a field type's own standardized serialization fixes a big-endian byte order (see <a href="#encoding-field" class="auto internal xref">Section 4.1.4</a>). For every <code>n</code> and <code>w</code>, <code>LE(n, w)</code> is the byte reversal of <code>I2OSP(n, w)</code>, and <code>LE2IP(x)</code> equals <code>OS2IP(reverse(x))</code>.<a href="#section-2.1-7" class="pilcrow">¶</a></p>
+<p id="section-2.1-8">The <code>LE(n, w)</code> failure condition mirrors the <code>"integer too large"</code> error of <code>I2OSP</code> (Section 4.1 of <span>[<a href="#RFC8017" class="cite xref">RFC8017</a>]</span>): the value <code>n</code> must fit in the <code>w</code> bytes available, so for the common case <code>w = 32</code> the input must satisfy <code>n &lt; 2^256</code>. Unlike the little-endian <code>IntegerToBytes</code> of Section 7.1 of <span>[<a href="#FIPS204" class="cite xref">FIPS204</a>]</span>, <code>LE</code> does not silently reduce <code>n</code> modulo <code>256^w</code>; an out-of-range input is an error, never a truncation.<a href="#section-2.1-8" class="pilcrow">¶</a></p>
+<p id="section-2.1-9">The set of integers between <code>0</code> and <code>N-1</code> is denoted <code>[0, N)</code>.<a href="#section-2.1-9" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="duplex-sponge-interface">
@@ -2138,7 +2173,7 @@ Input: s, an N-byte string
 
 Output: out, an (N+4)-byte string
 
-1. return I2OSP(len(s), 4) || s
+1. return LE(len(s), 4) || s
 </pre><a href="#section-4.1.1-5" class="pilcrow">¶</a>
 </div>
 </section>
@@ -2156,7 +2191,7 @@ Output: out, an (N+4)-byte string
           <h4 id="name-unsigned-integers">
 <a href="#section-4.1.3" class="section-number selfRef">4.1.3. </a><a href="#name-unsigned-integers" class="section-name selfRef">Unsigned integers</a>
           </h4>
-<p id="section-4.1.3-1">An integer modulo <code>M</code> is represented by its unique integer representative in the range <code>[0, M)</code> and encoded via <code>I2OSP</code>.<a href="#section-4.1.3-1" class="pilcrow">¶</a></p>
+<p id="section-4.1.3-1">An integer modulo <code>M</code> is represented by its unique integer representative in the range <code>[0, M)</code> and encoded via <code>LE</code>.<a href="#section-4.1.3-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.1.3-2">
 <pre>
 EncodeUint(x, M)
@@ -2169,7 +2204,7 @@ Inputs:
 Output: out, an Ns-byte string
 
 1. assert 0 &lt;= x &lt; M
-2. return I2OSP(x, Ns)
+2. return LE(x, Ns)
 </pre><a href="#section-4.1.3-2" class="pilcrow">¶</a>
 </div>
 <p id="section-4.1.3-3">where <code>Ns</code> is the smallest integer with <code>256^Ns &gt;= M</code>.<a href="#section-4.1.3-3" class="pilcrow">¶</a></p>
@@ -2181,8 +2216,8 @@ Output: out, an Ns-byte string
 <a href="#section-4.1.4" class="section-number selfRef">4.1.4. </a><a href="#name-field-elements" class="section-name selfRef">Field elements</a>
           </h4>
 <p id="section-4.1.4-1">This section specifies the <em>default</em> encoding of a finite field of order <code>q = p^m</code>, where <code>p</code> is the prime characteristic and <code>m &gt;= 1</code> is the extension degree.<a href="#section-4.1.4-1" class="pilcrow">¶</a></p>
-<p id="section-4.1.4-2">If the field already has a canonical serialization fixed by a standard, that serialization <strong>SHOULD</strong> be used in place of the default specified below, and it <strong>MUST</strong> be prefix-free. The default below encodes each prime-field coordinate as a fixed-width big-endian integer via <code>EncodeUint</code> (<a href="#encoding-uint" class="auto internal xref">Section 4.1.3</a>), and is chosen to coincide with the serialization of most standardized fields.<a href="#section-4.1.4-2" class="pilcrow">¶</a></p>
-<p id="section-4.1.4-3">For example, P-256 and BLS12-381 serialize each scalar field element as per <code>EncodeUint</code>. Curve25519 and Ed25519 (<span>[<a href="#RFC7748" class="cite xref">RFC7748</a>]</span>, <span>[<a href="#RFC8032" class="cite xref">RFC8032</a>]</span>) and ristretto255 (<span>[<a href="#RFC9496" class="cite xref">RFC9496</a>]</span>), serialize each element as a fixed-width little-endian integer. For these fields the little-endian serialization <strong>MUST</strong> be used in place. When the chosen field serialization departs from the above rule, that choice is part of the codec identity and <strong>MUST</strong> be reflected in the session tag (see <a href="#session-id" class="auto internal xref">Section 5.1</a>).<a href="#section-4.1.4-3" class="pilcrow">¶</a></p>
+<p id="section-4.1.4-2">If the field already has a canonical serialization fixed by a standard, that serialization <strong>SHOULD</strong> be used in place of the default specified below, and it <strong>MUST</strong> be prefix-free. The default below encodes each prime-field coordinate as a fixed-width little-endian integer via <code>EncodeUint</code> (<a href="#encoding-uint" class="auto internal xref">Section 4.1.3</a>).<a href="#section-4.1.4-2" class="pilcrow">¶</a></p>
+<p id="section-4.1.4-3">For example, Curve25519 <span>[<a href="#RFC7748" class="cite xref">RFC7748</a>]</span>, Ed25519 <span>[<a href="#RFC8032" class="cite xref">RFC8032</a>]</span>, ristretto255 <span><a href="https://rfc-editor.org/rfc/rfc9496#section-4.4" class="relref">Section 4.4</a> of [<a href="#RFC9496" class="cite xref">RFC9496</a>]</span> serialize field elements as a fixed-width little-endian integer  Similarly, in Section 7.1 of <span>[<a href="#FIPS204" class="cite xref">FIPS204</a>]</span>, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 (<span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>) and BLS12-381 (<span>[<a href="#I-D.irtf-cfrg-pairing-friendly-curves" class="cite xref">I-D.irtf-cfrg-pairing-friendly-curves</a>]</span>) serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization <strong>MUST</strong> be used in place: a prime-field coordinate <code>x</code> in <code>[0, p)</code> is encoded as <code>I2OSP(x, Ns)</code>, with <code>Ns</code> the smallest integer such that <code>256^Ns &gt;= p</code>, in place of the default <code>LE(x, Ns)</code>. As with the default, deserialization <strong>MUST</strong> reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than <code>p</code>). When the chosen field serialization departs from the above rule, that choice is part of the codec identity and <strong>MUST</strong> be reflected in the session tag (see <a href="#session-id" class="auto internal xref">Section 5.1</a>).<a href="#section-4.1.4-3" class="pilcrow">¶</a></p>
 <p id="section-4.1.4-4">With respect to a fixed basis, a field element is represented by its <code>m</code> coordinates in the prime field, each an integer in <code>[0, p)</code>. It is encoded as the concatenation of the per-coordinate encodings produced by <code>EncodeUint</code> (<a href="#encoding-uint" class="auto internal xref">Section 4.1.3</a>) with modulus <code>p</code>. Let <code>Ns</code> be the smallest integer with <code>256^Ns &gt;= p</code>; a field element encodes to <code>m * Ns</code> bytes.<a href="#section-4.1.4-4" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.1.4-5">
 <pre>
@@ -2254,7 +2289,7 @@ Output: out, a byte string of length N
           <h4 id="name-unsigned-integers-2">
 <a href="#section-4.2.2" class="section-number selfRef">4.2.2. </a><a href="#name-unsigned-integers-2" class="section-name selfRef">Unsigned integers</a>
           </h4>
-<p id="section-4.2.2-1">To sample a uniformly random element modulo <code>M</code> of <code>Ns</code> bytes (that is, the smallest integer <code>Ns</code> with <code>256^Ns &gt;= M</code>), squeeze <code>Ns + 16</code> bytes by interpreting them as a big-endian non-negative integer via <code>OS2IP</code>, and reduce modulo <code>M</code>.<a href="#section-4.2.2-1" class="pilcrow">¶</a></p>
+<p id="section-4.2.2-1">To sample a uniformly random element modulo <code>M</code> of <code>Ns</code> bytes (that is, the smallest integer <code>Ns</code> with <code>256^Ns &gt;= M</code>), squeeze <code>Ns + 16</code> bytes by interpreting them as a little-endian non-negative integer via <code>LE2IP</code>, and reduce modulo <code>M</code>.<a href="#section-4.2.2-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.2.2-2">
 <pre>
 DecodeUint(buf, M)
@@ -2267,7 +2302,7 @@ Inputs:
 Output: out, an integer in the range [0, M)
 
 1. fail if len(buf) != Ns + 16
-2. return OS2IP(buf) mod M
+2. return LE2IP(buf) mod M
 </pre><a href="#section-4.2.2-2" class="pilcrow">¶</a>
 </div>
 <p id="section-4.2.2-3">The 16 extra bytes bound the statistical distance between the reduced value and the uniform distribution over <code>[0, M)</code> to <code>2^-128</code>, matching <span><a href="https://rfc-editor.org/rfc/rfc9380#section-5" class="relref">Section 5</a> of [<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>. More generally, sampling <code>Ns + n</code> extra bytes bounds the bias to <code>2^-8n</code>; an instantiation targeting a security level of <code>k</code> bits <strong>SHOULD</strong> squeeze <code>k/8</code> extra bytes.<a href="#section-4.2.2-3" class="pilcrow">¶</a></p>
@@ -2314,7 +2349,7 @@ Output: out, an element of the field of order p^m, given by its
 </pre><a href="#section-4.2.3-2" class="pilcrow">¶</a>
 </div>
 <p id="section-4.2.3-3">For <code>m = 1</code>, <code>DecodeField</code> is <code>DecodeUint</code>, and the same efficiency remarks apply: when <code>log2(p)</code> is significantly smaller than 256 or <code>p</code> is a power of two, applications <strong>MAY</strong> substitute a more efficient alternative, subject to the same security requirements described in <a href="#decoding-uint" class="auto internal xref">Section 4.2.2</a>.<a href="#section-4.2.3-3" class="pilcrow">¶</a></p>
-<p id="section-4.2.3-4">For <code>m &gt; 1</code>, decoding relies on <code>16 * m</code> additional randomness bytes. Applications with big-integer arithmetic available <strong>MAY</strong> use a more randomness-efficient decoding algorithm, by instead sampling <code>Nm + 16</code> bytes, where <code>Nm</code> is the smallest integer with <code>256^Nm &gt;= p^m</code>, interpreting them as an integer via <code>OS2IP</code>, reducing modulo <code>p^m</code>, and recovering the coordinates <code>(a[0], ..., a[m-1])</code> as the base-<code>p</code> digits of the result. This consumes <code>Nm + 16</code> bytes, with the same <code>2^-128</code> bias bound.<a href="#section-4.2.3-4" class="pilcrow">¶</a></p>
+<p id="section-4.2.3-4">For <code>m &gt; 1</code>, decoding relies on <code>16 * m</code> additional randomness bytes. Applications with big-integer arithmetic available <strong>MAY</strong> use a more randomness-efficient decoding algorithm, by instead sampling <code>Nm + 16</code> bytes, where <code>Nm</code> is the smallest integer with <code>256^Nm &gt;= p^m</code>, interpreting them as an integer via <code>LE2IP</code>, reducing modulo <code>p^m</code>, and recovering the coordinates <code>(a[0], ..., a[m-1])</code> as the base-<code>p</code> digits of the result (least-significant digit first). This consumes <code>Nm + 16</code> bytes, with the same <code>2^-128</code> bias bound.<a href="#section-4.2.3-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2493,7 +2528,7 @@ Output: b, an N-byte string
 </pre><a href="#section-6.2.1-2" class="pilcrow">¶</a>
 </div>
 <p id="section-6.2.1-3"><code>DeserializeBytes</code> is the inverse of <code>EncodeBytes</code> (<a href="#encoding-varlen-string" class="auto internal xref">Section 4.1.1</a>), and consumes <code>N</code> bytes of the NARG string, and fails if fewer bytes remain.<a href="#section-6.2.1-3" class="pilcrow">¶</a></p>
-<p id="section-6.2.1-4">A byte string whose length is not known in advance is deserialized by reading a 4-byte length <code>N</code> via <code>OS2IP</code>, then reading the next <code>N</code> bytes; this is the inverse of <code>EncodeVarLenString</code> (<a href="#encoding-varlen-string" class="auto internal xref">Section 4.1.1</a>).<a href="#section-6.2.1-4" class="pilcrow">¶</a></p>
+<p id="section-6.2.1-4">A byte string whose length is not known in advance is deserialized by reading a 4-byte length <code>N</code> via <code>LE2IP</code>, then reading the next <code>N</code> bytes; this is the inverse of <code>EncodeVarLenString</code> (<a href="#encoding-varlen-string" class="auto internal xref">Section 4.1.1</a>).<a href="#section-6.2.1-4" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-6.2.1-5">
 <pre>
 DeserializeVarLenString(input)
@@ -2503,7 +2538,7 @@ Input: input, the unread remainder of the NARG string
 Output: b, an N-byte string
 
 1. fail if len(input) &lt; 4
-2. N = OS2IP(input[0 : 4])
+2. N = LE2IP(input[0 : 4])
 3. fail if len(input) - 4 &lt; N
 4. b = input[4 : 4 + N]
 5. return b
@@ -2525,7 +2560,7 @@ Output: b, an N-byte string
           <h4 id="name-unsigned-integers-3">
 <a href="#section-6.2.3" class="section-number selfRef">6.2.3. </a><a href="#name-unsigned-integers-3" class="section-name selfRef">Unsigned integers</a>
           </h4>
-<p id="section-6.2.3-1">Read the next <code>Ns</code> bytes, with <code>Ns</code> as in <a href="#encoding-uint" class="auto internal xref">Section 4.1.3</a>, and interpret them as a big-endian integer <code>x = OS2IP(.)</code>. If <code>x &gt;= M</code>, fail: non-canonical integer encodings <strong>MUST</strong> be rejected. The value returned is <code>x</code>. This is the inverse of <code>EncodeUint</code> (<a href="#encoding-uint" class="auto internal xref">Section 4.1.3</a>).<a href="#section-6.2.3-1" class="pilcrow">¶</a></p>
+<p id="section-6.2.3-1">Read the next <code>Ns</code> bytes, with <code>Ns</code> as in <a href="#encoding-uint" class="auto internal xref">Section 4.1.3</a>, and interpret them as a little-endian integer <code>x = LE2IP(.)</code>. If <code>x &gt;= M</code>, fail: non-canonical integer encodings <strong>MUST</strong> be rejected. The value returned is <code>x</code>. This is the inverse of <code>EncodeUint</code> (<a href="#encoding-uint" class="auto internal xref">Section 4.1.3</a>).<a href="#section-6.2.3-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-6.2.3-2">
 <pre>
 DeserializeUint(input, M)
@@ -2538,7 +2573,7 @@ Inputs:
 Output: x, an integer in the range [0, M)
 
 1. fail if len(input) &lt; Ns
-2. x = OS2IP(input[0 : Ns])
+2. x = LE2IP(input[0 : Ns])
 3. fail if x &gt;= M
 4. return x
 </pre><a href="#section-6.2.3-2" class="pilcrow">¶</a>
@@ -2695,7 +2730,7 @@ Output: a, an element of the field of order p^m, given by its
 <p id="section-8.6-1">The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities, especially due to incorrect implementations involving out-of-order (or missing) prover messages.<a href="#section-8.6-1" class="pilcrow">¶</a></p>
 <p id="section-8.6-2">Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes <span>[<a href="#CVE-2024-42461" class="cite xref">CVE-2024-42461</a>]</span>, and by replacing each prover message in turn with a different value.<a href="#section-8.6-2" class="pilcrow">¶</a></p>
 <p id="section-8.6-3">Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered.<a href="#section-8.6-3" class="pilcrow">¶</a></p>
-<p id="section-8.6-4">The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers <strong>MUST</strong> check that length indicators are correct, that integers fall within their expected range, and that the proof length is correct. For example, in <a href="#deserialize-byte-strings" class="auto internal xref">Section 6.2.1</a> the length prefix of a byte string is attacker-controlled, and can be as large as <code>2^32 - 1</code>, so computing <code>4 + N</code> can overflow 32-bit integers. As another example, a crafted length indicator can make verification checks trivial, or exhaust memory on deserialization before any cryptographic check runs <span>[<a href="#GNARK-OOM" class="cite xref">GNARK-OOM</a>]</span>.<a href="#section-8.6-4" class="pilcrow">¶</a></p>
+<p id="section-8.6-4">The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers <strong>MUST</strong> check that length indicators are correct, that integers fall within their expected range, and that the proof length is correct. For example, in <a href="#deserialize-byte-strings" class="auto internal xref">Section 6.2.1</a> the 4-byte length prefix read by <code>LE2IP</code> in <code>DeserializeVarLenString</code> is attacker-controlled, and can be as large as <code>2^32 - 1</code>, so computing <code>4 + N</code> can overflow 32-bit integers. As another example, a crafted length indicator can make verification checks trivial, or exhaust memory on deserialization before any cryptographic check runs <span>[<a href="#GNARK-OOM" class="cite xref">GNARK-OOM</a>]</span>.<a href="#section-8.6-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2772,6 +2807,14 @@ Output: a, an element of the field of order p^m, given by its
         <dd>
 <span class="refAuthor">Bertoni, G.</span>, <span class="refAuthor">Daemen, J.</span>, <span class="refAuthor">Peeters, M.</span>, and <span class="refAuthor">G. V. Assche</span>, <span class="refTitle">"Duplexing the Sponge: Single-Pass Authenticated Encryption and Other Applications"</span>, <time datetime="2011" class="refDate">2011</time>, <span>&lt;<a href="https://keccak.team/files/SpongeDuplex.pdf">https://keccak.team/files/SpongeDuplex.pdf</a>&gt;</span>. </dd>
 <dd class="break"></dd>
+<dt id="FIPS203">[FIPS203]</dt>
+        <dd>
+<span class="refAuthor">National Institute of Standards and Technology (NIST)</span>, <span class="refTitle">"Module-Lattice-Based Key-Encapsulation Mechanism Standard"</span>, <span class="seriesInfo">FIPS 203</span>, <time datetime="2024" class="refDate">2024</time>, <span>&lt;<a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf">https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="FIPS204">[FIPS204]</dt>
+        <dd>
+<span class="refAuthor">National Institute of Standards and Technology (NIST)</span>, <span class="refTitle">"Module-Lattice-Based Digital Signature Standard"</span>, <span class="seriesInfo">FIPS 204</span>, <time datetime="2024" class="refDate">2024</time>, <span>&lt;<a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf">https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 <dt id="FROZENHEART">[FROZENHEART]</dt>
         <dd>
 <span class="refAuthor">Trail of Bits</span>, <span class="refTitle">"The Frozen Heart Vulnerability in PlonK"</span>, <time datetime="2022" class="refDate">2022</time>, <span>&lt;<a href="https://blog.trailofbits.com/2022/04/18/the-frozen-heart-vulnerability-in-plonk/">https://blog.trailofbits.com/2022/04/18/the-frozen-heart-vulnerability-in-plonk/</a>&gt;</span>. </dd>
@@ -2779,6 +2822,10 @@ Output: a, an element of the field of order p^m, given by its
 <dt id="GNARK-OOM">[GNARK-OOM]</dt>
         <dd>
 <span class="refAuthor">Consensys</span>, <span class="refTitle">"GHSA-cph5-3pgr-c82g: gnark vulnerable to out-of-memory crash during deserialization of untrusted keys"</span>, <time datetime="2024" class="refDate">2024</time>, <span>&lt;<a href="https://github.com/Consensys/gnark/security/advisories/GHSA-cph5-3pgr-c82g">https://github.com/Consensys/gnark/security/advisories/GHSA-cph5-3pgr-c82g</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="I-D.irtf-cfrg-pairing-friendly-curves">[I-D.irtf-cfrg-pairing-friendly-curves]</dt>
+        <dd>
+<span class="refAuthor">Sakemi, Y.</span>, <span class="refAuthor">Kanno, S.</span>, and <span class="refAuthor">R. S. Wahby</span>, <span class="refTitle">"Pairing-Friendly Curves"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-irtf-cfrg-pairing-friendly-curves-12</span>, <time datetime="2025-11-02" class="refDate">2 November 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-pairing-friendly-curves-12">https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-pairing-friendly-curves-12</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC7748">[RFC7748]</dt>
         <dd>
