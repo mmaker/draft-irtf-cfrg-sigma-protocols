@@ -2881,7 +2881,7 @@ Output: a, an element of the field of order p^m, given by its
 Name = encode_varlen
 Function = EncodeVarLenString
 Input = 70726f6f66
-Output = 0000000570726f6f66
+Output = 0500000070726f6f66
 </pre><a href="#appendix-A.1.1-1" class="pilcrow">¶</a>
 </div>
 </section>
@@ -2896,11 +2896,11 @@ Output = 0000000570726f6f66
 Name = encode_uint
 Function = EncodeUint
 Group = P-256
-Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
-632551
+Modulus = 512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ff
+ffffff
 Value = deadbeef
-Output = 00000000000000000000000000000000000000000000000000000000de
-adbeef
+Output = efbeadde00000000000000000000000000000000000000000000000000
+000000
 </pre><a href="#appendix-A.1.2-1" class="pilcrow">¶</a>
 </div>
 </section>
@@ -2915,15 +2915,15 @@ adbeef
 Name = deserialize_field
 Function = DeserializeField
 Group = P-256
-Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
-632551
+Modulus = 512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ff
+ffffff
 ExtensionDegree = 2
-Input = 00000000000000000000000000000000000000000000000000000000dead
-beefffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632550
-Coordinates = 000000000000000000000000000000000000000000000000000000
-00deadbeef
-Coordinates = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9ca
-c2fc632550
+Input = efbeadde0000000000000000000000000000000000000000000000000000
+0000502563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
+Coordinates = efbeadde0000000000000000000000000000000000000000000000
+0000000000
+Coordinates = 502563fcc2cab9f3849e17a7adfae6bcffffffffffffffff000000
+00ffffffff
 </pre><a href="#appendix-A.1.3-1" class="pilcrow">¶</a>
 </div>
 </section>
@@ -3143,16 +3143,16 @@ Name = decode_uint
 Function = DecodeUint
 Hash = SHAKE128
 Group = P-256
-Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
-632551
+Modulus = 512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ff
+ffffff
 SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
 1c1d1e1f
-Operation = absorb:00000008696e7374616e6365
+Operation = absorb:08000000696e7374616e6365
 Operation = squeeze:48
-Output = 177efbafc28fc74895861272346b4312e3e44d74846cddd7e63e3d1f5c
-fa74243c10dc1a5d50d6b9f47db43283665d9f
-Challenge = 4469555175f8b49c04e9816d8179e412d68c01ee3683169e62c91c45
-1cdd283a
+Output = 7124d02b7cdfec99c4033dfd05624cfe2ff3af2c0e71656f770e676bd3
+6de6228f85fcb39f34f7bfc24c9f54ab35ddba
+Challenge = 4f6d432427130deb36e0a0a19fb10193f69bb8a75934cccbbedaf865
+7c9960f8
 </pre><a href="#appendix-A.2.9-1" class="pilcrow">¶</a>
 </div>
 </section>
@@ -3168,27 +3168,27 @@ Name = sumcheck
 Function = Sumcheck
 Hash = SHAKE128
 Group = P-256
-Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
-632551
+Modulus = 512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ff
+ffffff
 SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
 1c1d1e1f
 ContextTag = 73756d636865636b
 Degree = 2
-ClaimedSum = 16378d9446c64875239e4c7c5c07e2e4516ab8f1d1106a90762fe8
-3d6814dc5f
-Coefficients = 3352f9e4bd38fc21798a864d4e0ace1bfb9f29ca15f59dc5ef2c
-fb9fc2086644
-Coefficients = 6b217985d1da46a01d39b9617fce5d8005a7df7943988869b7ac
-55be7b700d16
-Coefficients = 44702043fa7a0993134f86804023e92c116b809208a4451fd3e3
-660264f72812
-Challenge = ca999901d7c56015a876e539ab335f666e4513de7cd41274b2aa4971
-681e7704
-ReducedClaim = fe9bb9b628bf6a0a47f998fdf41349fb6549f6497ef2106578d5
-56c9c8e42ee0
-Narg = 3352f9e4bd38fc21798a864d4e0ace1bfb9f29ca15f59dc5ef2cfb9fc208
-66446b217985d1da46a01d39b9617fce5d8005a7df7943988869b7ac55be7b700d16
-44702043fa7a0993134f86804023e92c116b809208a4451fd3e3660264f72812
+ClaimedSum = ba1a39a7fb56e170d59e77dd7867d8f308950912f224aaee20a57c
+854582a46b
+Coefficients = 6ccb2ad1934ad3ebf0e4bb8252cd5b112fc5f53c002d69f84ef0
+b64137711ebf
+Coefficients = 9efd98393e0de665fa54565508f53c49696806ae8f23cfb8ea48
+00ae5426c51b
+Coefficients = e6d010c41b4ac81a03bdd8d026cdb10141a217ea61a708459a7b
+0e548079a2d1
+Challenge = 5c104787f0626a81d1dcfadd4e539db057f1d84b557dd1cb19f89aff
+b3d7fd4e
+ReducedClaim = 9be9d2ee6c4b2faac4d239f1fcfe58cf723a84442517e482b23f
+203b62e0b707
+Narg = 6ccb2ad1934ad3ebf0e4bb8252cd5b112fc5f53c002d69f84ef0b6413771
+1ebf9efd98393e0de665fa54565508f53c49696806ae8f23cfb8ea4800ae5426c51b
+e6d010c41b4ac81a03bdd8d026cdb10141a217ea61a708459a7b0e548079a2d1
 </pre><a href="#appendix-A.2.10-1" class="pilcrow">¶</a>
 </div>
 </section>
@@ -3408,16 +3408,16 @@ Name = decode_uint
 Function = DecodeUint
 Hash = TurboSHAKE128
 Group = P-256
-Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
-632551
+Modulus = 512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ff
+ffffff
 SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
 1c1d1e1f
-Operation = absorb:00000008696e7374616e6365
+Operation = absorb:08000000696e7374616e6365
 Operation = squeeze:48
-Output = 0ace7c861bc8703d4201ccb5feafcd188808e1fc972de466d4455d6d7e
-c905a87c00f9654c3cde03ada2364e88010355
-Challenge = 62f6db4c28d15798c99d435334c068ee6ebdbd0e487b36903e7d5e59
-7511578d
+Output = 82a031e31b103ac01253ba3aae215f650a06a4bb24963a05ee1f8c0b82
+eae90d7bd36ea8cb560a91604ae8a97eb0d564
+Challenge = 8b55e9fe9b451d8719e01ddb7983fde76695a73563d7cd6f12d01650
+458b08c2
 </pre><a href="#appendix-A.3.9-1" class="pilcrow">¶</a>
 </div>
 </section>
@@ -3433,27 +3433,27 @@ Name = sumcheck
 Function = Sumcheck
 Hash = TurboSHAKE128
 Group = P-256
-Modulus = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc
-632551
+Modulus = 512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ff
+ffffff
 SessionId = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b
 1c1d1e1f
 ContextTag = 73756d636865636b
 Degree = 2
-ClaimedSum = 5927eee1956b1e9eb1180eb49eea59cee1241c4536f33b2a4582d6
-743ff53a57
-Coefficients = 040d4c06738a450a6b22e213350a3c201cdb6dbf77f7240e3dc3
-96d6d9daf7a0
-Coefficients = 51fb1ed7a4f12558d6b6f0237c4d7876fbc6ac77e0d68fa196fd
-56efc489e023
-Coefficients = ff1237fc09656f32041b5a6ab8886917688d8efc0d4601f126b8
-1c99c4189045
-Challenge = f20409dcc275d204579dec790136a2d272dfc1f5941260127ddd332f
-af2250e3
-ReducedClaim = e92b0ea702a4176e87a48b1f9f39297a3a3b88ca33e73d98f2d0
-94bbbf7445f6
-Narg = 040d4c06738a450a6b22e213350a3c201cdb6dbf77f7240e3dc396d6d9da
-f7a051fb1ed7a4f12558d6b6f0237c4d7876fbc6ac77e0d68fa196fd56efc489e023
-ff1237fc09656f32041b5a6ab8886917688d8efc0d4601f126b81c99c4189045
+ClaimedSum = c89a770ae1659e5686b9e30e37364467668d961a17e8c1fb341f3a
+68bfe12989
+Coefficients = d287b6370f8ba83760146f4a616bbd9ffb87d7908ef64f60d31f
+b97f616822d0
+Coefficients = 6111f36ce1504e03e2c1e408cc9be02dc74963e9decb4333eb6c
+a819afa588b4
+Coefficients = 65c4dd26679472cbed0b50bf03b9b673a733840f1b2fde07a572
+1f4f4b6b5c34
+Challenge = 79ab1d570f1ff8cbd5ed2cb5097cf837539ad305655bb3d605be1bbd
+b4732a95
+ReducedClaim = 187ca9febccde5880ffa3b6c3df560a4ca42114f135a7e8db947
+46faf2cd79bb
+Narg = d287b6370f8ba83760146f4a616bbd9ffb87d7908ef64f60d31fb97f6168
+22d06111f36ce1504e03e2c1e408cc9be02dc74963e9decb4333eb6ca819afa588b4
+65c4dd26679472cbed0b50bf03b9b673a733840f1b2fde07a5721f4f4b6b5c34
 </pre><a href="#appendix-A.3.10-1" class="pilcrow">¶</a>
 </div>
 </section>
