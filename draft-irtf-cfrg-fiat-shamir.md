@@ -740,6 +740,8 @@ The tag has the following security requirements:
 4. the tag **SHOULD** begin with a fixed identification string that is unique to the application.
 5. the tag **SHOULD** include a version number.
 
+An application that bypasses `DeriveSessionID` and sets the 32-byte `session_id` directly **MUST** ensure it satisfies the same requirements: distinct contexts (as characterized by requirements 1--3) map to distinct session identifiers. Deriving it from a `tag` as above is the **RECOMMENDED** way to obtain this property.
+
 ~~~
 DeriveSessionID(tag)
 
