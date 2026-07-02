@@ -1047,11 +1047,11 @@ svg {
 <thead><tr>
 <td class="left">Internet-Draft</td>
 <td class="center">Fiat-Shamir Transformation</td>
-<td class="right">June 2026</td>
+<td class="right">July 2026</td>
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù &amp; Yun</td>
-<td class="center">Expires 1 January 2027</td>
+<td class="center">Expires 3 January 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1064,12 +1064,12 @@ svg {
 <dd class="internet-draft">draft-irtf-cfrg-fiat-shamir-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-06-30" class="published">30 June 2026</time>
+<time datetime="2026-07-02" class="published">2 July 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-01-01">1 January 2027</time></dd>
+<dd class="expires"><time datetime="2027-01-03">3 January 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1124,7 +1124,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 1 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 3 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1466,7 +1466,7 @@ svg {
           <p id="section-1-7.3.1">a serialization and deserialization procedure for the NARG string produced by the prover (<a href="#narg-string" class="auto internal xref">Section 6</a>).<a href="#section-1-7.3.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
-<p id="section-1-8">This document specifies byte-oriented hash functions, but the transformation is well-suited to recursive proving, since the in-circuit cost of recomputing the Fiat-Shamir challenges is low, and  generalizes to other alphabets (for example, prime-field elements). It is compatible with arithmetization-friendly hash functions (e.g. Poseidon2 <span>[<a href="#POSEIDON2" class="cite xref">POSEIDON2</a>]</span>) that operate natively on field elements. See <span>[<a href="#CO25" class="cite xref">CO25</a>]</span> for the general construction.<a href="#section-1-8" class="pilcrow">¶</a></p>
+<p id="section-1-8">This document specifies byte-oriented hash functions, but the transformation is well-suited to recursive proving, since the in-circuit cost of recomputing the Fiat-Shamir challenges is low. It is compatible with arithmetization-friendly hash functions (e.g. Poseidon2 <span>[<a href="#POSEIDON2" class="cite xref">POSEIDON2</a>]</span>) that operate natively on field elements. See <span>[<a href="#CO25" class="cite xref">CO25</a>]</span> for the general construction.<a href="#section-1-8" class="pilcrow">¶</a></p>
 <p id="section-1-9">Other types of non-interactive transformations (with and without random oracles) are possible, but outside the scope of this specification.<a href="#section-1-9" class="pilcrow">¶</a></p>
 <span id="name-non-interactive-prover-for-"></span><div id="fig-fiat-shamir-prover">
 <figure id="figure-1">
@@ -2216,7 +2216,7 @@ Output: out, an Ns-byte string
           </h4>
 <p id="section-4.1.4-1">This section specifies the <em>default</em> encoding of a finite field of order <code>q = p^m</code>, where <code>p</code> is the prime characteristic and <code>m &gt;= 1</code> is the extension degree.<a href="#section-4.1.4-1" class="pilcrow">¶</a></p>
 <p id="section-4.1.4-2">If the field already has a canonical serialization fixed by a standard, that serialization <strong>SHOULD</strong> be used in place of the default specified below, and it <strong>MUST</strong> be prefix-free. The default below encodes each prime-field coordinate as a fixed-width little-endian integer via <code>EncodeUint</code> (<a href="#encoding-uint" class="auto internal xref">Section 4.1.3</a>).<a href="#section-4.1.4-2" class="pilcrow">¶</a></p>
-<p id="section-4.1.4-3">For example, Curve25519 <span>[<a href="#RFC7748" class="cite xref">RFC7748</a>]</span>, Ed25519 <span>[<a href="#RFC8032" class="cite xref">RFC8032</a>]</span>, ristretto255 <span><a href="https://rfc-editor.org/rfc/rfc9496#section-4.4" class="relref">Section 4.4</a> of [<a href="#RFC9496" class="cite xref">RFC9496</a>]</span> serialize field elements as a fixed-width little-endian integer  Similarly, in Section 7.1 of <span>[<a href="#FIPS204" class="cite xref">FIPS204</a>]</span>, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 (<span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>) and BLS12-381 (<span>[<a href="#I-D.irtf-cfrg-pairing-friendly-curves" class="cite xref">I-D.irtf-cfrg-pairing-friendly-curves</a>]</span>) serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization <strong>MUST</strong> be used in place: a prime-field coordinate <code>x</code> in <code>[0, p)</code> is encoded as <code>I2OSP(x, Ns)</code>, with <code>Ns</code> the smallest integer such that <code>256^Ns &gt;= p</code>, in place of the default <code>LE(x, Ns)</code>. As with the default, deserialization <strong>MUST</strong> reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than <code>p</code>). When the chosen field serialization departs from the above rule, that choice is part of the codec identity and <strong>MUST</strong> be reflected in the session tag (see <a href="#session-id" class="auto internal xref">Section 5.1</a>).<a href="#section-4.1.4-3" class="pilcrow">¶</a></p>
+<p id="section-4.1.4-3">For example, Curve25519 <span>[<a href="#RFC7748" class="cite xref">RFC7748</a>]</span>, Ed25519 <span>[<a href="#RFC8032" class="cite xref">RFC8032</a>]</span>, ristretto255 <span><a href="https://rfc-editor.org/rfc/rfc9496#section-4.4" class="relref">Section 4.4</a> of [<a href="#RFC9496" class="cite xref">RFC9496</a>]</span> serialize field elements as a fixed-width little-endian integer  Similarly, in Section 7.1 of <span>[<a href="#FIPS204" class="cite xref">FIPS204</a>]</span>, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span> and BLS12-381 <span>[<a href="#I-D.irtf-cfrg-pairing-friendly-curves" class="cite xref">I-D.irtf-cfrg-pairing-friendly-curves</a>]</span> serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization <strong>MUST</strong> be used in place: a prime-field coordinate <code>x</code> in <code>[0, p)</code> is encoded as <code>I2OSP(x, Ns)</code>, with <code>Ns</code> the smallest integer such that <code>256^Ns &gt;= p</code>, in place of the default <code>LE(x, Ns)</code>. As with the default, deserialization <strong>MUST</strong> reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than <code>p</code>). When the chosen field serialization departs from the above rule, that choice is part of the codec identity and <strong>MUST</strong> be reflected in the session tag (see <a href="#session-id" class="auto internal xref">Section 5.1</a>).<a href="#section-4.1.4-3" class="pilcrow">¶</a></p>
 <p id="section-4.1.4-4">With respect to a fixed basis, a field element is represented by its <code>m</code> coordinates in the prime field, each an integer in <code>[0, p)</code>. It is encoded as the concatenation of the per-coordinate encodings produced by <code>EncodeUint</code> (<a href="#encoding-uint" class="auto internal xref">Section 4.1.3</a>) with modulus <code>p</code>. Let <code>Ns</code> be the smallest integer with <code>256^Ns &gt;= p</code>; a field element encodes to <code>m * Ns</code> bytes.<a href="#section-4.1.4-4" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.1.4-5">
 <pre>
@@ -2785,7 +2785,7 @@ Output: a, an element of the field of order p^m, given by its
 <dl class="references">
 <dt id="BPW16">[BPW16]</dt>
         <dd>
-<span class="refAuthor">Bernhard, D.</span>, <span class="refAuthor">Pereira, O.</span>, and <span class="refAuthor">B. Warinschi</span>, <span class="refTitle">"How not to Prove Yourself: Pitfalls of the Fiat-Shamir Heuristic and Applications to Helios"</span>, <time datetime="2016" class="refDate">2016</time>, <span>&lt;<a href="https://eprint.iacr.org/2016/771">https://eprint.iacr.org/2016/771</a>&gt;</span>. </dd>
+<span class="refAuthor">Bernhard, D.</span>, <span class="refAuthor">Pereira, O.</span>, and <span class="refAuthor">B. Warinschi</span>, <span class="refTitle">"How not to Prove Yourself: Pitfalls of the Fiat-Shamir Heuristic and Applications to Helios"</span>, <time datetime="2012" class="refDate">2012</time>, <span>&lt;<a href="https://eprint.iacr.org/2016/771">https://eprint.iacr.org/2016/771</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="CO25">[CO25]</dt>
         <dd>
@@ -2813,11 +2813,11 @@ Output: a, an element of the field of order p^m, given by its
 <dd class="break"></dd>
 <dt id="FROZENHEART">[FROZENHEART]</dt>
         <dd>
-<span class="refAuthor">Trail of Bits</span>, <span class="refTitle">"The Frozen Heart Vulnerability in PlonK"</span>, <time datetime="2022" class="refDate">2022</time>, <span>&lt;<a href="https://blog.trailofbits.com/2022/04/18/the-frozen-heart-vulnerability-in-plonk/">https://blog.trailofbits.com/2022/04/18/the-frozen-heart-vulnerability-in-plonk/</a>&gt;</span>. </dd>
+<span class="refAuthor">Trail of Bits</span>, <span class="refTitle">"The Frozen Heart vulnerability in PlonK"</span>, <time datetime="2022" class="refDate">2022</time>, <span>&lt;<a href="https://blog.trailofbits.com/2022/04/18/the-frozen-heart-vulnerability-in-plonk/">https://blog.trailofbits.com/2022/04/18/the-frozen-heart-vulnerability-in-plonk/</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="GNARK-OOM">[GNARK-OOM]</dt>
         <dd>
-<span class="refAuthor">Consensys</span>, <span class="refTitle">"GHSA-cph5-3pgr-c82g: gnark vulnerable to out-of-memory crash during deserialization of untrusted keys"</span>, <time datetime="2024" class="refDate">2024</time>, <span>&lt;<a href="https://github.com/Consensys/gnark/security/advisories/GHSA-cph5-3pgr-c82g">https://github.com/Consensys/gnark/security/advisories/GHSA-cph5-3pgr-c82g</a>&gt;</span>. </dd>
+<span class="refAuthor">Consensys</span>, <span class="refTitle">"Out-of-memory during deserialization with crafted inputs"</span>, <time datetime="2024" class="refDate">2024</time>, <span>&lt;<a href="https://github.com/Consensys/gnark/security/advisories/GHSA-cph5-3pgr-c82g">https://github.com/Consensys/gnark/security/advisories/GHSA-cph5-3pgr-c82g</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="I-D.irtf-cfrg-pairing-friendly-curves">[I-D.irtf-cfrg-pairing-friendly-curves]</dt>
         <dd>
@@ -2849,7 +2849,7 @@ Output: a, an element of the field of order p^m, given by its
 <dd class="break"></dd>
 <dt id="SOLANA-ZK">[SOLANA-ZK]</dt>
         <dd>
-<span class="refAuthor">Solana Foundation</span>, <span class="refTitle">"Post-Mortem: ZK ElGamal Proof Program Bug"</span>, <time datetime="2025" class="refDate">2025</time>, <span>&lt;<a href="https://solana.com/news/post-mortem-may-2-2025">https://solana.com/news/post-mortem-may-2-2025</a>&gt;</span>. </dd>
+<span class="refAuthor">Solana Foundation</span>, <span class="refTitle">"Post Mortem: ZK ElGamal Proof Program Bug"</span>, <time datetime="2025" class="refDate">2025</time>, <span>&lt;<a href="https://solana.com/news/post-mortem-may-2-2025">https://solana.com/news/post-mortem-may-2-2025</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="SPONGE">[SPONGE]</dt>
       <dd>

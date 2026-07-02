@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 1 January 2027                                      Apple, Inc.
-                                                            30 June 2026
+Expires: 3 January 2027                                      Apple, Inc.
+                                                             2 July 2026
 
 
                        Fiat-Shamir Transformation
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 1 January 2027.
+   This Internet-Draft will expire on 3 January 2027.
 
 Copyright Notice
 
@@ -212,9 +212,8 @@ Table of Contents
 
    This document specifies byte-oriented hash functions, but the
    transformation is well-suited to recursive proving, since the in-
-   circuit cost of recomputing the Fiat-Shamir challenges is low, and
-   generalizes to other alphabets (for example, prime-field elements).
-   It is compatible with arithmetization-friendly hash functions (e.g.
+   circuit cost of recomputing the Fiat-Shamir challenges is low.  It is
+   compatible with arithmetization-friendly hash functions (e.g.
    Poseidon2 [POSEIDON2]) that operate natively on field elements.  See
    [CO25] for the general construction.
 
@@ -776,8 +775,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    little-endian integer Similarly, in Section 7.1 of [FIPS204], the
    integer coordinates of lattice vectors are serialized by least-
    significant-byte first.  Other standardized fields instead fix a big-
-   endian serialization: for example P-256 ([SEC1]) and BLS12-381
-   ([I-D.irtf-cfrg-pairing-friendly-curves]) serialize each scalar as a
+   endian serialization: for example P-256 [SEC1] and BLS12-381
+   [I-D.irtf-cfrg-pairing-friendly-curves] serialize each scalar as a
    fixed-width big-endian integer.  For such fields the big-endian
    serialization *MUST* be used in place: a prime-field coordinate x in
    [0, p) is encoded as I2OSP(x, Ns), with Ns the smallest integer such
@@ -1485,7 +1484,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    [BPW16]    Bernhard, D., Pereira, O., and B. Warinschi, "How not to
               Prove Yourself: Pitfalls of the Fiat-Shamir Heuristic and
-              Applications to Helios", 2016,
+              Applications to Helios", 2012,
               <https://eprint.iacr.org/2016/771>.
 
    [CO25]     Chiesa, A. and M. Orrù, "A Fiat-Shamir Transformation From
@@ -1518,14 +1517,13 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
               NIST.FIPS.204.pdf>.
 
    [FROZENHEART]
-              Trail of Bits, "The Frozen Heart Vulnerability in PlonK",
+              Trail of Bits, "The Frozen Heart vulnerability in PlonK",
               2022, <https://blog.trailofbits.com/2022/04/18/the-frozen-
               heart-vulnerability-in-plonk/>.
 
    [GNARK-OOM]
-              Consensys, "GHSA-cph5-3pgr-c82g: gnark vulnerable to out-
-              of-memory crash during deserialization of untrusted keys",
-              2024,
+              Consensys, "Out-of-memory during deserialization with
+              crafted inputs", 2024,
               <https://github.com/Consensys/gnark/security/advisories/
               GHSA-cph5-3pgr-c82g>.
 
@@ -1565,7 +1563,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
               <https://eprint.iacr.org/2023/522>.
 
    [SOLANA-ZK]
-              Solana Foundation, "Post-Mortem: ZK ElGamal Proof Program
+              Solana Foundation, "Post Mortem: ZK ElGamal Proof Program
               Bug", 2025,
               <https://solana.com/news/post-mortem-may-2-2025>.
 
