@@ -1,0 +1,1625 @@
+
+
+
+
+Crypto Forum                                                     M. Orrù
+Internet-Draft                                                      CNRS
+Intended status: Informational                                    C. Yun
+Expires: 3 January 2027                                      Apple, Inc.
+                                                             2 July 2026
+
+
+                   Sigma Proofs for Linear Relations
+                 draft-irtf-cfrg-sigma-protocols-latest
+
+Abstract
+
+   This document describes Sigma Protocols for proving knowledge of pre-
+   images of linear maps in prime-order elliptic curve groups.  Examples
+   include zero-knowledge proofs for discrete logarithm relations,
+   ElGamal encryptions, Pedersen commitments, and range proofs.
+
+About This Document
+
+   This note is to be removed before publishing as an RFC.
+
+   The latest revision of this draft can be found at
+   https://mmaker.github.io/draft-irtf-cfrg-sigma-protocols/draft-irtf-
+   cfrg-sigma-protocols.html.  Status information for this document may
+   be found at https://datatracker.ietf.org/doc/draft-irtf-cfrg-sigma-
+   protocols/.
+
+   Discussion of this document takes place on the Crypto Forum Research
+   Group mailing list (mailto:cfrg@ietf.org), which is archived at
+   https://mailarchive.ietf.org/arch/browse/cfrg.  Subscribe at
+   https://www.ietf.org/mailman/listinfo/cfrg/.
+
+   Source for this draft and an issue tracker can be found at
+   https://github.com/mmaker/draft-irtf-cfrg-sigma-protocols.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 3 January 2027.
+
+Copyright Notice
+
+   Copyright (c) 2026 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.
+
+Table of Contents
+
+   1.  Introduction
+   2.  Terminology and conventions in this document
+     2.1.  Bytes and integers
+     2.2.  Randomized algorithms
+     2.3.  Group abstraction
+       2.3.1.  Group
+       2.3.2.  Scalar
+   3.  Interface
+   4.  Proofs of preimage of a linear map
+     4.1.  Linear map
+     4.2.  Representation
+     4.3.  Specifying a linear relation
+     4.4.  Serialization
+     4.5.  Prover
+       4.5.1.  Prover commitment
+       4.5.2.  Response
+     4.6.  Verifier
+     4.7.  Simulator
+   5.  Non-interactive Sigma Protocols
+     5.1.  Non-interactive argument string serialization
+     5.2.  Computing the challenge
+     5.3.  Batchable
+     5.4.  Compact
+     5.5.  Tag and session identifier
+     5.6.  Suites
+   6.  Efficiency Considerations
+   7.  Security Considerations
+     7.1.  Fiat-Shamir transformation
+     7.2.  Privacy Considerations
+     7.3.  Constant-Time Requirements
+     7.4.  Post-Quantum Considerations
+   8.  Ciphersuites
+     8.1.  P-256 (secp256r1)
+       8.1.1.  Elliptic curve group of P-256 (secp256r1) SP800
+       8.1.2.  Scalar Field of P-256
+     8.2.  BLS12-381 (G1)
+       8.2.1.  Elliptic curve group of BLS12-381 (G1) RFC9380
+       8.2.2.  Scalar Field of BLS12-381
+   Acknowledgments
+   References
+     Normative References
+     Informative References
+   Appendix A.  Imperative construction of a linear relation
+   Appendix B.  Test Vectors
+     B.1.  Seeded PRNG
+     B.2.  sigma-proofs(P-256, SHAKE128)
+     B.3.  discrete_logarithm
+     B.4.  dleq
+     B.5.  pedersen_commitment
+     B.6.  pedersen_commitment_dleq
+     B.7.  bbs_blind_commitment_computation
+     B.8.  sigma-proofs(BLS12-381, SHAKE128)
+     B.9.  discrete_logarithm
+     B.10. dleq
+     B.11. pedersen_commitment
+     B.12. pedersen_commitment_dleq
+     B.13. bbs_blind_commitment_computation
+   Authors' Addresses
+
+1.  Introduction
+
+   Zero-knowledge proofs of knowledge allow a prover to convince a
+   verifier that a statement is true, without revealing anything else
+   than what is already revealed by the statment itself.  Many
+   practically-relevant statements about discrete logarithm relations
+   can be realized using so-called Sigma Protocols.  Introduced by
+   Schnorr [RFC8235] over thirty years ago, they are now widely used in
+   practice because of their simplicity, maturity, and versatility.
+
+   Sigma Protocols are an essential component of a number of
+   cryptographic constructions, such as anonymous credentials [ARC]
+   [BBS], verifiable random functions [RFC9381], anonymous tokens
+   [RFC9497], ring and blind signatures [BBSBlind], and proofs of
+   knowledge of the opening of a Pedersen commitment [Pedersen91].  This
+   document specifies a single Sigma Protocol for proving knowledge of a
+   preimage of a linear map over a prime-order group [Cramer97]
+   [Maurer09].
+
+   A Sigma Protocol is an interactive proof with the following three-
+   message flow:
+
+   +----------------------+                  +----------------------+
+   |        Prover        |                  |       Verifier       |
+   |  witness, instance   |                  |       instance       |
+   +----------------------+                  +----------------------+
+             |                                           |
+             | ProverCommitment(witness, rng)            |
+             | commitment                                |
+             |------------------------------------------>|
+             |                                           |
+             |                                 challenge |
+             |<------------------------------------------|
+             |                                           |
+             | ProverResponse(prover_state, challenge)   |
+             | response                                  |
+             |------------------------------------------>|
+             |                                           |
+             | Verifier(commitment, challenge, response) |
+             |                    accept or reject       |
+
+              Figure 1: Flow of an interactive sigma protocol.
+
+   The messages are respectively called _commitment_ (computed by the
+   prover), _challenge_ (randomly sampled by the verifier), and
+   _response_ (computed by the prover).  The *challenge* is a scalar
+   drawn uniformly at random from the scalar field of order p; in the
+   interactive protocol the verifier samples it directly (Section 2.2),
+   while non-interactive deployments derive it deterministically from
+   the transcript via compute_challenge (Section 5), and its
+   serialization is the canonical fixed-length scalar encoding of
+   Section 2.3.2.  The prover is stateful and maintains a single-use
+   private state between the first and third messages.  The public
+   transcript, checked by the verifier, is (commitment, challenge,
+   response).  Sigma Protocols can compose: several statements can be
+   proven simultaneously (AND composition), disjunctively (OR
+   composition [CramerDS94]), or thresholded.  AND composition of linear
+   relations is immediate in this document (Section 4.3); OR and
+   threshold composition, and composition across heterogeneous proof
+   systems, are more delicate and carry soundness and zero-knowledge
+   caveats -- see Section 7 and Section 7.4.
+
+   This document fixes the interface for Sigma Protocols, and then
+   focuses on discrete-logarithm relations that can be expressed as the
+   preimage of a linear morphism.  Affine relations with constant terms,
+   or quadratic equations, can still be reduced to this form
+   (Section 4).
+
+2.  Terminology and conventions in this document
+
+   The key words "*MUST*", "*MUST NOT*", "*REQUIRED*", "*SHALL*",
+   "*SHALL NOT*", "*SHOULD*", "*SHOULD NOT*", "*RECOMMENDED*", "*NOT
+   RECOMMENDED*", "*MAY*", and "*OPTIONAL*" in this document are to be
+   interpreted as described in BCP 14 [RFC2119] [RFC8174] when, and only
+   when, they appear in all capitals, as shown here.
+
+   The following notation is used throughout this document.
+
+2.1.  Bytes and integers
+
+   A byte is an 8-bit unsigned integer (an octet), and a _byte string_
+   is a finite sequence of bytes.  The empty byte string is written "",
+   x || y is the concatenation of the byte strings x and y, and len(x)
+   is the length of x in bytes.  Byte strings are indexed from zero: for
+   integers 0 <= i <= j <= len(x), x[i : j] denotes the (j - i)-byte
+   substring of x at positions i, i+1, ..., j-1, so that x[0 : N] is the
+   first N bytes of x and x[i : i] is "".
+
+   I2OSP(n, w) and OS2IP(x) are the integer/byte-string conversion
+   primitives used throughout this document, in big-endian byte order,
+   as defined in Section 4 of [RFC8017].  I2OSP(n, w) converts a non-
+   negative integer n with 0 <= n < 256^w into a w-byte, big-endian byte
+   string, and fails if n >= 256^w; OS2IP(x) is its inverse, mapping a
+   w-byte string to the integer in [0, 256^w) that it represents.  Byte
+   order and length of the scalar and group-element encodings are fixed
+   by each ciphersuite (Section 8).
+
+2.2.  Randomized algorithms
+
+   Prover algorithms that require fresh randomness take as input a
+   cryptographically secure random number generator, denoted rng.  This
+   document uses rng.random_scalar() to denote sampling a uniformly
+   random element of the scalar field.  Sampling a random scalar takes
+   two steps: obtaining high-quality entropy from the operating system's
+   CSPRNG (e.g., getrandom() [RFC4086]), and reducing the resulting
+   bytes to a scalar, as described for DecodeField in [fiat-shamir].
+
+2.3.  Group abstraction
+
+   Elliptic curves are presented using additive notation.
+
+   In symbolic notation, group elements are written upper-case (G, X, M)
+   and scalars lower-case (x, s).  Pseudocode and interface names are
+   descriptive (e.g. commitment, image, witness) and do not follow this
+   rule.
+
+2.3.1.  Group
+
+   identity() is the neutral element, generator() fixes the generator of
+   the prime-order subgroup, and order() returns its order p.  Addition,
+   equality, and scalar multiplication by a Scalar are written +, ==,
+   and * (via operator overloading, in place of add, equal, scalar_mul).
+
+   serialize(elements: [Group; N]) and deserialize(buffer) convert N
+   non-neutral group elements into fixed-length Ne * N-byte encoding,
+   where Ne is fixed per ciphersuite (Section 8).  Deserialization must
+   raise an error in case of failure.
+
+2.3.2.  Scalar
+
+   identity() is the additive identity of the scalar field.  Addition
+   and multiplication are written + and * (via operator overloading, in
+   place of add, mul). random(rng) samples a scalar from rng, decoding
+   bytes as described for random in the unsigned-integer decoding of
+   [fiat-shamir].
+
+   serialize(scalars: list[Scalar; N]) and deserialize(buffer) batch
+   convert between [Scalar; N] and its canonical, fixed-length Ns *
+   N-byte encoding.
+
+3.  Interface
+
+   A sigma protocol provides the following interface:
+
+   *  ProverCommitment(instance, witness, rng): produces a pair
+      (commitment, prover_state) consisting of the public prover
+      message, the *commitment*, and a private prover_state.  The prover
+      state is meant to be used only once per proof.  The random number
+      generator rng is defined in Section 2.2.
+
+   *  ProverResponse(prover_state, challenge) produces the *response*.
+
+   *  Verifier(instance, commitment, challenge, response), the
+      verification algorithm.
+
+   These are the _interactive_ protocol's building blocks: challenge
+   above is whatever value the verifier supplies.  They *MUST NOT* be
+   invoked with a challenge that was not either sent by an honest
+   interactive verifier or derived via compute_challenge (Section 5);
+   supplying an arbitrary challenge instead skips the Fiat-Shamir
+   transformation entirely (see Section 7.1).  Non-interactive
+   deployments call prove_batchable, verify_batchable, prove_compact, or
+   verify_compact (Section 5) rather than these functions directly.
+
+   Implementations *MAY* also provide the *zero-knowledge simulator*:
+
+   *  SimulateResponse(instance, rng), which returns a
+      simulated_response, a vector of scalars distributed as an honest
+      response would be.
+
+   *  SimulateCommitment(instance, response, challenge), which returns
+      the simulated_commitment consistent with that response and
+      challenge.
+
+   Both are specified concretely for the linear-map Sigma Protocol in
+   Section 4.7.  The simulator is useful for proof composition (e.g. OR-
+   composition [CramerDS94]) and for compact proof serialization
+   ([BonehS23]).
+
+4.  Proofs of preimage of a linear map
+
+   This section specifies proofs of knowledge for the preimage of a
+   linear map over a group, also known as preimage of a linear morphism,
+   Maurer proofs [Maurer09], or Cramer proofs [Cramer97].
+
+   A linear map is a matrix-vector product M * witness = image, where M
+   is a matrix of group elements, witness is a vector of scalars, and
+   image is the vector of group elements obtained by scalar-multiplying
+   and summing entries of M by witness, using the group operations of
+   Section 2.3.  The relation proven by this document is:
+
+   R := { (witness, image) : M * witness = image }
+
+   or, expanded coordinate-wise:
+
+   image[i] = sum(witness[j] * M[i][j] for j in range(num_scalars))
+              for i in range(num_equations)
+
+   num_scalars is the number of scalars in witness (the width of M), and
+   num_equations is the number of group elements in image (the height of
+   M), i.e. one equation per output element.  The witness is represented
+   simply as an array of num_scalars scalars, Witness = [Scalar;
+   num_scalars].
+
+   As an example, Schnorr's identification protocol has num_scalars =
+   num_equations = 1 and M = [G.generator()], proving knowledge of x
+   such that x * G.generator() = X [RFC8235].
+
+   Another example is the Chaum-Pedersen relation [ChaumP92]: given
+   group elements G, H, X, Y, the prover shows knowledge of a single
+   scalar x such that X = x * G and Y = x * H.  Here num_scalars = 1,
+   num_equations = 2, and:
+
+   M = [[G],
+        [H]]
+
+   Variants of the Chaum-Pedersen relation are widely used for VRFs
+   [RFC9381] and anonymous tokens [RFC9497].  Proving knowledge of the
+   opening (m, r) of a Pedersen commitment [Pedersen91] C = m * G + r *
+   H is the representation-proof case [Okamoto92]: a single equation of
+   two terms, with num_scalars = 2.  More elaborate relations (affine
+   equations with constant terms, quadratic equations, and, by
+   extension, any arithmetic circuit) reduce to this same form.
+
+   The group elements and the shape of the matrix depend on the
+   statement being proven, and constructing the wrong matrix leads to
+   bugs.  For the relation to be meaningful, the group elements combined
+   in each equation must have no known discrete-logarithm relation among
+   them; otherwise the statement might be trivial.  For instance, x * G
+   + y * 5G] has p valid witnesses, and given it's easy to solve
+   without.  Generating such elements is the responsibility of the
+   proving system and requires care; one way is to hash to the curve
+   (Section 3 of [RFC9380]).
+
+4.1.  Linear map
+
+   Matrices M arising from these relations are typically sparse: both
+   examples above have a single nonzero entry per row.  This document
+   therefore handles and serializes them in Yale/CSR sparse-matrix
+   format, rather than as an array of group elements.
+
+4.2.  Representation
+
+   An Equation is one row of M: a non-empty list of (scalar_index,
+   element_index) pairs giving the terms summed on its right-hand side.
+
+   A LinearRelation holds a set of group elements (each corresponding to
+   an element_index), a non-empty list of equations, and the image
+   outputs (e.g. X, Y).
+
+class Equation:
+    terms: list[(int, int)]     # (scalar_index, element_index) pairs; non-empty
+
+class LinearRelation:
+    Group: groups.Group
+    elements: list[Group]; non-empty
+    equations: list[Equation]   # one row per equation; non-empty
+    image: list[int]            # image of the linear map
+
+   A LinearRelation *MUST* have at least one equation, and every
+   equation's terms *MUST* be non-empty: a relation with zero equations
+   proves nothing, and a zero-term equation would assert only that some
+   pool element equals identity(), a case this document assigns no
+   meaning to. len(image) == len(equations), and every group element of
+   elements *MUST* be set (Section 2.3) before the relation is used.
+
+   The following quantities are derived from a LinearRelation:
+
+   num_elements(relation)  = len(relation.elements)
+   num_equations(relation) = len(relation.equations)
+   num_scalars(relation)   = 1 + max(s for eq in relation.equations
+                                       for (s, _) in eq.terms)
+
+   Note that num_elements, the size of the group-elements set, is
+   independent from num_equations.  For instance, in Chaum-Pedersen,
+   num_elements = 4 (G, H, X, Y), while num_equations = 2.
+
+   This document writes map(relation, scalars) for the function that
+   evaluates M at scalars:
+
+map(relation, scalars) -> list[Group]
+
+1. image = []
+2. for equation in relation.equations:
+3.     acc = relation.Group.identity()
+4.     for (scalar_index, element_index) in equation.terms:
+5.         acc = acc + scalars[scalar_index] * relation.elements[element_index]
+6.     image.append(acc)
+7. return image
+
+4.3.  Specifying a linear relation
+
+   This section defines a symbolic notation for declaring scalars,
+   elements, and equations in the notation of [CamenischS97], together
+   with the deterministic rule that compiles a declaration into the
+   indexed LinearRelation of Section 4.2.
+
+   A relation is declared as a named block, parameterized by the
+   concrete element values it will be instantiated with, so that it is
+   written once and referenced by name wherever it is used -- in
+   particular, identically by the prover and the verifier, which always
+   agree on the instance:
+
+   Relation NAME(params...):
+       Scalars: s[0], ..., s[k-1]
+       Elements: E[0], ..., E[n-1]
+       Equations:
+           E[i] = <linear combination of scalars and elements>
+           ...
+
+   Scalars: and Elements: each list names in the order the compiled
+   LinearRelation assigns them indices: the j-th name under Scalars:
+   becomes scalar index j, and the j-th name under Elements: becomes
+   relation.elements[j] (Section 4.2).  The named parameters are matched
+   by name against the Elements: entries and substituted with the
+   concrete element values supplied at instantiation.
+
+   A loop over an index variable (for example, declaring D_0, ...,
+   D_{n-1} with one equation per i) expands in the order the loop
+   executes, before names are assigned indices.
+
+   For example, the Chaum-Pedersen relation of Section 4 is declared as:
+
+   Relation ChaumPedersen(G, H, X, Y):
+       Scalars: x
+       Elements: G, H, X, Y
+       Equations:
+           X = x * G
+           Y = x * H
+
+   which compiles to the LinearRelation with elements = [G, H, X, Y],
+   equations = [Equation(terms=[(0, 0)]), Equation(terms=[(0, 1)])], and
+   image = [2, 3].
+
+   Each line of Equations: has the form element_name = term + term +
+   ..., where each term is scalar_name * element_name; it compiles to
+   one Equation of Section 4.2 whose terms are the (scalar_index,
+   element_index) pairs of its right-hand side, in the order written,
+   and whose image index is the pool index of the left-hand-side
+   element.
+
+   Both lists *MUST* enumerate every name used in Equations:, and *MUST
+   NOT* repeat a name.  Terms *MUST* be less than 2^32.  Every term
+   *MUST* be a single scalar_name * element_name product: the notation
+   has no constant terms, no scalar-scalar or element-element products,
+   and no affine offsets.  A constant base is expressed as an Elements:
+   entry multiplied by a scalar fixed to 1; affine and quadratic
+   statements reduce to this product form as described in Section 4.
+
+   Because a LinearRelation may hold any number of equations over shared
+   or disjoint variables, AND composition -- proving several relations
+   simultaneously -- comes for free: concatenate the Scalars:,
+   Elements:, and Equations: of each sub-relation (renaming any clashing
+   names) into a single declaration and compile it as one
+   LinearRelation, which binds every sub-statement under a single
+   challenge (Section 5).
+
+   A Relation NAME(params...) declaration desugars to a function
+   NAME(...) returning the compiled LinearRelation, with the named
+   parameters substituted for the matching Elements: entries.  The
+   prover computes the concrete element values and calls NAME(...) to
+   obtain the instance passed to prove_batchable or prove_compact
+   (Section 5); the verifier calls the same NAME(...) with the element
+   values it independently holds (public keys, ciphertexts, or other
+   values received from the prover) to obtain the identical instance
+   passed to verify_batchable or verify_compact.  This is the intended
+   integration point for specifications built on this document: the
+   definition of a statement is a Relation declaration, not a hand-
+   written sequence of index-allocation calls.
+
+   Some element values are not fixed public parameters but are chosen by
+   the prover and supplied to the verifier -- for instance, rerandomized
+   bases or commitments computed per proof.  Such prover-supplied
+   elements are part of the _instance_, not of the NARG string
+   (Section 5.1): they travel to the verifier outside the proof bytes
+   (which carry only commitment and response), and the verifier
+   substitutes the received values into NAME(...) to reconstruct the
+   instance before calling verify_batchable or verify_compact.  Because
+   the challenge is computed over the serialized instance (Section 4.4),
+   any modification of these values changes the challenge and the proof
+   fails; this is what binds them to the proof, and it is also why
+   prover and verifier *MUST* agree on the instance (Section 5).  Being
+   attacker-controlled input, each prover-supplied element *MUST* pass
+   the same deserialization validation as any untrusted group element
+   (Section 2.3, Section 7.1) before it is used.
+
+4.4.  Serialization
+
+   A LinearRelation is serialized as a sparse matrix in row-major order,
+   followed by the group elements set.  Each row is serialized encoding
+   the number of non-zero entries (in 4 bytes, via I2OSP Section 2.1),
+   followed by the indices pair (scalar index, element index) for each
+   entry (Section 4.2).  The group elements are serialized using the
+   group serialization function.
+
+   SerializeLinearRelation(relation)
+
+   Input:
+
+   - relation, a linear relation.
+
+   Output:
+
+   - a byte string
+
+   Procedure:
+
+    1. out = ""
+    2. out = out || I2OSP(num_equations(relation), 4)
+    3. for i in range(num_equations(relation)):
+    4.     out = out || I2OSP(relation.image[i], 4)
+    5.     terms = relation.equations[i].terms
+    6.     out = out || I2OSP(len(terms), 4)
+    7.     for (scalar_index, element_index) in terms:
+    8.         out = out || I2OSP(scalar_index, 4)
+    9.         out = out || I2OSP(element_index, 4)
+   10. return out || Group.serialize(relation.elements)
+
+   Here relation.image[i] is the pool index of the output element of the
+   i-th equation (Section 4.2), and each right-hand side term
+   (scalar_index, element_index) pairs a scalar (witness) index
+   (Section 4, Paragraph 6) with a group-element index.
+
+   The encoding binds the entire statement: the shape of the linear map
+   (the number of equations and the indices wired into each one)
+   together with every group element of the instance.  Because
+   num_equations(relation) >= 1 and every equation has at least one term
+   (Section 4.2), the output is always non-empty.  For a fixed relation
+   the output has a fixed length, so it is prefix-free, as required of
+   the instance encoding by [fiat-shamir].
+
+4.5.  Prover
+
+   The prover of a Sigma Protocol is stateful and will send two
+   messages, a "commitment" and a "response" message, described below.
+
+4.5.1.  Prover commitment
+
+  ProverCommitment(instance, witness, rng)
+
+  Inputs:
+
+  - instance, the LinearRelation being proven
+  - witness, an array of scalars
+  - rng, a cryptographically secure random number generator
+
+  Outputs:
+
+  - A (private) prover state
+  - A commitment message (a vector of group elements).
+
+  Procedure:
+
+  1. nonces = [rng.random_scalar() for _ in range(num_scalars(instance))
+  2. commitment = map(instance, nonces)
+  3. return (prover_state := (witness, nonces), commitment)
+
+4.5.2.  Response
+
+ProverResponse(prover_state, challenge)
+
+Inputs:
+
+    - prover_state, the current state of the prover
+    - challenge, the verifier challenge scalar
+
+Outputs:
+
+    - An array of scalar elements composing the response
+
+Procedure:
+
+1. witness, nonces = prover_state
+2. return [nonces[i] + witness[i] * challenge for i in range(len(nonces))]
+
+4.6.  Verifier
+
+Verifier(instance, commitment, challenge, response)
+
+Inputs:
+
+- instance, the LinearRelation being verified
+- commitment, the commitment generated by the prover
+- challenge, the challenge generated by the verifier
+- response, the response generated by the prover
+
+Outputs:
+
+- A boolean indicating whether the verification succeeded
+
+Procedure:
+
+1. assert len(commitment) == num_equations(instance) and \
+2.        len(response) == num_scalars(instance)
+2. expected = map(instance, response)
+3. image = [instance.elements[i] for i in instance.image]
+4. got = [commitment[i] + image[i] * challenge for i in range(num_equations(instance))]
+5. return got == expected
+
+4.7.  Simulator
+
+   Implementations that expose the zero-knowledge simulator (Section 3)
+   provide the two algorithms below; they are also what the compact
+   verifier (Section 5) relies on to recover the prover's commitment
+   from (challenge, response).
+
+   The simulator rearranges the verification equation of Section 4.6: an
+   accepting transcript satisfies commitment[i] + image[i] * challenge
+   == map(instance, response)[i] for every equation i, so the commitment
+   determined by a response and a challenge is map(instance, response) -
+   challenge * image.
+
+SimulateResponse(instance, rng)
+
+Inputs:
+
+- instance, the LinearRelation
+- rng, a cryptographically secure random number generator ({{rng-definition}})
+
+Outputs:
+
+- response, a simulated response: a vector of num_scalars(instance) scalars
+
+Procedure:
+
+1. return [rng.random_scalar() for _ in range(num_scalars(instance))]
+
+SimulateCommitment(instance, response, challenge)
+
+Inputs:
+
+- instance, the LinearRelation
+- response, a vector of num_scalars(instance) scalars
+- challenge, a challenge scalar
+
+Outputs:
+
+- commitment, a vector of num_equations(instance) group elements
+
+Procedure:
+
+1. expected = map(instance, response)
+2. image = [instance.elements[i] for i in instance.image]
+3. return [expected[i] - challenge * image[i] for i in range(num_equations(instance))]
+
+   Drawing response uniformly at random with SimulateResponse and then
+   computing commitment with SimulateCommitment yields a transcript
+   (commitment, challenge, response) identically distributed to an
+   honest one, which is the honest-verifier zero-knowledge property
+   (Section 7): an honest response nonces + witness * challenge is
+   uniform because nonces is uniform, and the honest commitment
+   map(instance, nonces) equals map(instance, response) - challenge *
+   image.
+
+5.  Non-interactive Sigma Protocols
+
+   The Fiat-Shamir transformation applied to Sigma Protocols yields a
+   non-interactive zero-knowledge argument of knowledge.
+
+   [fiat-shamir] describes how to instantiate the transformation, for
+   the group and field codecs given.The security requirements of the
+   session identifier session_id are discussed in Section 5.5.  The
+   actual choices of DecodeField are discussed in Section 8.  Two
+   serializations are possible.
+
+5.1.  Non-interactive argument string serialization
+
+   Two serialization flavors are possible:
+
+   *  A *batchable* NARG string serializes the prover messages
+      (commitment, response), as in [fiat-shamir], and it permits batch
+      verification of several proofs at once.
+
+   *  A *compact* NARG string serializes (challenge, response).  It is
+      preferable in the common cases, and whenever the commitment
+      (num_equations group elements) is larger than a single challenge
+      scalar.
+
+   A batchable NARG string is a (Ne * num_equations + Ns * num_scalars)-
+   byte string, while a compact narg string is a (Ns * (num_scalars +
+   1))-byte string.
+
+5.2.  Computing the challenge
+
+   Both serializations below derive the verifier's challenge identically
+   from the tag, the instance, and the prover's commitment.  Let Ne and
+   Ns be the element and scalar byte lengths of the ciphersuite
+   (Section 8).
+
+   compute_challenge(tag, instance, commitment)
+
+   Inputs:
+
+   - tag, a byte string uniquely identifying the session
+   - instance, the LinearRelation being proven
+   - commitment, the prover's commitment message
+
+   Outputs:
+
+   - challenge, the verifier's challenge scalar
+
+   Procedure:
+
+   1. session_id = DeriveSessionID(tag)
+   2. duplex_sponge = DS.Init(session_id)
+   3. duplex_sponge.Absorb(SerializeLinearRelation(instance))
+   4. duplex_sponge.Absorb(Group.serialize(commitment))
+   5. return DecodeField(duplex_sponge.Squeeze(Ns + 16), p, 1)
+
+   SerializeLinearRelation(instance) above is encode[0](instance) in the
+   notation of [fiat-shamir].
+
+5.3.  Batchable
+
+   A *batchable* NARG string is the generic transformation
+   ([fiat-shamir]), consisting of the concatenation of the prover
+   messages serialize(commitment) || serialize(response).
+
+prove_batchable(tag, instance, witness, rng)
+
+Inputs:
+
+- tag, a byte string uniquely identifying the session
+- instance, the LinearRelation to be proven
+- witness, the prover's secret witness
+- rng, a cryptographically secure random number generator ({{rng-definition}})
+
+Outputs:
+
+- the batchable proof, a byte string
+
+Procedure:
+
+1. (commitment, prover_state) = ProverCommitment(instance, witness, rng)
+2. challenge = compute_challenge(tag, instance, commitment)
+3. response = ProverResponse(prover_state, challenge)
+4. return Group.serialize(commitment) || Scalar.serialize(response)
+
+   verify_batchable(tag, instance, proof)
+
+   Inputs:
+
+   - tag, a byte string uniquely identifying the session
+   - instance, the LinearRelation to be proven
+   - proof, the batchable proof byte string
+
+   Outputs:
+
+   - a boolean indicating whether the proof is valid
+
+   Procedure:
+
+   1. Nc = num_equations(instance) * Ne
+   2. Nr = num_scalars(instance) * Ns
+   3. fail if len(proof) != Nc + Nr
+   4. commitment = Group.deserialize(proof[0 : Nc])
+   5. response = Scalar.deserialize(proof[Nc : Nc + Nr])
+   6. challenge = compute_challenge(tag, instance, commitment)
+   7. return Verifier(instance, commitment, challenge, response)
+
+5.4.  Compact
+
+   A *compact* proof serializes serialize(challenge) ||
+   serialize(response).  The Sigma Protocol transcript is recovered
+   invoking the simulator.
+
+prove_compact(tag, instance, witness, rng)
+
+Inputs:
+
+- tag, a byte string uniquely identifying the session
+- instance, the LinearRelation to be proven
+- witness, the prover's secret witness
+- rng, a cryptographically secure random number generator ({{rng-definition}})
+
+Outputs:
+
+- the compact proof, a byte string
+
+Procedure:
+
+1. (commitment, prover_state) = ProverCommitment(instance, witness, rng)
+2. challenge = compute_challenge(tag, instance, commitment)
+3. response = ProverResponse(prover_state, challenge)
+4. return Scalar.serialize([challenge])
+          || Scalar.serialize(response)
+
+   The verifier recomputes the commitment from the challenge and
+   response via SimulateCommitment (Section 4.7), then recomputes the
+   challenge from that commitment and accepts only if it matches the one
+   in the proof.
+
+verify_compact(tag, instance, proof)
+
+Inputs:
+
+- tag, a byte string uniquely identifying the session
+- instance, the LinearRelation to be proven; it MUST be the same as the one used by the prover
+- proof, the compact proof byte string
+
+Outputs:
+
+- a boolean indicating whether the proof is valid
+
+Procedure:
+
+1. Nch = Ns
+2. Nr = num_scalars(instance) * Ns
+3. fail if len(proof) != Nch + Nr
+4. challenge = Scalar.deserialize(proof[0 : Nch])[0]
+5. response = Scalar.deserialize(proof[Nch : Nch + Nr])
+6. commitment = SimulateCommitment(instance, response, challenge)
+7. expected_challenge = compute_challenge(tag, instance, commitment)
+8. return challenge == expected_challenge
+
+   Note that since the simulator always outputs valid proofs, there is
+   no need to run the verifier in this case.
+
+5.5.  Tag and session identifier
+
+   The session identifier session_id is a 32-byte string.  It *SHOULD*
+   be derived from a string tag using DeriveSessionID of [fiat-shamir].
+   The prover and verifier initialize their duplex sponge state from it
+   (Section 5).
+
+   The tag is a byte string following the security requirements on the
+   session identifier in [fiat-shamir].
+
+   As an example, consider a fictional application named Foo. A
+   reasonable choice of tag is:
+
+   FOO-{xx}-{tttt}-{flavor}-{hashID}-SIGMA-PROOFS-{yy}
+
+   where xx is the two-digit number indicating the version, tttt is a
+   32-bit integer identifying the epoch, flavor is DSFS for a _batchable
+   proof_ or CMPT for a _compact proof_ (Section 5.1), hashID is the
+   hash identifier, and yy is the two-digit number indicating the
+   elliptic-curve ciphersuite.
+
+5.6.  Suites
+
+   This section lists the ciphersuites for the non-interactive sigma
+   protocol.
+
+   A suite is composed of the following parameters:
+
+   *  an elliptic curve suite (Section 8),
+
+   *  a duplex sponge ([fiat-shamir]).
+
+   The ciphersuites defined by this document, and the identifiers used
+   by the test vectors, are:
+
+    +====================+=============+===============+=============+
+    | Identifier         | Group       | Duplex Sponge | Security    |
+    +====================+=============+===============+=============+
+    | Shake128_P256_     | P-256       | SHAKE128      | 128-bit     |
+    |                    | (secp256r1) |               | pre-quantum |
+    +--------------------+-------------+---------------+-------------+
+    | Shake128_BLS12381_ | BLS12-381   | SHAKE128      | 128-bit     |
+    |                    | (G1)        |               | pre-quantum |
+    +--------------------+-------------+---------------+-------------+
+
+           Table 1: Non-interactive Sigma Protocol ciphersuites
+
+   Each row uses the Sigma Protocol of Section 4 over the named group.
+   Ne and Ns are the element and scalar byte lengths of that group.
+
+   The ciphersuite identifier is a natural component of the tag
+   ([fiat-shamir]), since it fixes the group, the codecs, and the hash
+   instantiation.
+
+6.  Efficiency Considerations
+
+   Implementations *SHOULD* evaluate map(instance, scalars)
+   (Section 4.2) using a multi-scalar multiplication (MSM) algorithm for
+   each equation, rather than computing and summing each term
+   individually; this matters most for equations with many terms.
+
+   The verifier of Section 4.6 is specified as the equality
+   map(instance, response) == commitment + challenge * image, evaluated
+   as two separate vectors for clarity.  Implementations *MAY* instead
+   verify each equation i by checking that commitment[i] + challenge *
+   image[i] - sum(response[j] * M[i][j] for j) is identity(),
+   accumulating all terms in a single MSM per equation.  This folds the
+   challenge * image[i] scalar multiplication into the same MSM as the
+   row terms, sharing its point doublings, and negation is free on these
+   curves; the arithmetic is otherwise identical to the equality above.
+
+   As observed in the efficiency considerations of [fiat-shamir],
+   DS.Init(session_id) followed by Absorb(encode[0](instance)) depends
+   only on the tag and instance, not on the witness or randomness of any
+   particular proof.  Implementations that produce or verify many proofs
+   for the same instance, as computed by compute_challenge (Section 5),
+   can precompute and reuse the duplex sponge state resulting from these
+   two steps across proofs.
+
+7.  Security Considerations
+
+   Interactive Sigma Protocols have the following properties:
+
+   *  *Knowledge soundness*: If the proof is valid, the prover must have
+      knowledge of a secret witness satisfying the proof statement.
+      This property ensures that valid proofs cannot be generated
+      without possession of the corresponding witness.  The Sigma
+      Protocol of this document achieves this via special soundness
+      [Cramer97] [Maurer09] [ChiesaY24].
+
+   *  *Honest verifier zero-knowledge*: The proof string produced by the
+      prove function does not reveal any information beyond what can be
+      directly inferred from the statement itself.  This ensures that
+      honest verifiers gain no knowledge about the witness [ChiesaY24].
+
+   *  *Completeness*: If the statement being proved is true, an honest
+      verifier can be convinced of this fact by an honest prover via the
+      proof.
+
+   *  *Deniable*: Because Interactive Sigma Protocols don't have
+      transferable message authenticity, a third party (not the prover
+      or verifier) cannot be convinced that the prover made the proof.
+      This means that the Sigma Protocol interaction is not transferable
+      as evidence to a third party [JakobssonSI96] [Pass03].
+
+7.1.  Fiat-Shamir transformation
+
+   In practice, Sigma Protocols are almost always deployed non-
+   interactively via the Fiat-Shamir transformation (Section 5), so the
+   security considerations of [fiat-shamir] apply also here.  In
+   particular:
+
+   *  *Security level.* The knowledge-soundness error is governed by the
+      size of the challenge set, the full scalar field of order p,
+      together with the random-oracle loss analyzed in [fiat-shamir].
+
+   *  *Instance binding.* Soundness holds only if the encoded instance
+      binds the entire statement (Section 4.4); omitting any generator
+      or image element is a weak Fiat-Shamir vulnerability.
+
+   *  *Verifier input validation.* The NARG string is untrusted input.
+      Verifiers *MUST* check the proof length (no trailing bytes) and
+      reject malformed encodings before performing any algebraic check.
+      For group elements, deserialization *MUST* verify that each point
+      is canonically encoded, lies on the curve, and lies in the prime-
+      order group.  In particular, the latter requires a subgroup-
+      membership check when the group cofactor is greater than one
+      (Section 2.3).  For instance, skipping on-curve or subgroup check
+      enables invalid-curve attacks [JagerSS15]; accepting non-canonical
+      field elements [CVE-2022-23806].  The session identifier, the NARG
+      string, and the instance are to be considered malicious inputs.
+      For instance, invalid group parameters have previously caused bugs
+      as in [CVE-2020-0601].  The identity element *MUST* be rejected
+      wherever it appears: in any deserialized prover message, and in
+      any instance element, including elements the verifier derives from
+      prover-supplied values (Section 2.3).  For scalars,
+      deserialization MUST reject any value that is not the canonical
+      representative in [0, p); failing to check that signature or
+      response components are in range and nonzero is the validation-
+      skip class behind [CVE-2022-21449], and admitting non-canonical
+      encodings of the same value yields proof malleability
+      [CVE-2024-42461].  For compact proofs, the verifier *MUST*
+      recompute the challenge and compare it before accepting.
+
+   *  *Prover randomness.* Draw fresh nonces from rng for every proof.
+      A nonce reused under two different challenges reveals the witness
+      as (r1 - r2) / (c1 - c2) -- the failure behind well-known Schnorr
+      and ECDSA key recoveries.  Derive nonces deterministically only if
+      every input affecting the challenge (tag, instance, commitment) is
+      bound into the derivation (Section 3, [fiat-shamir]).
+
+   *  *Post-quantum.* The hardness of the proved relation rests on the
+      discrete logarithm problem, so these proofs are not post-quantum
+      sound; see Section 7.4.
+
+7.2.  Privacy Considerations
+
+   Interactive Sigma Protocols only guarantee zero-knowledge against
+   honest verifiers (Section 7); a malicious verifier may extract
+   information from the interaction, so this interactive setting *SHOULD
+   NOT* be used where verifiers cannot be trusted.  The non-interactive
+   Fiat-Shamir transformation removes this restriction, yielding
+   publicly verifiable (transferable) proofs that are statistically
+   zero-knowledge.
+
+7.3.  Constant-Time Requirements
+
+   The prover's control flow and memory access patterns are typically
+   influenced by the witness.  All group and field operations over
+   private inputs -- scalar multiplication, modular reduction, random-
+   value generation, and so on -- *MUST* be constant-time to avoid side-
+   channel leakage of the witness; in applications such as keyed-
+   verification credentials, the verifier's operations require the same
+   treatment.
+
+   Implementations *MUST* securely delete prover state as soon as it is
+   no longer needed, and *SHOULD* minimize the lifetime of sensitive
+   material (witness and instance), explicitly zeroize temporary buffers
+   after proof generation, and reduce exposure in crash dumps, swap/page
+   files, and diagnostic logging.
+
+7.4.  Post-Quantum Considerations
+
+   These proofs provide statistical zero-knowledge: witness-hiding holds
+   even against a quantum adversary with unbounded computational power,
+   so they remain suitable for privacy properties such as post-quantum
+   anonymity, unlinkability, blindness, and protection against "harvest
+   now, decrypt later" attacks.
+
+   Soundness is a different matter: it rests on the hardness of the
+   discrete logarithm problem over the curves of Section 8, which Shor's
+   algorithm solves efficiently on a quantum computer.  These proofs
+   *MUST NOT* be relied upon for post-quantum soundness.
+   Implementations requiring post-quantum soundness *SHOULD* transition
+   to alternative proof systems, e.g. MPC-in-the-Head
+   ([GiacomelliMO16]), lattice-based ([AttemaCK21]), or code-based
+   ([Stern93]) approaches.  During migration, a hybrid AND composition
+   of a classical-sound and a post-quantum-sound proof retains soundness
+   if *both* underlying problems remain hard; unlike the free
+   composition of linear relations described in Section 4.3, such
+   composition across heterogeneous proof systems is not addressed in
+   this specification, but examples may be found in the proof-of-concept
+   implementation and in [BonehS23].
+
+8.  Ciphersuites
+
+   We consider ciphersuites of prime-order elliptic curve groups.
+
+8.1.  P-256 (secp256r1)
+
+   This ciphersuite uses P-256 [SP800] for the Group.
+
+8.1.1.  Elliptic curve group of P-256 (secp256r1) [SP800]
+
+   *  order(): Return the integer
+      115792089210356248762697446949407573529996955224135760342422259061068512044369.
+
+   *  serialize([A]): Implemented using the compressed Elliptic-Curve-
+      Point-to-Octet-String method according to [SEC1]; Ne = 33.
+
+   *  deserialize(buf): Implemented by attempting to read buf into
+      chunks of 33-byte arrays and convert them using the compressed
+      Octet-String-to-Elliptic-Curve-Point method according to [SEC1],
+      and then performs partial public-key validation as defined in
+      section 5.6.2.3.4 of [KEYAGREEMENT].  This includes checking that
+      the coordinates of the resulting point are in the correct range,
+      that the point is on the curve, and that the point is not the
+      point at infinity.
+
+8.1.2.  Scalar Field of P-256
+
+   *  serialize(s): Relies on the Field-Element-to-Octet-String
+      conversion according to [SEC1]; Ns = 32.
+
+   *  deserialize(buf): Reads the byte array buf in chunks of 32 bytes
+      using Octet-String-to-Field-Element from [SEC1].  This function
+      can fail if the input does not represent a Scalar in the range [0,
+      G.Order() - 1].
+
+8.2.  BLS12-381 (G1)
+
+   This ciphersuite uses the prime-order subgroup G1 of the BLS12-381
+   elliptic curve [RFC9380] for the Group.
+
+8.2.1.  Elliptic curve group of BLS12-381 (G1) [RFC9380]
+
+   *  order(): Return the integer
+      52435875175126190479447740508185965837690552500527637822603658699938581184513.
+
+   *  serialize([A]): Implemented using the compressed serialization for
+      G1 points defined in Appendix C of [PAIRING]; Ne = 48.
+
+   *  deserialize(buf): Reads buf in chunks of 48 bytes and inverts the
+      compressed serialization above.  It performs full point
+      validation: that the encoding is canonical (the x-coordinate is
+      less than the field characteristic and the metadata bits are
+      consistent), that the resulting point is on the curve, and that it
+      lies in the prime-order subgroup G1.  The point at infinity is
+      rejected.  This function can raise a DeserializeError if
+      deserialization fails.
+
+8.2.2.  Scalar Field of BLS12-381
+
+   *  serialize(s): Relies on the big-endian fixed-length integer
+      encoding I2OSP (Section 2.1); Ns = 32.
+
+   *  deserialize(buf): Reads the byte array buf in chunks of 32 bytes
+      using OS2IP (Section 2.1).  This function can fail if the input
+      does not represent a Scalar in the range [0, G.Order() - 1].
+
+Acknowledgments
+
+   The authors thank Jan Bobolz, Vishruti Ganesh, Stephan Krenn, Mary
+   Maller, Ivan Visconti, Yuwen Zhang for reviewing a previous edition
+   of this specification.
+
+References
+
+Normative References
+
+   [fiat-shamir]
+              Orrù, M., "Fiat-Shamir Transformation", Work in Progress,
+              Internet-Draft, draft-irtf-cfrg-fiat-shamir-02, 2 March
+              2026, <https://datatracker.ietf.org/doc/html/draft-irtf-
+              cfrg-fiat-shamir-02>.
+
+   [KEYAGREEMENT]
+              Barker, E., Chen, L., Roginsky, A., Vassilev, A., and R.
+              Davis, "Recommendation for pair-wise key-establishment
+              schemes using discrete logarithm cryptography", National
+              Institute of Standards and Technology,
+              DOI 10.6028/nist.sp.800-56ar3, April 2018,
+              <https://doi.org/10.6028/nist.sp.800-56ar3>.
+
+   [PAIRING]  Sakemi, Y., Kanno, S., and R. S. Wahby, "Pairing-Friendly
+              Curves", Work in Progress, Internet-Draft, draft-irtf-
+              cfrg-pairing-friendly-curves-12, 2 November 2025,
+              <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
+              pairing-friendly-curves-12>.
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/rfc/rfc2119>.
+
+   [RFC4086]  Eastlake 3rd, D., Schiller, J., and S. Crocker,
+              "Randomness Requirements for Security", BCP 106, RFC 4086,
+              DOI 10.17487/RFC4086, June 2005,
+              <https://www.rfc-editor.org/rfc/rfc4086>.
+
+   [RFC8017]  Moriarty, K., Ed., Kaliski, B., Jonsson, J., and A. Rusch,
+              "PKCS #1: RSA Cryptography Specifications Version 2.2",
+              RFC 8017, DOI 10.17487/RFC8017, November 2016,
+              <https://www.rfc-editor.org/rfc/rfc8017>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+   [RFC8235]  Hao, F., Ed., "Schnorr Non-interactive Zero-Knowledge
+              Proof", RFC 8235, DOI 10.17487/RFC8235, September 2017,
+              <https://www.rfc-editor.org/rfc/rfc8235>.
+
+   [RFC9380]  Faz-Hernandez, A., Scott, S., Sullivan, N., Wahby, R. S.,
+              and C. A. Wood, "Hashing to Elliptic Curves", RFC 9380,
+              DOI 10.17487/RFC9380, August 2023,
+              <https://www.rfc-editor.org/rfc/rfc9380>.
+
+   [RFC9381]  Goldberg, S., Reyzin, L., Papadopoulos, D., and J. Včelák,
+              "Verifiable Random Functions (VRFs)", RFC 9381,
+              DOI 10.17487/RFC9381, August 2023,
+              <https://www.rfc-editor.org/rfc/rfc9381>.
+
+   [RFC9497]  Davidson, A., Faz-Hernandez, A., Sullivan, N., and C. A.
+              Wood, "Oblivious Pseudorandom Functions (OPRFs) Using
+              Prime-Order Groups", RFC 9497, DOI 10.17487/RFC9497,
+              December 2023, <https://www.rfc-editor.org/rfc/rfc9497>.
+
+Informative References
+
+   [ARC]      Yun, C. and C. A. Wood, "Anonymous Rate-Limited
+              Credentials", Work in Progress, Internet-Draft, draft-yun-
+              privacypass-crypto-arc-00, 20 October 2025,
+              <https://datatracker.ietf.org/doc/html/draft-yun-
+              privacypass-crypto-arc-00>.
+
+   [AttemaCK21]
+              Attema, T., Cramer, R., and L. Kohl, "A Compressed Sigma-
+              Protocol Theory for Lattices",
+              <https://dl.acm.org/doi/10.1007/978-3-030-84245-1_19>.
+
+   [BBS]      Looker, T., Kalos, V., Whitehead, A., and M. Lodder, "The
+              BBS Signature Scheme", Work in Progress, Internet-Draft,
+              draft-irtf-cfrg-bbs-signatures-10, 8 January 2026,
+              <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
+              bbs-signatures-10>.
+
+   [BBSBlind] Kalos, V. and G. M. Bernstein, "Blind BBS Signatures",
+              Work in Progress, Internet-Draft, draft-irtf-cfrg-bbs-
+              blind-signatures-03, 26 June 2026,
+              <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
+              bbs-blind-signatures-03>.
+
+   [BonehS23] Boneh, D. and V. Shoup, "A Graduate Course in Applied
+              Cryptography", n.d., <https://toc.cryptobook.us/>.
+
+   [CamenischS97]
+              Camenisch, J. and M. Stadler, "Efficient Group Signature
+              Schemes for Large Groups", 1997,
+              <https://doi.org/10.1007/BFb0052252>.
+
+   [ChaumP92] Chaum, D. and T. P. Pedersen, "Wallet Databases with
+              Observers", 1992,
+              <https://doi.org/10.1007/3-540-48071-4_7>.
+
+   [ChiesaY24]
+              Chiesa, A. and E. Yogev, "Building Cryptographic Proofs
+              from Hash Functions", 2024, <https://snargsbook.org/>.
+
+   [Cramer97] Cramer, R., "Modular Design of Secure yet Practical
+              Cryptographic Protocols", 1997,
+              <https://ir.cwi.nl/pub/21438>.
+
+   [CramerDS94]
+              Cramer, R., Damgaard, I., and B. Schoenmakers, "Proofs of
+              Partial Knowledge and Simplified Design of Witness Hiding
+              Protocols", 1994, <https://ir.cwi.nl/pub/1456/1456D.pdf>.
+
+   [CVE-2020-0601]
+              "CVE-2020-0601: Windows CryptoAPI Spoofing Vulnerability
+              (CurveBall)", 2020,
+              <https://nvd.nist.gov/vuln/detail/CVE-2020-0601>.
+
+   [CVE-2022-21449]
+              "CVE-2022-21449: Improper ECDSA signature verification in
+              Java SE / GraalVM (Psychic Signatures)", 2022,
+              <https://nvd.nist.gov/vuln/detail/CVE-2022-21449>.
+
+   [CVE-2022-23806]
+              "CVE-2022-23806: crypto/elliptic Curve.IsOnCurve returns
+              true for non-canonical field elements in Go", 2022,
+              <https://nvd.nist.gov/vuln/detail/CVE-2022-23806>.
+
+   [CVE-2024-42461]
+              "CVE-2024-42461: ECDSA signature malleability from BER-
+              encoded signatures in the elliptic package", 2024,
+              <https://nvd.nist.gov/vuln/detail/CVE-2024-42461>.
+
+   [FIPS-202] "SHA-3 standard :: permutation-based hash and extendable-
+              output functions", National Institute of Standards and
+              Technology (U.S.), DOI 10.6028/nist.fips.202, 2015,
+              <https://doi.org/10.6028/nist.fips.202>.
+
+   [GiacomelliMO16]
+              Giacomelli, I., Madsen, J., and C. Orlandi, "ZKBoo: Faster
+              Zero-Knowledge for Boolean Circuits",
+              <https://eprint.iacr.org/2016/163.pdf>.
+
+   [JagerSS15]
+              Jager, T., Schwenk, J., and J. Somorovsky, "Practical
+              Invalid Curve Attacks on TLS-ECDH", 2015,
+              <https://doi.org/10.1007/978-3-319-24174-6_21>.
+
+   [JakobssonSI96]
+              Jakobsson, M., Sako, K., and R. Impagliazzo, "Designated
+              Verifier Proofs and Their Applications", 1996,
+              <https://doi.org/10.1007/3-540-68339-9_13>.
+
+   [Maurer09] Maurer, U. M., "Unifying Zero-Knowledge Proofs of
+              Knowledge", 2009,
+              <https://doi.org/10.1007/978-3-642-02384-2_17>.
+
+   [Okamoto92]
+              Okamoto, T., "Provably Secure and Practical Identification
+              Schemes and Corresponding Signature Schemes", 1992,
+              <https://doi.org/10.1007/3-540-48071-4_3>.
+
+   [Pass03]   Pass, R., "On Deniability in the Common Reference String
+              and Random Oracle Model", 2003,
+              <https://doi.org/10.1007/978-3-540-45146-4_19>.
+
+   [Pedersen91]
+              Pedersen, T. P., "Non-Interactive and Information-
+              Theoretic Secure Verifiable Secret Sharing", 1991,
+              <https://doi.org/10.1007/3-540-46766-1_9>.
+
+   [SEC1]     Standards for Efficient Cryptography Group (SECG), "SEC 1:
+              Elliptic Curve Cryptography",
+              <https://www.secg.org/sec1-v2.pdf>.
+
+   [SP800]    "Recommendations for Discrete Logarithm-based
+              Cryptography", n.d.,
+              <https://nvlpubs.nist.gov/nistpubs/SpecialPublications/
+              NIST.SP.800-186.pdf>.
+
+   [Stern93]  Stern, J., "A New Identification Scheme Based on Syndrome
+              Decoding", 1993, <https://link.springer.com/
+              chapter/10.1007/3-540-48329-2_2>.
+
+Appendix A.  Imperative construction of a linear relation
+
+   The declarative notation of Section 4.3 assumes the shape of a
+   relation -- its scalars, elements, and equations -- is known when the
+   specification is written.  Some relations are only fully known at run
+   time (for instance, a range proof over a caller-supplied number of
+   bits); Section 4.3's loop form already covers this by unrolling in
+   the order the loop executes, but an implementation may instead prefer
+   to build the LinearRelation incrementally.  This appendix gives one
+   such imperative construction API, informative only: it is one way to
+   implement the compiler underlying Section 4.3 and Section 4.3,
+   Paragraph 2, not a normative interface.
+
+  class LinearRelationBuilder:
+      def allocate_scalars(self, n: int) -> list[int]
+      def allocate_elements(self, n: int) -> list[int]
+      def append_equation(self, lhs: int, rhs: list[(int, int)]) -> None
+      def set_elements(self, elements: list[(int, Group)]) -> None
+      def build(self) -> LinearRelation
+
+   allocate_scalars(n)/allocate_elements(n) reserve n new scalar/element
+   indices and return them. append_equation(lhs, rhs) appends one
+   Equation (Section 4.2) with the given image index and terms.
+   set_elements assigns concrete Group values to previously allocated
+   element indices; every allocated element *MUST* be set before build()
+   is called. build() returns the LinearRelation accumulated so far.
+
+   The Chaum-Pedersen relation of Section 4 is built this way as:
+
+  builder = LinearRelationBuilder(group)
+  [var_x] = builder.allocate_scalars(1)
+  [var_G, var_H, var_X, var_Y] = builder.allocate_elements(4)
+  builder.append_equation(var_X, [(var_x, var_G)])
+  builder.append_equation(var_Y, [(var_x, var_H)])
+  builder.set_elements([(var_G, G), (var_H, H), (var_X, X), (var_Y, Y)])
+  relation = builder.build()
+
+Appendix B.  Test Vectors
+
+B.1.  Seeded PRNG
+
+   For interoperability, the random number generator used for test
+   vectors is implemented using the SHAKE128 duplex sponge of
+   [fiat-shamir], absorbing a seed of 32 bytes.  The Seeded PRNG is for
+   reproducible test vectors; production implementations MUST use a
+   CSPRNG.
+
+   Random scalars are generated squeezing Ns + 16 bytes, seen as a big-
+   endian positive integer and reduced modulo p, as in the unsigned-
+   integer decoding of [fiat-shamir].
+
+class SeededPRNG:
+    def __init__(self, seed: bytes, order: int):
+        assert(len(seed) == 32)
+        self.order = order
+        self.hash_state = SHAKE128(b"sigma-proofs/TestDRNG/SHAKE128".ljust(64, b"\x00"))
+        self.hash_state.absorb(seed)
+
+    def random_scalar(self) -> Scalar:
+        Ns = (self.order.bit_length() + 7) // 8
+        random_integer  = OS2IP(self.hash_state.squeeze(Ns + 16))
+        return Scalar(random_integer % self.order)
+
+   The following sections contain test vectors for the Sigma Protocols
+   specified in this document.
+
+   The test vectors are grouped by ciphersuite.  Each vector includes a
+   Relation field naming the relation being proved and a Ciphersuite
+   field identifying the non-interactive instantiation used to generate
+   the proof bytes.
+
+B.2.  sigma-proofs(P-256, SHAKE128)
+
+   This section contains vectors for the ciphersuite identified as
+   sigma-proofs_Shake128_P256.
+
+B.3.  discrete_logarithm
+
+   Relation = discrete_logarithm
+   Ciphersuite = sigma-proofs_Shake128_P256
+   SessionId = 64697363726574655f6c6f6761726974686d
+   Statement = 0100000001000000010000000000000000000000036b17d1f2e12c42
+   47f8bce6e563a440f277037d812deb33a0f4a13945d898c29602d135e66a8b8d656f
+   a8e892501d931895ec031701a72aa550039742a8f6325336
+   Witness = daca1508279cce9abb7fdefc540ec4b9bcf1b689bbcf74ea3123dbd3f5
+   b611b0
+   Proof = d08bc0386f6ef8b3a431d490a1b30c0ab58341043aa76e59b74493417e65
+   a46ee9488aaa9b728b9ccd5231f1d99daae697e454d67d83522e5bc8de52324f06bd
+   Batchable Proof = 031af107806a9d4f14c569d5a255904f682a7e1cc289ca70f5
+   306d690609bf8f7231ffdce808d01c2ee9354c49c3dcbe6361cce35b81c304abd3a8
+   13909ec3c16a
+
+B.4.  dleq
+
+   Relation = dleq
+   Ciphersuite = sigma-proofs_Shake128_P256
+   SessionId = 646c6571
+   Statement = 02000000010000000100000000000000000000000300000001000000
+   0000000002000000036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4
+   a13945d898c29602e7747263366b618a771a284e6139947b17e9c3a96cb573d045db
+   511336fea2b502d135e66a8b8d656fa8e892501d931895ec031701a72aa550039742
+   a8f632533603c2170432aefa48cbbe91aa5be0da997e663528c96bd5652da0b71dbc
+   44b4a157
+   Witness = 92526b41ae23f4820a911c9ba1bdc6493f68ce123871c76a6e74ec43b8
+   5494c0
+   Proof = 8e9bd4ddb4c4cf342c4b29e9cb6447d1ed7268cbea7bd163408925c6058f
+   1e9a32b29cb837a982782e771e90665cceaae4c2051cd2f9de70a57b5661ae9b4cf4
+   Batchable Proof = 031af107806a9d4f14c569d5a255904f682a7e1cc289ca70f5
+   306d690609bf8f7202b9e055385e773efed02af727e2ac21b9dc411ede1789a3186a
+   b779e32c3ebec3fa58b127a6ea224395244ee5a0fc4ed0e99b9e576a7d6bc132e052
+   47bcb658a0
+
+B.5.  pedersen_commitment
+
+   Relation = pedersen_commitment
+   Ciphersuite = sigma-proofs_Shake128_P256
+   SessionId = 706564657273656e5f636f6d6d69746d656e74
+   Statement = 01000000020000000200000000000000000000000100000001000000
+   036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c29602
+   d135e66a8b8d656fa8e892501d931895ec031701a72aa550039742a8f6325336033f
+   5eec2203e5d6cf13564a3884637cba8d6a835edfe1e7127ed544efa734f33c
+   Witness = 92526b41ae23f4820a911c9ba1bdc6493f68ce123871c76a6e74ec43b8
+   5494c0c93640008f20c1c7e267c16a7acef56ce53605f763e94cca43be52e7ad2607
+   64
+   Proof = 03c2fed5978acc3cf8aaa0ca27ba0f8c594f0f30d54fd480c984c7af1627
+   de1c15d44da987f02c4d9e0fa01f081efa719e8cc778338faa04134017481924f06d
+   c3ee6f245c56bb20aaf97dea5380e09594b7d5d0dce38496e976d2d1a84893f5
+   Batchable Proof = 022b3a82ba319b6bb06e1c0df02639fabff6644f03737a6a31
+   29a080abbcbb994279dc23d43310f40de3d3e3a5567dfd74c5c87e7ecb8fae1e0617
+   2cfd9d4246eedadbce5fef61c99fc3cea903adfee9d8311943966a63ebc3abbe9556
+   6c2094f6
+
+B.6.  pedersen_commitment_dleq
+
+   Relation = pedersen_commitment_dleq
+   Ciphersuite = sigma-proofs_Shake128_P256
+   SessionId = 706564657273656e5f636f6d6d69746d656e745f646c6571
+   Statement = 02000000020000000200000000000000000000000100000001000000
+   05000000020000000000000003000000010000000400000002d135e66a8b8d656fa8
+   e892501d931895ec031701a72aa550039742a8f632533602e7747263366b618a771a
+   284e6139947b17e9c3a96cb573d045db511336fea2b503494cd0367a7478312233f9
+   a9645d2f3f9a68dcfe018d052325c4431b4dc4f78c032aaafb5d7a5a3dd1bad36f58
+   0cde19e8995a7a0c0cb79bc4f736b832de95320803dfcb42c94940e5ac6c5ffbabfb
+   b9a8da0132e0db8f414d8bdd01f5ae8fa2143103052d1bd120487fa37744c6da3295
+   f56e76be9c61a4de8a0b0c6c5de177935482
+   Witness = 5be9cc0de93d47ccaf8637f1c5a9e26e92b5bc38f6265a96d64bd437ac
+   7d597ab6116295a8d23d4cd60fb53b1ddf7177f95aee639a59dacecf37334a914bde
+   d6
+   Proof = 131348247c1d6c7b66402a0c5ed4a47af55e37b44c12b7ab0103c00440f9
+   773ddcf334188a910e111c0cf81a1ce25ac13ecdd7dbc8228a93d6f698a87af9d5f5
+   8d7b568fbb121a9f81fe2534d2f24a942a81e8daa08f48b09ea773befef5e8f0
+   Batchable Proof = 0384afaabfca8df99914b58ac83c1f16cc0871c95167c672b4
+   0f8b79eac10193ae021ebe92eec53b568bc65b0e6bddf3c9ca159fd493690dd28c60
+   a12fa672e163e205ef3af821437ddfd0eb080d0e1babdff75437c1004cc6273164f0
+   352850b73238701b45d0ee56d1be5359f5a25a81acf3f4942bb05f724a8f6713075c
+   fe8b89
+
+B.7.  bbs_blind_commitment_computation
+
+   Relation = bbs_blind_commitment_computation
+   Ciphersuite = sigma-proofs_Shake128_P256
+   SessionId = 6262735f626c696e645f636f6d6d69746d656e745f636f6d70757461
+   74696f6e
+   Statement = 01000000040000000400000000000000000000000100000001000000
+   0200000002000000030000000300000002d135e66a8b8d656fa8e892501d931895ec
+   031701a72aa550039742a8f632533602e7747263366b618a771a284e6139947b17e9
+   c3a96cb573d045db511336fea2b5032aaafb5d7a5a3dd1bad36f580cde19e8995a7a
+   0c0cb79bc4f736b832de95320803dfcb42c94940e5ac6c5ffbabfbb9a8da0132e0db
+   8f414d8bdd01f5ae8fa21431024a243b6f8a0030941fde57d57f1a4d418d01e7f398
+   962739fba3bbdb3adfb285
+   Witness = 895007d818e8c20774be15273e5b8733e345ba359205cbcd98a046f263
+   a7a0ce5be9cc0de93d47ccaf8637f1c5a9e26e92b5bc38f6265a96d64bd437ac7d59
+   7ab6116295a8d23d4cd60fb53b1ddf7177f95aee639a59dacecf37334a914bded6c6
+   038561954f5b4d4052c77d8c149a74767e1c478e09dc33e7cfc801f7dfb722
+   Proof = cc8e3072ee8c305b8409d01a25902d928692d4d29a56655e416afe30efbd
+   97f8b7a3141b009229ea5ebb3e15b8771bbc1317cf125feb902e151a7d29ce254e60
+   ad390b486329d18430e684ef46863524e8be301d21832b2a5dd070a6443070eeb292
+   e90a3808fae2e56417693f4023387e698b2cb2d41f2ffa2551d4124da40bbb343026
+   17a8bf67c7e0b6c73fce3697b15c1c2ef49f4991c27873f0b70a602d
+   Batchable Proof = 038b7263580bb33a66bf5b1c1d4dcadce46e89fd58c6224df2
+   c495e4d8447ee24b3caa3feab0ebaa85847f3d2161dccbd22947cdf33ebf5ca0793e
+   31e193b024e1f672cf51e471b286e3161e1dd18f0448cd42d3d8f30e813a6c2f2ccb
+   6a5eb6ce4cb3bc0043639723e6aa48541a4172ab4ebd36e7f7a85aecbf1de4dcc649
+   ff84147c4041813146e03e18d6f916a5b54633a0f68cca2153bc6d7f91bed9c6e351
+
+B.8.  sigma-proofs(BLS12-381, SHAKE128)
+
+   This section contains vectors for the ciphersuite identified as
+   sigma-proofs_Shake128_BLS12381.
+
+B.9.  discrete_logarithm
+
+   Relation = discrete_logarithm
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   SessionId = 64697363726574655f6c6f6761726974686d
+   Statement = 010000000100000001000000000000000000000097f1d3a73197d794
+   2695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3a
+   f00adb22c6bb81f56ff90504e08e3af0211b8b60d8a834af3bd7a63eb6d3a1e1f974
+   4fdbf915697ecb8a6ebd7d4db0885bedc2e02c8b
+   Witness = 722df275e5be8df73fe322083a661a5a02910bae74f5d3674b648af813
+   81cab0
+   Proof = 2d07db2a46daeb32ba019194b4e6f9319f9eae259c1e80c15f71f3db1d9c
+   4c5f25d92eb0743a8f3cd004b59cead8f325563c8d23d265cc2d35f596ea86a32816
+   Batchable Proof = 876bd688db9e4d0c1501d5f80ceb865958d1699998cd226a42
+   22a6826370702cceb6c966d61f1d80e3f8b7faef5b158b152c7865932f0b73c2f002
+   c299dbc778a3f587e34d9943410b2d46536a5b8bc7
+
+B.10.  dleq
+
+   Relation = dleq
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   SessionId = 646c6571
+   Statement = 02000000010000000100000000000000000000000300000001000000
+   000000000200000097f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e
+   3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb8cc0db261e028e0d81676c78
+   5dfd7d71976753c7ec9fb9166abfb6b262aaa36cfbde771460b70b06d2b4ab2f4faf
+   878d81f56ff90504e08e3af0211b8b60d8a834af3bd7a63eb6d3a1e1f9744fdbf915
+   697ecb8a6ebd7d4db0885bedc2e02c8bac83f5e8bc97f38b92d976067b1532f89442
+   0a74c549bf25026bb9067a5b5ba43293b7ba272180ade19c81d451e76012
+   Witness = 301dc6e2a7f14746146a2c281e2922cacda7c5613e26c72b3d57e06fa6
+   7831e0
+   Proof = 2bc9e1e80d3b14e2214a2792e7bf30162763cffe655238bfdce1196f3906
+   81481d4148ec767e3ca5ddb1a05efaf377a82dca623e863aa45af5caf58091a2fd92
+   Batchable Proof = 876bd688db9e4d0c1501d5f80ceb865958d1699998cd226a42
+   22a6826370702cceb6c966d61f1d80e3f8b7faef5b158b824c14d32ad86a34761314
+   bf3f2f46ed9f993a86b48cf9adc076153a736da4b0670bfa7263ab81c435dee0186a
+   721f5d465ff84606c95efa8a22d01d24c64f179d31d044164e2c90ae2122e796a161
+   41
+
+B.11.  pedersen_commitment
+
+   Relation = pedersen_commitment
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   SessionId = 706564657273656e5f636f6d6d69746d656e74
+   Statement = 01000000020000000200000000000000000000000100000001000000
+   97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55
+   e83ff97a1aeffb3af00adb22c6bb81f56ff90504e08e3af0211b8b60d8a834af3bd7
+   a63eb6d3a1e1f9744fdbf915697ecb8a6ebd7d4db0885bedc2e02c8bb29e444ccc3f
+   9ca21049e8188ccbaf50995c2b0b44c8ec93c742afc29b5ad90baff8a133baf318ee
+   a626df9b29b05995
+   Witness = 301dc6e2a7f14746146a2c281e2922cacda7c5613e26c72b3d57e06fa6
+   7831e00e46ec1da3e35fc11a2b91b272794ea40c6e283930e5cc981c7bd61f661726
+   84
+   Proof = 237aa321c1827aad548ecdbdf4f8e7f14baf24f2ba8a53d7d2304bc9d804
+   25ee222da47223c980f9008467c12054795a8601b3ad4ec566c777463775cdfe8805
+   3d825e17a65875d352e3e68a2d8825ba4a31a60ea4e4a8e8e622e93afb0de9a9
+   Batchable Proof = a97bc242710165e97eb80d556d66ee25c239b3e4d55e4e5e7b
+   43963139b57dab95931f3dac353b486e2bd3a9b26a184c3faec15beca7733326c654
+   6122d6ca2465d01dc17ccf4f6fe2cc588bc5e201c734106878cb40e65c921322e877
+   e965dee872ca106b7187556a5c13a15dc1ea14
+
+B.12.  pedersen_commitment_dleq
+
+   Relation = pedersen_commitment_dleq
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   SessionId = 706564657273656e5f636f6d6d69746d656e745f646c6571
+   Statement = 02000000020000000200000000000000000000000100000001000000
+   05000000020000000000000003000000010000000400000081f56ff90504e08e3af0
+   211b8b60d8a834af3bd7a63eb6d3a1e1f9744fdbf915697ecb8a6ebd7d4db0885bed
+   c2e02c8b8cc0db261e028e0d81676c785dfd7d71976753c7ec9fb9166abfb6b262aa
+   a36cfbde771460b70b06d2b4ab2f4faf878dae12bff9e60b2ba88bd9da69c55948d0
+   a6cdbffcce0379a3becbdd57c6aa17e858cf10f722f1c67c710541be9e1d2204a207
+   735523e9de213a4a84dde81c26e9291763c585e152b791f96f1d710dd0e981c6d7d9
+   d96a2bc42a057bd6bbaefd71aa75899f88793c24e526c90da736e3df71b358ac6d09
+   0a7fb10f421782eb062bf0400ea8ffacf3e0fff87130e8e9def594186d3501350830
+   da852e4ad460ec8ecb5868891df413d34972699f0b8005388c45c0d51de9b05b7be0
+   050f26c8e7fa
+   Witness = 48b922ab24da7d352e8184ffce98dd1513eea0a7c175193769b0b30464
+   ca30ba3217d0a0a623bb652283dda5c6aada76d14dd2a7b1461105a6f67e31946b4b
+   b6
+   Proof = 39e79064f980cfc9aeb953e5cd2ec2ac5a6abdbcb3ead98ece20becf7c32
+   75450e0b27a75216e4cb4a8975f5b8ab0492a9a98a9b6ebb79713ea8a7a277572b94
+   0a05027cb65354e5b92dd32d15d2b96fe89748a1a1149b7d979d3e5c645c67ff
+   Batchable Proof = a3ccd50dcb1fea6b89c83bcd6add352ad3db4eda268236a906
+   b41f59e3edde60b7a69ba7501d91176fdf08f5a21caef88a8fa7f9f44caa78674efd
+   2660f0d3327195e1f39421bf57fa0dc2874ccfc68e220f2b3bc5bdf71ef144743725
+   68616f6709b5b7e02b88f9cf5ead9cb5969d496adeac334584300cc86258a8e205c8
+   d61e506c8bbf56ff7815149b61a6f5e892bf14befbb9e3bdf49d9d230edcdb146b
+
+B.13.  bbs_blind_commitment_computation
+
+   Relation = bbs_blind_commitment_computation
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   SessionId = 6262735f626c696e645f636f6d6d69746d656e745f636f6d70757461
+   74696f6e
+   Statement = 01000000040000000400000000000000000000000100000001000000
+   0200000002000000030000000300000081f56ff90504e08e3af0211b8b60d8a834af
+   3bd7a63eb6d3a1e1f9744fdbf915697ecb8a6ebd7d4db0885bedc2e02c8b8cc0db26
+   1e028e0d81676c785dfd7d71976753c7ec9fb9166abfb6b262aaa36cfbde771460b7
+   0b06d2b4ab2f4faf878da207735523e9de213a4a84dde81c26e9291763c585e152b7
+   91f96f1d710dd0e981c6d7d9d96a2bc42a057bd6bbaefd71aa75899f88793c24e526
+   c90da736e3df71b358ac6d090a7fb10f421782eb062bf0400ea8ffacf3e0fff87130
+   e8e9def58494d8275db37296859ea24febe40bed9520bb30277e8356ab2fe9528708
+   3154cc5a191de3f2d4d90fe865265e782785
+   Witness = 0b77611f0ec1f6ed026d6d5cc02e1c8e0966b4fafb7796107174acb071
+   78b36e48b922ab24da7d352e8184ffce98dd1513eea0a7c175193769b0b30464ca30
+   ba3217d0a0a623bb652283dda5c6aada76d14dd2a7b1461105a6f67e31946b4bb63e
+   fe086aa913df787d02e2852da1c6eb900166c3987a32b85d46dba8a9cc09d2
+   Proof = 2b07fb2441b85dba5410c1a549ea03e3761cfff54d1e50239ff35a1e165b
+   4fa45c9ab831dde8b3ef217f629bda0acdff0c8630ca6319734101c008752a6bd17e
+   4d96e5aaba6b85696aebcc8b0d0b374d933f13e8a911a26dbb238b1b8bf66e3a23b1
+   5bbf3b08a20df3aed9c2e49529048d89d8757dc1b8d9262589302e4f0498718453a1
+   b683616c84d753b90f3f58946c40198255829672115f17b704097ae6
+   Batchable Proof = 8cdacd8de18dde04c58140d873b590b0f8aeaac32889909d15
+   5fb0723f3859742f6cb39189186de355426704d42a6c314733d3fa2d439ff72bd2cc
+   b9650efb8a62f61345f03a9ade2a8249a75fb816ec2d07797d80e4375c0ef748d22f
+   f4f130f1eb623da121fb4a549621bd61ea8c0d415b884e537733abddbc93992da4e4
+   52017e388af29cdca8850d516aba4b5de5033cd8b8dab06a6d68c30191fec014daef
+   a27a6aeecdc7024e7cedfe74ef74ff
+
+Authors' Addresses
+
+   Michele Orrù
+   CNRS
+   Email: m@orru.net
+
+
+   Cathie Yun
+   Apple, Inc.
+   Email: cathieyun@gmail.com
