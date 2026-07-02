@@ -94,7 +94,7 @@ informative:
   BPW16:
     title: "How not to Prove Yourself: Pitfalls of the Fiat-Shamir Heuristic and Applications to Helios"
     target: https://eprint.iacr.org/2016/771
-    date: 2016
+    date: 2012
     author:
       - fullname: "David Bernhard"
       - fullname: "Olivier Pereira"
@@ -109,13 +109,13 @@ informative:
       - fullname: "Opal Wright"
       - fullname: "Paul Grubbs"
   FROZENHEART:
-    title: "The Frozen Heart Vulnerability in PlonK"
+    title: "The Frozen Heart vulnerability in PlonK"
     target: https://blog.trailofbits.com/2022/04/18/the-frozen-heart-vulnerability-in-plonk/
     date: 2022
     author:
       - org: "Trail of Bits"
   SOLANA-ZK:
-    title: "Post-Mortem: ZK ElGamal Proof Program Bug"
+    title: "Post Mortem: ZK ElGamal Proof Program Bug"
     target: https://solana.com/news/post-mortem-may-2-2025
     date: 2025
     author:
@@ -138,7 +138,7 @@ informative:
       - fullname: "Bart Mennink"
       - fullname: "Porçu Quine"
   GNARK-OOM:
-    title: "GHSA-cph5-3pgr-c82g: gnark vulnerable to out-of-memory crash during deserialization of untrusted keys"
+    title: "Out-of-memory during deserialization with crafted inputs"
     target: https://github.com/Consensys/gnark/security/advisories/GHSA-cph5-3pgr-c82g
     date: 2024
     author:
@@ -175,7 +175,7 @@ Both the non-interactive prover and verifier rely on:
 - a set of codecs, describing how each prover and verifier message talk to the duplex sponge ({{codecs}});
 - a serialization and deserialization procedure for the NARG string produced by the prover ({{narg-string}}).
 
-This document specifies byte-oriented hash functions, but the transformation is well-suited to recursive proving, since the in-circuit cost of recomputing the Fiat-Shamir challenges is low, and  generalizes to other alphabets (for example, prime-field elements). It is compatible with arithmetization-friendly hash functions (e.g. Poseidon2 {{POSEIDON2}}) that operate natively on field elements. See {{CO25}} for the general construction.
+This document specifies byte-oriented hash functions, but the transformation is well-suited to recursive proving, since the in-circuit cost of recomputing the Fiat-Shamir challenges is low. It is compatible with arithmetization-friendly hash functions (e.g. Poseidon2 {{POSEIDON2}}) that operate natively on field elements. See {{CO25}} for the general construction.
 
 Other types of non-interactive transformations (with and without random oracles) are possible, but outside the scope of this specification.
 
@@ -605,7 +605,7 @@ This section specifies the _default_ encoding of a finite field of order `q = p^
 
 If the field already has a canonical serialization fixed by a standard, that serialization **SHOULD** be used in place of the default specified below, and it **MUST** be prefix-free. The default below encodes each prime-field coordinate as a fixed-width little-endian integer via `EncodeUint` ({{encoding-uint}}).
 
-For example, Curve25519 {{?RFC7748}}, Ed25519 {{?RFC8032}}, ristretto255 {{Section 4.4 of ?RFC9496}} serialize field elements as a fixed-width little-endian integer  Similarly, in Section 7.1 of {{FIPS204}}, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 ({{SEC1}}) and BLS12-381 ({{?I-D.irtf-cfrg-pairing-friendly-curves}}) serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization **MUST** be used in place: a prime-field coordinate `x` in `[0, p)` is encoded as `I2OSP(x, Ns)`, with `Ns` the smallest integer such that `256^Ns >= p`, in place of the default `LE(x, Ns)`. As with the default, deserialization **MUST** reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than `p`). When the chosen field serialization departs from the above rule, that choice is part of the codec identity and **MUST** be reflected in the session tag (see {{session-id}}).
+For example, Curve25519 {{?RFC7748}}, Ed25519 {{?RFC8032}}, ristretto255 {{Section 4.4 of ?RFC9496}} serialize field elements as a fixed-width little-endian integer  Similarly, in Section 7.1 of {{FIPS204}}, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 {{SEC1}} and BLS12-381 {{?I-D.irtf-cfrg-pairing-friendly-curves}} serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization **MUST** be used in place: a prime-field coordinate `x` in `[0, p)` is encoded as `I2OSP(x, Ns)`, with `Ns` the smallest integer such that `256^Ns >= p`, in place of the default `LE(x, Ns)`. As with the default, deserialization **MUST** reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than `p`). When the chosen field serialization departs from the above rule, that choice is part of the codec identity and **MUST** be reflected in the session tag (see {{session-id}}).
 
 With respect to a fixed basis, a field element is represented by its `m` coordinates in the prime field, each an integer in `[0, p)`. It is encoded as the concatenation of the per-coordinate encodings produced by `EncodeUint` ({{encoding-uint}}) with modulus `p`. Let `Ns` be the smallest integer with `256^Ns >= p`; a field element encodes to `m * Ns` bytes.
 
