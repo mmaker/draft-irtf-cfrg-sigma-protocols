@@ -198,8 +198,8 @@ Table of Contents
    This document specifies proofs for discrete-logarithm relations that
    can be expressed as the preimage of a linear map.  Affine relations
    with constant terms (e.g. verifiable encryption) are expressed
-   directly, via weighted terms (Section 4.2); quadratic equations (e.g.
-   range proofs) can still be reduced to this form.
+   directly, via multi-term images (Section 4.2); quadratic equations
+   (e.g. range proofs) can still be reduced to this form.
 
 2.  Terminology and conventions in this document
 
@@ -229,9 +229,9 @@ Table of Contents
    w-byte string to the integer in [0, 256^w) that it represents.  LE(n,
    w) is the little-endian counterpart defined in [fiat-shamir],
    converting n into a w-byte, little-endian byte string; it is used for
-   the indices, counts, and weights of the instance encoding
-   (Section 4.5).  Byte order and length of the scalar and group-element
-   encodings are fixed by each ciphersuite (Section 8).
+   the indices and counts of the instance encoding (Section 4.5).  Byte
+   order and length of the scalar and group-element encodings are fixed
+   by each ciphersuite (Section 8).
 
 2.2.  Randomized algorithms
 
@@ -371,7 +371,7 @@ Table of Contents
    [RFC9381] and anonymous tokens [RFC9497].  Proving knowledge of the
    opening (m, r) of a Pedersen commitment [Pedersen91] C = m * G + r *
    H are Okamoto-Schnorr proofs [Okamoto92].  Affine equations with
-   constant terms can be expressed directly through weighted image terms
+   constant terms can be expressed directly through multi-term images
    (Section 4.2); more elaborate relations (quadratic equations,
    arithmetic circuits, etc.) reduce to this same form.
 
@@ -394,39 +394,41 @@ Table of Contents
    CSR sparse-matrix format, rather than as an array of group elements.
 
    Each row of M is called an Equation, and consists of two term lists.
-   The image terms (the left-hand side) are a non-empty list of (weight,
-   element_index) pairs, whose weighted sum is the output of the
-   equation.  The terms (the right-hand side) are a non-empty list of
-   (scalar_index, weight, element_index) triples, each contributing
-   weight * (witness[scalar_index] * elements[element_index]).  A
-   LinearRelation holds a set of group elements (each corresponding to
-   an element_index) and a non-empty list of equations.
+   The image terms (the left-hand side) are a non-empty list of element
+   indices, whose sum is the output of the equation.  The terms (the
+   right-hand side) are a non-empty list of (scalar_index,
+   element_index) pairs, each contributing witness[scalar_index] *
+   elements[element_index].  A LinearRelation holds a set of group
+   elements (each corresponding to an element_index) and a non-empty
+   list of equations.
 
    class Equation:
-       image: list[(int, int)]
-           # non-empty, (weight, element_index)
-       terms: list[(int, int, int)]
-           # non-empty, (scalar_index, weight, element_index)
+       image: list[int]
+           # non-empty, element_index
+       terms: list[(int, int)]
+           # non-empty, (scalar_index, element_index)
 
    class LinearRelation:
        Group: groups.Group
        elements: list[Group]        # non-empty
        equations: list[Equation]    # non-empty
 
-   Weights are integers in [1, 2^64), acting on group elements by scalar
-   multiplication (implicitly reduced modulo the group order p).  A
-   weight of 1 is the common case; larger weights arise, for instance,
-   in range proofs, where a base element is reused across terms with
-   power-of-two weights.
+   There are no integer constants on either side of an equation: every
+   term is a plain product of one witness scalar and one instance
+   element, and every image is a plain sum of instance elements.  A
+   statement involving a constant multiple of an element (such as 3 * H)
+   registers the element 3 * H itself as an instance element;
+   Section 4.4 describes how such derived entries are constructed and
+   why the encoding still binds the original element.
 
-   The image of each equation is kept as a list of weighted terms, and
-   *MUST NOT* be pre-computed into a single group element, so that the
+   The image of each equation is kept as a list of terms, and *MUST NOT*
+   be pre-computed into a single group element, so that the
    serialization of Section 4.5 binds every group element of the
    statement individually.  For example, the verifiable-decryption
-   statement x * E0 = M + E1 has image terms [(1, M), (1, E1)]; folding
-   them into the single element F = M + E1 would yield a proof that no
-   longer binds the pair (M, E1), and that verifies unchanged for any
-   other pair (M', E1') with M' + E1' = F (Section 7.4).
+   statement x * E0 = M + E1 has image terms [M, E1]; folding them into
+   the single element F = M + E1 would yield a proof that no longer
+   binds the pair (M, E1), and that verifies unchanged for any other
+   pair (M', E1') with M' + E1' = F (Section 7.4).
 
    A LinearRelation *MUST* have at least one equation, and every
    equation's image and terms *MUST* be non-empty.  Every index *MUST*
@@ -458,7 +460,7 @@ Table of Contents
    num_elements(instance)  = len(instance.elements)
    num_equations(instance) = len(instance.equations)
    num_scalars(instance)   = 1 + max(s for eq in instance.equations
-                                       for (s, _, _) in eq.terms)
+                                       for (s, _) in eq.terms)
 
    The size of the group-elements set num_elements is independent of
    num_equations.  For instance, in Chaum-Pedersen, num_elements = 4 (G,
@@ -472,8 +474,8 @@ Table of Contents
    1. out = []
    2. for equation in instance.equations:
    3.     acc = instance.Group.identity()
-   4.     for (scalar_index, weight, element_index) in equation.terms:
-   5.         acc = acc + (weight * scalars[scalar_index]) \
+   4.     for (scalar_index, element_index) in equation.terms:
+   5.         acc = acc + scalars[scalar_index] \
                           * instance.elements[element_index]
    6.     out.append(acc)
    7. return out
@@ -486,8 +488,8 @@ Table of Contents
    1. out = []
    2. for equation in instance.equations:
    3.     acc = instance.Group.identity()
-   4.     for (weight, element_index) in equation.image:
-   5.         acc = acc + weight * instance.elements[element_index]
+   4.     for element_index in equation.image:
+   5.         acc = acc + instance.elements[element_index]
    6.     out.append(acc)
    7. return out
 
@@ -503,8 +505,7 @@ Table of Contents
        and a non-empty image list.
 
    3.  Every scalar_index, every element_index, and every equation's
-       term count is less than 2^32, and every weight is in the range
-       [1, 2^64).
+       term count is less than 2^32.
 
    4.  Every element_index is less than num_elements(instance).
 
@@ -559,11 +560,10 @@ Table of Contents
    instance.elements[j] (Section 4.2).  Vectors of indices (for example,
    declaring D_0, ..., D_{n-1}) unroll in order.  Each equation has the
    form image = term + term + ... (Section 4.2), where image is a sum of
-   weight * element_name entries and each term is weight * scalar_name *
-   element_name; the integer constant weight lies in [1, 2^64) and
-   defaults to 1 when omitted.  Each term compiles to a (scalar_index,
-   weight, element_index) triple, in the order written, and each image
-   entry to a (weight, element_index) pair of the compiled equation.
+   element names and each term is a scalar_name * element_name product.
+   Each term compiles to a (scalar_index, element_index) pair, in the
+   order written, and each image entry to an element index of the
+   compiled equation.
 
    In pseudocode, NAME(...) indicates the compiled LinearRelation with
    the named parameters substituted on the matching Elements: entries.
@@ -580,8 +580,8 @@ Table of Contents
            Y = x * H
 
    which compiles to the LinearRelation with elements = [G, H, X, Y] and
-   equations = [Equation(image=[(1, 2)], terms=[(0, 1, 0)]),
-   Equation(image=[(1, 3)], terms=[(0, 1, 1)])].
+   equations = [Equation(image=[2], terms=[(0, 0)]), Equation(image=[3],
+   terms=[(0, 1)])].
 
    As an example with a multi-term image, the following declares a proof
    of correct ElGamal decryption: the ciphertext (E0, E1), with E1 = r *
@@ -594,32 +594,34 @@ Table of Contents
            X = x * G
            M + E1 = x * E0
 
-   The second equation compiles to Equation(image=[(1, 4), (1, 3)],
-   terms=[(0, 1, 2)]): both M and E1 are instance elements, individually
-   bound by the serialization of Section 4.5.
+   The second equation compiles to Equation(image=[4, 3], terms=[(0,
+   2)]): both M and E1 are instance elements, individually bound by the
+   serialization of Section 4.5.
 
    Both lists *MUST* enumerate every name used in Equations:, and *MUST
    NOT* repeat a name.  Conversely, every listed name *MUST* appear in
    Equations:: a declared scalar or element that is never used compiles
    to a LinearRelation violating the index requirements of Section 4.2.
-   Indices and term counts *MUST* be less than 2^32, and weights *MUST*
-   be in [1, 2^64).  Every term *MUST* be a single weight * scalar_name
-   * element_name product: the notation has no scalar constants, and no
-   scalar-scalar or element-element products.  Element-only entries (no
-   scalar) appear only on the image side of an equation; there is no
-   negation, and a subtracted element is expressed by supplying its
-   negated value as an Elements: entry (negation is injective, so the
-   encoding still binds the original element).  A negated entry is part
-   of constructing the statement: each party *MUST* compute it locally
-   from the original element, and *MUST NOT* accept it as a separate
-   input, since no algebraic relation between instance elements is
-   checked by ValidateInstance (Section 4.3) or by the verifier
-   (Section 7.1).  An element and its negation used as bases of the same
-   equation form a known discrete-logarithm relation, forbidden by
-   Section 4.1.  Each element *MUST NOT* be the identity element.  A
-   constant base is expressed as an Elements: entry multiplied by a
-   scalar fixed to 1; quadratic statements reduce to this product form
-   as described in Section 4.
+   Indices and term counts *MUST* be less than 2^32.  Every term *MUST*
+   be a single scalar_name * element_name product: the notation has no
+   integer constants, and no scalar-scalar or element-element products.
+   Element-only entries (no scalar) appear only on the image side of an
+   equation.  There is no negation and there are no constant multiples:
+   a subtracted element is expressed by supplying its negated value as
+   an Elements: entry, and a constant multiple such as 3 * H by
+   supplying the element 3 * H itself.  Both derivations are injective
+   -- multiplication by any fixed nonzero scalar is, since the group has
+   prime order -- so the encoding still binds the original element.  A
+   derived entry is part of constructing the statement: each party
+   *MUST* compute it locally from the original element, and *MUST NOT*
+   accept it as a separate input, since no algebraic relation between
+   instance elements is checked by ValidateInstance (Section 4.3) or by
+   the verifier (Section 7.1).  An element and an entry derived from it
+   used as bases of the same equation form a known discrete-logarithm
+   relation, forbidden by Section 4.1.  Each element *MUST NOT* be the
+   identity element.  A constant base is expressed as an Elements: entry
+   multiplied by a scalar fixed to 1; quadratic statements reduce to
+   this product form as described in Section 4.
 
    Because a LinearRelation may hold any number of equations over shared
    or disjoint variables, AND composition comes for free, by
@@ -635,12 +637,12 @@ Table of Contents
 
    A LinearRelation is serialized as a sparse matrix in row-major order,
    followed by the group elements set.  Each row is serialized encoding
-   its image terms (their count, followed by the (weight, element index)
-   pair of each term), and then its right-hand side terms (their count,
-   followed by the (scalar index, weight, element index) triple of each
-   term) (Section 4.2).  Counts and indices are encoded in 4 bytes and
-   weights in 8 bytes, via LE (Section 2.1).  Then, the group elements
-   are serialized using the group serialization function.
+   its image terms (their count, followed by the element index of each
+   term), and then its right-hand side terms (their count, followed by
+   the (scalar index, element index) pair of each term) (Section 4.2).
+   Counts and indices are encoded in 4 bytes, via LE (Section 2.1).
+   Then, the group elements are serialized using the group serialization
+   function.
 
    SerializeLinearRelation(instance)
 
@@ -659,24 +661,21 @@ Table of Contents
     3. for i in range(num_equations(instance)):
     4.     image_terms = instance.equations[i].image
     5.     out = out || LE(len(image_terms), 4)
-    6.     for (weight, element_index) in image_terms:
-    7.         out = out || LE(weight, 8)
-    8.         out = out || LE(element_index, 4)
-    9.     terms = instance.equations[i].terms
-   10.     out = out || LE(len(terms), 4)
-   11.     for (scalar_index, weight, element_index) in terms:
-   12.         out = out || LE(scalar_index, 4)
-   13.         out = out || LE(weight, 8)
-   14.         out = out || LE(element_index, 4)
-   15. return out || Group.serialize(instance.elements)
+    6.     for element_index in image_terms:
+    7.         out = out || LE(element_index, 4)
+    8.     terms = instance.equations[i].terms
+    9.     out = out || LE(len(terms), 4)
+   10.     for (scalar_index, element_index) in terms:
+   11.         out = out || LE(scalar_index, 4)
+   12.         out = out || LE(element_index, 4)
+   13. return out || Group.serialize(instance.elements)
 
-   Here each image term (weight, element_index) pairs a weight with the
-   group-element index it multiplies on the left-hand side of the i-th
-   equation (Section 4.2), and each right-hand side term (scalar_index,
-   weight, element_index) associates a scalar (witness) index and a
-   weight with a group-element index.  The image is encoded through its
-   terms, never as a pre-computed sum, so that every statement element
-   is bound individually (Section 4.2, Section 7.4).
+   Here each image term is the index of a group element summed on the
+   left-hand side of the i-th equation (Section 4.2), and each right-
+   hand side term (scalar_index, element_index) associates a scalar
+   (witness) index with a group-element index.  The image is encoded
+   through its terms, never as a pre-computed sum, so that every
+   statement element is bound individually (Section 4.2, Section 7.4).
 
    SerializeLinearRelation operates on a LinearRelation as compiled from
    its declaration (Section 4.4).  Implementations *MUST* preserve
@@ -685,8 +684,8 @@ Table of Contents
    different serializations.
 
    The encoding binds the entire statement: the shape of the linear map
-   (the number of equations, and the indices and weights wired into each
-   one) together with every group element of the instance.  Because
+   (the number of equations, and the indices wired into each one)
+   together with every group element of the instance.  Because
    num_equations(instance) >= 1 and every equation has at least one
    image term and one right-hand side term (Section 4.2), the output is
    always non-empty.
@@ -1108,20 +1107,16 @@ Table of Contents
    Implementations *SHOULD* evaluate map(instance, scalars)
    (Section 4.2) using a multi-scalar multiplication (MSM) algorithm for
    each equation, rather than computing and summing each term
-   individually; this matters most for equations with many terms.  Term
-   weights are folded into the MSM coefficients as scalar-by-scalar
-   products (weight * scalars[scalar_index] modulo p), which cost far
-   less than a separate point multiplication.
+   individually; this matters most for equations with many terms.
 
    The verifier of Section 4.7 is specified as the equality
    map(instance, response) == commitment + challenge * image(instance),
    evaluated as two separate vectors for clarity.  Implementations *MAY*
    instead verify each equation i by checking that commitment[i] +
-   challenge * img[i] - sum(weight[j] * response[j] * M[i][j] for j) is
-   identity(), accumulating all terms in a single MSM per equation.
-   Each image term (weight, element_index) enters this MSM with
-   coefficient challenge * weight, so the weighted image is never
-   materialized as a separate point.  This folds the image scalar
+   challenge * img[i] - sum(response[j] * M[i][j] for j) is identity(),
+   accumulating all terms in a single MSM per equation.  Each image term
+   enters this MSM with coefficient challenge, so the summed image is
+   never materialized as a separate point.  This folds the image scalar
    multiplications into the same MSM as the row terms, sharing its point
    doublings, and negation is free on these curves; the arithmetic is
    otherwise identical to the equality above.
@@ -1153,15 +1148,16 @@ Table of Contents
    adversarially-chosen holds no meaning.  A proof certifies the
    statement only as the verifier constructed it.
 
-   Entries derived from other instance elements, such as the negated
-   entries of Section 4.4, *MUST* be recomputed locally from the
-   already-validated original, never received pre-computed: the verifier
-   has no means to check that one entry is the negation of another, and
-   a proof over a mismatched pair soundly certifies a statement other
-   than the intended one.  The same caution applies within a single
-   implementation: a sign error made consistently by prover and verifier
-   still verifies, while proving a different statement; test vectors and
-   cross-implementation checks are the effective defense.
+   Entries derived from other instance elements, such as the negated or
+   constant-multiple entries of Section 4.4, *MUST* be recomputed
+   locally from the already-validated original, never received pre-
+   computed: the verifier has no means to check that one entry is
+   derived from another, and a proof over a mismatched pair soundly
+   certifies a statement other than the intended one.  The same caution
+   applies within a single implementation: a sign error made
+   consistently by prover and verifier still verifies, while proving a
+   different statement; test vectors and cross-implementation checks are
+   the effective defense.
 
 7.2.  Prover randomness
 
@@ -1661,18 +1657,17 @@ Appendix A.  Imperative construction of a linear relation
        def allocate_scalars(self, n: int) -> list[int]
        def allocate_elements(self, n: int) -> list[int]
        def append_equation(self,
-                           lhs: list[(int, int)],
-                           rhs: list[(int, int, int)]) -> None
+                           lhs: list[int],
+                           rhs: list[(int, int)]) -> None
        def set_elements(self, elements: list[(int, Group)]) -> None
        def build(self) -> LinearRelation
 
    allocate_scalars(n)/allocate_elements(n) reserve n new scalar/element
    indices and return them. append_equation(lhs, rhs) appends one
-   Equation (Section 4.2) with the given (weight, element_index) image
-   terms and (scalar_index, weight, element_index) right-hand side
-   terms; an implementation may accept an element index in place of lhs
-   and a (scalar_index, element_index) pair in place of a term, as
-   shorthands for a weight of 1. set_elements assigns concrete Group
+   Equation (Section 4.2) with the given image element indices and
+   (scalar_index, element_index) right-hand side terms; an
+   implementation may accept a single element index in place of lhs, as
+   a shorthand for a one-term image. set_elements assigns concrete Group
    values to previously allocated element indices; every allocated
    element *MUST* be set before build() is called. build() returns the
    LinearRelation accumulated so far.
@@ -1682,8 +1677,8 @@ Appendix A.  Imperative construction of a linear relation
    builder = LinearRelationBuilder(group)
    [var_x] = builder.allocate_scalars(1)
    [var_G, var_H, var_X, var_Y] = builder.allocate_elements(4)
-   builder.append_equation([(1, var_X)], [(var_x, 1, var_G)])
-   builder.append_equation([(1, var_Y)], [(var_x, 1, var_H)])
+   builder.append_equation([var_X], [(var_x, var_G)])
+   builder.append_equation([var_Y], [(var_x, var_H)])
    builder.set_elements([(var_G, G), (var_H, H),
                          (var_X, X), (var_Y, Y)])
    relation = builder.build()
