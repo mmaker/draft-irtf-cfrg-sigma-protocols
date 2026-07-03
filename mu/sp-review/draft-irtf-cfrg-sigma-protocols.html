@@ -1602,20 +1602,7 @@ map(instance, scalars) -&gt; list[Group]
 7. return out
 </pre><a href="#section-4.2-13" class="pilcrow">¶</a>
 </div>
-<p id="section-4.2-14">and <code>image(instance)</code> for the evaluation of each equation's left-hand side:<a href="#section-4.2-14" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-4.2-15">
-<pre>
-image(instance) -&gt; list[Group]
-
-1. out = []
-2. for equation in instance.equations:
-3.     acc = instance.Group.identity()
-4.     for element_index in equation.image:
-5.         acc = acc + instance.elements[element_index]
-6.     out.append(acc)
-7. return out
-</pre><a href="#section-4.2-15" class="pilcrow">¶</a>
-</div>
+<p id="section-4.2-14">and <code>image(instance)</code> for the evaluation of each equation's left-hand side: the list of <code>num_equations(instance)</code> group elements whose <code>i</code>-th entry is the sum of <code>instance.elements[element_index]</code> over the image entries of the <code>i</code>-th equation.<a href="#section-4.2-14" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="instance-validation">

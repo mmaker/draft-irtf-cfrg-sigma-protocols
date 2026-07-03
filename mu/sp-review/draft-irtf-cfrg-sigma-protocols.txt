@@ -481,17 +481,9 @@ Table of Contents
    7. return out
 
    and image(instance) for the evaluation of each equation's left-hand
-   side:
-
-   image(instance) -> list[Group]
-
-   1. out = []
-   2. for equation in instance.equations:
-   3.     acc = instance.Group.identity()
-   4.     for element_index in equation.image:
-   5.         acc = acc + instance.elements[element_index]
-   6.     out.append(acc)
-   7. return out
+   side: the list of num_equations(instance) group elements whose i-th
+   entry is the sum of instance.elements[element_index] over the image
+   entries of the i-th equation.
 
 4.3.  Instance validation
 
