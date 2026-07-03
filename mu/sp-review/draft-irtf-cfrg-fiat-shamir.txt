@@ -67,10 +67,7 @@ Copyright Notice
    Provisions Relating to IETF Documents (https://trustee.ietf.org/
    license-info) in effect on the date of publication of this document.
    Please review these documents carefully, as they describe your rights
-   and restrictions with respect to this document.  Code Components
-   extracted from this document must include Revised BSD License text as
-   described in Section 4.e of the Trust Legal Provisions and are
-   provided without warranty as described in the Revised BSD License.
+   and restrictions with respect to this document.
 
 Table of Contents
 
@@ -210,10 +207,9 @@ Table of Contents
    *  a serialization and deserialization procedure for the NARG string
       produced by the prover (Section 6).
 
-   This document specifies byte-oriented hash functions, but the
-   transformation is well-suited to recursive proving, since the in-
-   circuit cost of recomputing the Fiat-Shamir challenges is low.  It is
-   compatible with arithmetization-friendly hash functions (e.g.
+   This transformation is also well-suited for recursive proving, since
+   the in-circuit cost of recomputing the Fiat-Shamir challenges is low.
+   It is compatible with arithmetization-friendly hash functions (e.g.
    Poseidon2 [POSEIDON2]) that operate natively on field elements.  See
    [CO25] for the general construction.
 
@@ -521,20 +517,18 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 3.2.  SHAKE128 duplex sponge
 
    In the SHA-3 family, two extendable-output functions (SHAKEs) are
-   defined over the Keccak-f permutation: SHAKE128 and SHAKE256.  Four
-   other fixed-length hash-function instances (SHA3-224, SHA3-256,
-   SHA3-384, and SHA3-512) are also defined but are out of scope for
-   this document.  A SHAKE is an eXtendable-Output Function (XOF)
-   defined as SHAKE(M, n) where the output is an n-bit string.  The
-   corresponding collision and second-preimage-resistance for SHAKE128
-   are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1
-   of [SHA3]).  This instantiation targets 128-bit security.  The
-   SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of
-   R = 168 bytes and a capacity of 32 bytes (256 bits).
+   defined over the Keccak-f permutation: SHAKE128 and SHAKE256.  A
+   SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n)
+   where the output is an n-bit string.  The corresponding collision and
+   second-preimage-resistance for SHAKE128 are min(n/2,128) and
+   min(n,128) bits, respectively (see Appendix A.1 of [SHA3]).  This
+   instantiation targets 128-bit security.  The SHAKE128 state is a
+   200-byte (1600-bit) string, split into a rate of R = 168 bytes and a
+   capacity of 32 bytes (256 bits).
 
    In this instantiation, every verifier message is the SHAKE128 XOF
    evaluation over the session identifier, the encoded instance, and the
-   encoded prover messages up to end including the current round.  That
+   encoded prover messages up to and including the current round.  That
    is, the i-th verifier message (for 1 <= i <= k) of byte length len_i
    is computed as:
 
@@ -609,14 +603,14 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    last 12 rounds.  Its state is a 200-byte (1600-bit) string, split
    into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits).
    The corresponding collision and second-preimage-resistance are
-   min(n/2,128) and min(n,128) bits for an n-byte output string,
+   min(n/2,128) and min(n,128) bits for an n-bit output string,
    respectively (see [RFC9861]).  This instantiation targets 128-bit
    security.
 
    In this instantiation, every verifier message is the TurboSHAKE128
-   XOF as TurboSHAKE128(M, D, L), where M is the concatenation of the
-   session identifier, the encoded instance, and the encoded prover
-   messages up to and including the current round, D (the domain-
+   XOF evaluation TurboSHAKE128(M, D, L), where M is the concatenation
+   of the session identifier, the encoded instance, and the encoded
+   prover messages up to and including the current round, D (the domain-
    separation byte in the range 0x01 to 0x7F) is fixed to D = 0x1F, the
    default value, and L is the desired output length in bytes [RFC9861].
 
@@ -692,8 +686,9 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    A codec is a set of functions that map prover and verifier messages
    to the hash function's alphabet:
 
-   *  Encoding converts prover messages into the bytes absorbed by the
-      duplex sponge.  Encoding functions *MUST* be prefix-free.
+   *  Encoding converts the instance and the prover messages into the
+      bytes absorbed by the duplex sponge.  Encoding functions *MUST* be
+      prefix-free.
 
    *  Decoding converts squeezed bytes into verifier messages.  Decoding
       *MUST* preserve the uniform distribution (up to a small codec
@@ -705,7 +700,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
 4.1.1.  Byte strings
 
-   Encoding of a N-byte string is the identity function.
+   Encoding of an N-byte string is the identity function.
 
    EncodeBytes(s)
 
@@ -772,7 +767,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    For example, Curve25519 [RFC7748], Ed25519 [RFC8032], ristretto255
    Section 4.4 of [RFC9496] serialize field elements as a fixed-width
-   little-endian integer Similarly, in Section 7.1 of [FIPS204], the
+   little-endian integer.  Similarly, in Section 7.1 of [FIPS204], the
    integer coordinates of lattice vectors are serialized by least-
    significant-byte first.  Other standardized fields instead fix a big-
    endian serialization: for example P-256 [SEC1] and BLS12-381
@@ -859,10 +854,9 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
 4.2.2.  Unsigned integers
 
-   To sample a uniformly random element modulo M of Ns bytes (that is,
-   the smallest integer Ns with 256^Ns >= M), squeeze Ns + 16 bytes by
-   interpreting them as a little-endian non-negative integer via LE2IP,
-   and reduce modulo M.
+   To sample a uniformly random element modulo M, let Ns be the smallest
+   integer with 256^Ns >= M: squeeze Ns + 16 bytes, interpret them as a
+   little-endian non-negative integer via LE2IP, and reduce modulo M.
 
    DecodeUint(buf, M)
 
@@ -886,9 +880,9 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    significantly smaller than 8 * Ns, if M is a power of two, and if M
    is only slightly below a power of 256 (for example, the secp256k1
    scalar field order) where squeezing just Ns bytes and reducing with a
-   single conditional subtraction already has bias below 2^-128.  In
-   such cases, applications *MAY* use an alternative decoding function,
-   provided it meets the following security requirements:
+   single conditional subtraction already has bias of approximately 2^-
+   128.  In such cases, applications *MAY* use an alternative decoding
+   function, provided it meets the following security requirements:
 
    *  The function *MUST* have bias less than the soundness error of the
       interactive argument.
@@ -905,8 +899,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 4.2.3.  Field elements
 
    A field element of a field of order p^m is decoded coordinate by
-   coordinate: each of its m prime-field coordinates is decoded via
-   DecodeUint (Section 4.2.2) with modulus p, starting from the least-
+   coordinate, via DecodeUint (Section 4.2.2), starting from the least-
    significant.  With Ns as in Section 4.1.4, this consumes m * (Ns +
    16) bytes.  A prime field is the case m = 1.
 
@@ -1065,17 +1058,18 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    before any prover message.  The prover and verifier *MUST* absorb
    encode[0](instance), where encode[0] is the first encoding map.  The
    encoded instance *MUST* be non-empty.  While the session identifier
-   of the previous section Section 5.1 fixes the language, the instance
-   selects one of its members.
+   of the previous section (Section 5.1) fixes the language, the
+   instance selects one of its members.
 
    As for every encoding map, encode[0] *MUST* be prefix-free, else a
    malicious prover may be able to satisfy the verification equations on
    a statement it cannot prove (see Section 8.5).  The encoding map
    encode[0] *SHOULD* reuse the encodings of Section 4.1.
 
-   As an example, the sumcheck relation for multilinear polynomials in N
-   variables over the field of size p^m.  For a polynomial committed
-   using the polynomial commitment scheme COM, the relation consists of:
+   As an example, consider the sumcheck relation for multilinear
+   polynomials in N variables over the field of size p^m.  For a
+   polynomial committed using the polynomial commitment scheme COM, the
+   relation consists of:
 
    *  instance (S, C): C the commitment, and S the target sum;
 
@@ -1128,7 +1122,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
 6.2.  Deserialization
 
-   Deserialization of the NARG string consists in reading the prover
+   Deserialization of the NARG string consists of reading the prover
    messages and computing the inverse of the serialization procedure:
    each message is read by consuming a fixed number of bytes, determined
    by its type and the instance, and advancing past them.
@@ -1143,8 +1137,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
 6.2.1.  Byte strings
 
-   An N-byte string whose length is known by the message's type and the
-   instance, deserialization reads N bytes.
+   For an N-byte string whose length is known from the message's type
+   and the instance, deserialization reads N bytes.
 
    DeserializeBytes(input, N)
 
@@ -1284,9 +1278,9 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    XOF evaluations (Section 3.2, Section 3.3) without copying the XOF
    state (see the notation ctx.Copy() in the pseudocode) will yield
-   identical bytes, but incur in a cost quadratic in the number of
-   rounds.  Implementations *SHOULD* instead maintain the incremental
-   duplex sponge state of Section 3.1.
+   identical bytes, but incur a cost quadratic in the number of rounds.
+   Implementations *SHOULD* instead maintain the incremental duplex
+   sponge state of Section 3.1.
 
 8.  Security considerations
 
@@ -1371,7 +1365,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    each proof from a cryptographically secure entropy source, as noted
    in Section 1.  Reusing the same randomness (or correlated randomness)
    across two proofs will compromise zero-knowledge.  Implementations
-   *SHOULD* sample different random coins for each proof using the
+   *MUST* sample independent random coins for each proof using the
    operating system's secure entropy source.
 
 8.4.3.  Quantum adversaries
@@ -1402,7 +1396,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    of critical security vulnerabilities, often grouped under the term
    _weak Fiat-Shamir transformation_ [BPW16].  In each of them, the
    cryptographic hash function was not provided the full statement being
-   proven.  A malicious prover then can compute the verifier message
+   proven.  A malicious prover can then compute the verifier message
    first, and choose the omitted part of the instance afterwards so that
    the verification equation is satisfied on a statement whose witness
    it does not hold.
@@ -1413,12 +1407,12 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    obtains a challenge c, and replies with a scalar f.  The verifier
    accepts if the verification equations hold: f * G == A + c * X and f
    * H == B + c * Y.  Suppose the challenge c is derived only by
-   absorbing (A, B) and omitting the instance (G, H, X, Y) (cf
-   Section 8.5).  A malicious prover can pick A, B, H, and f at random,
-   derive c, and then set X and Y to satisfy the verification equations.
-   Verification passes, yet no single x satisfies both X = x * G and Y =
-   x * H.  A false statement has been proven.  Other examples are
-   available in [DMWG23].
+   absorbing (A, B) and omitting the instance (G, H, X, Y).  A malicious
+   prover can pick A, B, H, and f at random, derive c, and then set X
+   and Y to satisfy the verification equations.  Verification passes,
+   yet no single x satisfies both X = x * G and Y = x * H.  A false
+   statement has been proven.  Other examples are available in [DMWG23]
+   [CVE-2022-29566].
 
    All security guarantees are conditioned on the instance being part of
    the relation being proven.  The Fiat-Shamir transformation does not
@@ -1430,15 +1424,16 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 8.6.  Implementation guidance
 
    The Fiat-Shamir transformation has historically led to a number of
-   critical security vulnerabilities, especially due to incorrect
-   implementations involving out-of-order (or missing) prover messages.
+   critical security vulnerabilities.  Some incorrect implementations
+   involve out-of-order (or missing) prover messages [CVE-2024-45039]
+   [CVE-2026-46654].
 
    Test vectors can help confirm that honestly-generated proofs verify,
    but such tests exercise only completeness.  Negative testing will
    help exercise the rejection paths too.  Some such examples are:
    tampering with a valid NARG string to cause verification to fail, by
-   flipping, appending, or prepending bytes [CVE-2024-42461], and by
-   replacing each prover message in turn with a different value.
+   flipping, appending, or prepending bytes, and by replacing each
+   prover message in turn with a different value.
 
    Absorbing a prover message and serializing it to (or reading it from)
    the NARG string should be performed within the same function call, to
@@ -1497,10 +1492,21 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
               Duplex Sponges", 2025,
               <https://eprint.iacr.org/2025/536.pdf>.
 
-   [CVE-2024-42461]
-              "CVE-2024-42461: ECDSA signature malleability from BER-
-              encoded signatures in the elliptic package", 2024,
-              <https://nvd.nist.gov/vuln/detail/CVE-2024-42461>.
+   [CVE-2022-29566]
+              "CVE-2022-29566: Fiat-Shamir hashing omits public values
+              from the statement and the proof in Bulletproofs (Frozen
+              Heart)", 2022,
+              <https://nvd.nist.gov/vuln/detail/CVE-2022-29566>.
+
+   [CVE-2024-45039]
+              "CVE-2024-45039: gnark Groth16 commitment extension
+              unsound for more than one commitment", 2024,
+              <https://nvd.nist.gov/vuln/detail/CVE-2024-45039>.
+
+   [CVE-2026-46654]
+              "CVE-2026-46654: Plonky3 Fiat-Shamir challenge collision
+              from a non-binding transcript", 2026,
+              <https://nvd.nist.gov/vuln/detail/CVE-2026-46654>.
 
    [DMWG23]   Dao, Q., Miller, J., Wright, O., and P. Grubbs, "Weak
               Fiat-Shamir Attacks on Modern Proof Systems", 2023,
@@ -1510,12 +1516,6 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
               "Duplexing the Sponge: Single-Pass Authenticated
               Encryption and Other Applications", 2011,
               <https://keccak.team/files/SpongeDuplex.pdf>.
-
-   [FIPS203]  National Institute of Standards and Technology (NIST),
-              "Module-Lattice-Based Key-Encapsulation Mechanism
-              Standard", FIPS 203, 2024,
-              <https://nvlpubs.nist.gov/nistpubs/FIPS/
-              NIST.FIPS.203.pdf>.
 
    [FIPS204]  National Institute of Standards and Technology (NIST),
               "Module-Lattice-Based Digital Signature Standard",
