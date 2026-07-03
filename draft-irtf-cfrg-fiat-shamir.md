@@ -3,7 +3,7 @@ title: "Fiat-Shamir Transformation"
 category: info
 
 docname: draft-irtf-cfrg-fiat-shamir-latest
-submissiontype: IETF
+submissiontype: IRTF
 number:
 date:
 consensus: true
@@ -44,14 +44,6 @@ normative:
         ins: Standards for Efficient Cryptography Group (SECG)
 
 informative:
-  FIPS203:
-    title: "Module-Lattice-Based Key-Encapsulation Mechanism Standard"
-    target: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf
-    date: 2024
-    seriesinfo:
-      "FIPS": "203"
-    author:
-      - org: "National Institute of Standards and Technology (NIST)"
   FIPS204:
     title: "Module-Lattice-Based Digital Signature Standard"
     target: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf
@@ -143,10 +135,18 @@ informative:
     date: 2024
     author:
       - org: "Consensys"
-  CVE-2024-42461:
-    title: "CVE-2024-42461: ECDSA signature malleability from BER-encoded signatures in the elliptic package"
-    target: https://nvd.nist.gov/vuln/detail/CVE-2024-42461
+  CVE-2022-29566:
+    title: "CVE-2022-29566: Fiat-Shamir hashing omits public values from the statement and the proof in Bulletproofs (Frozen Heart)"
+    target: https://nvd.nist.gov/vuln/detail/CVE-2022-29566
+    date: 2022
+  CVE-2024-45039:
+    title: "CVE-2024-45039: gnark Groth16 commitment extension unsound for more than one commitment"
+    target: https://nvd.nist.gov/vuln/detail/CVE-2024-45039
     date: 2024
+  CVE-2026-46654:
+    title: "CVE-2026-46654: Plonky3 Fiat-Shamir challenge collision from a non-binding transcript"
+    target: https://nvd.nist.gov/vuln/detail/CVE-2026-46654
+    date: 2026
 
 --- abstract
 
@@ -175,7 +175,7 @@ Both the non-interactive prover and verifier rely on:
 - a set of codecs, describing how each prover and verifier message talk to the duplex sponge ({{codecs}});
 - a serialization and deserialization procedure for the NARG string produced by the prover ({{narg-string}}).
 
-This document specifies byte-oriented hash functions, but the transformation is well-suited to recursive proving, since the in-circuit cost of recomputing the Fiat-Shamir challenges is low. It is compatible with arithmetization-friendly hash functions (e.g. Poseidon2 {{POSEIDON2}}) that operate natively on field elements. See {{CO25}} for the general construction.
+This transformation is also well-suited for recursive proving, since the in-circuit cost of recomputing the Fiat-Shamir challenges is low. It is compatible with arithmetization-friendly hash functions (e.g. Poseidon2 {{POSEIDON2}}) that operate natively on field elements. See {{CO25}} for the general construction.
 
 Other types of non-interactive transformations (with and without random oracles) are possible, but outside the scope of this specification.
 
@@ -396,9 +396,9 @@ Guidance on how to produce a 32-byte `session_id` is given in {{session-id}}; it
 
 ## SHAKE128 duplex sponge {#suite-shake128}
 
-In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the `Keccak-f` permutation: SHAKE128 and SHAKE256. Four other fixed-length hash-function instances (SHA3-224, SHA3-256, SHA3-384, and SHA3-512) are also defined but are out of scope for this document. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of {{SHA3}}). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits).
+In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the `Keccak-f` permutation: SHAKE128 and SHAKE256. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of {{SHA3}}). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits).
 
-In this instantiation, every verifier message is the SHAKE128 XOF evaluation over the session identifier, the encoded instance, and the encoded prover messages up to end including the current round. That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
+In this instantiation, every verifier message is the SHAKE128 XOF evaluation over the session identifier, the encoded instance, and the encoded prover messages up to and including the current round. That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
 
 ~~~
 verifier_msg[i] := decode[i](SHAKE128(
@@ -466,9 +466,9 @@ Output: a uniformly-distributed random n-byte string
 
 ## TurboSHAKE128 duplex sponge {#suite-turboshake128}
 
-TurboSHAKE128 {{!RFC9861}} is an eXtendable-Output Function (XOF) built on `Keccak-p[1600, 12]`, the `Keccak-f[1600]` permutation reduced to its last 12 rounds.  Its state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an `n`-byte output string, respectively (see {{!RFC9861}}). This instantiation targets 128-bit security.
+TurboSHAKE128 {{!RFC9861}} is an eXtendable-Output Function (XOF) built on `Keccak-p[1600, 12]`, the `Keccak-f[1600]` permutation reduced to its last 12 rounds. Its state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an `n`-bit output string, respectively (see {{!RFC9861}}). This instantiation targets 128-bit security.
 
-In this instantiation, every verifier message is the TurboSHAKE128 XOF as `TurboSHAKE128(M, D, L)`, where `M` is the concatenation of the session identifier, the encoded instance, and the encoded prover messages up to and including the current round, `D` (the domain-separation byte in the range `0x01` to `0x7F`) is fixed to `D = 0x1F`, the default value, and `L` is the desired output length in bytes {{!RFC9861}}.
+In this instantiation, every verifier message is the TurboSHAKE128 XOF evaluation `TurboSHAKE128(M, D, L)`, where `M` is the concatenation of the session identifier, the encoded instance, and the encoded prover messages up to and including the current round, `D` (the domain-separation byte in the range `0x01` to `0x7F`) is fixed to `D = 0x1F`, the default value, and `L` is the desired output length in bytes {{!RFC9861}}.
 
 That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
 
@@ -540,7 +540,7 @@ Output: a uniformly-distributed random n-byte string
 
 A codec is a set of functions that map prover and verifier messages to the hash function's alphabet:
 
-- Encoding converts prover messages into the bytes absorbed by the duplex sponge. Encoding functions **MUST** be prefix-free.
+- Encoding converts the instance and the prover messages into the bytes absorbed by the duplex sponge. Encoding functions **MUST** be prefix-free.
 - Decoding converts squeezed bytes into verifier messages. Decoding **MUST** preserve the uniform distribution (up to a small codec error).
 
 ## Encoding into byte strings {#encoding-bytes}
@@ -549,7 +549,7 @@ All encoding functions **MUST** be prefix-free.
 
 ### Byte strings {#encoding-varlen-string}
 
-Encoding of a `N`-byte string is the identity function.
+Encoding of an `N`-byte string is the identity function.
 
 ~~~
 EncodeBytes(s)
@@ -605,7 +605,7 @@ This section specifies the _default_ encoding of a finite field of order `q = p^
 
 If the field already has a canonical serialization fixed by a standard, that serialization **SHOULD** be used in place of the default specified below, and it **MUST** be prefix-free. The default below encodes each prime-field coordinate as a fixed-width little-endian integer via `EncodeUint` ({{encoding-uint}}).
 
-For example, Curve25519 {{?RFC7748}}, Ed25519 {{?RFC8032}}, ristretto255 {{Section 4.4 of ?RFC9496}} serialize field elements as a fixed-width little-endian integer  Similarly, in Section 7.1 of {{FIPS204}}, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 {{SEC1}} and BLS12-381 {{?I-D.irtf-cfrg-pairing-friendly-curves}} serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization **MUST** be used in place: a prime-field coordinate `x` in `[0, p)` is encoded as `I2OSP(x, Ns)`, with `Ns` the smallest integer such that `256^Ns >= p`, in place of the default `LE(x, Ns)`. As with the default, deserialization **MUST** reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than `p`). When the chosen field serialization departs from the above rule, that choice is part of the codec identity and **MUST** be reflected in the session tag (see {{session-id}}).
+For example, Curve25519 {{?RFC7748}}, Ed25519 {{?RFC8032}}, ristretto255 {{Section 4.4 of ?RFC9496}} serialize field elements as a fixed-width little-endian integer. Similarly, in Section 7.1 of {{FIPS204}}, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 {{SEC1}} and BLS12-381 {{?I-D.irtf-cfrg-pairing-friendly-curves}} serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization **MUST** be used in place: a prime-field coordinate `x` in `[0, p)` is encoded as `I2OSP(x, Ns)`, with `Ns` the smallest integer such that `256^Ns >= p`, in place of the default `LE(x, Ns)`. As with the default, deserialization **MUST** reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than `p`). When the chosen field serialization departs from the above rule, that choice is part of the codec identity and **MUST** be reflected in the session tag (see {{session-id}}).
 
 With respect to a fixed basis, a field element is represented by its `m` coordinates in the prime field, each an integer in `[0, p)`. It is encoded as the concatenation of the per-coordinate encodings produced by `EncodeUint` ({{encoding-uint}}) with modulus `p`. Let `Ns` be the smallest integer with `256^Ns >= p`; a field element encodes to `m * Ns` bytes.
 
@@ -664,7 +664,7 @@ Output: out, a byte string of length N
 
 ### Unsigned integers {#decoding-uint}
 
-To sample a uniformly random element modulo `M` of `Ns` bytes (that is, the smallest integer `Ns` with `256^Ns >= M`), squeeze `Ns + 16` bytes by interpreting them as a little-endian non-negative integer via `LE2IP`, and reduce modulo `M`.
+To sample a uniformly random element modulo `M`, let `Ns` be the smallest integer with `256^Ns >= M`: squeeze `Ns + 16` bytes, interpret them as a little-endian non-negative integer via `LE2IP`, and reduce modulo `M`.
 
 ~~~
 DecodeUint(buf, M)
@@ -682,7 +682,7 @@ Output: out, an integer in the range [0, M)
 
 The 16 extra bytes bound the statistical distance between the reduced value and the uniform distribution over `[0, M)` to `2^-128`, matching {{Section 5 of ?RFC9380}}. More generally, sampling `Ns + n` extra bytes bounds the bias to `2^-8n`; an instantiation targeting a security level of `k` bits **SHOULD** squeeze `k/8` extra bytes.
 
-In three cases this approach is inefficient: if `log2(M)` is significantly smaller than `8 * Ns`, if `M` is a power of two, and if `M` is only slightly below a power of `256` (for example, the secp256k1 scalar field order) where squeezing just `Ns` bytes and reducing with a single conditional subtraction already has bias below `2^-128`.
+In three cases this approach is inefficient: if `log2(M)` is significantly smaller than `8 * Ns`, if `M` is a power of two, and if `M` is only slightly below a power of `256` (for example, the secp256k1 scalar field order) where squeezing just `Ns` bytes and reducing with a single conditional subtraction already has bias of approximately `2^-128`.
 In such cases, applications **MAY** use an alternative decoding function, provided it meets the following security requirements:
 
 -  The function **MUST** have bias less than the soundness error of the interactive argument.
@@ -693,7 +693,7 @@ Similar requirements and a longer discussion are available in {{Section 5 of ?RF
 
 ### Field elements {#decoding-field}
 
-A field element of a field of order `p^m` is decoded coordinate by coordinate: each of its `m` prime-field coordinates is decoded via `DecodeUint` ({{decoding-uint}}) with modulus `p`, starting from the least-significant. With `Ns` as in {{encoding-field}}, this consumes `m * (Ns + 16)` bytes. A prime field is the case `m = 1`.
+A field element of a field of order `p^m` is decoded coordinate by coordinate, via `DecodeUint` ({{decoding-uint}}), starting from the least-significant. With `Ns` as in {{encoding-field}}, this consumes `m * (Ns + 16)` bytes. A prime field is the case `m = 1`.
 
 ~~~
 DecodeField(buf, p, m)
@@ -728,7 +728,7 @@ Neither the session identifier nor the instance is part of the NARG string: the 
 
 The session identifier is a 32-byte string that identifies the context in which the non-interactive argument is used. An application **MAY** set it to any 32-byte string it derives by its own unambiguous means; the procedure `DeriveSessionID` below is the **RECOMMENDED** way to obtain one from a human-meaningful `tag`.
 
-For a duplex sponge operating over bytes, the session identifier is derived from a `tag` via the procedure `DeriveSessionID`. The `tag` is a byte string whose encoding as a sequence of bytes **MUST** be specified unambiguously, so that every implementation reproduces identical bytes.  It is **RECOMMENDED** the `tag` be a US-ASCII string, without byte-order mark at the beginning, nor `0x00` byte termination.
+For a duplex sponge operating over bytes, the session identifier is derived from a `tag` via the procedure `DeriveSessionID`. The `tag` is a byte string whose encoding as a sequence of bytes **MUST** be specified unambiguously, so that every implementation reproduces identical bytes. It is **RECOMMENDED** the `tag` be a US-ASCII string, without byte-order mark at the beginning, nor `0x00` byte termination.
 
 When the `tag` is composed of several fields (for example the components required below), those fields **MUST** be combined unambiguously, so that no two distinct tuples of field values yield the same byte string. Using fixed-width fields or an unambiguous delimiter is sufficient; concatenating variable-length fields without separation is not, because distinct tuples can collide (for example `("SV1", "22")` and `("SV12", "2")` both yield `SV122`), which would cause two different contexts to share a session identifier.
 
@@ -783,11 +783,11 @@ where `xx` is the two-digit version number, `hashID` is the hash identifier, and
 The instance is input to the non-interactive prover and the non-interactive verifier; it fixes the specific statement being proven.
 
 The instance is the first value absorbed after `Init(session_id)` and before any prover message. The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map.
-The encoded instance **MUST** be non-empty. While the session identifier of the previous section {{session-id}} fixes the language, the instance selects one of its members.
+The encoded instance **MUST** be non-empty. While the session identifier of the previous section ({{session-id}}) fixes the language, the instance selects one of its members.
 
 As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the encodings of {{encoding-bytes}}.
 
-As an example, the sumcheck relation for multilinear polynomials in `N` variables over the field of size `p^m`. For a polynomial committed using the polynomial commitment scheme `COM`, the relation consists of:
+As an example, consider the sumcheck relation for multilinear polynomials in `N` variables over the field of size `p^m`. For a polynomial committed using the polynomial commitment scheme `COM`, the relation consists of:
 
 - instance `(S, C)`: `C` the commitment, and `S` the target sum;
 - witness `(F, r)`: `F` is the multilinear polynomial in `N` variables, and `r` is the commitment opening information.
@@ -836,13 +836,13 @@ Serialization is the concatenation of the byte encoding of each prover message, 
 
 ## Deserialization
 
-Deserialization of the NARG string consists in reading the prover messages and computing the inverse of the serialization procedure: each message is read by consuming a fixed number of bytes, determined by its type and the instance, and advancing past them.
+Deserialization of the NARG string consists of reading the prover messages and computing the inverse of the serialization procedure: each message is read by consuming a fixed number of bytes, determined by its type and the instance, and advancing past them.
 
 Verification **MUST** fail if any of the prover messages cannot be deserialized successfully. After the last expected prover message has been read, the verifier **MUST** verify that no bytes remain. Bytes that are never read or that are decoded despite being invalid will cause the proof to be malleable: an adversary will be able to malleate a valid proof to obtain a second, distinct accepting proof for the same statement.
 
 ### Byte strings {#deserialize-byte-strings}
 
-An `N`-byte string whose length is known by the message's type and the instance, deserialization reads `N` bytes.
+For an `N`-byte string whose length is known from the message's type and the instance, deserialization reads `N` bytes.
 
 ~~~
 DeserializeBytes(input, N)
@@ -938,13 +938,13 @@ Read the next `Ne` bytes and convert them to a group element using the group's e
 
 Note that for elliptic curves defined in {{SEC1}}, decoding is the Octet-String-to-Elliptic-Curve-Point conversion, which checks that the encoding is well-formed and that the point lies on the curve, and returns "invalid" otherwise. The single-byte `0x00` encoding of the identity is not a valid `Ne`-byte input and **SHOULD** be rejected.
 
-# Efficiency considerations
+# Efficiency considerations {#efficiency}
 
 For both codecs and serialization, batch algorithms should be preferred when available, because they amortize per-element cost over a whole sequence. For example, serializing a batch of compressed elliptic-curve points requires only one modular inversion for the entire batch (via Montgomery's trick) rather than one per point, the dominant cost in point compression. Deserialization does not batch in the same way, since point decompression requires a per-element square root.
 
 `Init(session_id)` (see {{session-id}}) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of the duplex sponge state, instead of initializing it every time. In the {{suite-shake128}} and {{suite-turboshake128}}, the padded session identifier fills exactly one rate block ({{init}}), saving one invocation of the permutation function per execution. Similarly, `DeriveSessionID` can be precomputed when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing `encode[0](instance)`.
 
-XOF evaluations ({{suite-shake128}}, {{suite-turboshake128}}) without copying the XOF state (see the notation `ctx.Copy()` in the pseudocode) will yield identical bytes, but incur in a cost quadratic in the number of rounds. Implementations **SHOULD** instead maintain the incremental duplex sponge state of {{interface}}.
+XOF evaluations ({{suite-shake128}}, {{suite-turboshake128}}) without copying the XOF state (see the notation `ctx.Copy()` in the pseudocode) will yield identical bytes, but incur a cost quadratic in the number of rounds. Implementations **SHOULD** instead maintain the incremental duplex sponge state of {{interface}}.
 
 # Security considerations
 
@@ -986,7 +986,7 @@ If the interactive proof is honest-verifier zero-knowledge, then so is the non-i
 
 The additive zero-knowledge loss introduced by the transformation is linear in the number of queries the adversary makes to the random oracle {{CO25}}.
 
-Zero-knowledge holds only when the prover draws fresh randomness for each proof from a cryptographically secure entropy source, as noted in {{introduction}}. Reusing the same randomness (or correlated randomness) across two proofs will compromise zero-knowledge. Implementations **SHOULD** sample different random coins for each proof using the operating system's secure entropy source.
+Zero-knowledge holds only when the prover draws fresh randomness for each proof from a cryptographically secure entropy source, as noted in {{introduction}}. Reusing the same randomness (or correlated randomness) across two proofs will compromise zero-knowledge. Implementations **MUST** sample independent random coins for each proof using the operating system's secure entropy source.
 
 ### Quantum adversaries
 
@@ -1002,17 +1002,17 @@ To provide knowledge soundness and zero-knowledge, stronger capabilities than in
 
 ## Instance encoding
 
-Incorrect encoding of the instance has historically led to a number of critical security vulnerabilities, often grouped under the term *weak Fiat-Shamir transformation* {{BPW16}}. In each of them, the cryptographic hash function was not provided the full statement being proven. A malicious prover then can compute the verifier message first, and choose the omitted part of the instance afterwards so that the verification equation is satisfied on a statement whose witness it does not hold.
+Incorrect encoding of the instance has historically led to a number of critical security vulnerabilities, often grouped under the term *weak Fiat-Shamir transformation* {{BPW16}}. In each of them, the cryptographic hash function was not provided the full statement being proven. A malicious prover can then compute the verifier message first, and choose the omitted part of the instance afterwards so that the verification equation is satisfied on a statement whose witness it does not hold.
 
-One such example is in {{BPW16}}. A Chaum-Pedersen proof of equality for an instance `(G, H, X, Y)` proves knowledge of a witness `x` such that `X = x * G` and `Y = x * H`. The prover sends commitments `(A, B)`, obtains a challenge `c`, and replies with a scalar `f`. The verifier accepts if the verification equations hold: `f * G == A + c * X` and `f * H == B + c * Y`. Suppose the challenge `c` is derived only by absorbing `(A, B)` and omitting the instance `(G, H, X, Y)` (cf {{instance-encoding}}). A malicious prover can pick `A`, `B`, `H`, and `f` at random, derive `c`, and then set `X` and `Y` to satisfy the verification equations. Verification passes, yet no single `x` satisfies both `X = x * G` and `Y = x * H`. A false statement has been proven. Other examples are available in {{DMWG23}}.
+One such example is in {{BPW16}}. A Chaum-Pedersen proof of equality for an instance `(G, H, X, Y)` proves knowledge of a witness `x` such that `X = x * G` and `Y = x * H`. The prover sends commitments `(A, B)`, obtains a challenge `c`, and replies with a scalar `f`. The verifier accepts if the verification equations hold: `f * G == A + c * X` and `f * H == B + c * Y`. Suppose the challenge `c` is derived only by absorbing `(A, B)` and omitting the instance `(G, H, X, Y)`. A malicious prover can pick `A`, `B`, `H`, and `f` at random, derive `c`, and then set `X` and `Y` to satisfy the verification equations. Verification passes, yet no single `x` satisfies both `X = x * G` and `Y = x * H`. A false statement has been proven. Other examples are available in {{DMWG23}} {{CVE-2022-29566}}.
 
 All security guarantees are conditioned on the instance being part of the relation being proven. The Fiat-Shamir transformation does not verify that the statement being proven is well-formed, or valid. If the instance or the witness provided as input are not in the relation (e.g. they are malformed), the output is undefined and no security guarantee is provided.
 
 ## Implementation guidance {#implementation-guidance}
 
-The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities, especially due to incorrect implementations involving out-of-order (or missing) prover messages.
+The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities. Some incorrect implementations involve out-of-order (or missing) prover messages {{CVE-2024-45039}} {{CVE-2026-46654}}.
 
-Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes {{CVE-2024-42461}}, and by replacing each prover message in turn with a different value.
+Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes, and by replacing each prover message in turn with a different value.
 
 Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered.
 
