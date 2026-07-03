@@ -1051,7 +1051,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù &amp; Yun</td>
-<td class="center">Expires 3 January 2027</td>
+<td class="center">Expires 4 January 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1064,12 +1064,12 @@ svg {
 <dd class="internet-draft">draft-irtf-cfrg-fiat-shamir-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-07-02" class="published">2 July 2026</time>
+<time datetime="2026-07-03" class="published">3 July 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-01-03">3 January 2027</time></dd>
+<dd class="expires"><time datetime="2027-01-04">4 January 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1124,7 +1124,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 3 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 4 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1141,10 +1141,7 @@ svg {
             (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
             publication of this document. Please review these documents
             carefully, as they describe your rights and restrictions with
-            respect to this document. Code Components extracted from this
-            document must include Revised BSD License text as described in
-            Section 4.e of the Trust Legal Provisions and are provided without
-            warranty as described in the Revised BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+            respect to this document.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="toc">
@@ -1466,7 +1463,7 @@ svg {
           <p id="section-1-7.3.1">a serialization and deserialization procedure for the NARG string produced by the prover (<a href="#narg-string" class="auto internal xref">Section 6</a>).<a href="#section-1-7.3.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
-<p id="section-1-8">This document specifies byte-oriented hash functions, but the transformation is well-suited to recursive proving, since the in-circuit cost of recomputing the Fiat-Shamir challenges is low. It is compatible with arithmetization-friendly hash functions (e.g. Poseidon2 <span>[<a href="#POSEIDON2" class="cite xref">POSEIDON2</a>]</span>) that operate natively on field elements. See <span>[<a href="#CO25" class="cite xref">CO25</a>]</span> for the general construction.<a href="#section-1-8" class="pilcrow">¶</a></p>
+<p id="section-1-8">This transformation is also well-suited for recursive proving, since the in-circuit cost of recomputing the Fiat-Shamir challenges is low. It is compatible with arithmetization-friendly hash functions (e.g. Poseidon2 <span>[<a href="#POSEIDON2" class="cite xref">POSEIDON2</a>]</span>) that operate natively on field elements. See <span>[<a href="#CO25" class="cite xref">CO25</a>]</span> for the general construction.<a href="#section-1-8" class="pilcrow">¶</a></p>
 <p id="section-1-9">Other types of non-interactive transformations (with and without random oracles) are possible, but outside the scope of this specification.<a href="#section-1-9" class="pilcrow">¶</a></p>
 <span id="name-non-interactive-prover-for-"></span><div id="fig-fiat-shamir-prover">
 <figure id="figure-1">
@@ -1951,8 +1948,8 @@ Output: n, a non-negative integer with 0 &lt;= n &lt; 256^w
         <h3 id="name-shake128-duplex-sponge">
 <a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-shake128-duplex-sponge" class="section-name selfRef">SHAKE128 duplex sponge</a>
         </h3>
-<p id="section-3.2-1">In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the <code>Keccak-f</code> permutation: SHAKE128 and SHAKE256. Four other fixed-length hash-function instances (SHA3-224, SHA3-256, SHA3-384, and SHA3-512) are also defined but are out of scope for this document. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of <span>[<a href="#SHA3" class="cite xref">SHA3</a>]</span>). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of <code>R = 168</code> bytes and a capacity of 32 bytes (256 bits).<a href="#section-3.2-1" class="pilcrow">¶</a></p>
-<p id="section-3.2-2">In this instantiation, every verifier message is the SHAKE128 XOF evaluation over the session identifier, the encoded instance, and the encoded prover messages up to end including the current round. That is, the <code>i</code>-th verifier message (for <code>1 &lt;= i &lt;= k</code>) of byte length <code>len_i</code> is computed as:<a href="#section-3.2-2" class="pilcrow">¶</a></p>
+<p id="section-3.2-1">In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the <code>Keccak-f</code> permutation: SHAKE128 and SHAKE256. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of <span>[<a href="#SHA3" class="cite xref">SHA3</a>]</span>). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of <code>R = 168</code> bytes and a capacity of 32 bytes (256 bits).<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.2-2">In this instantiation, every verifier message is the SHAKE128 XOF evaluation over the session identifier, the encoded instance, and the encoded prover messages up to and including the current round. That is, the <code>i</code>-th verifier message (for <code>1 &lt;= i &lt;= k</code>) of byte length <code>len_i</code> is computed as:<a href="#section-3.2-2" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3.2-3">
 <pre>
 verifier_msg[i] := decode[i](SHAKE128(
@@ -2039,8 +2036,8 @@ Output: a uniformly-distributed random n-byte string
         <h3 id="name-turboshake128-duplex-sponge">
 <a href="#section-3.3" class="section-number selfRef">3.3. </a><a href="#name-turboshake128-duplex-sponge" class="section-name selfRef">TurboSHAKE128 duplex sponge</a>
         </h3>
-<p id="section-3.3-1">TurboSHAKE128 <span>[<a href="#RFC9861" class="cite xref">RFC9861</a>]</span> is an eXtendable-Output Function (XOF) built on <code>Keccak-p[1600, 12]</code>, the <code>Keccak-f[1600]</code> permutation reduced to its last 12 rounds.  Its state is a 200-byte (1600-bit) string, split into a rate of <code>R = 168</code> bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an <code>n</code>-byte output string, respectively (see <span>[<a href="#RFC9861" class="cite xref">RFC9861</a>]</span>). This instantiation targets 128-bit security.<a href="#section-3.3-1" class="pilcrow">¶</a></p>
-<p id="section-3.3-2">In this instantiation, every verifier message is the TurboSHAKE128 XOF as <code>TurboSHAKE128(M, D, L)</code>, where <code>M</code> is the concatenation of the session identifier, the encoded instance, and the encoded prover messages up to and including the current round, <code>D</code> (the domain-separation byte in the range <code>0x01</code> to <code>0x7F</code>) is fixed to <code>D = 0x1F</code>, the default value, and <code>L</code> is the desired output length in bytes <span>[<a href="#RFC9861" class="cite xref">RFC9861</a>]</span>.<a href="#section-3.3-2" class="pilcrow">¶</a></p>
+<p id="section-3.3-1">TurboSHAKE128 <span>[<a href="#RFC9861" class="cite xref">RFC9861</a>]</span> is an eXtendable-Output Function (XOF) built on <code>Keccak-p[1600, 12]</code>, the <code>Keccak-f[1600]</code> permutation reduced to its last 12 rounds. Its state is a 200-byte (1600-bit) string, split into a rate of <code>R = 168</code> bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an <code>n</code>-bit output string, respectively (see <span>[<a href="#RFC9861" class="cite xref">RFC9861</a>]</span>). This instantiation targets 128-bit security.<a href="#section-3.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.3-2">In this instantiation, every verifier message is the TurboSHAKE128 XOF evaluation <code>TurboSHAKE128(M, D, L)</code>, where <code>M</code> is the concatenation of the session identifier, the encoded instance, and the encoded prover messages up to and including the current round, <code>D</code> (the domain-separation byte in the range <code>0x01</code> to <code>0x7F</code>) is fixed to <code>D = 0x1F</code>, the default value, and <code>L</code> is the desired output length in bytes <span>[<a href="#RFC9861" class="cite xref">RFC9861</a>]</span>.<a href="#section-3.3-2" class="pilcrow">¶</a></p>
 <p id="section-3.3-3">That is, the <code>i</code>-th verifier message (for <code>1 &lt;= i &lt;= k</code>) of byte length <code>len_i</code> is computed as:<a href="#section-3.3-3" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3.3-4">
 <pre>
@@ -2133,7 +2130,7 @@ Output: a uniformly-distributed random n-byte string
 <p id="section-4-1">A codec is a set of functions that map prover and verifier messages to the hash function's alphabet:<a href="#section-4-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-4-2.1">
-          <p id="section-4-2.1.1">Encoding converts prover messages into the bytes absorbed by the duplex sponge. Encoding functions <strong>MUST</strong> be prefix-free.<a href="#section-4-2.1.1" class="pilcrow">¶</a></p>
+          <p id="section-4-2.1.1">Encoding converts the instance and the prover messages into the bytes absorbed by the duplex sponge. Encoding functions <strong>MUST</strong> be prefix-free.<a href="#section-4-2.1.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-4-2.2">
           <p id="section-4-2.2.1">Decoding converts squeezed bytes into verifier messages. Decoding <strong>MUST</strong> preserve the uniform distribution (up to a small codec error).<a href="#section-4-2.2.1" class="pilcrow">¶</a></p>
@@ -2150,7 +2147,7 @@ Output: a uniformly-distributed random n-byte string
           <h4 id="name-byte-strings">
 <a href="#section-4.1.1" class="section-number selfRef">4.1.1. </a><a href="#name-byte-strings" class="section-name selfRef">Byte strings</a>
           </h4>
-<p id="section-4.1.1-1">Encoding of a <code>N</code>-byte string is the identity function.<a href="#section-4.1.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.1.1-1">Encoding of an <code>N</code>-byte string is the identity function.<a href="#section-4.1.1-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.1.1-2">
 <pre>
 EncodeBytes(s)
@@ -2216,7 +2213,7 @@ Output: out, an Ns-byte string
           </h4>
 <p id="section-4.1.4-1">This section specifies the <em>default</em> encoding of a finite field of order <code>q = p^m</code>, where <code>p</code> is the prime characteristic and <code>m &gt;= 1</code> is the extension degree.<a href="#section-4.1.4-1" class="pilcrow">¶</a></p>
 <p id="section-4.1.4-2">If the field already has a canonical serialization fixed by a standard, that serialization <strong>SHOULD</strong> be used in place of the default specified below, and it <strong>MUST</strong> be prefix-free. The default below encodes each prime-field coordinate as a fixed-width little-endian integer via <code>EncodeUint</code> (<a href="#encoding-uint" class="auto internal xref">Section 4.1.3</a>).<a href="#section-4.1.4-2" class="pilcrow">¶</a></p>
-<p id="section-4.1.4-3">For example, Curve25519 <span>[<a href="#RFC7748" class="cite xref">RFC7748</a>]</span>, Ed25519 <span>[<a href="#RFC8032" class="cite xref">RFC8032</a>]</span>, ristretto255 <span><a href="https://rfc-editor.org/rfc/rfc9496#section-4.4" class="relref">Section 4.4</a> of [<a href="#RFC9496" class="cite xref">RFC9496</a>]</span> serialize field elements as a fixed-width little-endian integer  Similarly, in Section 7.1 of <span>[<a href="#FIPS204" class="cite xref">FIPS204</a>]</span>, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span> and BLS12-381 <span>[<a href="#I-D.irtf-cfrg-pairing-friendly-curves" class="cite xref">I-D.irtf-cfrg-pairing-friendly-curves</a>]</span> serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization <strong>MUST</strong> be used in place: a prime-field coordinate <code>x</code> in <code>[0, p)</code> is encoded as <code>I2OSP(x, Ns)</code>, with <code>Ns</code> the smallest integer such that <code>256^Ns &gt;= p</code>, in place of the default <code>LE(x, Ns)</code>. As with the default, deserialization <strong>MUST</strong> reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than <code>p</code>). When the chosen field serialization departs from the above rule, that choice is part of the codec identity and <strong>MUST</strong> be reflected in the session tag (see <a href="#session-id" class="auto internal xref">Section 5.1</a>).<a href="#section-4.1.4-3" class="pilcrow">¶</a></p>
+<p id="section-4.1.4-3">For example, Curve25519 <span>[<a href="#RFC7748" class="cite xref">RFC7748</a>]</span>, Ed25519 <span>[<a href="#RFC8032" class="cite xref">RFC8032</a>]</span>, ristretto255 <span><a href="https://rfc-editor.org/rfc/rfc9496#section-4.4" class="relref">Section 4.4</a> of [<a href="#RFC9496" class="cite xref">RFC9496</a>]</span> serialize field elements as a fixed-width little-endian integer. Similarly, in Section 7.1 of <span>[<a href="#FIPS204" class="cite xref">FIPS204</a>]</span>, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span> and BLS12-381 <span>[<a href="#I-D.irtf-cfrg-pairing-friendly-curves" class="cite xref">I-D.irtf-cfrg-pairing-friendly-curves</a>]</span> serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization <strong>MUST</strong> be used in place: a prime-field coordinate <code>x</code> in <code>[0, p)</code> is encoded as <code>I2OSP(x, Ns)</code>, with <code>Ns</code> the smallest integer such that <code>256^Ns &gt;= p</code>, in place of the default <code>LE(x, Ns)</code>. As with the default, deserialization <strong>MUST</strong> reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than <code>p</code>). When the chosen field serialization departs from the above rule, that choice is part of the codec identity and <strong>MUST</strong> be reflected in the session tag (see <a href="#session-id" class="auto internal xref">Section 5.1</a>).<a href="#section-4.1.4-3" class="pilcrow">¶</a></p>
 <p id="section-4.1.4-4">With respect to a fixed basis, a field element is represented by its <code>m</code> coordinates in the prime field, each an integer in <code>[0, p)</code>. It is encoded as the concatenation of the per-coordinate encodings produced by <code>EncodeUint</code> (<a href="#encoding-uint" class="auto internal xref">Section 4.1.3</a>) with modulus <code>p</code>. Let <code>Ns</code> be the smallest integer with <code>256^Ns &gt;= p</code>; a field element encodes to <code>m * Ns</code> bytes.<a href="#section-4.1.4-4" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.1.4-5">
 <pre>
@@ -2288,7 +2285,7 @@ Output: out, a byte string of length N
           <h4 id="name-unsigned-integers-2">
 <a href="#section-4.2.2" class="section-number selfRef">4.2.2. </a><a href="#name-unsigned-integers-2" class="section-name selfRef">Unsigned integers</a>
           </h4>
-<p id="section-4.2.2-1">To sample a uniformly random element modulo <code>M</code> of <code>Ns</code> bytes (that is, the smallest integer <code>Ns</code> with <code>256^Ns &gt;= M</code>), squeeze <code>Ns + 16</code> bytes by interpreting them as a little-endian non-negative integer via <code>LE2IP</code>, and reduce modulo <code>M</code>.<a href="#section-4.2.2-1" class="pilcrow">¶</a></p>
+<p id="section-4.2.2-1">To sample a uniformly random element modulo <code>M</code>, let <code>Ns</code> be the smallest integer with <code>256^Ns &gt;= M</code>: squeeze <code>Ns + 16</code> bytes, interpret them as a little-endian non-negative integer via <code>LE2IP</code>, and reduce modulo <code>M</code>.<a href="#section-4.2.2-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.2.2-2">
 <pre>
 DecodeUint(buf, M)
@@ -2305,7 +2302,7 @@ Output: out, an integer in the range [0, M)
 </pre><a href="#section-4.2.2-2" class="pilcrow">¶</a>
 </div>
 <p id="section-4.2.2-3">The 16 extra bytes bound the statistical distance between the reduced value and the uniform distribution over <code>[0, M)</code> to <code>2^-128</code>, matching <span><a href="https://rfc-editor.org/rfc/rfc9380#section-5" class="relref">Section 5</a> of [<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>. More generally, sampling <code>Ns + n</code> extra bytes bounds the bias to <code>2^-8n</code>; an instantiation targeting a security level of <code>k</code> bits <strong>SHOULD</strong> squeeze <code>k/8</code> extra bytes.<a href="#section-4.2.2-3" class="pilcrow">¶</a></p>
-<p id="section-4.2.2-4">In three cases this approach is inefficient: if <code>log2(M)</code> is significantly smaller than <code>8 * Ns</code>, if <code>M</code> is a power of two, and if <code>M</code> is only slightly below a power of <code>256</code> (for example, the secp256k1 scalar field order) where squeezing just <code>Ns</code> bytes and reducing with a single conditional subtraction already has bias below <code>2^-128</code>.
+<p id="section-4.2.2-4">In three cases this approach is inefficient: if <code>log2(M)</code> is significantly smaller than <code>8 * Ns</code>, if <code>M</code> is a power of two, and if <code>M</code> is only slightly below a power of <code>256</code> (for example, the secp256k1 scalar field order) where squeezing just <code>Ns</code> bytes and reducing with a single conditional subtraction already has bias of approximately <code>2^-128</code>.
 In such cases, applications <strong>MAY</strong> use an alternative decoding function, provided it meets the following security requirements:<a href="#section-4.2.2-4" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-4.2.2-5.1">
@@ -2326,7 +2323,7 @@ In such cases, applications <strong>MAY</strong> use an alternative decoding fun
           <h4 id="name-field-elements-2">
 <a href="#section-4.2.3" class="section-number selfRef">4.2.3. </a><a href="#name-field-elements-2" class="section-name selfRef">Field elements</a>
           </h4>
-<p id="section-4.2.3-1">A field element of a field of order <code>p^m</code> is decoded coordinate by coordinate: each of its <code>m</code> prime-field coordinates is decoded via <code>DecodeUint</code> (<a href="#decoding-uint" class="auto internal xref">Section 4.2.2</a>) with modulus <code>p</code>, starting from the least-significant. With <code>Ns</code> as in <a href="#encoding-field" class="auto internal xref">Section 4.1.4</a>, this consumes <code>m * (Ns + 16)</code> bytes. A prime field is the case <code>m = 1</code>.<a href="#section-4.2.3-1" class="pilcrow">¶</a></p>
+<p id="section-4.2.3-1">A field element of a field of order <code>p^m</code> is decoded coordinate by coordinate, via <code>DecodeUint</code> (<a href="#decoding-uint" class="auto internal xref">Section 4.2.2</a>), starting from the least-significant. With <code>Ns</code> as in <a href="#encoding-field" class="auto internal xref">Section 4.1.4</a>, this consumes <code>m * (Ns + 16)</code> bytes. A prime field is the case <code>m = 1</code>.<a href="#section-4.2.3-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.2.3-2">
 <pre>
 DecodeField(buf, p, m)
@@ -2368,7 +2365,7 @@ Output: out, an element of the field of order p^m, given by its
 <a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-session-identifiers" class="section-name selfRef">Session identifiers</a>
         </h3>
 <p id="section-5.1-1">The session identifier is a 32-byte string that identifies the context in which the non-interactive argument is used. An application <strong>MAY</strong> set it to any 32-byte string it derives by its own unambiguous means; the procedure <code>DeriveSessionID</code> below is the <strong>RECOMMENDED</strong> way to obtain one from a human-meaningful <code>tag</code>.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
-<p id="section-5.1-2">For a duplex sponge operating over bytes, the session identifier is derived from a <code>tag</code> via the procedure <code>DeriveSessionID</code>. The <code>tag</code> is a byte string whose encoding as a sequence of bytes <strong>MUST</strong> be specified unambiguously, so that every implementation reproduces identical bytes.  It is <strong>RECOMMENDED</strong> the <code>tag</code> be a US-ASCII string, without byte-order mark at the beginning, nor <code>0x00</code> byte termination.<a href="#section-5.1-2" class="pilcrow">¶</a></p>
+<p id="section-5.1-2">For a duplex sponge operating over bytes, the session identifier is derived from a <code>tag</code> via the procedure <code>DeriveSessionID</code>. The <code>tag</code> is a byte string whose encoding as a sequence of bytes <strong>MUST</strong> be specified unambiguously, so that every implementation reproduces identical bytes. It is <strong>RECOMMENDED</strong> the <code>tag</code> be a US-ASCII string, without byte-order mark at the beginning, nor <code>0x00</code> byte termination.<a href="#section-5.1-2" class="pilcrow">¶</a></p>
 <p id="section-5.1-3">When the <code>tag</code> is composed of several fields (for example the components required below), those fields <strong>MUST</strong> be combined unambiguously, so that no two distinct tuples of field values yield the same byte string. Using fixed-width fields or an unambiguous delimiter is sufficient; concatenating variable-length fields without separation is not, because distinct tuples can collide (for example <code>("SV1", "22")</code> and <code>("SV12", "2")</code> both yield <code>SV122</code>), which would cause two different contexts to share a session identifier.<a href="#section-5.1-3" class="pilcrow">¶</a></p>
 <p id="section-5.1-4">The tag has the following security requirements:<a href="#section-5.1-4" class="pilcrow">¶</a></p>
 <ol start="1" type="1" class="normal type-1" id="section-5.1-5">
@@ -2432,9 +2429,9 @@ BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-messageS1challenge
         </h3>
 <p id="section-5.2-1">The instance is input to the non-interactive prover and the non-interactive verifier; it fixes the specific statement being proven.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
 <p id="section-5.2-2">The instance is the first value absorbed after <code>Init(session_id)</code> and before any prover message. The prover and verifier <strong>MUST</strong> absorb <code>encode[0](instance)</code>, where <code>encode[0]</code> is the first encoding map.
-The encoded instance <strong>MUST</strong> be non-empty. While the session identifier of the previous section <a href="#session-id" class="auto internal xref">Section 5.1</a> fixes the language, the instance selects one of its members.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
+The encoded instance <strong>MUST</strong> be non-empty. While the session identifier of the previous section (<a href="#session-id" class="auto internal xref">Section 5.1</a>) fixes the language, the instance selects one of its members.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
 <p id="section-5.2-3">As for every encoding map, <code>encode[0]</code> <strong>MUST</strong> be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see <a href="#instance-encoding" class="auto internal xref">Section 8.5</a>). The encoding map <code>encode[0]</code> <strong>SHOULD</strong> reuse the encodings of <a href="#encoding-bytes" class="auto internal xref">Section 4.1</a>.<a href="#section-5.2-3" class="pilcrow">¶</a></p>
-<p id="section-5.2-4">As an example, the sumcheck relation for multilinear polynomials in <code>N</code> variables over the field of size <code>p^m</code>. For a polynomial committed using the polynomial commitment scheme <code>COM</code>, the relation consists of:<a href="#section-5.2-4" class="pilcrow">¶</a></p>
+<p id="section-5.2-4">As an example, consider the sumcheck relation for multilinear polynomials in <code>N</code> variables over the field of size <code>p^m</code>. For a polynomial committed using the polynomial commitment scheme <code>COM</code>, the relation consists of:<a href="#section-5.2-4" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.2-5.1">
             <p id="section-5.2-5.1.1">instance <code>(S, C)</code>: <code>C</code> the commitment, and <code>S</code> the target sum;<a href="#section-5.2-5.1.1" class="pilcrow">¶</a></p>
@@ -2502,14 +2499,14 @@ enc(G) || enc(H) || enc(C) || enc(D)
         <h3 id="name-deserialization">
 <a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-deserialization" class="section-name selfRef">Deserialization</a>
         </h3>
-<p id="section-6.2-1">Deserialization of the NARG string consists in reading the prover messages and computing the inverse of the serialization procedure: each message is read by consuming a fixed number of bytes, determined by its type and the instance, and advancing past them.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
+<p id="section-6.2-1">Deserialization of the NARG string consists of reading the prover messages and computing the inverse of the serialization procedure: each message is read by consuming a fixed number of bytes, determined by its type and the instance, and advancing past them.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
 <p id="section-6.2-2">Verification <strong>MUST</strong> fail if any of the prover messages cannot be deserialized successfully. After the last expected prover message has been read, the verifier <strong>MUST</strong> verify that no bytes remain. Bytes that are never read or that are decoded despite being invalid will cause the proof to be malleable: an adversary will be able to malleate a valid proof to obtain a second, distinct accepting proof for the same statement.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
 <div id="deserialize-byte-strings">
 <section id="section-6.2.1">
           <h4 id="name-byte-strings-2">
 <a href="#section-6.2.1" class="section-number selfRef">6.2.1. </a><a href="#name-byte-strings-2" class="section-name selfRef">Byte strings</a>
           </h4>
-<p id="section-6.2.1-1">An <code>N</code>-byte string whose length is known by the message's type and the instance, deserialization reads <code>N</code> bytes.<a href="#section-6.2.1-1" class="pilcrow">¶</a></p>
+<p id="section-6.2.1-1">For an <code>N</code>-byte string whose length is known from the message's type and the instance, deserialization reads <code>N</code> bytes.<a href="#section-6.2.1-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-6.2.1-2">
 <pre>
 DeserializeBytes(input, N)
@@ -2623,14 +2620,14 @@ Output: a, an element of the field of order p^m, given by its
 </div>
 </section>
 </div>
-<div id="efficiency-considerations">
+<div id="efficiency">
 <section id="section-7">
       <h2 id="name-efficiency-considerations">
 <a href="#section-7" class="section-number selfRef">7. </a><a href="#name-efficiency-considerations" class="section-name selfRef">Efficiency considerations</a>
       </h2>
 <p id="section-7-1">For both codecs and serialization, batch algorithms should be preferred when available, because they amortize per-element cost over a whole sequence. For example, serializing a batch of compressed elliptic-curve points requires only one modular inversion for the entire batch (via Montgomery's trick) rather than one per point, the dominant cost in point compression. Deserialization does not batch in the same way, since point decompression requires a per-element square root.<a href="#section-7-1" class="pilcrow">¶</a></p>
 <p id="section-7-2"><code>Init(session_id)</code> (see <a href="#session-id" class="auto internal xref">Section 5.1</a>) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of the duplex sponge state, instead of initializing it every time. In the <a href="#suite-shake128" class="auto internal xref">Section 3.2</a> and <a href="#suite-turboshake128" class="auto internal xref">Section 3.3</a>, the padded session identifier fills exactly one rate block (<a href="#init" class="auto internal xref">Section 3.2.1</a>), saving one invocation of the permutation function per execution. Similarly, <code>DeriveSessionID</code> can be precomputed when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing <code>encode[0](instance)</code>.<a href="#section-7-2" class="pilcrow">¶</a></p>
-<p id="section-7-3">XOF evaluations (<a href="#suite-shake128" class="auto internal xref">Section 3.2</a>, <a href="#suite-turboshake128" class="auto internal xref">Section 3.3</a>) without copying the XOF state (see the notation <code>ctx.Copy()</code> in the pseudocode) will yield identical bytes, but incur in a cost quadratic in the number of rounds. Implementations <strong>SHOULD</strong> instead maintain the incremental duplex sponge state of <a href="#interface" class="auto internal xref">Section 3.1</a>.<a href="#section-7-3" class="pilcrow">¶</a></p>
+<p id="section-7-3">XOF evaluations (<a href="#suite-shake128" class="auto internal xref">Section 3.2</a>, <a href="#suite-turboshake128" class="auto internal xref">Section 3.3</a>) without copying the XOF state (see the notation <code>ctx.Copy()</code> in the pseudocode) will yield identical bytes, but incur a cost quadratic in the number of rounds. Implementations <strong>SHOULD</strong> instead maintain the incremental duplex sponge state of <a href="#interface" class="auto internal xref">Section 3.1</a>.<a href="#section-7-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="security-considerations">
@@ -2689,7 +2686,7 @@ Output: a, an element of the field of order p^m, given by its
           </h4>
 <p id="section-8.4.2-1">If the interactive proof is honest-verifier zero-knowledge, then so is the non-interactive proof. In particular, the resulting argument string does not reveal any information beyond what can be directly inferred from the statement being valid.<a href="#section-8.4.2-1" class="pilcrow">¶</a></p>
 <p id="section-8.4.2-2">The additive zero-knowledge loss introduced by the transformation is linear in the number of queries the adversary makes to the random oracle <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>.<a href="#section-8.4.2-2" class="pilcrow">¶</a></p>
-<p id="section-8.4.2-3">Zero-knowledge holds only when the prover draws fresh randomness for each proof from a cryptographically secure entropy source, as noted in <a href="#introduction" class="auto internal xref">Section 1</a>. Reusing the same randomness (or correlated randomness) across two proofs will compromise zero-knowledge. Implementations <strong>SHOULD</strong> sample different random coins for each proof using the operating system's secure entropy source.<a href="#section-8.4.2-3" class="pilcrow">¶</a></p>
+<p id="section-8.4.2-3">Zero-knowledge holds only when the prover draws fresh randomness for each proof from a cryptographically secure entropy source, as noted in <a href="#introduction" class="auto internal xref">Section 1</a>. Reusing the same randomness (or correlated randomness) across two proofs will compromise zero-knowledge. Implementations <strong>MUST</strong> sample independent random coins for each proof using the operating system's secure entropy source.<a href="#section-8.4.2-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quantum-adversaries">
@@ -2717,8 +2714,8 @@ Output: a, an element of the field of order p^m, given by its
         <h3 id="name-instance-encoding">
 <a href="#section-8.5" class="section-number selfRef">8.5. </a><a href="#name-instance-encoding" class="section-name selfRef">Instance encoding</a>
         </h3>
-<p id="section-8.5-1">Incorrect encoding of the instance has historically led to a number of critical security vulnerabilities, often grouped under the term <em>weak Fiat-Shamir transformation</em> <span>[<a href="#BPW16" class="cite xref">BPW16</a>]</span>. In each of them, the cryptographic hash function was not provided the full statement being proven. A malicious prover then can compute the verifier message first, and choose the omitted part of the instance afterwards so that the verification equation is satisfied on a statement whose witness it does not hold.<a href="#section-8.5-1" class="pilcrow">¶</a></p>
-<p id="section-8.5-2">One such example is in <span>[<a href="#BPW16" class="cite xref">BPW16</a>]</span>. A Chaum-Pedersen proof of equality for an instance <code>(G, H, X, Y)</code> proves knowledge of a witness <code>x</code> such that <code>X = x * G</code> and <code>Y = x * H</code>. The prover sends commitments <code>(A, B)</code>, obtains a challenge <code>c</code>, and replies with a scalar <code>f</code>. The verifier accepts if the verification equations hold: <code>f * G == A + c * X</code> and <code>f * H == B + c * Y</code>. Suppose the challenge <code>c</code> is derived only by absorbing <code>(A, B)</code> and omitting the instance <code>(G, H, X, Y)</code> (cf <a href="#instance-encoding" class="auto internal xref">Section 8.5</a>). A malicious prover can pick <code>A</code>, <code>B</code>, <code>H</code>, and <code>f</code> at random, derive <code>c</code>, and then set <code>X</code> and <code>Y</code> to satisfy the verification equations. Verification passes, yet no single <code>x</code> satisfies both <code>X = x * G</code> and <code>Y = x * H</code>. A false statement has been proven. Other examples are available in <span>[<a href="#DMWG23" class="cite xref">DMWG23</a>]</span>.<a href="#section-8.5-2" class="pilcrow">¶</a></p>
+<p id="section-8.5-1">Incorrect encoding of the instance has historically led to a number of critical security vulnerabilities, often grouped under the term <em>weak Fiat-Shamir transformation</em> <span>[<a href="#BPW16" class="cite xref">BPW16</a>]</span>. In each of them, the cryptographic hash function was not provided the full statement being proven. A malicious prover can then compute the verifier message first, and choose the omitted part of the instance afterwards so that the verification equation is satisfied on a statement whose witness it does not hold.<a href="#section-8.5-1" class="pilcrow">¶</a></p>
+<p id="section-8.5-2">One such example is in <span>[<a href="#BPW16" class="cite xref">BPW16</a>]</span>. A Chaum-Pedersen proof of equality for an instance <code>(G, H, X, Y)</code> proves knowledge of a witness <code>x</code> such that <code>X = x * G</code> and <code>Y = x * H</code>. The prover sends commitments <code>(A, B)</code>, obtains a challenge <code>c</code>, and replies with a scalar <code>f</code>. The verifier accepts if the verification equations hold: <code>f * G == A + c * X</code> and <code>f * H == B + c * Y</code>. Suppose the challenge <code>c</code> is derived only by absorbing <code>(A, B)</code> and omitting the instance <code>(G, H, X, Y)</code>. A malicious prover can pick <code>A</code>, <code>B</code>, <code>H</code>, and <code>f</code> at random, derive <code>c</code>, and then set <code>X</code> and <code>Y</code> to satisfy the verification equations. Verification passes, yet no single <code>x</code> satisfies both <code>X = x * G</code> and <code>Y = x * H</code>. A false statement has been proven. Other examples are available in <span>[<a href="#DMWG23" class="cite xref">DMWG23</a>]</span> <span>[<a href="#CVE-2022-29566" class="cite xref">CVE-2022-29566</a>]</span>.<a href="#section-8.5-2" class="pilcrow">¶</a></p>
 <p id="section-8.5-3">All security guarantees are conditioned on the instance being part of the relation being proven. The Fiat-Shamir transformation does not verify that the statement being proven is well-formed, or valid. If the instance or the witness provided as input are not in the relation (e.g. they are malformed), the output is undefined and no security guarantee is provided.<a href="#section-8.5-3" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2727,8 +2724,8 @@ Output: a, an element of the field of order p^m, given by its
         <h3 id="name-implementation-guidance">
 <a href="#section-8.6" class="section-number selfRef">8.6. </a><a href="#name-implementation-guidance" class="section-name selfRef">Implementation guidance</a>
         </h3>
-<p id="section-8.6-1">The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities, especially due to incorrect implementations involving out-of-order (or missing) prover messages.<a href="#section-8.6-1" class="pilcrow">¶</a></p>
-<p id="section-8.6-2">Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes <span>[<a href="#CVE-2024-42461" class="cite xref">CVE-2024-42461</a>]</span>, and by replacing each prover message in turn with a different value.<a href="#section-8.6-2" class="pilcrow">¶</a></p>
+<p id="section-8.6-1">The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities. Some incorrect implementations involve out-of-order (or missing) prover messages <span>[<a href="#CVE-2024-45039" class="cite xref">CVE-2024-45039</a>]</span> <span>[<a href="#CVE-2026-46654" class="cite xref">CVE-2026-46654</a>]</span>.<a href="#section-8.6-1" class="pilcrow">¶</a></p>
+<p id="section-8.6-2">Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes, and by replacing each prover message in turn with a different value.<a href="#section-8.6-2" class="pilcrow">¶</a></p>
 <p id="section-8.6-3">Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered.<a href="#section-8.6-3" class="pilcrow">¶</a></p>
 <p id="section-8.6-4">The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers <strong>MUST</strong> check that length indicators are correct, that integers fall within their expected range, and that the proof length is correct. For example, in <a href="#deserialize-byte-strings" class="auto internal xref">Section 6.2.1</a> the 4-byte length prefix read by <code>LE2IP</code> in <code>DeserializeVarLenString</code> is attacker-controlled, and can be as large as <code>2^32 - 1</code>, so computing <code>4 + N</code> can overflow 32-bit integers. As another example, a crafted length indicator can make verification checks trivial, or exhaust memory on deserialization before any cryptographic check runs <span>[<a href="#GNARK-OOM" class="cite xref">GNARK-OOM</a>]</span>.<a href="#section-8.6-4" class="pilcrow">¶</a></p>
 </section>
@@ -2791,9 +2788,17 @@ Output: a, an element of the field of order p^m, given by its
         <dd>
 <span class="refAuthor">Chiesa, A.</span> and <span class="refAuthor">M. Orrù</span>, <span class="refTitle">"A Fiat-Shamir Transformation From Duplex Sponges"</span>, <time datetime="2025" class="refDate">2025</time>, <span>&lt;<a href="https://eprint.iacr.org/2025/536.pdf">https://eprint.iacr.org/2025/536.pdf</a>&gt;</span>. </dd>
 <dd class="break"></dd>
-<dt id="CVE-2024-42461">[CVE-2024-42461]</dt>
+<dt id="CVE-2022-29566">[CVE-2022-29566]</dt>
         <dd>
-<span class="refTitle">"CVE-2024-42461: ECDSA signature malleability from BER-encoded signatures in the elliptic package"</span>, <time datetime="2024" class="refDate">2024</time>, <span>&lt;<a href="https://nvd.nist.gov/vuln/detail/CVE-2024-42461">https://nvd.nist.gov/vuln/detail/CVE-2024-42461</a>&gt;</span>. </dd>
+<span class="refTitle">"CVE-2022-29566: Fiat-Shamir hashing omits public values from the statement and the proof in Bulletproofs (Frozen Heart)"</span>, <time datetime="2022" class="refDate">2022</time>, <span>&lt;<a href="https://nvd.nist.gov/vuln/detail/CVE-2022-29566">https://nvd.nist.gov/vuln/detail/CVE-2022-29566</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="CVE-2024-45039">[CVE-2024-45039]</dt>
+        <dd>
+<span class="refTitle">"CVE-2024-45039: gnark Groth16 commitment extension unsound for more than one commitment"</span>, <time datetime="2024" class="refDate">2024</time>, <span>&lt;<a href="https://nvd.nist.gov/vuln/detail/CVE-2024-45039">https://nvd.nist.gov/vuln/detail/CVE-2024-45039</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="CVE-2026-46654">[CVE-2026-46654]</dt>
+        <dd>
+<span class="refTitle">"CVE-2026-46654: Plonky3 Fiat-Shamir challenge collision from a non-binding transcript"</span>, <time datetime="2026" class="refDate">2026</time>, <span>&lt;<a href="https://nvd.nist.gov/vuln/detail/CVE-2026-46654">https://nvd.nist.gov/vuln/detail/CVE-2026-46654</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="DMWG23">[DMWG23]</dt>
         <dd>
@@ -2802,10 +2807,6 @@ Output: a, an element of the field of order p^m, given by its
 <dt id="DUPLEX">[DUPLEX]</dt>
         <dd>
 <span class="refAuthor">Bertoni, G.</span>, <span class="refAuthor">Daemen, J.</span>, <span class="refAuthor">Peeters, M.</span>, and <span class="refAuthor">G. V. Assche</span>, <span class="refTitle">"Duplexing the Sponge: Single-Pass Authenticated Encryption and Other Applications"</span>, <time datetime="2011" class="refDate">2011</time>, <span>&lt;<a href="https://keccak.team/files/SpongeDuplex.pdf">https://keccak.team/files/SpongeDuplex.pdf</a>&gt;</span>. </dd>
-<dd class="break"></dd>
-<dt id="FIPS203">[FIPS203]</dt>
-        <dd>
-<span class="refAuthor">National Institute of Standards and Technology (NIST)</span>, <span class="refTitle">"Module-Lattice-Based Key-Encapsulation Mechanism Standard"</span>, <span class="seriesInfo">FIPS 203</span>, <time datetime="2024" class="refDate">2024</time>, <span>&lt;<a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf">https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="FIPS204">[FIPS204]</dt>
         <dd>
