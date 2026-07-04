@@ -220,6 +220,18 @@ informative:
     title: "CVE-2025-57801: gnark in-circuit ECDSA/EdDSA verification accepts out-of-range S (signature malleability)"
     target: https://nvd.nist.gov/vuln/detail/CVE-2025-57801
     date: 2025
+  SOLANA-ZK:
+    title: "Post Mortem: ZK ElGamal Proof Program Bug"
+    target: https://solana.com/news/post-mortem-may-2-2025
+    date: 2025
+    author:
+      - org: "Solana Foundation"
+  SOLANA-PHANTOM:
+    title: "Uncovering the Phantom Challenge Soundness Bug in Solana's ZK ElGamal Proof Program"
+    target: https://blog.zksecurity.xyz/posts/solana-phantom-challenge-bug/
+    date: 2025
+    author:
+      - fullname: "Suneal Gong"
   JagerSS15:
     title: "Practical Invalid Curve Attacks on TLS-ECDH"
     target: https://doi.org/10.1007/978-3-319-24174-6_21
@@ -289,7 +301,7 @@ The following notation is used throughout this document.
 
 ## Bytes and integers {#bytes-and-integers}
 
-A byte is an 8-bit unsigned integer (an octet), and a *byte string* is a finite sequence of bytes. The empty byte string is written `""`, `x || y` is the concatenation of the byte strings `x` and `y`, and `len(x)` is the length of `x` in bytes. Byte strings are indexed from zero: for integers `0 <= i <= j <= len(x)`, `x[i : j]` denotes the `(j - i)`-byte substring of `x` at positions `i, i+1, ..., j-1`, so that `x[0 : N]` is the first `N` bytes of `x` and `x[i : i]` is `""`.
+A byte is an 8-bit unsigned integer (an octet), and a *byte string* is a finite sequence of bytes. The empty byte string is written `""`, and `x || y` is the concatenation of the byte strings `x` and `y`. For any finite sequence `x`, `len(x)` is the number of elements in `x`; for a byte string, this is its length in bytes. Byte strings are indexed from zero: for integers `0 <= i <= j <= len(x)`, `x[i : j]` denotes the `(j - i)`-byte substring of `x` at positions `i, i+1, ..., j-1`, so that `x[0 : N]` is the first `N` bytes of `x` and `x[i : i]` is `""`.
 
 `I2OSP(n, w)` and `OS2IP(x)` are the integer/byte-string conversion primitives used throughout this document, in big-endian byte order, as defined in {{Section 4 of !RFC8017}}. `I2OSP(n, w)` converts a non-negative integer `n` with `0 <= n < 256^w` into a `w`-byte, big-endian byte string, and fails if `n >= 256^w`; `OS2IP(x)` is its inverse, mapping a `w`-byte string to the integer in `[0, 256^w)` that it represents. `LE(n, w)` is the little-endian counterpart defined in {{fiat-shamir}}, converting `n` into a `w`-byte, little-endian byte string; it is used for the indices and counts of the instance encoding ({{serialize-linear-relations}}). Byte order and length of the scalar and group-element encodings are fixed by each ciphersuite ({{ciphersuites}}).
 
@@ -355,8 +367,9 @@ R := { ((M, image), witness) : M * witness = image }
 `image` is the result of the multi-scalar multiplication of each matrix row with the witness:
 
 ~~~
-image[i] = sum(witness[j] * M[i][j] for j in range(num_scalars))
-           for i in range(num_equations)
+image[i] = sum(witness[j] * M[i][j]
+               for j in 0, ..., num_scalars - 1)
+           for i in 0, ..., num_equations - 1
 ~~~
 
 `num_scalars` is the length of `witness` (the width of `M`), and `num_equations` is the number of group elements in `image` (the height of `M`).
@@ -521,7 +534,7 @@ Procedure:
 
  1. out = ""
  2. out = out || LE(num_equations(instance), 4)
- 3. for i in range(num_equations(instance)):
+ 3. for i in 0, ..., num_equations(instance) - 1:
  4.     image_terms = instance.equations[i].image
  5.     out = out || LE(len(image_terms), 4)
  6.     for element_index in image_terms:
@@ -544,7 +557,7 @@ The encoding is prefix-free over well-formed instances, as required of the insta
 
 ## Prover
 
-The prover of a Sigma Protocol is stateful and will send two messages, a "commitment" and a "response" message, described below.
+The prover of a Sigma Protocol is stateful and will send two messages, described below.
 
 ### Prover commitment
 
@@ -554,24 +567,24 @@ ProverCommitment(instance, witness, rng)
 Inputs:
 
 - instance, the LinearRelation being proven
-- witness, an array of scalars
+- witness, an array of scalars satisfying the linear relation
 - rng, a cryptographically secure random number generator
 
 Outputs:
 
 - A (private) prover state
-- A commitment message (a vector of group elements).
+- A commitment message (a vector of group elements)
 
 Procedure:
 
 1. fail if len(witness) != num_scalars(instance)
 2. nonces = [rng.random_scalar()
-             for _ in range(num_scalars(instance))]
+             for j in 0, ..., num_scalars(instance) - 1]
 3. commitment = map(instance, nonces)
 4. return (prover_state := (witness, nonces), commitment)
 ~~~
 
-The prover **MUST** fail if the witness length does not match `num_scalars(instance)`: a mismatch cannot yield a valid proof and, depending on the implementation language, may otherwise read out of bounds in `ProverResponse`.
+The prover **MUST** fail if the witness length does not match `num_scalars(instance)`: a mismatch cannot yield a valid proof and, depending on the implementation language, may otherwise read out of bounds in `ProverResponse`. The prover **MAY** fail if the witness is not valid for the instance provided.
 
 ### Response
 
@@ -583,13 +596,13 @@ Inputs:
     - prover_state, the current state of the prover
     - challenge, the verifier challenge scalar
 
-Output: An array of scalar elements composing the response
+Output: The response message, an array of scalars
 
 Procedure:
 
 1. witness, nonces = prover_state
 2. return [nonces[i] + witness[i] * challenge
-           for i in range(len(nonces))]
+           for i in 0, ..., len(nonces) - 1]
 ~~~
 
 ## Verifier {#verifier}
@@ -614,9 +627,8 @@ Procedure:
 2. fail if len(commitment) != num_equations(instance) or \
            len(response) != num_scalars(instance)
 3. expected = map(instance, response)
-4. img = image(instance)
-5. got = [commitment[i] + img[i] * challenge
-          for i in range(num_equations(instance))]
+5. got = [commitment[i] + image(instance)[i] * challenge
+          for i in 0, ..., num_equations(instance) - 1]
 6. return got == expected
 ~~~
 
@@ -638,7 +650,8 @@ Output: a vector of num_scalars(instance) scalars
 
 Procedure:
 
-1. return [rng.random_scalar() for _ in range(num_scalars(instance))]
+1. return [rng.random_scalar()
+           for j in 0, ..., num_scalars(instance) - 1]
 ~~~
 
 ~~~
@@ -658,7 +671,7 @@ Procedure:
 2. img = image(instance)
 3. return simulated_commitment := [
        expected[i] - challenge * img[i]
-       for i in range(num_equations(instance))]
+       for i in 0, ..., num_equations(instance) - 1]
 ~~~
 
 Drawing `response` uniformly at random with `SimulateResponse` and then computing `commitment` with `SimulateCommitment` yields a transcript `(commitment, challenge, response)` with the same distribution as an honest one. This is the honest-verifier zero-knowledge property ({{security-considerations}}).
@@ -686,77 +699,57 @@ A **batchable** NARG string is the NARG string of {{fiat-shamir}}, consisting of
 Group.serialize(commitment) || Scalar.serialize(response)
 ~~~
 
-`ProveBatchable` and `VerifyBatchable` are the NARG prover and verifier of {{fiat-shamir}} instantiated with the Sigma Protocol of {{sigma-protocol-group}}, and are fully determined by it:
+`ProveBatchable` and `VerifyBatchable` are the NARG prover and verifier of {{fiat-shamir}} instantiated with the Sigma Protocol of {{sigma-protocol-group}}.
 
 - `ProveBatchable(tag, instance, witness, rng)` computes the commitment message with `ProverCommitment`, derives the challenge via `DecodeField` from a duplex sponge initialized with `DeriveSessionID(tag)` that absorbs `SerializeLinearRelation(instance)` followed by `Group.serialize(commitment)`, computes the response with `ProverResponse(prover_state, challenge)`. Finally, it outputs the NARG string above.
 - `VerifyBatchable(tag, instance, proof)` fails unless `ValidateInstance(instance)` succeeds and `len(proof)` is exactly `Ne * num_equations(instance) + Ns * num_scalars(instance)`; it deserializes `commitment` and `response` with `Group.deserialize` and `Scalar.deserialize`, recomputes the challenge from the instance and the commitment bytes exactly as the prover does, and returns `Verifier(instance, commitment, challenge, response)`.
 
-Verification of multiple batchable NARG strings can be done more cheaply than verifying each proof on its own {{?RFC8032}} {{BDLSY11}}. The verifier still recomputes the challenge of each proof individually to recover the protocol transcript, but instead of checking each proof's verification equation separately, it checks a single random linear combination of the verification equations of the whole batch {{BellareGR98}}.
+Verification of multiple batchable NARG strings **MAY** be done more efficiently than verifying each proof on its own.
 
-proof `i` is valid if, for every equation index `j`:
+Batch verification is done by re-computing the verifier challenge of each proof individually, and then checking a single random linear combination of the verification equations of the whole batch. See {{Section 8.2 of ?RFC8032}} for additional concerns, in the literature {{BDLSY11}} {{BellareGR98}}. It is a local verifier-side optimization: it changes neither the prover nor the NARG string.
+
+For `Nt` transcripts `(commitment, challenge, response)`, the `i`-th one is valid if, for every equation index `j`:
 
 ~~~
 commitment[i][j] + challenge[i] * image(instances[i])[j]
                  == map(instances[i], response[i])[j]
 ~~~
 
-The batch verifier draws one uniformly random scalar coefficient for every pair `(i, j)` and accepts only if the sum of all left-hand sides, each multiplied by its coefficient, is the identity. One coefficient per equation, and not merely per proof, is required: a single coefficient applied to all equations of a proof would let a cheating prover choose errors in two equations of the same proof that cancel each other.
-
-Batch verification is sound under the following assumption: **the coefficients are uniformly distributed in `[0, p)` and independent of the proofs, instances, and tags being verified**. Under this assumption, because the group has prime order `p`, the per-equation errors of an invalid batch form a vector of group elements at least one of which is not the identity, and a random linear combination of its entries is the identity with probability exactly `1/p`. A batch containing an invalid proof is therefore accepted with probability at most `1/p` over the choice of the coefficients.
-
-The procedure below realizes this assumption by deriving the coefficients from a fresh duplex sponge, domain-separated from the per-proof challenge computation by its own session identifier. The sponge absorbs the entire batch (each proof's session identifier, serialized instance, and NARG string) and squeezes only after the last absorption, so that every coefficient depends on every transcript. Modeling the sponge as a random oracle, an adversary that re-generates proofs to steer the coefficients succeeds after `q` attempts with probability at most `q/p`.
+The batch verifier may instead sample uniformly random coefficients `batching_randomness[i][j]` (for `i = 0, ..., Nt - 1` and `j = 0, ..., num_equations(instances[i]) - 1`) and check the single equation:
 
 ~~~
-BatchVerify(tags, instances, proofs)
-
-Inputs:
-
-- tags, a list of N byte strings, where tags[i] uniquely identifies
-  the session of proofs[i]
-- instances, a list of N LinearRelations, where instances[i] MUST be
-  the instance proven by proofs[i]
-- proofs, a list of N batchable NARG strings
-
-Output: a boolean indicating whether all N proofs are valid
-
-Procedure:
-
-1. batch_sponge = DS.Init(
-       DeriveSessionID("irtf-cfrg-sigma-protocols/batch-verify"))
-2. for i in range(N):
-3.     fail if ValidateInstance(instances[i]) fails
-4.     Nc = num_equations(instances[i]) * Ne
-5.     Nr = num_scalars(instances[i]) * Ns
-6.     fail if len(proofs[i]) != Nc + Nr
-7.     commitment[i] = Group.deserialize(proofs[i][0 : Nc])
-8.     response[i] = Scalar.deserialize(proofs[i][Nc : Nc + Nr])
-9.     session_id = DeriveSessionID(tags[i])
-10.    duplex_sponge = DS.Init(session_id)
-11.    duplex_sponge.Absorb(SerializeLinearRelation(instances[i]))
-12.    duplex_sponge.Absorb(proofs[i][0 : Nc])
-13.    challenge[i] = DecodeField(
-           duplex_sponge.Squeeze(Ns + 16), p, 1)
-14.    batch_sponge.Absorb(session_id)
-15.    batch_sponge.Absorb(SerializeLinearRelation(instances[i]))
-16.    batch_sponge.Absorb(proofs[i])
-17. acc = Group.identity()
-18. for i in range(N):
-19.    expected = map(instances[i], response[i])
-20.    img = image(instances[i])
-21.    for j in range(num_equations(instances[i])):
-22.        r = DecodeField(batch_sponge.Squeeze(Ns + 16), p, 1)
-23.        acc = acc + r * (commitment[i][j]
-                           + challenge[i] * img[j] - expected[j])
-24. return acc == Group.identity()
+sum(
+  batching_randomness[i][j] * commitment[i][j]
+  + batching_randomness[i][j] * challenge[i] * image(instances[i])[j]
+  - batching_randomness[i][j] * map(instances[i], response[i])[j]
+  for i in 0, ..., Nt - 1
+  for j in 0, ..., num_equations(instances[i]) - 1
+) == Group.identity()
 ~~~
 
-Steps 3-13 perform, for each proof, the same instance validation, deserialization, input validation, and challenge recomputation as `VerifyBatchable`: batching relaxes none of the checks on untrusted input ({{sigma-ni-security}}).
+Similarly to batch verification of Ed25519 signatures {{BDLSY11}}, a false proof will be accepted with probability at most 2^-128, which is neglible. In general, for `batching_randomness` elements drawn uniformly from a set of `2^t` scalars, a false proof will be accepted with probability at most `2^-t`.
 
-The coefficients never leave the verifier and need not be reproduced by any other party, so their derivation is a local choice rather than an interoperability requirement: the domain-separation string in step 1 is arbitrary (any session identifier distinct from those of the proofs will do), and a verifier **MAY** instead sample each coefficient as `rng.random_scalar()` ({{rng-definition}}) after the whole batch has been received, in which case the `1/p` bound holds without the grinding term `q`. Coefficients drawn uniformly from a smaller range are a standard optimization that further reduces the multi-scalar multiplication cost {{BellareGR98}}: with `t`-bit coefficients, an invalid batch is accepted with probability at most `2^-t`. Ed25519 batch verification uses 128-bit coefficients in this way {{BDLSY11}}.
+The independent coefficients **MAY** be replaced by the successive powers `1, mu, mu^2, ...` of a single uniformly random scalar `mu`, assigned in a fixed order to the pairs `(i, j)`. In this case, an invalid batch is accepted with probability at most `(Nt - 1)/p` rather than `1/p`, where `Nt` is the number of transcripts in the batch.
 
-Verification of a single NARG string is deterministic; as with EdDSA ({{Section 8.2 of ?RFC8032}}), the speedup from verifying multiple proofs at once requires random numbers.
+It is **RECOMMENDED** the batch randomness be generated deterministically, with the duplex sponge of {{fiat-shamir}} as follows:
 
-Batch verification outputs a single boolean for the whole batch. When it fails, it does not identify the offending proof; an application that needs to do so falls back to verifying the proofs individually.
+~~~
+1. batching_sid = DeriveSessionID(
+       "irtf-cfrg-sigma-protocols/batch-verify")
+2. state = DS.Init(batching_sid)
+3. for i in 0, ..., Nt - 1:
+4.     state.Absorb(session_ids[i])
+5.     state.Absorb(SerializeLinearRelation(instances[i]))
+6.     state.Absorb(narg_strings[i])
+7. state.Squeeze(128 * sum(num_equations(instances[i])
+                           for i in 0, ..., Nt - 1))
+~~~
+
+The verifier **MUST** perform instance validation for each instance, and **MUST** compute each of the verifier challenges as in {{fiat-shamir}}.
+
+The verifier **MUST NOT** use the duplex sponge of a NARG verifier {{SOLANA-ZK}}: the batching randomness is not a verifier message of the proof system. If even one NARG string or instance is not absorbed, an attacker can choose the omitted value afterwards so that the combined check passes on otherwise-invalid proofs. As an example, in OR composition {{CramerDS94}} the response message contains the prover-chosen challenge share `c_2`, with `c_1 = challenge - c_2`; if it is not absorbed, soundness is lost {{SOLANA-PHANTOM}}.
+
+When it fails, batch verification does not identify the offending proof; an application may fall back to verifying the proofs individually. Empty batches are accepted as valid; the batch size **MUST** be less than `2^32`.
 
 ## Compact {#narg-string-compact}
 
@@ -843,7 +836,7 @@ where `xx` is the two-digit number indicating the version, `tttt` is a 32-bit in
 
 Implementations **SHOULD** evaluate `map(instance, scalars)` ({{representation}}) using a multi-scalar multiplication (MSM) algorithm for each equation, rather than computing and summing each term individually; this matters most for equations with many terms.
 
-The verifier of {{verifier}} is specified as the equality `map(instance, response) == commitment + challenge * image(instance)`, evaluated as two separate vectors for clarity. Implementations **MAY** instead verify each equation `i` by checking that `commitment[i] + challenge * img[i] - sum(response[j] * M[i][j] for j)` is `identity()`, accumulating all terms in a single MSM per equation. Each image term enters this MSM with coefficient `challenge`, so the summed image is never materialized as a separate point. This folds the image scalar multiplications into the same MSM as the row terms, sharing its point doublings, and negation is free on these curves; the arithmetic is otherwise identical to the equality above.
+The verifier of {{verifier}} is specified as the equality `map(instance, response) == commitment + challenge * image(instance)`, evaluated as two separate vectors for clarity. Implementations **MAY** instead verify each equation `i` by checking that `commitment[i] + challenge * img[i] - sum(response[j] * M[i][j] for j in 0, ..., num_scalars(instance) - 1)` is `identity()`, accumulating all terms in a single MSM per equation. Each image term enters this MSM with coefficient `challenge`, so the summed image is never materialized as a separate point. This folds the image scalar multiplications into the same MSM as the row terms, sharing its point doublings, and negation is free on these curves; the arithmetic is otherwise identical to the equality above.
 
 As observed in the efficiency considerations of {{fiat-shamir}}, `DS.Init(session_id)` followed by `Absorb(encode[0](instance))` depends only on the `tag` and `instance`, not on the witness or randomness of any particular proof. Implementations that produce or verify many proofs for the same instance can precompute and reuse the duplex sponge state resulting from these two steps of the challenge derivation ({{non-interactive}}) across proofs. `ValidateInstance` ({{instance-validation}}) likewise depends only on the instance, and can be checked once per instance rather than once per proof.
 
