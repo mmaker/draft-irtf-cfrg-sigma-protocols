@@ -945,16 +945,16 @@ Table of Contents
    The verifier *MUST NOT* use the duplex sponge of a NARG verifier
    [SOLANA-ZK]: the batching randomness is not a verifier message of the
    proof system.  If even one NARG string or instance is not absorbed,
-   an attacker that observes the batching randomness can choose the
-   omitted value afterwards so that the combined check passes on
-   otherwise-invalid proofs.  As an example, in OR composition
-   [CramerDS94] the response message contains the prover-chosen
-   challenge share c_2, with c_1 = challenge - c_2; if it is not
+   an attacker can choose the omitted value afterwards so that the
+   combined check passes on otherwise-invalid proofs.  As an example, in
+   OR composition [CramerDS94] the response message contains the prover-
+   chosen challenge share c_2, with c_1 = challenge - c_2; if it is not
    absorbed, soundness is lost [SOLANA-PHANTOM].
 
    When it fails, batch verification does not identify the offending
    proof; an application may fall back to verifying the proofs
-   individually.
+   individually.  Empty batches are accepted as valid; the batch size
+   *MUST* be less than 2^32.
 
 5.3.  Compact
 
