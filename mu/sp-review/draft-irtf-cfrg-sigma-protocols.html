@@ -1053,7 +1053,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù &amp; Yun</td>
-<td class="center">Expires 4 January 2027</td>
+<td class="center">Expires 5 January 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1066,12 +1066,12 @@ svg {
 <dd class="internet-draft">draft-irtf-cfrg-sigma-protocols-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-07-03" class="published">3 July 2026</time>
+<time datetime="2026-07-04" class="published">4 July 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-01-04">4 January 2027</time></dd>
+<dd class="expires"><time datetime="2027-01-05">5 January 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1126,7 +1126,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 4 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 5 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1439,7 +1439,7 @@ svg {
         <h3 id="name-bytes-and-integers">
 <a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-bytes-and-integers" class="section-name selfRef">Bytes and integers</a>
         </h3>
-<p id="section-2.1-1">A byte is an 8-bit unsigned integer (an octet), and a <em>byte string</em> is a finite sequence of bytes. The empty byte string is written <code>""</code>, <code>x || y</code> is the concatenation of the byte strings <code>x</code> and <code>y</code>, and <code>len(x)</code> is the length of <code>x</code> in bytes. Byte strings are indexed from zero: for integers <code>0 &lt;= i &lt;= j &lt;= len(x)</code>, <code>x[i : j]</code> denotes the <code>(j - i)</code>-byte substring of <code>x</code> at positions <code>i, i+1, ..., j-1</code>, so that <code>x[0 : N]</code> is the first <code>N</code> bytes of <code>x</code> and <code>x[i : i]</code> is <code>""</code>.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.1-1">A byte is an 8-bit unsigned integer (an octet), and a <em>byte string</em> is a finite sequence of bytes. The empty byte string is written <code>""</code>, and <code>x || y</code> is the concatenation of the byte strings <code>x</code> and <code>y</code>. For any finite sequence <code>x</code>, <code>len(x)</code> is the number of elements in <code>x</code>; for a byte string, this is its length in bytes. Byte strings are indexed from zero: for integers <code>0 &lt;= i &lt;= j &lt;= len(x)</code>, <code>x[i : j]</code> denotes the <code>(j - i)</code>-byte substring of <code>x</code> at positions <code>i, i+1, ..., j-1</code>, so that <code>x[0 : N]</code> is the first <code>N</code> bytes of <code>x</code> and <code>x[i : i]</code> is <code>""</code>.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
 <p id="section-2.1-2"><code>I2OSP(n, w)</code> and <code>OS2IP(x)</code> are the integer/byte-string conversion primitives used throughout this document, in big-endian byte order, as defined in <span><a href="https://rfc-editor.org/rfc/rfc8017#section-4" class="relref">Section 4</a> of [<a href="#RFC8017" class="cite xref">RFC8017</a>]</span>. <code>I2OSP(n, w)</code> converts a non-negative integer <code>n</code> with <code>0 &lt;= n &lt; 256^w</code> into a <code>w</code>-byte, big-endian byte string, and fails if <code>n &gt;= 256^w</code>; <code>OS2IP(x)</code> is its inverse, mapping a <code>w</code>-byte string to the integer in <code>[0, 256^w)</code> that it represents. <code>LE(n, w)</code> is the little-endian counterpart defined in <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>, converting <code>n</code> into a <code>w</code>-byte, little-endian byte string; it is used for the indices and counts of the instance encoding (<a href="#serialize-linear-relations" class="auto internal xref">Section 4.5</a>). Byte order and length of the scalar and group-element encodings are fixed by each ciphersuite (<a href="#ciphersuites" class="auto internal xref">Section 8</a>).<a href="#section-2.1-2" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -1534,8 +1534,9 @@ R := { ((M, image), witness) : M * witness = image }
 <p id="section-4.1-4"><code>image</code> is the result of the multi-scalar multiplication of each matrix row with the witness:<a href="#section-4.1-4" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.1-5">
 <pre>
-image[i] = sum(witness[j] * M[i][j] for j in range(num_scalars))
-           for i in range(num_equations)
+image[i] = sum(witness[j] * M[i][j]
+               for j in 0, ..., num_scalars - 1)
+           for i in 0, ..., num_equations - 1
 </pre><a href="#section-4.1-5" class="pilcrow">¶</a>
 </div>
 <p id="section-4.1-6"><code>num_scalars</code> is the length of <code>witness</code> (the width of <code>M</code>), and <code>num_equations</code> is the number of group elements in <code>image</code> (the height of <code>M</code>).<a href="#section-4.1-6" class="pilcrow">¶</a></p>
@@ -1714,7 +1715,7 @@ Procedure:
 
  1. out = ""
  2. out = out || LE(num_equations(instance), 4)
- 3. for i in range(num_equations(instance)):
+ 3. for i in 0, ..., num_equations(instance) - 1:
  4.     image_terms = instance.equations[i].image
  5.     out = out || LE(len(image_terms), 4)
  6.     for element_index in image_terms:
@@ -1738,7 +1739,7 @@ Procedure:
         <h3 id="name-prover">
 <a href="#section-4.6" class="section-number selfRef">4.6. </a><a href="#name-prover" class="section-name selfRef">Prover</a>
         </h3>
-<p id="section-4.6-1">The prover of a Sigma Protocol is stateful and will send two messages, a "commitment" and a "response" message, described below.<a href="#section-4.6-1" class="pilcrow">¶</a></p>
+<p id="section-4.6-1">The prover of a Sigma Protocol is stateful and will send two messages, described below.<a href="#section-4.6-1" class="pilcrow">¶</a></p>
 <div id="prover-commitment">
 <section id="section-4.6.1">
           <h4 id="name-prover-commitment">
@@ -1751,24 +1752,24 @@ ProverCommitment(instance, witness, rng)
 Inputs:
 
 - instance, the LinearRelation being proven
-- witness, an array of scalars
+- witness, an array of scalars satisfying the linear relation
 - rng, a cryptographically secure random number generator
 
 Outputs:
 
 - A (private) prover state
-- A commitment message (a vector of group elements).
+- A commitment message (a vector of group elements)
 
 Procedure:
 
 1. fail if len(witness) != num_scalars(instance)
 2. nonces = [rng.random_scalar()
-             for _ in range(num_scalars(instance))]
+             for j in 0, ..., num_scalars(instance) - 1]
 3. commitment = map(instance, nonces)
 4. return (prover_state := (witness, nonces), commitment)
 </pre><a href="#section-4.6.1-1" class="pilcrow">¶</a>
 </div>
-<p id="section-4.6.1-2">The prover <strong>MUST</strong> fail if the witness length does not match <code>num_scalars(instance)</code>: a mismatch cannot yield a valid proof and, depending on the implementation language, may otherwise read out of bounds in <code>ProverResponse</code>.<a href="#section-4.6.1-2" class="pilcrow">¶</a></p>
+<p id="section-4.6.1-2">The prover <strong>MUST</strong> fail if the witness length does not match <code>num_scalars(instance)</code>: a mismatch cannot yield a valid proof and, depending on the implementation language, may otherwise read out of bounds in <code>ProverResponse</code>. The prover <strong>MAY</strong> fail if the witness is not valid for the instance provided.<a href="#section-4.6.1-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="response">
@@ -1785,13 +1786,13 @@ Inputs:
     - prover_state, the current state of the prover
     - challenge, the verifier challenge scalar
 
-Output: An array of scalar elements composing the response
+Output: The response message, an array of scalars
 
 Procedure:
 
 1. witness, nonces = prover_state
 2. return [nonces[i] + witness[i] * challenge
-           for i in range(len(nonces))]
+           for i in 0, ..., len(nonces) - 1]
 </pre><a href="#section-4.6.2-1" class="pilcrow">¶</a>
 </div>
 </section>
@@ -1823,9 +1824,8 @@ Procedure:
 2. fail if len(commitment) != num_equations(instance) or \
            len(response) != num_scalars(instance)
 3. expected = map(instance, response)
-4. img = image(instance)
-5. got = [commitment[i] + img[i] * challenge
-          for i in range(num_equations(instance))]
+5. got = [commitment[i] + image(instance)[i] * challenge
+          for i in 0, ..., num_equations(instance) - 1]
 6. return got == expected
 </pre><a href="#section-4.7-2" class="pilcrow">¶</a>
 </div>
@@ -1851,7 +1851,8 @@ Output: a vector of num_scalars(instance) scalars
 
 Procedure:
 
-1. return [rng.random_scalar() for _ in range(num_scalars(instance))]
+1. return [rng.random_scalar()
+           for j in 0, ..., num_scalars(instance) - 1]
 </pre><a href="#section-4.8-2" class="pilcrow">¶</a>
 </div>
 <div class="alignLeft art-text artwork" id="section-4.8-3">
@@ -1872,7 +1873,7 @@ Procedure:
 2. img = image(instance)
 3. return simulated_commitment := [
        expected[i] - challenge * img[i]
-       for i in range(num_equations(instance))]
+       for i in 0, ..., num_equations(instance) - 1]
 </pre><a href="#section-4.8-3" class="pilcrow">¶</a>
 </div>
 <p id="section-4.8-4">Drawing <code>response</code> uniformly at random with <code>SimulateResponse</code> and then computing <code>commitment</code> with <code>SimulateCommitment</code> yields a transcript <code>(commitment, challenge, response)</code> with the same distribution as an honest one. This is the honest-verifier zero-knowledge property (<a href="#security-considerations" class="auto internal xref">Section 7</a>).<a href="#section-4.8-4" class="pilcrow">¶</a></p>
@@ -1915,7 +1916,7 @@ Procedure:
 Group.serialize(commitment) || Scalar.serialize(response)
 </pre><a href="#section-5.2-2" class="pilcrow">¶</a>
 </div>
-<p id="section-5.2-3"><code>ProveBatchable</code> and <code>VerifyBatchable</code> are the NARG prover and verifier of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> instantiated with the Sigma Protocol of <a href="#sigma-protocol-group" class="auto internal xref">Section 4</a>, and are fully determined by it:<a href="#section-5.2-3" class="pilcrow">¶</a></p>
+<p id="section-5.2-3"><code>ProveBatchable</code> and <code>VerifyBatchable</code> are the NARG prover and verifier of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> instantiated with the Sigma Protocol of <a href="#sigma-protocol-group" class="auto internal xref">Section 4</a>.<a href="#section-5.2-3" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.2-4.1">
             <p id="section-5.2-4.1.1"><code>ProveBatchable(tag, instance, witness, rng)</code> computes the commitment message with <code>ProverCommitment</code>, derives the challenge via <code>DecodeField</code> from a duplex sponge initialized with <code>DeriveSessionID(tag)</code> that absorbs <code>SerializeLinearRelation(instance)</code> followed by <code>Group.serialize(commitment)</code>, computes the response with <code>ProverResponse(prover_state, challenge)</code>. Finally, it outputs the NARG string above.<a href="#section-5.2-4.1.1" class="pilcrow">¶</a></p>
@@ -1924,66 +1925,46 @@ Group.serialize(commitment) || Scalar.serialize(response)
             <p id="section-5.2-4.2.1"><code>VerifyBatchable(tag, instance, proof)</code> fails unless <code>ValidateInstance(instance)</code> succeeds and <code>len(proof)</code> is exactly <code>Ne * num_equations(instance) + Ns * num_scalars(instance)</code>; it deserializes <code>commitment</code> and <code>response</code> with <code>Group.deserialize</code> and <code>Scalar.deserialize</code>, recomputes the challenge from the instance and the commitment bytes exactly as the prover does, and returns <code>Verifier(instance, commitment, challenge, response)</code>.<a href="#section-5.2-4.2.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-5.2-5">Verification of multiple batchable NARG strings can be done more cheaply than verifying each proof on its own <span>[<a href="#RFC8032" class="cite xref">RFC8032</a>]</span> <span>[<a href="#BDLSY11" class="cite xref">BDLSY11</a>]</span>. The verifier still recomputes the challenge of each proof individually to recover the protocol transcript, but instead of checking each proof's verification equation separately, it checks a single random linear combination of the verification equations of the whole batch <span>[<a href="#BellareGR98" class="cite xref">BellareGR98</a>]</span>.<a href="#section-5.2-5" class="pilcrow">¶</a></p>
-<p id="section-5.2-6">proof <code>i</code> is valid if, for every equation index <code>j</code>:<a href="#section-5.2-6" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-5.2-7">
+<p id="section-5.2-5">Verification of multiple batchable NARG strings <strong>MAY</strong> be done more efficiently than verifying each proof on its own.<a href="#section-5.2-5" class="pilcrow">¶</a></p>
+<p id="section-5.2-6">Batch verification is done by re-computing the verifier challenge of each proof individually, and then checking a single random linear combination of the verification equations of the whole batch. See <span><a href="https://rfc-editor.org/rfc/rfc8032#section-8.2" class="relref">Section 8.2</a> of [<a href="#RFC8032" class="cite xref">RFC8032</a>]</span> for additional concerns, in the literature <span>[<a href="#BDLSY11" class="cite xref">BDLSY11</a>]</span> <span>[<a href="#BellareGR98" class="cite xref">BellareGR98</a>]</span>. It is a local verifier-side optimization: it changes neither the prover nor the NARG string.<a href="#section-5.2-6" class="pilcrow">¶</a></p>
+<p id="section-5.2-7">For <code>Nt</code> transcripts <code>(commitment, challenge, response)</code>, the <code>i</code>-th one is valid if, for every equation index <code>j</code>:<a href="#section-5.2-7" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-5.2-8">
 <pre>
 commitment[i][j] + challenge[i] * image(instances[i])[j]
                  == map(instances[i], response[i])[j]
-</pre><a href="#section-5.2-7" class="pilcrow">¶</a>
+</pre><a href="#section-5.2-8" class="pilcrow">¶</a>
 </div>
-<p id="section-5.2-8">The batch verifier draws one uniformly random scalar coefficient for every pair <code>(i, j)</code> and accepts only if the sum of all left-hand sides, each multiplied by its coefficient, is the identity. One coefficient per equation, and not merely per proof, is required: a single coefficient applied to all equations of a proof would let a cheating prover choose errors in two equations of the same proof that cancel each other.<a href="#section-5.2-8" class="pilcrow">¶</a></p>
-<p id="section-5.2-9">Batch verification is sound under the following assumption: <strong>the coefficients are uniformly distributed in <code>[0, p)</code> and independent of the proofs, instances, and tags being verified</strong>. Under this assumption, because the group has prime order <code>p</code>, the per-equation errors of an invalid batch form a vector of group elements at least one of which is not the identity, and a random linear combination of its entries is the identity with probability exactly <code>1/p</code>. A batch containing an invalid proof is therefore accepted with probability at most <code>1/p</code> over the choice of the coefficients.<a href="#section-5.2-9" class="pilcrow">¶</a></p>
-<p id="section-5.2-10">The procedure below realizes this assumption by deriving the coefficients from a fresh duplex sponge, domain-separated from the per-proof challenge computation by its own session identifier. The sponge absorbs the entire batch (each proof's session identifier, serialized instance, and NARG string) and squeezes only after the last absorption, so that every coefficient depends on every transcript. Modeling the sponge as a random oracle, an adversary that re-generates proofs to steer the coefficients succeeds after <code>q</code> attempts with probability at most <code>q/p</code>.<a href="#section-5.2-10" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-5.2-11">
+<p id="section-5.2-9">The batch verifier may instead sample uniformly random coefficients <code>batching_randomness[i][j]</code> (for <code>i = 0, ..., Nt - 1</code> and <code>j = 0, ..., num_equations(instances[i]) - 1</code>) and check the single equation:<a href="#section-5.2-9" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-5.2-10">
 <pre>
-BatchVerify(tags, instances, proofs)
-
-Inputs:
-
-- tags, a list of N byte strings, where tags[i] uniquely identifies
-  the session of proofs[i]
-- instances, a list of N LinearRelations, where instances[i] MUST be
-  the instance proven by proofs[i]
-- proofs, a list of N batchable NARG strings
-
-Output: a boolean indicating whether all N proofs are valid
-
-Procedure:
-
-1. batch_sponge = DS.Init(
-       DeriveSessionID("irtf-cfrg-sigma-protocols/batch-verify"))
-2. for i in range(N):
-3.     fail if ValidateInstance(instances[i]) fails
-4.     Nc = num_equations(instances[i]) * Ne
-5.     Nr = num_scalars(instances[i]) * Ns
-6.     fail if len(proofs[i]) != Nc + Nr
-7.     commitment[i] = Group.deserialize(proofs[i][0 : Nc])
-8.     response[i] = Scalar.deserialize(proofs[i][Nc : Nc + Nr])
-9.     session_id = DeriveSessionID(tags[i])
-10.    duplex_sponge = DS.Init(session_id)
-11.    duplex_sponge.Absorb(SerializeLinearRelation(instances[i]))
-12.    duplex_sponge.Absorb(proofs[i][0 : Nc])
-13.    challenge[i] = DecodeField(
-           duplex_sponge.Squeeze(Ns + 16), p, 1)
-14.    batch_sponge.Absorb(session_id)
-15.    batch_sponge.Absorb(SerializeLinearRelation(instances[i]))
-16.    batch_sponge.Absorb(proofs[i])
-17. acc = Group.identity()
-18. for i in range(N):
-19.    expected = map(instances[i], response[i])
-20.    img = image(instances[i])
-21.    for j in range(num_equations(instances[i])):
-22.        r = DecodeField(batch_sponge.Squeeze(Ns + 16), p, 1)
-23.        acc = acc + r * (commitment[i][j]
-                           + challenge[i] * img[j] - expected[j])
-24. return acc == Group.identity()
-</pre><a href="#section-5.2-11" class="pilcrow">¶</a>
+sum(
+  batching_randomness[i][j] * commitment[i][j]
+  + batching_randomness[i][j] * challenge[i] * image(instances[i])[j]
+  - batching_randomness[i][j] * map(instances[i], response[i])[j]
+  for i in 0, ..., Nt - 1
+  for j in 0, ..., num_equations(instances[i]) - 1
+) == Group.identity()
+</pre><a href="#section-5.2-10" class="pilcrow">¶</a>
 </div>
-<p id="section-5.2-12">Steps 3-13 perform, for each proof, the same instance validation, deserialization, input validation, and challenge recomputation as <code>VerifyBatchable</code>: batching relaxes none of the checks on untrusted input (<a href="#sigma-ni-security" class="auto internal xref">Section 7.4</a>).<a href="#section-5.2-12" class="pilcrow">¶</a></p>
-<p id="section-5.2-13">The coefficients never leave the verifier and need not be reproduced by any other party, so their derivation is a local choice rather than an interoperability requirement: the domain-separation string in step 1 is arbitrary (any session identifier distinct from those of the proofs will do), and a verifier <strong>MAY</strong> instead sample each coefficient as <code>rng.random_scalar()</code> (<a href="#rng-definition" class="auto internal xref">Section 2.2</a>) after the whole batch has been received, in which case the <code>1/p</code> bound holds without the grinding term <code>q</code>. Coefficients drawn uniformly from a smaller range are a standard optimization that further reduces the multi-scalar multiplication cost <span>[<a href="#BellareGR98" class="cite xref">BellareGR98</a>]</span>: with <code>t</code>-bit coefficients, an invalid batch is accepted with probability at most <code>2^-t</code>. Ed25519 batch verification uses 128-bit coefficients in this way <span>[<a href="#BDLSY11" class="cite xref">BDLSY11</a>]</span>.<a href="#section-5.2-13" class="pilcrow">¶</a></p>
-<p id="section-5.2-14">Verification of a single NARG string is deterministic; as with EdDSA (<span><a href="https://rfc-editor.org/rfc/rfc8032#section-8.2" class="relref">Section 8.2</a> of [<a href="#RFC8032" class="cite xref">RFC8032</a>]</span>), the speedup from verifying multiple proofs at once requires random numbers.<a href="#section-5.2-14" class="pilcrow">¶</a></p>
-<p id="section-5.2-15">Batch verification outputs a single boolean for the whole batch. When it fails, it does not identify the offending proof; an application that needs to do so falls back to verifying the proofs individually.<a href="#section-5.2-15" class="pilcrow">¶</a></p>
+<p id="section-5.2-11">Similarly to batch verification of Ed25519 signatures <span>[<a href="#BDLSY11" class="cite xref">BDLSY11</a>]</span>, a false proof will be accepted with probability at most 2^-128, which is neglible. In general, for <code>batching_randomness</code> elements drawn uniformly from a set of <code>2^t</code> scalars, a false proof will be accepted with probability at most <code>2^-t</code>.<a href="#section-5.2-11" class="pilcrow">¶</a></p>
+<p id="section-5.2-12">The independent coefficients <strong>MAY</strong> be replaced by the successive powers <code>1, mu, mu^2, ...</code> of a single uniformly random scalar <code>mu</code>, assigned in a fixed order to the pairs <code>(i, j)</code>. In this case, an invalid batch is accepted with probability at most <code>(Nt - 1)/p</code> rather than <code>1/p</code>, where <code>Nt</code> is the number of transcripts in the batch.<a href="#section-5.2-12" class="pilcrow">¶</a></p>
+<p id="section-5.2-13">It is <strong>RECOMMENDED</strong> the batch randomness be generated deterministically, with the duplex sponge of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> as follows:<a href="#section-5.2-13" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-5.2-14">
+<pre>
+1. batching_sid = DeriveSessionID(
+       "irtf-cfrg-sigma-protocols/batch-verify")
+2. state = DS.Init(batching_sid)
+3. for i in 0, ..., Nt - 1:
+4.     state.Absorb(session_ids[i])
+5.     state.Absorb(SerializeLinearRelation(instances[i]))
+6.     state.Absorb(narg_strings[i])
+7. state.Squeeze(128 * sum(num_equations(instances[i])
+                           for i in 0, ..., Nt - 1))
+</pre><a href="#section-5.2-14" class="pilcrow">¶</a>
+</div>
+<p id="section-5.2-15">The verifier <strong>MUST</strong> perform instance validation for each instance, and <strong>MUST</strong> compute each of the verifier challenges as in <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>.<a href="#section-5.2-15" class="pilcrow">¶</a></p>
+<p id="section-5.2-16">The verifier <strong>MUST NOT</strong> use the duplex sponge of a NARG verifier <span>[<a href="#SOLANA-ZK" class="cite xref">SOLANA-ZK</a>]</span>: the batching randomness is not a verifier message of the proof system. If even one NARG string or instance is not absorbed, an attacker that observes the batching randomness can choose the omitted value afterwards so that the combined check passes on otherwise-invalid proofs. As an example, in OR composition <span>[<a href="#CramerDS94" class="cite xref">CramerDS94</a>]</span> the response message contains the prover-chosen challenge share <code>c_2</code>, with <code>c_1 = challenge - c_2</code>; if it is not absorbed, soundness is lost <span>[<a href="#SOLANA-PHANTOM" class="cite xref">SOLANA-PHANTOM</a>]</span>.<a href="#section-5.2-16" class="pilcrow">¶</a></p>
+<p id="section-5.2-17">When it fails, batch verification does not identify the offending proof; an application may fall back to verifying the proofs individually.<a href="#section-5.2-17" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="narg-string-compact">
@@ -2079,7 +2060,7 @@ FOO-{xx}-{tttt}-{flavor}-{hashID}-SIGMA-PROOFS-{yy}
 <a href="#section-6" class="section-number selfRef">6. </a><a href="#name-efficiency-considerations" class="section-name selfRef">Efficiency Considerations</a>
       </h2>
 <p id="section-6-1">Implementations <strong>SHOULD</strong> evaluate <code>map(instance, scalars)</code> (<a href="#representation" class="auto internal xref">Section 4.2</a>) using a multi-scalar multiplication (MSM) algorithm for each equation, rather than computing and summing each term individually; this matters most for equations with many terms.<a href="#section-6-1" class="pilcrow">¶</a></p>
-<p id="section-6-2">The verifier of <a href="#verifier" class="auto internal xref">Section 4.7</a> is specified as the equality <code>map(instance, response) == commitment + challenge * image(instance)</code>, evaluated as two separate vectors for clarity. Implementations <strong>MAY</strong> instead verify each equation <code>i</code> by checking that <code>commitment[i] + challenge * img[i] - sum(response[j] * M[i][j] for j)</code> is <code>identity()</code>, accumulating all terms in a single MSM per equation. Each image term enters this MSM with coefficient <code>challenge</code>, so the summed image is never materialized as a separate point. This folds the image scalar multiplications into the same MSM as the row terms, sharing its point doublings, and negation is free on these curves; the arithmetic is otherwise identical to the equality above.<a href="#section-6-2" class="pilcrow">¶</a></p>
+<p id="section-6-2">The verifier of <a href="#verifier" class="auto internal xref">Section 4.7</a> is specified as the equality <code>map(instance, response) == commitment + challenge * image(instance)</code>, evaluated as two separate vectors for clarity. Implementations <strong>MAY</strong> instead verify each equation <code>i</code> by checking that <code>commitment[i] + challenge * img[i] - sum(response[j] * M[i][j] for j in 0, ..., num_scalars(instance) - 1)</code> is <code>identity()</code>, accumulating all terms in a single MSM per equation. Each image term enters this MSM with coefficient <code>challenge</code>, so the summed image is never materialized as a separate point. This folds the image scalar multiplications into the same MSM as the row terms, sharing its point doublings, and negation is free on these curves; the arithmetic is otherwise identical to the equality above.<a href="#section-6-2" class="pilcrow">¶</a></p>
 <p id="section-6-3">As observed in the efficiency considerations of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>, <code>DS.Init(session_id)</code> followed by <code>Absorb(encode[0](instance))</code> depends only on the <code>tag</code> and <code>instance</code>, not on the witness or randomness of any particular proof. Implementations that produce or verify many proofs for the same instance can precompute and reuse the duplex sponge state resulting from these two steps of the challenge derivation (<a href="#non-interactive" class="auto internal xref">Section 5</a>) across proofs. <code>ValidateInstance</code> (<a href="#instance-validation" class="auto internal xref">Section 4.3</a>) likewise depends only on the instance, and can be checked once per instance rather than once per proof.<a href="#section-6-3" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2512,6 +2493,14 @@ FOO-{xx}-{tttt}-{flavor}-{hashID}-SIGMA-PROOFS-{yy}
 <dt id="RFC9497">[RFC9497]</dt>
         <dd>
 <span class="refAuthor">Davidson, A.</span>, <span class="refAuthor">Faz-Hernandez, A.</span>, <span class="refAuthor">Sullivan, N.</span>, and <span class="refAuthor">C. A. Wood</span>, <span class="refTitle">"Oblivious Pseudorandom Functions (OPRFs) Using Prime-Order Groups"</span>, <span class="seriesInfo">RFC 9497</span>, <span class="seriesInfo">DOI 10.17487/RFC9497</span>, <time datetime="2023-12" class="refDate">December 2023</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9497">https://www.rfc-editor.org/rfc/rfc9497</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="SOLANA-PHANTOM">[SOLANA-PHANTOM]</dt>
+        <dd>
+<span class="refAuthor">Gong, S.</span>, <span class="refTitle">"Uncovering the Phantom Challenge Soundness Bug in Solana's ZK ElGamal Proof Program"</span>, <time datetime="2025" class="refDate">2025</time>, <span>&lt;<a href="https://blog.zksecurity.xyz/posts/solana-phantom-challenge-bug/">https://blog.zksecurity.xyz/posts/solana-phantom-challenge-bug/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="SOLANA-ZK">[SOLANA-ZK]</dt>
+        <dd>
+<span class="refAuthor">Solana Foundation</span>, <span class="refTitle">"Post Mortem: ZK ElGamal Proof Program Bug"</span>, <time datetime="2025" class="refDate">2025</time>, <span>&lt;<a href="https://solana.com/news/post-mortem-may-2-2025">https://solana.com/news/post-mortem-may-2-2025</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="Stern93">[Stern93]</dt>
       <dd>
