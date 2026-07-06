@@ -891,7 +891,7 @@ This section contains additional security considerations about the Fiat-Shamir t
 
 Encoding maps are inverted only in the security analysis (by the knowledge extractor), never by the prover or verifier. The proof relies on a left inverse existing and being efficiently computable, which the knowledge-soundness extractor uses to recover prover messages from the absorbed bytes {{CO25}}.
 
-Decoding preserves the uniform distribution only when its input is uniform. Verifier messages **MUST** therefore be derived from `Squeeze` output and never from prover-controlled, or non-uniform bytes: decoding a non-uniform input yields a verifier message that is distinguishable from uniform, which would break the public-coin property the transformation depends on.
+Decoding preserves the uniform distribution only when its input is uniform. Verifier messages **SHOULD** therefore be derived from `Squeeze` output and never from prover-controlled, or non-uniform bytes: decoding a non-uniform input yields a verifier message that is distinguishable from uniform, which would break the public-coin property the transformation depends on.
 
 ## Constant-time requirements {#constant-time}
 
