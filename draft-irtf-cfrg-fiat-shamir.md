@@ -3,7 +3,7 @@ title: "Fiat-Shamir Transformation"
 category: info
 
 docname: draft-irtf-cfrg-fiat-shamir-latest
-submissiontype: IETF
+submissiontype: IRTF
 number:
 date:
 consensus: true
@@ -40,14 +40,6 @@ normative:
         ins: Standards for Efficient Cryptography Group (SECG)
 
 informative:
-  FIPS203:
-    title: "Module-Lattice-Based Key-Encapsulation Mechanism Standard"
-    target: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf
-    date: 2024
-    seriesinfo:
-      "FIPS": "203"
-    author:
-      - org: "National Institute of Standards and Technology (NIST)"
   FIPS204:
     title: "Module-Lattice-Based Digital Signature Standard"
     target: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf
@@ -90,7 +82,7 @@ informative:
   BPW16:
     title: "How not to Prove Yourself: Pitfalls of the Fiat-Shamir Heuristic and Applications to Helios"
     target: https://eprint.iacr.org/2016/771
-    date: 2016
+    date: 2012
     author:
       - fullname: "David Bernhard"
       - fullname: "Olivier Pereira"
@@ -105,17 +97,25 @@ informative:
       - fullname: "Opal Wright"
       - fullname: "Paul Grubbs"
   FROZENHEART:
-    title: "The Frozen Heart Vulnerability in PlonK"
+    title: "The Frozen Heart vulnerability in PlonK"
     target: https://blog.trailofbits.com/2022/04/18/the-frozen-heart-vulnerability-in-plonk/
     date: 2022
     author:
       - org: "Trail of Bits"
   SOLANA-ZK:
-    title: "Post-Mortem: ZK ElGamal Proof Program Bug"
+    title: "Post Mortem: ZK ElGamal Proof Program Bug"
     target: https://solana.com/news/post-mortem-may-2-2025
     date: 2025
     author:
       - org: "Solana Foundation"
+  POSEIDON2:
+    title: "Poseidon2: A Faster Version of the Poseidon Hash Function"
+    target: https://eprint.iacr.org/2023/323
+    date: 2023
+    author:
+      - fullname: "Lorenzo Grassi"
+      - fullname: "Dmitry Khovratovich"
+      - fullname: "Markus Schofnegger"
   SAFE:
     title: "SAFE: Sponge API for Field Elements"
     target: https://eprint.iacr.org/2023/522
@@ -126,15 +126,23 @@ informative:
       - fullname: "Bart Mennink"
       - fullname: "Porçu Quine"
   GNARK-OOM:
-    title: "GHSA-cph5-3pgr-c82g: gnark vulnerable to out-of-memory crash during deserialization of untrusted keys"
+    title: "Out-of-memory during deserialization with crafted inputs"
     target: https://github.com/Consensys/gnark/security/advisories/GHSA-cph5-3pgr-c82g
     date: 2024
     author:
       - org: "Consensys"
-  CVE-2024-42461:
-    title: "CVE-2024-42461: ECDSA signature malleability from BER-encoded signatures in the elliptic package"
-    target: https://nvd.nist.gov/vuln/detail/CVE-2024-42461
+  CVE-2022-29566:
+    title: "CVE-2022-29566: Fiat-Shamir hashing omits public values from the statement and the proof in Bulletproofs (Frozen Heart)"
+    target: https://nvd.nist.gov/vuln/detail/CVE-2022-29566
+    date: 2022
+  CVE-2024-45039:
+    title: "CVE-2024-45039: gnark Groth16 commitment extension unsound for more than one commitment"
+    target: https://nvd.nist.gov/vuln/detail/CVE-2024-45039
     date: 2024
+  CVE-2026-46654:
+    title: "CVE-2026-46654: Plonky3 Fiat-Shamir challenge collision from a non-binding transcript"
+    target: https://nvd.nist.gov/vuln/detail/CVE-2026-46654
+    date: 2026
 
 --- abstract
 
@@ -163,115 +171,120 @@ Both the non-interactive prover and verifier rely on:
 - a set of codecs, describing how each prover and verifier message talk to the duplex sponge ({{codecs}});
 - a serialization and deserialization procedure for the NARG string produced by the prover ({{narg-string}}).
 
-This document specifies only byte-oriented hash functions, but this transformation generalizes to alphabets other than bytes (for example, prime-field elements); see {{CO25}} for the general construction.
+This transformation is also well-suited for recursive proving, since the in-circuit cost of recomputing the Fiat-Shamir challenges is low. It is compatible with arithmetization-friendly hash functions (e.g. Poseidon2 {{POSEIDON2}}) that operate natively on field elements. See {{CO25}} for the general construction.
 
 Other types of non-interactive transformations (with and without random oracles) are possible, but outside the scope of this specification.
 
 ~~~ aasvg
-+--------------------------------------------------------------------------+
-| NARG Prover (session_id, instance, witness)                              |
-|                                                                          |
-|                                                              +------+    |
-|  session_id ------------------------------------------------>| Init |    |
-|                                                              +------+    |
-|                                                                   |      |
-|                                                                   v      |
-|                                          +------------+      +--------+  |
-|  instance ------------------------------>| encode[0]  |----->| Absorb |  |
-|  +---------------------+                 +------------+      +--------+  |
-|  | Interactive Prover  |                                          |      |
-|  |  (instance, witness)|                                          v      |
-|  |                     | prover_msg[1]   +------------+      +--------+  |
-|  |                     +---------------->| encode[1]  |----->| Absorb |  |
-|  |                     |                 +------------+      +--------+  |
-|  |                     |                                          |      |
-|  |                     |                                          v      |
-|  |                     | verifier_msg[1] +------------+      +---------+ |
-|  |                     |<----------------| decode[1]  |<-----| Squeeze | |
-|  |                     |                 +------------+      +---------+ |
-|  |                     |                                          |      |
-|  |                     |                                          v      |
-|  |                     | prover_msg[2]   +------------+      +--------+  |
-|  |                     +---------------->| encode[2]  |----->| Absorb |  |
-|  |                     |                 +------------+      +--------+  |
-|  |                     |                                          |      |
-|  |                     |                                          v      |
-|  |                     | verifier_msg[2] +------------+      +---------+ |
-|  |                     |<----------------| decode[2]  |<-----| Squeeze | |
-|  |                     |                 +------------+      +---------+ |
-|  |                     |        .                                 .      |
-|  |                     |        .                                 .      |
-|  |                     |        .                                 .      |
-|  |                     | prover_msg[k-1] +-------------+     +--------+  |
-|  |                     +---------------->| encode[k-1] |---->| Absorb |  |
-|  |                     |                 +-------------+     +--------+  |
-|  |                     |                                          |      |
-|  |                     |                                          v      |
-|  |                     | verifier_msg[k-1] +-------------+   +---------+ |
-|  |                     |<------------------| decode[k-1] |<--| Squeeze | |
-|  |                     |                   +-------------+   +---------+ |
-|  |                     | prover_msg[k]                                   |
-|  |                     +------------------>                              |
-|  +---------------------+                                                 |
-|                                                                          |
-|       narg_string := serialize(prover_msg[..])                           |
-+--------------------------------------------------------------------------+
++-------------------------------------------------------------------+
+| NARG Prover (session_id, instance, witness)                       |
+|                                                                   |
+|                                                        +------+   |
+| session_id ------------------------------------------->| Init |   |
+|                                                        +------+   |
+|                                                            |      |
+|                                                            v      |
+|                                       +------------+   +--------+ |
+| instance ---------------------------->| encode[0]  |-->| Absorb | |
+| +-------------------+                 +------------+   +--------+ |
+| | Interactive Prover|                                      |      |
+| |(instance, witness)|                                      |      |
+| |                   | prover_msg[1]                        v      |
+| |                   |                 +------------+   +--------+ |
+| |                   +---------------->| encode[1]  |-->| Absorb | |
+| |                   |                 +------------+   +--------+ |
+| |                   |                                      |      |
+| |                   | verifier_msg[1]                      v      |
+| |                   |                 +------------+   +---------+|
+| |                   |<----------------| decode[1]  |<--| Squeeze ||
+| |                   |                 +------------+   +---------+|
+| |                   |                                      |      |
+| |                   | prover_msg[2]                        v      |
+| |                   |                 +------------+   +--------+ |
+| |                   +---------------->| encode[2]  |-->| Absorb | |
+| |                   |                 +------------+   +--------+ |
+| |                   |                                      |      |
+| |                   | verifier_msg[2]                      v      |
+| |                   |                 +------------+   +---------+|
+| |                   |<----------------| decode[2]  |<--| Squeeze ||
+| |                   |                 +------------+   +---------+|
+| |                   |        .                             .      |
+| |                   |        .                             .      |
+| |                   |        .                             .      |
+| |                   |                                      |      |
+| |                   | prover_msg[k-1]                      v      |
+| |                   |                 +------------+   +--------+ |
+| |                   +---------------->| encode[k-1]|-->| Absorb | |
+| |                   |                 +------------+   +--------+ |
+| |                   |                                      |      |
+| |                   | verifier_msg[k-1]                    v      |
+| |                   |                 +------------+   +---------+|
+| |                   |<----------------| decode[k-1]|<--| Squeeze ||
+| |                   |                 +------------+   +---------+|
+| |                   | prover_msg[k]                               |
+| |                   +---------------->                            |
+| +-------------------+                                             |
+|                                                                   |
+|    narg_string := serialize(prover_msg[..])                       |
++-------------------------------------------------------------------+
 ~~~
 {: #fig-fiat-shamir-prover title="Non-interactive prover for the Fiat-Shamir transformation"}
 
 ~~~ aasvg
-+-----------------------------------------------------------------------+
-| NARG Verifier V(session_id, instance, narg_string)                    |
-|                                                                       |
-| 1. prover_msg[..] := deserialize(narg_string)                         |
-| 2. derive verifier messages:                                          |
-|                                                                       |
-|                                     +------+                          |
-| session_id ------------------------>| Init |                          |
-|                                     +------+                          |
-|                                         |                             |
-|                                         v                             |
-|              +-----------+          +--------+                        |
-| instance --->| encode[0] |--------->| Absorb |                        |
-|              +-----------+          +--------+                        |
-|                                         |                             |
-|                                         v                             |
-|prover_msg[1] +-----------+          +--------+                        |
-|------------->| encode[1] |--------->| Absorb |                        |
-|              +-----------+          +--------+                        |
-|                                         |                             |
-|                                         v                             |
-| verifier_msg[1] +-----------+       +---------+                       |
-| <---------------| decode[1] |<------| Squeeze |                       |
-|                 +-----------+       +---------+                       |
-|                                         |                             |
-|                                         v                             |
-|prover_msg[2] +-----------+          +--------+                        |
-|------------->| encode[2] |--------->| Absorb |                        |
-|              +-----------+          +--------+                        |
-|                                         |                             |
-|                                         v                             |
-| verifier_msg[2] +-----------+       +---------+                       |
-| <---------------| decode[2] |<------| Squeeze |                       |
-|                 +-----------+       +---------+                       |
-|       .                                 .                             |
-|       .                                 .                             |
-|       .                                 .                             |
-|prover_msg[k]  +-----------+       +--------+                          |
-|-------------->| encode[k] |------>| Absorb |                          |
-|               +-----------+       +--------+                          |
-|                                         |                             |
-|                                         v                             |
-| verifier_msg[k]   +-----------+   +---------+                         |
-| <-----------------| decode[k] |<--| Squeeze |                         |
-|                   +-----------+   +---------+                         |
-|                                                                       |
-| 3. check IP decision:                                                 |
-|                                                                       |
-| +-------------------------------------------------------------------+ |
-| | Interactive Verifier (instance, prover_msg[..], verifier_msg[..]) | |
-| +-------------------------------------------------------------------+ |
-+-----------------------------------------------------------------------+
++-------------------------------------------------------------------+
+| NARG Verifier V(session_id, instance, narg_string)                |
+|                                                                   |
+| 1. prover_msg[..] := deserialize(narg_string)                     |
+| 2. derive verifier messages:                                      |
+|                                                                   |
+|                                     +------+                      |
+| session_id ------------------------>| Init |                      |
+|                                     +------+                      |
+|                                         |                         |
+|                                         v                         |
+|              +-----------+          +--------+                    |
+| instance --->| encode[0] |--------->| Absorb |                    |
+|              +-----------+          +--------+                    |
+|                                         |                         |
+|                                         v                         |
+|prover_msg[1] +-----------+          +--------+                    |
+|------------->| encode[1] |--------->| Absorb |                    |
+|              +-----------+          +--------+                    |
+|                                         |                         |
+|                                         v                         |
+| verifier_msg[1] +-----------+       +---------+                   |
+| <---------------| decode[1] |<------| Squeeze |                   |
+|                 +-----------+       +---------+                   |
+|                                         |                         |
+|                                         v                         |
+|prover_msg[2] +-----------+          +--------+                    |
+|------------->| encode[2] |--------->| Absorb |                    |
+|              +-----------+          +--------+                    |
+|                                         |                         |
+|                                         v                         |
+| verifier_msg[2] +-----------+       +---------+                   |
+| <---------------| decode[2] |<------| Squeeze |                   |
+|                 +-----------+       +---------+                   |
+|       .                                 .                         |
+|       .                                 .                         |
+|       .                                 .                         |
+|prover_msg[k]  +-----------+       +--------+                      |
+|-------------->| encode[k] |------>| Absorb |                      |
+|               +-----------+       +--------+                      |
+|                                         |                         |
+|                                         v                         |
+| verifier_msg[k]   +-----------+   +---------+                     |
+| <-----------------| decode[k] |<--| Squeeze |                     |
+|                   +-----------+   +---------+                     |
+|                                                                   |
+| 3. Run the interactive verifier                                   |
+|                                                                   |
+| +--------------------------------------+                          |
+| | Interactive Verifier                 |                          |
+| |  (instance, prover_msg[..],          |                          |
+| |   verifier_msg[..])                  |                          |
+| +--------------------------------------+                          |
++-------------------------------------------------------------------+
 ~~~
 {: #fig-fiat-shamir-verifier title="Non-interactive verifier for the Fiat-Shamir transformation"}
 
@@ -324,10 +337,6 @@ Output: n, a non-negative integer with 0 <= n < 256^w
 4. return n
 ~~~
 
-`I2OSP(n, w)` and `OS2IP(x)` are the big-endian primitives defined in Section 4 of {{!RFC8017}}: `I2OSP(n, w)` converts a non-negative integer `n` less than `256^w` into a `w`-byte, big-endian byte string, and `OS2IP(x)` converts a byte string into a non-negative integer in big-endian order. This document uses them only where a field type's own standardized serialization fixes a big-endian byte order (see {{encoding-field}}). For every `n` and `w`, `LE(n, w)` is the byte reversal of `I2OSP(n, w)`, and `LE2IP(x)` equals `OS2IP(reverse(x))`.
-
-The `LE(n, w)` failure condition mirrors the `"integer too large"` error of `I2OSP` (Section 4.1 of {{!RFC8017}}): the value `n` must fit in the `w` bytes available, so for the common case `w = 32` the input must satisfy `n < 2^256`. Unlike the little-endian `IntegerToBytes` of Section 7.1 of {{FIPS204}}, `LE` does not silently reduce `n` modulo `256^w`; an out-of-range input is an error, never a truncation.
-
 The set of integers between `0` and `N-1` is denoted `[0, N)`.
 
 ## Duplex sponge interface
@@ -340,7 +349,7 @@ The interface generalizes the **sponge** {{SPONGE}}, which maps a variable-lengt
 
 The **session identifier** is a 32-byte string that identifies the application context and the specific non-interactive argument in use; it is held by both the prover and the verifier (see {{session-id}}).
 
-A **prover message** is a message sent by the interactive prover, and a **verifier message** is a message sent by the interactive verifier (a uniformly random value, sometimes called _challenge_). A message can be a value of any type for which a codec ({{codecs}}) is defined, such as a byte string, an unsigned integer, or a group element. The **transcript** is the ordered sequence of prover and verifier messages. In particular, the transcript does _not_ include the session identifier.
+A **prover message** is a message sent by the interactive prover, and a **verifier message** is a message sent by the interactive verifier (a uniformly random value, sometimes called _challenge_). A message can be a value of any type for which a codec ({{codecs}}) is defined, such as a byte string, an unsigned integer, or a group element. The **transcript** is the ordered sequence of prover and verifier messages. In particular, the transcript does _not_ include the instance and session identifier.
 
 The **instance** specifies the statement being proven and is held by both the prover and the verifier. The (encoded) instance **MUST** be non-empty.
 
@@ -350,7 +359,7 @@ For an NP language, the instance is a word, the witness is a proof of its member
 
 The **NARG string** (non-interactive argument string) is the serialized output of the non-interactive prover.
 
-The notation in this document is for an interactive argument with `k` rounds in which the prover moves first and the verifier moves last. Other types of interactions can be expressed in the same notation by setting the unused messages to the empty string: a protocol whose verifier moves first (such as a batch argument) sets its first prover message to `""`, and one whose prover moves last (such as a sigma protocol) sets its final verifier message to `""`. Prover and verifier round messages `2`, ..., `k-1` **MUST** be non-empty.
+The notation in this document is for an interactive argument with `k` rounds in which the prover moves first (that is, sends the first message) and the verifier moves last. Other types of interactions can be expressed in the same notation by setting the unused messages to the empty string: a protocol whose verifier moves first (such as a batch argument) sets its first prover message to `""`, and one whose prover moves last (such as a sigma protocol) sets its final verifier message to `""`. Prover and verifier round messages `2`, ..., `k-1` **MUST** be non-empty.
 
 ## Codec and serialization
 
@@ -370,7 +379,7 @@ For a prover message, the serialized bytes coincide with the encoded bytes ({{se
 
 # Duplex sponge {#hash-instantiations}
 
-This section lists the duplex sponge instantiations provided in this document.
+This section defines the duplex sponge instantiations used in this document.
 
 ## Interface
 
@@ -378,34 +387,48 @@ Prover and verifier messages are handled via three operations:
 
 - `Init(session_id) -> state`: create a new duplex sponge state, seeded by the 32-byte string `session_id`.
 - `state.Absorb(x)`: absorb `x` into the state.
-- `state.Squeeze(n) -> buf`: produce `n` bytes from the state.
+- `state.Squeeze(n) -> buf`: produce `n` elements from the state.
 
-In the duplex sponge interface, messages can be absorbed incrementally: `state.Absorb(x)` followed by `state.Absorb(y)` (with no `state.Squeeze` in between) is equivalent to `state.Absorb(x || y)`. The output of `state.Squeeze(n)` is uniformly distributed, and consecutive `state.Squeeze` calls continue one output stream.
+In the duplex sponge interface, messages can be absorbed incrementally, and insert no separators: `state.Absorb(x)` followed by `state.Absorb(y)` (with no `state.Squeeze` in between) is equivalent to `state.Absorb(x || y)`.
+
+Each `state.Squeeze(n)` is uniformly distributed, and consecutive `state.Squeeze` calls continue one output stream.
 
 Guidance on how to produce a 32-byte `session_id` is given in {{session-id}}; its security requirements in {{indifferentiability-of-the-hash-function}}.
 
-## SHAKE128 duplex sponge {#suite-shake128}
+## XOF duplex sponge {#xof-duplex-sponge}
 
-In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the `Keccak-f` permutation: SHAKE128 and SHAKE256. Four other fixed-length hash-function instances (SHA3-224, SHA3-256, SHA3-384, and SHA3-512) are also defined but are out of scope for this document. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of {{SHA3}}). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits).
+This section implements the duplex sponge interface using an eXtendable-Output Function (XOF). An XOF is a hash function mapping a byte string to an output string of any desired length. It has the following operations:
 
-This instantiation is equivalent to invoking the SHAKE128 XOF on the concatenation of the session identifier, the encoded instance, and the encoded prover messages. That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
+- `XOF.New() -> ctx`, a fresh absorbing context;
+- `ctx.Update(x)`, absorbing the byte string `x` into the context;
+- `ctx.Copy() -> ctx`, an independent copy of the context;
+- `ctx.Finalize() -> reader`, finalizing the context and returning a reader over the output stream;
+- `reader.Read(n) -> buf`, the next `n` bytes of the output stream.
+
+`R` (the rate) is the block size at which the XOF processes absorbed input. It **MUST** be `R >= 32`. `XOF(M, len)`, the XOF evaluation of the byte string `M`, producing `len` bytes of output. The concrete XOF is fixed by the suite ({{suites}})
+
+The bytes returned by `reader.Read` are the bytes of `XOF(M, .)`, where `M` is the entire input absorbed via `Update`. Consecutive `Read` calls continue the output stream.
+
+Every verifier message is the XOF evaluation over the session identifier, the encoded instance, and the encoded prover messages up to and including the current round. That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
 
 ~~~
-verifier_msg[i] := decode[i](SHAKE128(
+verifier_msg[i] := decode[i](XOF(
                        session_id || zeros(R - 32)
                        || encode[0](instance)
                        || encode[1](prover_msg[1])
                        || ...
                        || encode[i](prover_msg[i]),
-                   len_i * 8))
+                   len_i))
 ~~~
 
-The session identifier is padded with `R - 32 = 136` zero bytes so that the instance and prover messages begin on a fresh rate-block boundary (see {{init}}).
+The session identifier is padded with `R - 32` zero bytes so that the instance and prover messages begin on a fresh rate-block boundary (see {{xof-init}}), for efficiency ({{efficiency}}).
 
-### Init {#init}
+The security properties required of the XOF, and the security level attained, are fixed by the suite ({{suites}}); the corresponding requirements on the construction are discussed in {{indifferentiability-of-the-hash-function}}.
 
-Seed the state by absorbing the session identifier, padded with zeros to fill the rate (the remaining `R - 32 = 136` bytes).
-The zeros are ordinary input absorbed before the standard SHAKE128 padding.
+### Init {#xof-init}
+
+Seed the state by absorbing the session identifier, padded with zeros to fill the rate (the remaining `R - 32` bytes).
+The zeros are ordinary input absorbed before the XOF's standard padding.
 
 ~~~
 Init(session_id)
@@ -415,109 +438,33 @@ Input: session_id, a byte array
 Output: a duplex sponge state
 
 1. assert len(session_id) == 32
-2. ctx = SHAKE128.New()
+2. ctx = XOF.New()
 3. ctx.Update(session_id || zeros(R - 32))
 4. return state := (ctx, reader = None)
 ~~~
 
-### Absorb {#shake128-absorb}
+### Absorb {#xof-absorb}
 
 Feed a byte string `x` into the state. Absorbing the empty string leaves the state unchanged.
 
 ~~~
 state.Absorb(x)
 
-Input:
-
-- x, a byte array
+Input: x, a byte string
 
 1. state.ctx.Update(x)
 2. if len(x) != 0:
 3.    state.reader = None
 ~~~
 
-### Squeeze
+### Squeeze {#xof-squeeze}
 
-Returns the next `n` bytes of the SHAKE128 output stream computed over the absorbed input. If the duplex sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a SHAKE128 XOF reader. Consecutive `Squeeze` calls **continue** the same SHAKE128 output stream.
-
-~~~
-state.Squeeze(n)
-
-Input:
-
-- n, the number of bytes to be squeezed
-
-Output: a uniformly-distributed random n-byte string
-
-1. if state.reader == None:
-2.    state.reader = state.ctx.Copy().Finalize()
-3. return state.reader.Read(n)
-~~~
-
-## TurboSHAKE128 duplex sponge {#suite-turboshake128}
-
-TurboSHAKE128 {{!RFC9861}} is an eXtendable-Output Function (XOF) built on the round-reduced `Keccak-p[1600, 12]` permutation.  Its state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an `n`-byte output string, respectively (see {{!RFC9861}}). This instantiation targets 128-bit security.
-
-This instantiation is equivalent to invoking the TurboSHAKE128 XOF as `TurboSHAKE128(M, D, L)`, where `M` is the concatenation of the session identifier, the encoded instance, and the encoded prover messages, `D` (the domain-separation byte in the range `0x01` to `0x7F`) is fixed to `D = 0x1F`, the default value, and `L` is the desired output length in bytes {{!RFC9861}}.
-
-That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
-
-~~~
-verifier_msg[i] := decode[i](TurboSHAKE128(
-                       session_id || zeros(R - 32)
-                       || encode[0](instance)
-                       || encode[1](prover_msg[1])
-                       || ...
-                       || encode[i](prover_msg[i]),
-                   0x1F, len_i))
-~~~
-
-The session identifier is padded with `R - 32 = 136` zero bytes so that the instance and prover messages begin on a fresh rate-block boundary (see {{turboshake128-init}}).
-
-### Init {#turboshake128-init}
-
-Seed the state by absorbing the session identifier, padded with zeros to fill the rate (the remaining `R - 32 = 136` bytes).
-The zeros are ordinary input absorbed before the standard TurboSHAKE128 padding.
-
-~~~
-Init(session_id)
-
-Input: session_id, a byte array
-
-Output: a duplex sponge state
-
-1. assert len(session_id) == 32
-2. ctx = TurboSHAKE128.New(D = 0x1F)
-3. ctx.Update(session_id || zeros(R - 32))
-4. return state := (ctx, reader = None)
-~~~
-
-### Absorb {#turboshake128-absorb}
-
-Feed a byte string `x` into the state. Absorbing the empty string leaves the state unchanged.
-
-~~~
-state.Absorb(x)
-
-Input:
-
-- x, a byte string
-
-1. state.ctx.Update(x)
-2. if len(x) != 0:
-3.    state.reader = None
-~~~
-
-### Squeeze {#turboshake128-squeeze}
-
-Returns the next `n` bytes of the TurboSHAKE128 output stream computed over the absorbed input. If the duplex sponge is in the absorbing phase, it finalizes a copy of the absorbing context as a TurboSHAKE128 XOF reader. Consecutive `Squeeze` calls **continue** the same TurboSHAKE128 output stream.
+Returns the next `n` bytes of the XOF output stream computed over the absorbed input. If the duplex sponge is in the absorbing phase, it finalizes a copy of the absorbing context as an XOF reader. Consecutive `Squeeze` calls **continue** the same output stream.
 
 ~~~
 state.Squeeze(n)
 
-Input:
-
-- n, the number of bytes to be squeezed
+Input: n, the number of bytes to be squeezed
 
 Output: a uniformly-distributed random n-byte string
 
@@ -528,18 +475,16 @@ Output: a uniformly-distributed random n-byte string
 
 # Codecs
 
-A codec is a set of functions that map prover and verifier messages to the hash function's alphabet:
+A codec is a set of functions that map prover messages to, and verifier messages from, the hash function's alphabet:
 
-- Encoding converts prover messages into the bytes absorbed by the duplex sponge. Encoding functions **MUST** be prefix-free.
-- Decoding converts squeezed bytes into verifier messages. Decoding **MUST** preserve the uniform distribution (up to a small codec error).
+- Encoding converts the instance and the prover messages into the bytes absorbed by the duplex sponge. The only security requirement on encoding functions is that they be prefix-free.
+- Decoding converts squeezed bytes into verifier messages. Decoding **MUST** preserve the uniform distribution in the verifier message space (up to a small codec error). Decoding is infallible.
 
 ## Encoding into byte strings {#encoding-bytes}
 
-All encoding functions **MUST** be prefix-free.
-
 ### Byte strings {#encoding-varlen-string}
 
-Encoding of a `N`-byte string is the identity function.
+Encoding of an `N`-byte string is the identity function.
 
 ~~~
 EncodeBytes(s)
@@ -595,7 +540,7 @@ This section specifies the _default_ encoding of a finite field of order `q = p^
 
 If the field already has a canonical serialization fixed by a standard, that serialization **SHOULD** be used in place of the default specified below, and it **MUST** be prefix-free. The default below encodes each prime-field coordinate as a fixed-width little-endian integer via `EncodeUint` ({{encoding-uint}}).
 
-For example, Curve25519 {{?RFC7748}}, Ed25519 {{?RFC8032}}, ristretto255 {{Section 4.4 of ?RFC9496}} serialize field elements as a fixed-width little-endian integer  Similarly, in Section 7.1 of {{FIPS204}}, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 ({{SEC1}}) and BLS12-381 ({{?I-D.irtf-cfrg-pairing-friendly-curves}}) serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization **MUST** be used in place: a prime-field coordinate `x` in `[0, p)` is encoded as `I2OSP(x, Ns)`, with `Ns` the smallest integer such that `256^Ns >= p`, in place of the default `LE(x, Ns)`. As with the default, deserialization **MUST** reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than `p`). When the chosen field serialization departs from the above rule, that choice is part of the codec identity and **MUST** be reflected in the session tag (see {{session-id}}).
+For example, Curve25519 {{?RFC7748}}, Ed25519 {{?RFC8032}}, ristretto255 {{Section 4.4 of ?RFC9496}} serialize field elements as a fixed-width little-endian integer. Similarly, in Section 7.1 of {{FIPS204}}, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 {{SEC1}} and BLS12-381 {{?I-D.irtf-cfrg-pairing-friendly-curves}} serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization **MUST** be used in place: a prime-field coordinate `x` in `[0, p)` is encoded as `I2OSP(x, Ns)`, with `Ns` the smallest integer such that `256^Ns >= p`, in place of the default `LE(x, Ns)`. As with the default, deserialization **MUST** reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than `p`). When using a different codec, that selection **MUST** be reflected in the session tag (see {{session-id}}).
 
 With respect to a fixed basis, a field element is represented by its `m` coordinates in the prime field, each an integer in `[0, p)`. It is encoded as the concatenation of the per-coordinate encodings produced by `EncodeUint` ({{encoding-uint}}) with modulus `p`. Let `Ns` be the smallest integer with `256^Ns >= p`; a field element encodes to `m * Ns` bytes.
 
@@ -654,7 +599,7 @@ Output: out, a byte string of length N
 
 ### Unsigned integers {#decoding-uint}
 
-To sample a uniformly random element modulo `M` of `Ns` bytes (that is, the smallest integer `Ns` with `256^Ns >= M`), squeeze `Ns + 16` bytes by interpreting them as a little-endian non-negative integer via `LE2IP`, and reduce modulo `M`.
+To sample a uniformly random element modulo `M`, let `Ns` be the smallest integer with `256^Ns >= M`: squeeze `Ns + 16` bytes, interpret them as a little-endian non-negative integer via `LE2IP`, and reduce modulo `M`.
 
 ~~~
 DecodeUint(buf, M)
@@ -672,7 +617,7 @@ Output: out, an integer in the range [0, M)
 
 The 16 extra bytes bound the statistical distance between the reduced value and the uniform distribution over `[0, M)` to `2^-128`, matching {{Section 5 of ?RFC9380}}. More generally, sampling `Ns + n` extra bytes bounds the bias to `2^-8n`; an instantiation targeting a security level of `k` bits **SHOULD** squeeze `k/8` extra bytes.
 
-In three cases this approach is inefficient: if `log2(M)` is significantly smaller than `8 * Ns`, if `M` is a power of two, and if `M` is only slightly below a power of `256` (for example, the secp256k1 scalar field order) where squeezing just `Ns` bytes and reducing with a single conditional subtraction already has bias below `2^-128`.
+In three cases this approach is inefficient: if `log2(M)` is significantly smaller than `8 * Ns`, if `M` is a power of two, and if `M` is only slightly below a power of `256` (for example, the secp256k1 scalar field order) where squeezing just `Ns` bytes and reducing with a single conditional subtraction already has bias of approximately `2^-128`.
 In such cases, applications **MAY** use an alternative decoding function, provided it meets the following security requirements:
 
 -  The function **MUST** have bias less than the soundness error of the interactive argument.
@@ -683,7 +628,7 @@ Similar requirements and a longer discussion are available in {{Section 5 of ?RF
 
 ### Field elements {#decoding-field}
 
-A field element of a field of order `p^m` is decoded coordinate by coordinate: each of its `m` prime-field coordinates is decoded via `DecodeUint` ({{decoding-uint}}) with modulus `p`, starting from the least-significant. With `Ns` as in {{encoding-field}}, this consumes `m * (Ns + 16)` bytes. A prime field is the case `m = 1`.
+A field element of a field of order `p^m` is decoded coordinate by coordinate, via `DecodeUint` ({{decoding-uint}}), starting from the least-significant. With `Ns` as in {{encoding-field}}, this consumes `m * (Ns + 16)` bytes. A prime field is the case `m = 1`.
 
 ~~~
 DecodeField(buf, p, m)
@@ -718,7 +663,7 @@ Neither the session identifier nor the instance is part of the NARG string: the 
 
 The session identifier is a 32-byte string that identifies the context in which the non-interactive argument is used. An application **MAY** set it to any 32-byte string it derives by its own unambiguous means; the procedure `DeriveSessionID` below is the **RECOMMENDED** way to obtain one from a human-meaningful `tag`.
 
-For a duplex sponge operating over bytes, the session identifier is derived from a `tag` via the procedure `DeriveSessionID`. The `tag` is a byte string whose encoding as a sequence of bytes **MUST** be specified unambiguously, so that every implementation reproduces identical bytes.  It is **RECOMMENDED** the `tag` be a US-ASCII string, without byte-order mark at the beginning, nor `0x00` byte termination.
+For a duplex sponge operating over bytes, the session identifier is derived from a `tag` via the procedure `DeriveSessionID`. The `tag` is a byte string whose encoding as a sequence of bytes **MUST** be specified unambiguously, so that every implementation reproduces identical bytes. It is **RECOMMENDED** the `tag` be a US-ASCII string, without byte-order mark at the beginning, nor `0x00` byte termination.
 
 When the `tag` is composed of several fields (for example the components required below), those fields **MUST** be combined unambiguously, so that no two distinct tuples of field values yield the same byte string. Using fixed-width fields or an unambiguous delimiter is sufficient; concatenating variable-length fields without separation is not, because distinct tuples can collide (for example `("SV1", "22")` and `("SV12", "2")` both yield `SV122`), which would cause two different contexts to share a session identifier.
 
@@ -729,6 +674,8 @@ The tag has the following security requirements:
 3. the tag **MUST** contain contextual information about where the proof is made (e.g. a URL to identify the application namespace, a timestamp to prevent replay attacks).
 4. the tag **SHOULD** begin with a fixed identification string that is unique to the application.
 5. the tag **SHOULD** include a version number.
+
+An application that bypasses `DeriveSessionID`, and sets the 32-byte `session_id` directly **MUST** ensure it satisfies the same requirements.
 
 ~~~
 DeriveSessionID(tag)
@@ -742,7 +689,7 @@ Output: session_id, a 32-byte string
 3. return duplex_sponge.Squeeze(32)
 ~~~
 
-Above, `DS` denotes the duplex sponge instantiation in use ({{hash-instantiations}}, for example the SHAKE128 duplex sponge of {{suite-shake128}}): `DS.Init` constructs a fresh state, and `state.Absorb` and `state.Squeeze` are its operations. The 32-byte string `"irtf-cfrg-fiat-shamir/session-id"` is a domain separator for this derivation.
+Above, `DS` denotes the duplex sponge in use ({{hash-instantiations}}), instantiated with one of the suites of {{suites}}. The 32-byte string `"irtf-cfrg-fiat-shamir/session-id"` is a domain separator for this derivation.
 
 As an example, consider a fictional application named Foo that implements sigma protocols over elliptic curves for encrypted messages shared during a time epoch `tttt`. A reasonable choice of tag is:
 
@@ -777,7 +724,7 @@ The encoded instance **MUST** be non-empty. While the session identifier of the 
 
 As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the encodings of {{encoding-bytes}}.
 
-As an example, the sumcheck relation for multilinear polynomials in `N` variables over the field of size `p^m`. For a polynomial committed using the polynomial commitment scheme `COM`, the relation consists of:
+As an example, consider the sumcheck relation for multilinear polynomials in `N` variables over the field of size `p^m`. For a polynomial committed using the polynomial commitment scheme `COM`, the relation consists of:
 
 - instance `(S, C)`: `C` the commitment, and `S` the target sum;
 - witness `(F, r)`: `F` is the multilinear polynomial in `N` variables, and `r` is the commitment opening information.
@@ -797,10 +744,10 @@ EncodeField(S, p, m) || EncodeUint(N, 2^32) || COM.Serialize(C)
 
 where `COM.Serialize` is the commitment-serialization function of the scheme `COM` (the opening check `COM.Open` is used above).
 
-As another example, in the discrete logarithm setting, the Chaum-Pedersen relation over an additive elliptic curve group with generators `G`, `H` (for which the relative discrete logarithm is not known). The relation consists of:
+As another example, consider, in the discrete logarithm setting, the Chaum-Pedersen relation over an additive elliptic curve group with generators `G`, `H` (for which the relative discrete logarithm is not known). The relation consists of:
 
-- instance `(C, D)` are Pedersen commitments
-- witness `(x, r, s)` scalar field elements with `x` the commitment message and `r`, `s` independent random commitment openings
+- the instance `(C, D)`, a pair of Pedersen commitments;
+- the witness `(x, r, s)`, scalar field elements with `x` the commitment message and `r`, `s` independent random commitment openings
 
 such that
 
@@ -816,7 +763,7 @@ enc(G) || enc(H) || enc(C) || enc(D)
 
 where `enc` is the group element-serialization function described in {{encoding-ec-point}}.
 
-Omitting public statement data from the transformation, such as `N` in the first example or the group generators `G`, `H` in the second, can can compromise soundness of the proof system. See {{instance-encoding}}.
+Omitting public statement data from the transformation, such as `N` in the first example or the group generators `G`, `H` in the second, can compromise soundness of the proof system. See {{instance-encoding}}.
 
 # Non-interactive argument string {#narg-string}
 
@@ -826,13 +773,13 @@ Serialization is the concatenation of the byte encoding of each prover message, 
 
 ## Deserialization
 
-Deserialization of the NARG string consists in reading the prover messages and computing the inverse of the serialization procedure: each message is read by consuming a fixed number of bytes, determined by its type and the instance, and advancing past them.
+Deserialization of the NARG string consists of reading the prover messages and computing the inverse of the serialization procedure: each message is read by consuming a byte string whose length determined by its type and the instance, and advancing past them.
 
 Verification **MUST** fail if any of the prover messages cannot be deserialized successfully. After the last expected prover message has been read, the verifier **MUST** verify that no bytes remain. Bytes that are never read or that are decoded despite being invalid will cause the proof to be malleable: an adversary will be able to malleate a valid proof to obtain a second, distinct accepting proof for the same statement.
 
 ### Byte strings {#deserialize-byte-strings}
 
-An `N`-byte string whose length is known by the message's type and the instance, deserialization reads `N` bytes.
+For an `N`-byte string whose length is known from the message's type and the instance, deserialization reads `N` bytes.
 
 ~~~
 DeserializeBytes(input, N)
@@ -928,11 +875,13 @@ Read the next `Ne` bytes and convert them to a group element using the group's e
 
 Note that for elliptic curves defined in {{SEC1}}, decoding is the Octet-String-to-Elliptic-Curve-Point conversion, which checks that the encoding is well-formed and that the point lies on the curve, and returns "invalid" otherwise. The single-byte `0x00` encoding of the identity is not a valid `Ne`-byte input and **SHOULD** be rejected.
 
-# Efficiency considerations
+# Efficiency considerations {#efficiency}
 
 For both codecs and serialization, batch algorithms should be preferred when available, because they amortize per-element cost over a whole sequence. For example, serializing a batch of compressed elliptic-curve points requires only one modular inversion for the entire batch (via Montgomery's trick) rather than one per point, the dominant cost in point compression. Deserialization does not batch in the same way, since point decompression requires a per-element square root.
 
-`Init(session_id)` (see {{session-id}}) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of the duplex sponge state, instead of initializing it every time. In the {{suite-shake128}} and {{suite-turboshake128}}, the padded session identifier fills exactly one rate block ({{init}}), saving one invocation of the permutation function per execution. Similarly, `DeriveSessionID` can be precomputed when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing `encode[0](instance)`.
+`Init(session_id)` (see {{session-id}}) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of the duplex sponge state, instead of initializing it every time. In the XOF duplex sponge ({{xof-duplex-sponge}}), the padded session identifier fills exactly one rate block ({{xof-init}}), saving one invocation of the permutation function per execution. Similarly, `DeriveSessionID` can be precomputed when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing `encode[0](instance)`.
+
+XOF evaluations ({{xof-duplex-sponge}}) without copying the XOF state (see the notation `ctx.Copy()` in the pseudocode) will yield identical bytes, but incur a cost quadratic in the number of rounds. Implementations **SHOULD** instead maintain the incremental duplex sponge state of {{interface}}.
 
 # Security considerations
 
@@ -974,7 +923,7 @@ If the interactive proof is honest-verifier zero-knowledge, then so is the non-i
 
 The additive zero-knowledge loss introduced by the transformation is linear in the number of queries the adversary makes to the random oracle {{CO25}}.
 
-Zero-knowledge holds only when the prover draws fresh randomness for each proof from a cryptographically secure entropy source, as noted in {{introduction}}. Reusing the same randomness (or correlated randomness) across two proofs will compromise zero-knowledge. Implementations **SHOULD** sample different random coins for each proof using the operating system's secure entropy source.
+Zero-knowledge holds only when the prover draws fresh randomness for each proof from a cryptographically secure entropy source, as noted in {{introduction}}. Reusing the same randomness (or correlated randomness) across two proofs will compromise zero-knowledge. Implementations **MUST** sample independent random coins for each proof using a cryptographically secure random number generator with sufficient entropy from the system (e.g. using `getrandom` {{?RFC4086}}).
 
 ### Quantum adversaries
 
@@ -990,31 +939,60 @@ To provide knowledge soundness and zero-knowledge, stronger capabilities than in
 
 ## Instance encoding
 
-Incorrect encoding of the instance has historically led to a number of critical security vulnerabilities, often grouped under the term *weak Fiat-Shamir transformation* {{BPW16}}. In each of them, the cryptographic hash function was not provided the full statement being proven. A malicious prover then can compute the verifier message first, and choose the omitted part of the instance afterwards so that the verification equation is satisfied on a statement whose witness it does not hold.
+Incorrect encoding of the instance has historically led to a number of critical security vulnerabilities, often grouped under the term *weak Fiat-Shamir transformation*. In each of them, the cryptographic hash function was not provided the full statement being proven. A malicious prover can then compute the verifier message first, and choose the omitted part of the instance afterwards so that the verification equation is satisfied on a statement whose witness it does not hold.
 
-One such example is in {{BPW16}}. A Chaum-Pedersen proof of equality for an instance `(G, H, X, Y)` proves knowledge of a witness `x` such that `X = x * G` and `Y = x * H`. The prover sends commitments `(A, B)`, obtains a challenge `c`, and replies with a scalar `f`. The verifier accepts if the verification equations hold: `f * G == A + c * X` and `f * H == B + c * Y`. Suppose the challenge `c` is derived only by absorbing `(A, B)` and omitting the instance `(G, H, X, Y)` (cf {{instance-encoding}}). A malicious prover can pick `A`, `B`, `H`, and `f` at random, derive `c`, and then set `X` and `Y` to satisfy the verification equations. Verification passes, yet no single `x` satisfies both `X = x * G` and `Y = x * H`. A false statement has been proven. Other examples are available in {{DMWG23}}.
+As an example {{BPW16}}, Chaum-Pedersen proof of equality for an instance `(G, H, X, Y)` proves knowledge of a witness `x` such that `X = x * G` and `Y = x * H`. The prover sends commitments `(A, B)`, obtains a challenge `c`, and replies with a scalar `f`. The verifier accepts if the verification equations hold: `f * G == A + c * X` and `f * H == B + c * Y`. Suppose the challenge `c` is derived only by absorbing `(A, B)` and omitting the instance `(G, H, X, Y)`. A malicious prover can pick `A`, `B`, `H`, and `f` at random, derive `c`, and then set `X` and `Y` to satisfy the verification equations. Verification passes, yet no single `x` satisfies both `X = x * G` and `Y = x * H`. A false statement has been proven. Other examples are available in {{DMWG23}} {{CVE-2022-29566}}.
 
 All security guarantees are conditioned on the instance being part of the relation being proven. The Fiat-Shamir transformation does not verify that the statement being proven is well-formed, or valid. If the instance or the witness provided as input are not in the relation (e.g. they are malformed), the output is undefined and no security guarantee is provided.
 
 ## Implementation guidance {#implementation-guidance}
 
-The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities, especially due to incorrect implementations involving out-of-order (or missing) prover messages.
+The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities.
 
-Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes {{CVE-2024-42461}}, and by replacing each prover message in turn with a different value.
+Some incorrect implementations involve out-of-order (or missing) prover messages {{CVE-2024-45039}} {{CVE-2026-46654}}. Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered. A byte-level interface, as described in this document, is advisable in place of proof data structures whose fields are randomly addressable. A sequential interface, by contrast, enforces in-order processing. An end-of-input check is necessary to prevent malleability.
 
-Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered.
+Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes, and by replacing each prover message in turn with a different value.
 
 The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers **MUST** check that length indicators are correct, that integers fall within their expected range, and that the proof length is correct. For example, in {{deserialize-byte-strings}} the 4-byte length prefix read by `LE2IP` in `DeserializeVarLenString` is attacker-controlled, and can be as large as `2^32 - 1`, so computing `4 + N` can overflow 32-bit integers. As another example, a crafted length indicator can make verification checks trivial, or exhaust memory on deserialization before any cryptographic check runs {{GNARK-OOM}}.
+
+# Suites {#suites}
+
+The suites defined by this document, and the identifiers used by the test vectors, are:
+
+| Identifier | Primitive | Alphabet
+|---|---|---|
+| `SHAKE128` | SHAKE128 {{SHA3}} | bytes |
+| `TurboSHAKE128` | TurboSHAKE128 {{!RFC9861}} | bytes |
+{: #tab-suites title="Duplex sponge suites"}
+
+The suite identifier is a natural component of the `tag` ({{session-id}}), since it fixes the hash instantiation.
+
+## SHAKE128 {#suite-shake128}
+
+In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the Keccak-f permutation: SHAKE128 and SHAKE256. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of {{SHA3}}). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits).
+
+## TurboSHAKE128 {#suite-turboshake128}
+
+TurboSHAKE128 {{!RFC9861}} is an eXtendable-Output Function (XOF) built on Keccak-p\[1600, 12\], the Keccak-f\[1600\] permutation reduced to its last 12 rounds. Its state is a 200-byte (1600-bit) string, split into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an n-bit output string, respectively. This instantiation targets 128-bit security.
+
+In this instantiation, every verifier message is the TurboSHAKE128 XOF evaluation TurboSHAKE128(M, D, L), where M is the concatenation of the session identifier, the encoded instance, and the encoded prover messages up to and including the current round, D (the domain-separation byte in the range 0x01 to 0x7F) is fixed to D = 0x1F, the default value, and L is the desired output length in bytes {{!RFC9861}}.
 
 # IANA Considerations
 
 This document has no IANA actions.
 
+# Acknowledgments
+{:numbered="false"}
+
+The authors thank Thomas Pornin, Vishruti Ganesh, Brent Zundel, Hart Montgomery, Opal Wright for reviewing a previous edition of this specification.
+
+The authors thank Giap Vu and David Wong (zkSecurity) for their help and contributions.
+
 --- back
 
 # Test Vectors
 
-The vectors are grouped into three suites. The codec suite is hash-independent; the SHAKE128 and TurboSHAKE128 suites exercise the duplex sponge of {{suite-shake128}} and {{suite-turboshake128}} respectively, and carry the same vector names, differing only in the hash and the resulting bytes.
+The vectors are grouped into three suites. The codec suite is hash-independent; the SHAKE128 and TurboSHAKE128 suites exercise the XOF duplex sponge ({{xof-duplex-sponge}}) instantiated with the suites of {{suite-shake128}} and {{suite-turboshake128}} respectively, and carry the same vector names, differing only in the hash and the resulting bytes.
 
 ## Codec test vectors
 
