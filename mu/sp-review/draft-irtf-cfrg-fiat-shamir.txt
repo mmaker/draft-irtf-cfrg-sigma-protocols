@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 5 January 2027                                      Apple, Inc.
-                                                             4 July 2026
+Expires: 8 January 2027                                      Apple, Inc.
+                                                             7 July 2026
 
 
                        Fiat-Shamir Transformation
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 5 January 2027.
+   This Internet-Draft will expire on 8 January 2027.
 
 Copyright Notice
 
@@ -1564,9 +1564,9 @@ Table of Contents
    [I-D.irtf-cfrg-pairing-friendly-curves]
               Sakemi, Y., Kanno, S., and R. S. Wahby, "Pairing-Friendly
               Curves", Work in Progress, Internet-Draft, draft-irtf-
-              cfrg-pairing-friendly-curves-12, 2 November 2025,
+              cfrg-pairing-friendly-curves-13, 6 July 2026,
               <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
-              pairing-friendly-curves-12>.
+              pairing-friendly-curves-13>.
 
    [POSEIDON2]
               Grassi, L., Khovratovich, D., and M. Schofnegger,
