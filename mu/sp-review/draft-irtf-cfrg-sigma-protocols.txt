@@ -16,8 +16,8 @@ Abstract
 
    This document describes Sigma Protocols for proving knowledge of
    preimages of linear maps in prime-order elliptic curve groups.  These
-   are sometimes also called "Maurer Proofs", for the preimage of a
-   group homomorphism.
+   are sometimes also called "Maurer Proofs": proofs of knowledge of a
+   preimage of a group homomorphism.
 
    Examples include zero-knowledge proofs for discrete logarithm
    relations, ElGamal encryptions, Pedersen commitments, and range
@@ -104,7 +104,7 @@ Table of Contents
      7.1.  Interactive security properties
      7.2.  Fiat-Shamir transformation
      7.3.  NARG string validation
-     7.4.  Instance validation
+     7.4.  Instance security
      7.5.  Privacy Considerations
      7.6.  Constant-Time Requirements
      7.7.  Post-Quantum Considerations
@@ -245,7 +245,7 @@ Table of Contents
    Sampling a random scalar takes two steps: obtaining high-quality
    entropy from the operating system's CSPRNG (e.g., getrandom()
    [RFC4086]), and reducing the resulting bytes to a scalar.  It is
-   *RECOMMENDED* that the latter is done via DecodeField as in
+   *RECOMMENDED* that the latter be done via DecodeField as in
    [fiat-shamir], which is equivalent to wide reduction as in
    hash_to_field (Section 5.2 of [RFC9380]), and the integer conversion
    of Appendix A.4.1 of [FIPS186-5].  The "discard method" of
@@ -280,9 +280,8 @@ Table of Contents
    A Scalar is an element of the group's _scalar field_, the prime field
    of integers modulo the group order p (Section 2.3.1).
 
-   identity() is the additive identity of the scalar field.  Addition
-   and multiplication are written + and * (via operator overloading, in
-   place of add, mul).
+   Addition and multiplication are written + and * (via operator
+   overloading, in place of add, mul).
 
    serialize(scalars: list[Scalar; N]) and deserialize(buffer) batch
    convert between [Scalar; N] and its canonical, fixed-length Ns *
@@ -310,7 +309,7 @@ Table of Contents
    R := { ((M, image), witness) : image = M * witness }
 
    image is the result of the multi-scalar multiplication of each matrix
-   row with the witness.  For i in 0, ..., num_equations
+   row with the witness.  For i in 0, ..., num_equations - 1
 
    image[i] = sum(witness[j] * M[i][j] for j in 0, ..., num_scalars - 1)
 
@@ -338,9 +337,8 @@ Table of Contents
 
    Affine equations with constant terms can be expressed directly
    through image terms and coefficients (Section 3.2); more elaborate
-   relations (quadratic equations, arithmetic circuits, etc.) reduce to
-   this same form by letting instance elements themselves serve as bases
-   (Section 3.4).
+   relations, such as quadratic equations, reduce to this same form by
+   letting instance elements themselves serve as bases (Section 3.4).
 
    The group Group, and its generator, are provided by the ciphersuite
    Section 8.  The caller has the responsibility to select the
@@ -483,7 +481,7 @@ Table of Contents
    among the relation parameters.  Every other name used in Equations:
    is declared exactly once, as a parameter or under Witness:. A
    declaration *MUST* compile to a valid instance (Section 3.5).  All
-   elements and witness scalars *MUST* be used Section 3.2.
+   elements and witness scalars *MUST* be used (Section 3.2).
 
    Each equation is an equality between two linear combinations.  Each
    term is the product of an optional _coefficient_, an optional witness
@@ -775,10 +773,11 @@ Table of Contents
    not valid for the instance provided.  The prover *MUST* fail if the
    witness length does not match num_scalars(instance): a mismatch
    cannot yield a valid proof and, depending on the implementation
-   language, may otherwise read out of bounds in ProverResponse.  Both
-   checks compare the witness against whatever instance the caller
-   supplied; neither vouches for the instance itself, which the prover
-   is required to construct or authenticate (Section 7.4).
+   language, may otherwise read out of bounds in ProverResponse.  The
+   length check, like the optional witness-validity check of
+   Section 3.5, compares the witness against whatever instance the
+   caller supplied; neither vouches for the instance itself, which the
+   prover is required to construct or authenticate (Section 7.4).
 
 4.2.2.  Prover response
 
@@ -887,12 +886,12 @@ Table of Contents
 
    FOO-V{xx}-{tttt}-{flavor}-with-{ciphersuiteID}
 
-   where xx is the two-digit number indicating the version, tttt is a
-   32-bit integer identifying the epoch, flavor is the flavor marker,
+   where xx is the two-digit number indicating the version, tttt is the
+   four-digit number identifying the epoch, flavor is the flavor marker,
    and ciphersuiteID is the ciphersuite identifier of Section 8.  For
    instance, for batchable NARG strings:
 
-   FOO-V01-00000001-DSFS-with-sigma-proofs_Shake128_P256
+   FOO-V01-0001-DSFS-with-sigma-proofs_Shake128_P256
 
    For compact NARG strings, CMPT may be used.
 
@@ -908,6 +907,14 @@ Table of Contents
    scalar:
 
    DeriveChallenge(tag, instance, commitment_bytes)
+
+   Inputs:
+
+   - tag, a byte string uniquely identifying the session
+   - instance, the LinearRelation being proven
+   - commitment_bytes, the serialized commitment message
+
+   Output: the challenge, a scalar
 
    1. session_id = DeriveSessionID(tag)
    2. duplex_sponge = DS.Init(session_id)
@@ -1076,11 +1083,12 @@ Procedure:
    assigned in row-major order (transcripts, then equations) to the
    pairs (i, j) and computed in the scalar field.  When this option is
    combined with the deterministic procedure below, step 7 squeezes 16
-   bytes instead of 16 * K, and mu is the little-endian integer they
-   encode, read via LE2IP (Section 2.1), uniform in [0, 2^128).  In this
-   case, an invalid batch is accepted with probability at most (K -
-   1)/2^128, rather than the 2^-128 achieved by independently sampled
-   randomness.
+   bytes instead of 16 * K, where K = sum(num_equations(instances[i])
+   for i in 0, ..., Nt - 1) is the total number of batched equations,
+   and mu is the little-endian integer they encode, read via LE2IP
+   (Section 2.1), uniform in [0, 2^128).  In this case, an invalid batch
+   is accepted with probability at most (K - 1)/2^128, rather than the
+   2^-128 achieved by independently sampled randomness.
 
    It is *RECOMMENDED* that the batching randomness be generated
    deterministically, with the duplex sponge of [fiat-shamir] as
@@ -1135,10 +1143,13 @@ Procedure:
 6.  Efficiency Considerations
 
    Constant arithmetic operations *MAY* be preprocessed, provided the
-   security requirements of Section 3.2 hold.
+   security requirements of Section 3.2 hold: evaluation-time
+   precomputation, such as fixed-base multiplication tables, is safe;
+   registering a precomputed linear combination as a new instance
+   element is not.
 
    Multi-scalar multiplication (MSM) algorithms can help evaluate
-   map(instance, scalars) (Section 3.2) and the verification equation.
+   map(instance, scalars) (Section 3.3) and the verification equation.
    For example, the verifier of Section 4.3 is specified as the equality
    map(instance, response) == commitment + challenge * image(instance),
    evaluated as two separate vectors for clarity.  Implementations *MAY*
@@ -1256,7 +1267,7 @@ Procedure:
    For compact NARG strings, the verifier *MUST* recompute the challenge
    and compare it before accepting.
 
-7.4.  Instance validation
+7.4.  Instance security
 
    The prover and verifier construct the instance from values they
    independently hold and trust, such as the group generator.  Often,
@@ -1269,7 +1280,8 @@ Procedure:
    Some equations pin down no specific scalars.  For example, the
    equation X = x * G + 5 * y * G collapses to X = (x + 5 * y) * G, and
    has p distinct witnesses [x, y], each trivial to derive from any
-   other.  Similarly, x * H - x * H.  It is the responsibility of the
+   other.  Similarly, the pair of terms x * H - x * H cancels for every
+   value of x, and constrains nothing.  It is the responsibility of the
    caller to provide non-trivial relations.  Some effort in this
    direction is done in Section 3.5 (such as rejection of trivial
    images), however this will not cover all cases.  Applications *MUST*
@@ -1290,9 +1302,9 @@ Procedure:
    != c2, the witness is (s1 - s2) / (c1 - c2), where s1, s2 are the
    corresponding responses).
 
-   The Verifier procedure *SHOULD NOT* be used as-is.  Interactive Sigma
-   Protocols only guarantee zero-knowledge against honest verifiers
-   (Section 7).
+   The Verifier procedure *SHOULD NOT* be used interactively with an
+   untrusted verifier: interactive Sigma Protocols only guarantee zero-
+   knowledge against honest verifiers (Section 7).
 
    For verification, VerifyBatchable and VerifyCompact *SHOULD* be used.
    The non-interactive Fiat-Shamir transformation yields statistically
@@ -1405,8 +1417,9 @@ Procedure:
    | proofs_Shake128_P256     | (secp256r1) |  |  |        | pre-     |
    |                          |             |  |  |        | quantum  |
    +--------------------------+-------------+--+--+--------+----------+
-   | sigma-                   | BLS12-381   |48|32|SHAKE128| 128-bit  |
-   | proofs_Shake128_BLS12381 | (G1)        |  |  |        | pre-     |
+   | sigma-                   | BLS12-381   |48|32|SHAKE128| about    |
+   | proofs_Shake128_BLS12381 | (G1)        |  |  |        | 120-bit  |
+   |                          |             |  |  |        | pre-     |
    |                          |             |  |  |        | quantum  |
    +--------------------------+-------------+--+--+--------+----------+
 
@@ -1422,15 +1435,17 @@ Procedure:
    [fiat-shamir]: the scalar field is prime, and its serialization
    length Ns = 32 equals the smallest integer such that 256^Ns >= p, so
    provers and verifiers squeeze exactly Ns + 16 = 48 bytes per
-   challenge (Section 5.2).  The alternative decoding functions that
-   [fiat-shamir] permits for special moduli *MUST NOT* be substituted: a
-   different decoder derives different challenges, and two otherwise-
-   conforming implementations would not interoperate.  In particular,
-   the single-conditional-subtraction shortcut mentioned there for
-   moduli slightly below a power of 256 applies to neither group: the
-   order of P-256 is approximately 2^256 - 2^224, and reducing 32
-   squeezed bytes with one conditional subtraction would introduce a
-   bias of about 2^-32.
+   challenge (Section 5.2).  Note that DecodeField interprets the
+   squeezed bytes as a little-endian integer, even though these
+   ciphersuites serialize scalars in big-endian order (Section 2.1).
+   The alternative decoding functions that [fiat-shamir] permits for
+   special moduli *MUST NOT* be substituted: a different decoder derives
+   different challenges, and two otherwise-conforming implementations
+   would not interoperate.  In particular, the single-conditional-
+   subtraction shortcut mentioned there for moduli slightly below a
+   power of 256 applies to neither group: the order of P-256 is
+   approximately 2^256 - 2^224, and reducing 32 squeezed bytes with one
+   conditional subtraction would introduce a bias of about 2^-32.
 
    The groups are prime-order elliptic curve groups, defined as follows.
 
@@ -1465,7 +1480,7 @@ Procedure:
       (Section 2.1) (Ns = 32).
 
    *  deserialize(buf): OS2IP (Section 2.1); it *MUST* fail unless the
-      result is in [0, order() - 1].
+      result is in [0, order()).
 
 8.2.  BLS12-381 (G1)
 
@@ -1500,7 +1515,7 @@ Procedure:
       (Section 2.1) (Ns = 32).
 
    *  deserialize(buf): OS2IP (Section 2.1); it *MUST* fail unless the
-      result is in [0, order() - 1].
+      result is in [0, order()).
 
 Acknowledgments
 
