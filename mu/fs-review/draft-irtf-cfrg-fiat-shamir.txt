@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 4 January 2027                                      Apple, Inc.
-                                                             3 July 2026
+Expires: 8 January 2027                                      Apple, Inc.
+                                                             7 July 2026
 
 
                        Fiat-Shamir Transformation
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 4 January 2027.
+   This Internet-Draft will expire on 8 January 2027.
 
 Copyright Notice
 
@@ -122,9 +122,10 @@ Table of Contents
      8.5.  Instance encoding
      8.6.  Implementation guidance
    9.  IANA Considerations
-   10. References
-     10.1.  Normative References
-     10.2.  Informative References
+   Acknowledgments
+   References
+     Normative References
+     Informative References
    Appendix A.  Test Vectors
      A.1.  Codec test vectors
        A.1.1.  Length-prefixed byte-string encoding
@@ -604,8 +605,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits).
    The corresponding collision and second-preimage-resistance are
    min(n/2,128) and min(n,128) bits for an n-bit output string,
-   respectively (see [RFC9861]).  This instantiation targets 128-bit
-   security.
+   respectively.  This instantiation targets 128-bit security.
 
    In this instantiation, every verifier message is the TurboSHAKE128
    XOF evaluation TurboSHAKE128(M, D, L), where M is the concatenation
@@ -1448,9 +1448,18 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    This document has no IANA actions.
 
-10.  References
+Acknowledgments
 
-10.1.  Normative References
+   The authors thank Thomas Pornin, Vishruti Ganesh, Brent Zundel, Hart
+   Montgomery, Opal Wright for reviewing a previous edition of this
+   specification.
+
+   The authors thank Giap Vu and David Wong (zkSecurity) for their help
+   and contributions.
+
+References
+
+Normative References
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -1475,7 +1484,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
               <https://nvlpubs.nist.gov/nistpubs/FIPS/
               NIST.FIPS.202.pdf>.
 
-10.2.  Informative References
+Informative References
 
    [BPW16]    Bernhard, D., Pereira, O., and B. Warinschi, "How not to
               Prove Yourself: Pitfalls of the Fiat-Shamir Heuristic and
@@ -1530,9 +1539,9 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    [I-D.irtf-cfrg-pairing-friendly-curves]
               Sakemi, Y., Kanno, S., and R. S. Wahby, "Pairing-Friendly
               Curves", Work in Progress, Internet-Draft, draft-irtf-
-              cfrg-pairing-friendly-curves-12, 2 November 2025,
+              cfrg-pairing-friendly-curves-13, 6 July 2026,
               <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
-              pairing-friendly-curves-12>.
+              pairing-friendly-curves-13>.
 
    [POSEIDON2]
               Grassi, L., Khovratovich, D., and M. Schofnegger,
