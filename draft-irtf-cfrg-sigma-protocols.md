@@ -396,8 +396,6 @@ image[i] = sum(witness[j] * M[i][j] for j in 0, ..., num_scalars - 1)
 
 `num_scalars` is the length of `witness` (the width of `M`), and `num_equations` is the number of group elements in `image` (the height of `M`).
 
-The matrix entry `M[i][j]` is called the *effective base* of the scalar `witness[j]` in equation `i`: the group element that the scalar multiplies once the equation is fully expanded. In the representation of {{representation}}, where a scalar index may be distributed across several terms of the same equation, the effective base is the sum of `coeff * elements[element_index]` over all terms of the equation carrying that scalar index.
-
 As an example, Schnorr's identification protocol has `num_scalars = num_equations = 1` and `M = [[G]]`, where `G` is the group generator, proving knowledge of the scalar `x` such that the group element `X` satisfies `X = x * G` {{?RFC8235}}.
 
 Another example is the Chaum-Pedersen relation {{ChaumP92}}: given the group generator `G` and group elements `H`, `X`, `Y`, the prover shows knowledge of a single scalar `x` such that `X = x * G` and `Y = x * H`. Here `num_scalars = 1`, `num_equations = 2`, and:
@@ -434,7 +432,7 @@ class Equation:
 
 A `LinearRelation` holds a set of group elements (each corresponding to an `element_index`) and a list of equations. Each row of `M` is called an `Equation`, and consists of two term lists. The `image` terms (the left-hand side) are pairs `(element_index, coeff)`, whose evaluated sum of `coeff * elements[element_index]` is the image. The `terms` (the right-hand side) are triplets `(scalar_index, element_index, coeff)`. Each `coeff` is a scalar ({{scalar}}): a public constant of the statement, fixed by the instance and bound by its serialization ({{serialize-linear-relations}}). A `LinearRelation` **MUST** have at least one equation, and every equation's `image` and `terms` **MUST** be non-empty.
 
-A constant of the statement (an element carrying no witness scalar) is encoded as an image term ({{relation-notation}}). It **MUST NOT** be encoded as a right-hand side term whose witness scalar is "fixed" to `1`: no verification equation constrains that scalar to `1`, and the proof degrades to knowledge of *some* multiplier. A coefficient **MAY** be zero; a zero coefficient on a right-hand side term contributes the identity to that scalar's effective base ({{linear-map}}), which is admissible as long as the scalar keeps a non-identity effective base in some equation ({{instance-validation}}).
+A constant of the statement (an element carrying no witness scalar) is encoded as an image term ({{relation-notation}}). It **MUST NOT** be encoded as a right-hand side term whose witness scalar is "fixed" to `1`: no verification equation constrains that scalar to `1`, and the proof degrades to knowledge of *some* multiplier. A coefficient **MAY** be zero.
 
 Linear combinations **MUST NOT** be preprocessed in advance, in image or base position: registering a precomputed sum of statement elements yields a malleable argument ({{sigma-ni-security}}). The verifiable-decryption statement `M + E1 = x * E0` is encoded with the two image terms `(M, 1), (E1, 1)`, never as the single element `F = M + E1`. A statement multiplying a scalar by a sum of elements, such as `Y = x * (E0 + E1)`, is expressed by repeating the scalar index across terms, as `terms = [(0, 1, 1), (0, 2, 1)]`, never as the single element `K = E0 + E1`; a scalar index may appear multiple times in the same equation. A negation or a constant multiple of a statement element, such as `-H` or `2 * H`, is expressed through the coefficient of a term referencing `H` itself, never by registering a second, derived element.
 
@@ -549,7 +547,7 @@ Relation AggregateEncryption(X1, X2, M, E0, E1):
     M + E1 = r * (X1 + X2)
 ~~~
 
-The scalar `r` distributes over the parenthesized sum, so the second equation compiles to `Equation(image=[(3, 1), (5, 1)], terms=[(0, 1, 1), (0, 2, 1)])`: the scalar index `0` appears in both terms, the effective base of `r` is `X1 + X2` ({{linear-map}}), and each key share stays individually bound by the serialization of {{serialize-linear-relations}}; supplying the single element `X = X1 + X2` as a parameter in their place would not bind the shares ({{representation}}).
+The scalar `r` distributes over the parenthesized sum, so the second equation compiles to `Equation(image=[(3, 1), (5, 1)], terms=[(0, 1, 1), (0, 2, 1)])`.
 
 As a last example, the following proves that the value committed by `C` is a bit, the building block of range proofs:
 
@@ -575,11 +573,11 @@ For an instance to be valid, it **MUST** satisfy all below conditions:
 4. Every element index is less than `num_elements(instance)`. In other words, every index references a group element.
 5. Every element index appears in the terms or image terms of at least one equation.
 Together with check 4, this ensures `num_elements(instance)-1` is the largest referenced element index.
-6. Every scalar index appears in the terms of at least one equation. This is the syntactic prerequisite of check 10, which guarantees that every response scalar is constrained by at least one verification equation.
-7. `instance.elements[0]` is the group generator `Group.generator()` ({{representation}}); implementations that hardwire the generator at index `0` when constructing the elements list satisfy it by construction.
-8. No element of `instance.elements` is the identity element, wherever it appears among the statement elements ({{relation-notation}}); the group serialization is not defined on it ({{group}}).
+6. Every scalar index appears in the terms of at least one equation.
+7. `instance.elements[0]` is the group generator `Group.generator()` ({{representation}}).
+8. No element of `instance.elements` is the identity element.
 9. No element of `image(instance)` is the identity element: an equation whose image evaluates to the identity is satisfied by the all-zero witness, so a proof of it attests nothing.
-10. Every scalar index has a non-identity effective base ({{linear-map}}) in at least one equation. An equation in which a scalar's effective base evaluates to the identity does not constrain that scalar's response; if that happens in every equation the scalar appears in, the response coordinate is entirely free, and any accepting NARG string can be mauled by rewriting it. For a scalar appearing in a single term of an equation, a non-identity effective base reduces to that term's coefficient being nonzero, since check 8 already excludes the identity element.
+10. No column of the matrix `M` is the identity. That is, for every scalar index, there is at least one equation for which the sum of `coeff * elements[element_index]` over the terms carrying that scalar index is not the identity.
 
 With `ValidateInstance(instance)` (in pseudocode) we denote the function returning `true` if all above predicates are met.
 
