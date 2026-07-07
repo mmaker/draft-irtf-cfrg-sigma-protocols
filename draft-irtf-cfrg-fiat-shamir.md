@@ -466,7 +466,7 @@ Output: a uniformly-distributed random n-byte string
 
 ## TurboSHAKE128 duplex sponge {#suite-turboshake128}
 
-TurboSHAKE128 {{!RFC9861}} is an eXtendable-Output Function (XOF) built on `Keccak-p[1600, 12]`, the `Keccak-f[1600]` permutation reduced to its last 12 rounds. Its state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an `n`-bit output string, respectively (see {{!RFC9861}}). This instantiation targets 128-bit security.
+TurboSHAKE128 {{!RFC9861}} is an eXtendable-Output Function (XOF) built on `Keccak-p[1600, 12]`, the `Keccak-f[1600]` permutation reduced to its last 12 rounds. Its state is a 200-byte (1600-bit) string, split into a rate of `R = 168` bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an `n`-bit output string, respectively. This instantiation targets 128-bit security.
 
 In this instantiation, every verifier message is the TurboSHAKE128 XOF evaluation `TurboSHAKE128(M, D, L)`, where `M` is the concatenation of the session identifier, the encoded instance, and the encoded prover messages up to and including the current round, `D` (the domain-separation byte in the range `0x01` to `0x7F`) is fixed to `D = 0x1F`, the default value, and `L` is the desired output length in bytes {{!RFC9861}}.
 
