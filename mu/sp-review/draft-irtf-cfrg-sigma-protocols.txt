@@ -16,8 +16,8 @@ Abstract
 
    This document describes Sigma Protocols for proving knowledge of
    preimages of linear maps in prime-order elliptic curve groups.  These
-   are sometimes also called "Maurer Proofs": proofs of knowledge of a
-   preimage of a group homomorphism.
+   are sometimes also called _Maurer Proofs_, or _proofs of knowledge of
+   a preimage of a group homomorphism_.
 
    Examples include zero-knowledge proofs for discrete logarithm
    relations, ElGamal encryptions, Pedersen commitments, and range
@@ -116,6 +116,7 @@ Table of Contents
      8.2.  BLS12-381 (G1)
        8.2.1.  Elliptic curve group of BLS12-381 (G1) RFC9380
        8.2.2.  Scalar Field of BLS12-381
+   9.  IANA Considerations
    Acknowledgments
    References
      Normative References
@@ -139,12 +140,8 @@ Table of Contents
 1.  Introduction
 
    Zero-knowledge proofs of knowledge allow a prover to convince a
-   verifier that a statement is true, without revealing anything else
-   than what is already revealed by the statement itself.  Many
-   practically-relevant statements about discrete logarithm relations
-   can be realized using Sigma Protocols.  Introduced by Schnorr
-   [Schnorr91] [RFC8235], they are now widely used in practice because
-   of their simplicity, maturity, and versatility.
+   verifier that a statement is true, without revealing anything other
+   than what is already revealed by the statement itself.
 
    Sigma Protocols are an essential component of a number of
    cryptographic constructions, such as anonymous credentials [ARC]
@@ -226,42 +223,40 @@ Table of Contents
    negative integer n with 0 <= n < 256^w into a w-byte, big-endian byte
    string, and fails if n >= 256^w; OS2IP(x) is its inverse, mapping a
    w-byte string to the integer in [0, 256^w) that it represents.  LE(n,
-   w) is the little-endian counterpart defined in [fiat-shamir],
-   converting n into a w-byte, little-endian byte string; it is used for
-   the indices and counts of the instance encoding (Section 3.6).
+   w) is the little-endian counterpart defined in [fiat-shamir].
    LE2IP(x), also defined in [fiat-shamir], converts a little-endian
-   byte string back into a non-negative integer; it is used to derive
-   the batching randomness (Section 5.6).  Byte order and length of the
-   scalar and group-element encodings are fixed by each ciphersuite
-   (Section 8).
+   byte string back into a non-negative integer.  Byte order and length
+   of the scalar and group-element encodings are fixed by each
+   ciphersuite (Section 8).
 
 2.2.  Randomized algorithms
 
    The prover commitment algorithm requires fresh, single-use
    randomness.  This document denotes with rng a cryptographically
-   secure random number generator (CSPRNG), and uses rng.random_scalar()
-   to denote sampling a uniformly random element of the scalar field.
+   secure random number generator (CSPRNG), and uses
+   Group.random_scalar(rng) to denote sampling a uniformly random
+   element of the scalar field, similarly to RandomScalar() of
+   Section 2.1 of [RFC9497].
 
    Sampling a random scalar takes two steps: obtaining high-quality
-   entropy from the operating system's CSPRNG (e.g., getrandom()
-   [RFC4086]), and reducing the resulting bytes to a scalar.  It is
+   entropy via a CSPRNG (e.g., getrandom(); see [RFC4086] for randomness
+   requirements), and reducing the resulting bytes to a scalar.  It is
    *RECOMMENDED* that the latter be done via DecodeField as in
-   [fiat-shamir], which is equivalent to wide reduction as in
-   hash_to_field (Section 5.2 of [RFC9380]), and the integer conversion
+   [fiat-shamir], which is equivalent to the wide reduction of
+   hash_to_field (Section 5.2 of [RFC9380]) and the integer conversion
    of Appendix A.4.1 of [FIPS186-5].  The "discard method" of
    Appendix A.4.2 of [FIPS186-5] *SHOULD NOT* be used Section 7.6.
    Different sampling mechanisms do not affect interoperability of
-   proofs: correct proofs will verify identically.
+   proofs.
 
 2.3.  Group abstraction
 
    Elliptic curves are presented using additive notation.
 
-   In symbolic notation, group elements are written upper-case (G, X, M)
-   and scalars lower-case (x, s).  The name G is reserved: it always
-   denotes the group generator Group.generator() (Section 2.3.1).
-   Pseudocode and interface names are descriptive (e.g. commitment,
-   image, witness) and do not follow this rule.
+   Group elements are upper-case (G, X, M) and scalars lower-case (x,
+   s).  The name G denotes the group generator Group.generator()
+   (Section 2.3.1).  Pseudocode and interface names are descriptive
+   (e.g. commitment, image, witness) and do not follow this rule.
 
 2.3.1.  Group
 
@@ -272,22 +267,26 @@ Table of Contents
 
    serialize(elements: [Group; N]) and deserialize(buffer) convert N
    non-neutral group elements into a fixed-length Ne * N-byte encoding,
-   where Ne is fixed per ciphersuite (Section 8).  Deserialization
-   *MUST* raise an error in case of failure.
+   where Ne is fixed per ciphersuite (Section 8).
+
+   Both serialize and deserialize are defined only on non-neutral
+   elements.  Serialization *MUST* fail on the identity element, and
+   deserialization *MUST* raise an error in case of failure, including
+   on any encoding of the identity.  An honest prover statistically hits
+   this event only with negligible probability.  See Section 10.1 of
+   [RFC9380], Appendix C of [PAIRING], Section 2.1 of [RFC9497], [ARC].
 
 2.3.2.  Scalar
 
    A Scalar is an element of the group's _scalar field_, the prime field
-   of integers modulo the group order p (Section 2.3.1).
-
-   Addition and multiplication are written + and * (via operator
-   overloading, in place of add, mul).
+   of integers modulo the group order p.  Addition and multiplication
+   are written + and * (via operator overloading).
 
    serialize(scalars: list[Scalar; N]) and deserialize(buffer) batch
    convert between [Scalar; N] and its canonical, fixed-length Ns *
    N-byte encoding.
 
-   A uniformly random scalar is sampled with rng.random_scalar()
+   A uniformly random scalar is sampled with Group.random_scalar(rng)
    (Section 2.2).
 
 3.  Linear relations
@@ -342,10 +341,10 @@ Table of Contents
 
    The group Group, and its generator, are provided by the ciphersuite
    Section 8.  The caller has the responsibility to select the
-   appropriate group element, and this requires care.  Computationally-
-   independent bases, sometimes also called _auxiliary generators_, or
-   _nothing up my sleeve (NUMS) generators_, may be computed via hash to
-   the curve (Section 3 of [RFC9380]).
+   appropriate M, and this requires care.  Computationally-independent
+   bases, sometimes also called _auxiliary generators_, or _nothing up
+   my sleeve (NUMS) generators_, may be computed via hash to the curve
+   (Section 3 of [RFC9380]).
 
 3.2.  Representation
 
@@ -357,7 +356,7 @@ Table of Contents
    A LinearRelation is the instance for the Sigma Protocol.  It fixes
    the linear map M and the image, that is, the instance (M, image) of
    the relation R (Section 3.1).  There might be multiple witnesses for
-   the same (M, image), or no valid witnesses.  The word _relation_ is
+   the same (M, image), or no valid witness.  The word _relation_ is
    used here in the linear-algebra sense: a system of linear equations
    among group elements.  A LinearRelation is held and evaluated by both
    prover and verifier (Section 3.3).
@@ -375,53 +374,55 @@ Table of Contents
 
    A LinearRelation holds a set of group elements (each corresponding to
    an element_index) and a list of equations.  Each row of M is called
-   an Equation, and consists of two term lists.  The image terms (the
-   left-hand side) are pairs (element_index, coeff), whose evaluated sum
-   of coeff * elements[element_index] is the image.  The terms (the
-   right-hand side) are triplets (scalar_index, element_index, coeff).
-   Each coeff is a scalar (Section 2.3.2): a public constant of the
-   statement, fixed by the instance and bound by its serialization
-   (Section 3.6).  A LinearRelation *MUST* have at least one equation,
-   and every equation's image and terms *MUST* be non-empty.
+   an Equation, and consists of two lists of terms.
 
-   A constant of the statement (an element carrying no witness scalar)
-   is encoded as an image term (Section 3.4).  It *MUST NOT* be encoded
-   as a right-hand side term whose witness scalar is "fixed" to 1: no
-   verification equation constrains that scalar to 1, and the proof
-   degrades to knowledge of _some_ multiplier.  A coefficient *MAY* be
-   zero.
+   The image terms (the left-hand side) are pairs (element_index,
+   coeff).  The image is the sum of coeff * elements[element_index].
 
-   Linear combinations *MUST NOT* be preprocessed in advance, in image
-   or base position: registering a precomputed sum of statement elements
-   yields a malleable argument (Section 7.2).  The verifiable-decryption
-   statement M + E1 = x * E0 is encoded with the two image terms (M, 1),
-   (E1, 1), never as the single element F = M + E1.  A statement
+   The terms (the right-hand side) are triplets (scalar_index,
+   element_index, coeff).  Each coeff is a scalar (Section 2.3.2) fixed
+   by the instance.
+
+   A LinearRelation *MUST* have at least one equation, and every
+   equation's image and terms *MUST* be non-empty.  A constant of the
+   statement (an element carrying no witness scalar) is encoded as an
+   image term (Section 3.4).  It *MUST NOT* be encoded as a right-hand
+   side term whose witness scalar is "fixed" to 1.  A coefficient *MAY*
+   be zero.
+
+   The instance *MUST* contain, as individually-indexed elements, every
+   group element on which the statement depends.  In particular, linear
+   combinations of statement elements *MUST NOT* be evaluated before the
+   instance is encoded, else the resulting argument is malleable across
+   its preimages (Section 7.2).
+
+   For instance, the verifiable-decryption statement M + E1 = x * E0 is
+   encoded with the two image terms (M, 1), (E1, 1), never as the single
+   element F = M + E1.  Otherwise, the same proof will verify for any F
+   = M' + E1', even when M' != M.  As another example, a statement
    multiplying a scalar by a sum of elements, such as Y = x * (E0 + E1),
    is expressed by repeating the scalar index across terms, as terms =
-   [(0, 1, 1), (0, 2, 1)], never as the single element K = E0 + E1; a
-   scalar index may appear multiple times in the same equation.  A
-   negation or a constant multiple of a statement element, such as -H or
-   2 * H, is expressed through the coefficient of a term referencing H
-   itself, never by registering a second, derived element.
+   [(0, 1, 1), (0, 2, 1)], never as the single element K = E0 + E1.  An
+   element may appear multiple times in the same equation, even with the
+   same coefficient and scalar.
 
    Every group element index *MUST* have an associated group element.
    Every element *MUST* appear in the terms or image terms of at least
    one equation, except for the generator (index 0), which is present in
-   every instance, whether or not an equation uses it.  Every scalar
+   every instance whether or not an equation uses it.  Every scalar
    index *MUST* appear in at least one term, else the corresponding
    response is accepted unchecked.
 
-   The above structural requirements are collected in ValidateInstance
-   (Section 3.5).  A valid instance has:
+   A valid instance has:
 
    num_elements(instance)  = len(instance.elements)
    num_equations(instance) = len(instance.equations)
    num_scalars(instance)   = 1 + max(s for eq in instance.equations
                                        for (s, _, _) in eq.terms)
 
-   The size of the group-elements set num_elements is independent of
-   num_equations.  For instance, in Chaum-Pedersen, num_elements = 4 (G,
-   H, X, Y), while num_equations = 2.
+   The number of group elements is independent of the number of
+   equations.  For instance, Chaum-Pedersen has num_elements = 4,
+   num_equations = 2.
 
 3.3.  Map evaluation
 
@@ -454,7 +455,7 @@ Table of Contents
    (Section 3.2) and its serialization (Section 3.6).  The notation of
    this section is the *RECOMMENDED* way to present a relation.
 
-   A linear relation is declared as a named block:
+   A linear relation is declared as a US-ASCII block:
 
    Relation NAME(P[0], ..., P[n-1]):
      Witness: s[0], ..., s[k-1]
@@ -462,9 +463,7 @@ Table of Contents
        <linear combination> = <linear combination>
        ...
 
-   As a first example -- one witness scalar constrained by two equations
-   -- the Chaum-Pedersen relation of Section 3.1 is declared as a US-
-   ASCII block:
+   As a first example, the Chaum-Pedersen relation of Section 3.1 is:
 
    Relation ChaumPedersen(H, X, Y):
      Witness: x
@@ -472,16 +471,16 @@ Table of Contents
        X = x * G
        Y = x * H
 
-   The relation parameters are the public values of the statement (in
-   ChaumPedersen, these are H, X, and Y).  A parameter whose name begins
-   with an upper-case letter is a group element, and one whose name
-   begins with a lower-case letter is a public scalar (following
-   Section 2.3); the names under Witness: are the secret scalars.  G
-   denotes the group generator at element index 0, and *MUST NOT* appear
-   among the relation parameters.  Every other name used in Equations:
-   is declared exactly once, as a parameter or under Witness:. A
-   declaration *MUST* compile to a valid instance (Section 3.5).  All
-   elements and witness scalars *MUST* be used (Section 3.2).
+   The relation parameters are the public values of the statement.  A
+   parameter whose name begins with an upper-case letter is a group
+   element, and one whose name begins with a lower-case letter is a
+   public scalar (following Section 2.3); the names under Witness: are
+   the secret scalars.  G denotes the group generator at element index
+   0, and *MUST NOT* appear among the relation parameters.  Every other
+   name used in Equations: is declared exactly once, as a parameter or
+   under Witness:. A declaration *MUST* compile to a valid instance
+   (Section 3.5).  All elements and witness scalars *MUST* be used
+   (Section 3.2).
 
    Each equation is an equality between two linear combinations.  Each
    term is the product of an optional _coefficient_, an optional witness
@@ -489,8 +488,8 @@ Table of Contents
    linear in the witness.  A coefficient is a public constant of the
    statement evaluated in the scalar field before compilation.  An
    omitted coefficient is 1, and a leading - on a term negates its
-   coefficient.  A witness scalar multiplying a parenthesized sum of
-   elements distributes over the sum.
+   coefficient.  Expressions in parentheses distribute before the term
+   rules apply: 2 * r * (X1 - X2) denotes 2 * r * X1 - 2 * r * X2.
 
    As an example with two witness scalars in a single equation, the
    Okamoto-Schnorr proof proves knowledge of the opening of a Pedersen
@@ -535,10 +534,7 @@ Table of Contents
 
    m is now a scalar parameter, so m * G is a constant term.  The
    relation compiles to elements = [G, H, C] and equations =
-   [Equation(image=[(2, 1), (0, -m)], terms=[(0, 1, 1)])].  No special
-   case is needed at m = 0: the zero-coefficient term contributes the
-   identity to the image sum yet stays bound by the serialization, so
-   proofs for distinct values of m derive distinct challenges.
+   [Equation(image=[(2, 1), (0, -m)], terms=[(0, 1, 1)])].
 
    As an example with a constant term crossing sides, correct ElGamal
    decryption states that the ciphertext (E0, E1), with E1 = r * X - M,
@@ -610,8 +606,10 @@ Table of Contents
    4.   Every element index is less than num_elements(instance).  In
         other words, every index references a group element.
 
-   5.   Every element index appears in the terms or image terms of at
-        least one equation.  Together with check 4, this ensures
+   5.   Every element index other than 0 appears in the terms or image
+        terms of at least one equation; the generator (index 0) is
+        present in every instance whether or not an equation uses it
+        (Section 3.2).  Together with check 4, this ensures
         num_elements(instance)-1 is the largest referenced element
         index.
 
@@ -632,25 +630,30 @@ Table of Contents
         of coeff * elements[element_index] over the terms carrying that
         scalar index is not the identity.
 
-   With ValidateInstance(instance) (in pseudocode) we denote the
-   function returning true if all above predicates are met.
-
-   Validity is a property of the instance alone, not of any particular
-   proof.  The prover *SHOULD* reject an invalid instance, and *MAY*
+   The prover *SHOULD* reject an invalid instance, and *MAY*
    additionally check that image == map(instance, witness) before
    proving; Section 7.5 and Section 7.4 state when this check, or a
    stronger precaution, is required.  The verifier *MUST* fail on an
-   invalid instance (Section 4.3, Section 5), either at instance
-   generation or during the actual verification.
+   invalid instance (Section 4.3, Section 5), either when the instance
+   is constructed or during verification itself.
+
+   In pseudocode, ValidateInstance(instance) denotes the function
+   returning true if all above predicates are met.  Instance validation
+   won't flag all violations of Section 3.2 (for instance, a registered
+   element obtained as a precomputed linear combination from one
+   obtained independently) because the instance generation can't know
+   how a group element is obtained.  A structurally valid instance may
+   still yield an unsound argument.
 
 3.6.  Serialization
 
-   A LinearRelation is serialized as a prefix-free sparse matrix encoded
-   in row-major order: each equation's image terms, then its right-hand
-   side terms, each list preceded by its count (Section 3.2), followed
-   by the group elements at indices 1 onwards.  Counts and indices are
-   encoded in 4 bytes via LE (Section 2.1).  Coefficients are encoded
-   with the scalar serialization function (Ns bytes each, Section 8).
+   A LinearRelation is serialized as a sparse matrix encoded in row-
+   major order: each equation's image terms, then its right-hand side
+   terms, each list preceded by its count (Section 3.2), followed by the
+   group elements at indices 1 onwards.  Counts and indices are encoded
+   in 4 bytes via LE (Section 2.1).  Coefficients are encoded with the
+   scalar serialization function (Ns bytes each, Section 8).  The
+   encoding is unambiguous and prefix-free.
 
   SerializeLinearRelation(instance)
 
@@ -692,10 +695,9 @@ Table of Contents
    Group.serialize([H, X, Y])                      # statement elements
 
    SerializeLinearRelation operates on a LinearRelation as compiled from
-   its declaration (Section 3.4).  Implementations *MUST* preserve
-   ordering during serialization.  The same relation expressed in two
-   different ways (for example, swapping two rows of M) will yield
-   different serializations.
+   its declaration, following its equation and term order (Section 3.4).
+   The same relation expressed in two different ways (for example,
+   swapping two rows of M) will yield different serializations.
 
 4.  The Sigma Protocol
 
@@ -764,7 +766,7 @@ Table of Contents
    Procedure:
 
    1. fail if len(witness) != num_scalars(instance)
-   2. nonces = [rng.random_scalar()
+   2. nonces = [Group.random_scalar(rng)
                 for j in 0, ..., num_scalars(instance) - 1]
    3. commitment = map(instance, nonces)
    4. return (commitment, prover_state := (witness, nonces))
@@ -773,11 +775,7 @@ Table of Contents
    not valid for the instance provided.  The prover *MUST* fail if the
    witness length does not match num_scalars(instance): a mismatch
    cannot yield a valid proof and, depending on the implementation
-   language, may otherwise read out of bounds in ProverResponse.  The
-   length check, like the optional witness-validity check of
-   Section 3.5, compares the witness against whatever instance the
-   caller supplied; neither vouches for the instance itself, which the
-   prover is required to construct or authenticate (Section 7.4).
+   language, may otherwise leak the witness.
 
 4.2.2.  Prover response
 
@@ -878,11 +876,13 @@ Table of Contents
    (Section 5.2).
 
    The tag is a byte string following the security requirements on the
-   session identifier in [fiat-shamir].  Following the domain-separation
-   conventions of Section 3.1 of [RFC9380], an application concatenates
-   its own name, version, and epoch with the flavor marker and the
-   ciphersuite identifier, verbatim.  As an example, a reasonable choice
-   of tag for a fictional application named Foo is:
+   session identifier in [fiat-shamir].  It *MUST* contain, verbatim,
+   the _flavor_ (DSFS for batchable NARG strings, CMPT for compact NARG
+   strings), and the ciphersuite identifier (Section 8).  Following the
+   domain-separation conventions of Section 3.1 of [RFC9380], an
+   application concatenates its own name, version, and epoch with these
+   two components.  As an example, a reasonable choice of tag for a
+   fictional application named Foo is:
 
    FOO-V{xx}-{tttt}-{flavor}-with-{ciphersuiteID}
 
@@ -893,7 +893,8 @@ Table of Contents
 
    FOO-V01-0001-DSFS-with-sigma-proofs_Shake128_P256
 
-   For compact NARG strings, CMPT may be used.
+   The corresponding tag for compact NARG strings replaces DSFS with
+   CMPT.
 
    The session identifier *MUST* be generated from trusted input, and
    not supplied by an untrusted entity.
@@ -944,7 +945,8 @@ Table of Contents
    A batchable NARG string is a (Ne * num_equations + Ns * num_scalars)-
    byte string, while a compact NARG string is a (Ns * (num_scalars +
    1))-byte string.  A NARG string verifies only under the flavor it was
-   produced for.  Both flavors have the same soundness guarantees.
+   produced for: the flavor marker is a mandatory tag component
+   (Section 5.1).  Both flavors have the same soundness guarantees.
 
    NARG strings are not deterministic, and so applications *MUST NOT*
    rely on the uniqueness of the NARG string for replay protection or as
@@ -1044,14 +1046,14 @@ Procedure:
 
    Verification of multiple batchable NARG strings *MAY* be done more
    efficiently than verifying each NARG string on its own.  Batch
-   verification is a local verifier-side optimization, which does not
-   affect the prover nor the NARG string.
+   verification is a local verifier-side optimization, which affects
+   neither the prover nor the NARG string.
 
    Batch verification is done by re-computing the verifier challenge of
    each NARG string individually (Section 5.2), and then checking a
    single random linear combination of the verification equations of the
-   whole batch.  See Section 8.2 of [RFC8032], and [BDLSY11]
-   [BellareGR98] in the literature.
+   whole batch.  See Section 8.2 of [RFC8032], [BDLSY11], and
+   [BellareGR98].
 
    The verification equation for Nt transcripts (commitment, challenge,
    response) of preimages of linear relations is:
@@ -1078,24 +1080,10 @@ Procedure:
    drawn uniformly from a set of 2^t scalars, a false NARG string will
    be accepted with probability at most 2^-t.
 
-   The batching randomness elements *MAY* be replaced by the successive
-   powers 1, mu, mu^2, ... of a single uniformly random scalar mu,
-   assigned in row-major order (transcripts, then equations) to the
-   pairs (i, j) and computed in the scalar field.  When this option is
-   combined with the deterministic procedure below, step 7 squeezes 16
-   bytes instead of 16 * K, where K = sum(num_equations(instances[i])
-   for i in 0, ..., Nt - 1) is the total number of batched equations,
-   and mu is the little-endian integer they encode, read via LE2IP
-   (Section 2.1), uniform in [0, 2^128).  In this case, an invalid batch
-   is accepted with probability at most (K - 1)/2^128, rather than the
-   2^-128 achieved by independently sampled randomness.
-
    It is *RECOMMENDED* that the batching randomness be generated
    deterministically, with the duplex sponge of [fiat-shamir] as
    follows.  Below, session_ids[i] is the 32-byte session identifier of
-   the i-th NARG string being verified (Section 5.1), derived from a tag
-   carrying the DSFS flavor marker, and narg_strings[i] its batchable
-   NARG string.
+   the i-th NARG string being verified (Section 5.1).
 
     1. batching_sid = DeriveSessionID(
          "irtf-cfrg-sigma-protocols/batch-verify")
@@ -1111,11 +1099,11 @@ Procedure:
    string is determined by the respective instance.
 
    The squeezed output is read in row-major order (for example, the
-   second batching randomness is the second equation of the first
-   transcript).  Each 16-byte chunk is interpreted as a little-endian
-   integer via LE2IP (Section 2.1).  The batching randomness elements
-   are uniform in [0, 2^128) and are used as scalars without further
-   reduction.
+   second batching randomness corresponds to the second equation of the
+   first transcript).  Each 16-byte chunk is interpreted as a little-
+   endian integer via LE2IP (Section 2.1).  The batching randomness
+   elements are uniform in [0, 2^128) and are used as scalars without
+   further reduction.
 
     8. k = 0
     9. for i in 0, ..., Nt - 1:
@@ -1132,13 +1120,25 @@ Procedure:
    application may fall back to verifying the NARG strings individually.
 
    Batch verification is sound only if the batching randomness is
-   unpredictable to the prover.  The batching randomness *MUST*
+   unpredictable to the prover(s).  The batching randomness *MUST*
    therefore be derived only after every value in the batched equation
-   is fixed.  In particular, for Sigma Protocols this includes the
-   response message.  The batch verification procedure *MUST NOT* reuse
-   the duplex sponge of a NARG verifier.  Omitting prover messages from
-   the batching randomness will compromise soundness of batch
-   verification [SOLANA-ZK] [SOLANA-PHANTOM].
+   is fixed.  In particular, this includes the response message!
+   Omitting prover messages from the batching randomness will compromise
+   soundness of batch verification [SOLANA-ZK] [SOLANA-PHANTOM].  The
+   batch verification procedure *MUST NOT* reuse the duplex sponge of a
+   NARG verifier.
+
+   The batching randomness elements *MAY* be replaced by the successive
+   powers 1, mu, mu^2, ... of a single uniformly random scalar mu,
+   assigned in row-major order (transcripts, then equations) to the
+   pairs (i, j) and computed in the scalar field.  In this case, step 7
+   squeezes 16 bytes instead of 16 * K, where K =
+   sum(num_equations(instances[i]) for i in 0, ..., Nt - 1) is the total
+   number of batched equations, and mu is the little-endian integer they
+   encode, read via LE2IP (Section 2.1), uniformly distributed in [0,
+   2^128).  In this case, an invalid batch is accepted with probability
+   at most (K - 1)/2^128, rather than the 2^-128 achieved by independent
+   sampling.
 
 6.  Efficiency Considerations
 
@@ -1223,8 +1223,10 @@ Procedure:
    example: encoding Y = x * (E0 + E1) with the single element K = E0 +
    E1 as base instead of the two terms x * E0 + x * E1 verifies
    unchanged for every pair (E0', E1') with E0' + E1' = K.  Section 3.2
-   requires every image and base term to reference a statement element
-   individually.
+   requires the instance to contain, individually, every group element
+   on which the application's acceptance depends; both examples above
+   violate that requirement while remaining structurally valid
+   (Section 3.5).
 
    The challenge is drawn uniformly from the challenge set C
    (Section 4.3).  In this document, C is the full scalar field, and the
@@ -1238,13 +1240,10 @@ Procedure:
    that outputs an accepting proof with probability epsilon after q hash
    queries yields a witness with probability about epsilon^2/q, a
    quadratic loss.  In the algebraic group model (with a random oracle),
-   extraction is instead straight-line, for some relations: a witness is
-   recovered from any single accepting proof with total extraction error
-   on the order of q/|C|, a linear loss, shown in Section 9 of [Orru24]
-   for C the full scalar field.  That analysis assumes exactly the
-   computational independence of the instance elements required in
-   Section 3.1, and proves strong simulation-extractability, which
-   additionally rules out proof malleability.
+   extraction is instead straight-line (when, for each row of M, finding
+   a non-trivial linear relation among its elements is computationally
+   hard) with total extraction error on the order of q/|C| (Section 9 of
+   [Orru24]).
 
 7.3.  NARG string validation
 
@@ -1257,9 +1256,7 @@ Procedure:
    curve or subgroup check enables invalid-curve attacks [JagerSS15].
    Accepting non-canonical field elements will compromise soundness
    [CVE-2022-23806].  The identity element *MUST* be rejected in any
-   deserialized prover messages and instance elements, including
-   elements the verifier derives from prover-supplied values
-   (Section 2.3).
+   deserialized prover messages and instance elements (Section 2.3).
 
    For scalars, deserialization *MUST* reject any value that is not the
    canonical representative in [0, p) [CVE-2023-33252] [CVE-2025-57801].
@@ -1283,7 +1280,7 @@ Procedure:
    other.  Similarly, the pair of terms x * H - x * H cancels for every
    value of x, and constrains nothing.  It is the responsibility of the
    caller to provide non-trivial relations.  Some effort in this
-   direction is done in Section 3.5 (such as rejection of trivial
+   direction is made in Section 3.5 (such as rejection of trivial
    images), however this will not cover all cases.  Applications *MUST*
    handle degenerate equations before calling the prover and verifier.
 
@@ -1318,16 +1315,14 @@ Procedure:
 7.6.  Constant-Time Requirements
 
    The secret values of this document are the witness, the nonces, and
-   the prover state that carries them.  The instance -- its group
-   elements, scalar coefficients, and image -- the challenge, the
-   response, and the NARG string are public.  All group and field
-   operations whose inputs include secret values *SHOULD* be constant-
-   time in those values, and randomness *SHOULD* be derived with
-   straight-line code, avoiding rejection sampling and other methods
-   whose iteration count depends on the entropy drawn (Section 2.2).
-   Conversely, branching on public values is safe: implementations
-   *MAY*, for instance, skip multiplications by coefficient 1, or test
-   instance coefficients for zero in variable time.
+   the prover state that carries them.  The instance and the NARG string
+   are public.  All group and field operations whose inputs include
+   secret values *SHOULD* be constant-time in those values, and
+   randomness *SHOULD* be derived with straight-line code, avoiding
+   rejection sampling and other methods whose iteration count depends on
+   the entropy drawn (Section 2.2).  Implementations *MAY* skip
+   multiplications by coefficient 1, or test instance coefficients for
+   zero in variable time.
 
    The dominant secret-dependent operation is the multi-scalar
    multiplication map(instance, nonces) in ProverCommitment, whose
@@ -1336,12 +1331,8 @@ Procedure:
    group libraries typically offer as an interface separate from their
    variable-time MSM.  The variable-time algorithms of Section 6 leak
    scalar bits through window sizes and iteration counts, and partial
-   knowledge of the nonces -- a few bits over many proofs -- recovers
-   the witness by lattice reduction [HowgraveGrahamS01] [JancarSSS20]:
-   the observation that a re-used nonce reveals the witness
-   (Section 7.5) extends to partial leakage.  The same requirement
-   applies to the response computation nonces[i] + witness[i] *
-   challenge.
+   knowledge of the nonces will compromise the witness
+   [HowgraveGrahamS01] [JancarSSS20].
 
    In some applications, such as keyed-verification credentials,
    constant-time implementations are required for the verifier too:
@@ -1356,8 +1347,9 @@ Procedure:
    extend to the encoding of the instance during challenge derivation.
    Implementations that expose the simulator (Section 4.1) for OR
    composition should note that which clause is simulated is itself
-   determined by the witness: real and simulated clauses *SHOULD* follow
-   the same code path, with clause selection performed in constant time.
+   determined by the witness.  Real and simulated clauses *SHOULD*
+   follow the same code path, with constant-time selection of the
+   desired transcript.
 
 7.7.  Post-Quantum Considerations
 
@@ -1436,16 +1428,7 @@ Procedure:
    length Ns = 32 equals the smallest integer such that 256^Ns >= p, so
    provers and verifiers squeeze exactly Ns + 16 = 48 bytes per
    challenge (Section 5.2).  Note that DecodeField interprets the
-   squeezed bytes as a little-endian integer, even though these
-   ciphersuites serialize scalars in big-endian order (Section 2.1).
-   The alternative decoding functions that [fiat-shamir] permits for
-   special moduli *MUST NOT* be substituted: a different decoder derives
-   different challenges, and two otherwise-conforming implementations
-   would not interoperate.  In particular, the single-conditional-
-   subtraction shortcut mentioned there for moduli slightly below a
-   power of 256 applies to neither group: the order of P-256 is
-   approximately 2^256 - 2^224, and reducing 32 squeezed bytes with one
-   conditional subtraction would introduce a bias of about 2^-32.
+   squeezed bytes as a little-endian integer.
 
    The groups are prime-order elliptic curve groups, defined as follows.
 
@@ -1470,9 +1453,8 @@ Procedure:
    *  deserialize(buf): inverts the conversion above; only the
       compressed form is a valid encoding (each Ne-byte slice begins
       with 0x02 or 0x03).  It *MUST* perform partial public-key
-      validation as defined in Section 5.6.2.3.4 of [NIST-SP-800-56A] --
-      the coordinates are in range, the point is on the curve, and it is
-      not the point at infinity -- and *MUST* fail otherwise.
+      validation as defined in Section 5.6.2.3.4 of [NIST-SP-800-56A]
+      and *MUST* fail otherwise.
 
 8.1.2.  Scalar Field of P-256
 
@@ -1498,16 +1480,13 @@ Procedure:
       It is the group element at index 0 of every instance
       (Section 3.2).
 
-   *  serialize([A]): the compressed G1 serialization of Section 5 of
-      [PAIRING] (Ne = 48); test vectors are in Appendix D.1 of
-      [PAIRING].
+   *  serialize([A]): the compressed G1 serialization of Appendix C of
+      [PAIRING] (Ne = 48).  The point-at-infinity encoding of that
+      format (I_bit set) is neither produced (Section 2.3) nor accepted.
 
    *  deserialize(buf): inverts the serialization above.  It *MUST*
-      perform full point validation -- the encoding is canonical (the
-      x-coordinate is less than the field characteristic and the
-      metadata bits are consistent), the point is on the curve, and it
-      lies in the prime-order subgroup G1 -- and *MUST* reject the point
-      at infinity, failing otherwise.
+      perform full point validation and *MUST* reject the point at
+      infinity.
 
 8.2.2.  Scalar Field of BLS12-381
 
@@ -1516,6 +1495,12 @@ Procedure:
 
    *  deserialize(buf): OS2IP (Section 2.1); it *MUST* fail unless the
       result is in [0, order()).
+
+9.  IANA Considerations
+
+   This document has no IANA actions.  The ciphersuite identifiers of
+   Section 8 are defined by this document and enter the protocol only as
+   components of the tag (Section 5.1); no registry is established.
 
 Acknowledgments
 
@@ -1562,11 +1547,6 @@ Normative References
               Requirement Levels", BCP 14, RFC 2119,
               DOI 10.17487/RFC2119, March 1997,
               <https://www.rfc-editor.org/rfc/rfc2119>.
-
-   [RFC4086]  Eastlake 3rd, D., Schiller, J., and S. Crocker,
-              "Randomness Requirements for Security", BCP 106, RFC 4086,
-              DOI 10.17487/RFC4086, June 2005,
-              <https://www.rfc-editor.org/rfc/rfc4086>.
 
    [RFC8017]  Moriarty, K., Ed., Kaliski, B., Jonsson, J., and A. Rusch,
               "PKCS #1: RSA Cryptography Specifications Version 2.2",
@@ -1736,6 +1716,11 @@ Informative References
               <https://fahrplan.events.ccc.de/congress/2010/Fahrplan/
               attachments/1780_27c3_console_hacking_2010.pdf>.
 
+   [RFC4086]  Eastlake 3rd, D., Schiller, J., and S. Crocker,
+              "Randomness Requirements for Security", BCP 106, RFC 4086,
+              DOI 10.17487/RFC4086, June 2005,
+              <https://www.rfc-editor.org/rfc/rfc4086>.
+
    [RFC8032]  Josefsson, S. and I. Liusvaara, "Edwards-Curve Digital
               Signature Algorithm (EdDSA)", RFC 8032,
               DOI 10.17487/RFC8032, January 2017,
@@ -1780,8 +1765,9 @@ A.1.  Seeded PRNG
 
    The random number generator used for test vectors is implemented
    using the SHAKE128 duplex sponge [fiat-shamir] with session
-   identifier __sigma-proofs/TestDRNG/SHAKE128.  Random scalars are
-   generated via DecodeField of [fiat-shamir].
+   identifier __sigma-proofs/TestDRNG/SHAKE128.  For these vectors,
+   Group.random_scalar(rng) squeezes bytes from the sponge and reduces
+   them to a scalar via DecodeField of [fiat-shamir].
 
    The following sections contain test vectors for the Sigma Protocols
    specified in this document.
