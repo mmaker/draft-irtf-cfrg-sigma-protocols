@@ -318,14 +318,6 @@ Table of Contents
    num_equations is the number of group elements in image (the height of
    M).
 
-   The matrix entry M[i][j] is called the _effective base_ of the scalar
-   witness[j] in equation i: the group element that the scalar
-   multiplies once the equation is fully expanded.  In the
-   representation of Section 3.2, where a scalar index may be
-   distributed across several terms of the same equation, the effective
-   base is the sum of coeff * elements[element_index] over all terms of
-   the equation carrying that scalar index.
-
    As an example, Schnorr's identification protocol has num_scalars =
    num_equations = 1 and M = [[G]], where G is the group generator,
    proving knowledge of the scalar x such that the group element X
@@ -399,10 +391,7 @@ Table of Contents
    as a right-hand side term whose witness scalar is "fixed" to 1: no
    verification equation constrains that scalar to 1, and the proof
    degrades to knowledge of _some_ multiplier.  A coefficient *MAY* be
-   zero; a zero coefficient on a right-hand side term contributes the
-   identity to that scalar's effective base (Section 3.1), which is
-   admissible as long as the scalar keeps a non-identity effective base
-   in some equation (Section 3.5).
+   zero.
 
    Linear combinations *MUST NOT* be preprocessed in advance, in image
    or base position: registering a precomputed sum of statement elements
@@ -582,11 +571,7 @@ Table of Contents
 
    The scalar r distributes over the parenthesized sum, so the second
    equation compiles to Equation(image=[(3, 1), (5, 1)], terms=[(0, 1,
-   1), (0, 2, 1)]): the scalar index 0 appears in both terms, the
-   effective base of r is X1 + X2 (Section 3.1), and each key share
-   stays individually bound by the serialization of Section 3.6;
-   supplying the single element X = X1 + X2 as a parameter in their
-   place would not bind the shares (Section 3.2).
+   1), (0, 2, 1)]).
 
    As a last example, the following proves that the value committed by C
    is a bit, the building block of range proofs:
@@ -633,33 +618,21 @@ Table of Contents
         index.
 
    6.   Every scalar index appears in the terms of at least one
-        equation.  This is the syntactic prerequisite of check 10, which
-        guarantees that every response scalar is constrained by at least
-        one verification equation.
+        equation.
 
    7.   instance.elements[0] is the group generator Group.generator()
-        (Section 3.2); implementations that hardwire the generator at
-        index 0 when constructing the elements list satisfy it by
-        construction.
+        (Section 3.2).
 
-   8.   No element of instance.elements is the identity element,
-        wherever it appears among the statement elements (Section 3.4);
-        the group serialization is not defined on it (Section 2.3.1).
+   8.   No element of instance.elements is the identity element.
 
    9.   No element of image(instance) is the identity element: an
         equation whose image evaluates to the identity is satisfied by
         the all-zero witness, so a proof of it attests nothing.
 
-   10.  Every scalar index has a non-identity effective base
-        (Section 3.1) in at least one equation.  An equation in which a
-        scalar's effective base evaluates to the identity does not
-        constrain that scalar's response; if that happens in every
-        equation the scalar appears in, the response coordinate is
-        entirely free, and any accepting NARG string can be mauled by
-        rewriting it.  For a scalar appearing in a single term of an
-        equation, a non-identity effective base reduces to that term's
-        coefficient being nonzero, since check 8 already excludes the
-        identity element.
+   10.  No column of the matrix M is the identity.  That is, for every
+        scalar index, there is at least one equation for which the sum
+        of coeff * elements[element_index] over the terms carrying that
+        scalar index is not the identity.
 
    With ValidateInstance(instance) (in pseudocode) we denote the
    function returning true if all above predicates are met.
