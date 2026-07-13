@@ -1053,7 +1053,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù &amp; Yun</td>
-<td class="center">Expires 8 January 2027</td>
+<td class="center">Expires 14 January 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1066,12 +1066,12 @@ svg {
 <dd class="internet-draft">draft-irtf-cfrg-sigma-protocols-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-07-07" class="published">7 July 2026</time>
+<time datetime="2026-07-13" class="published">13 July 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-01-08">8 January 2027</time></dd>
+<dd class="expires"><time datetime="2027-01-14">14 January 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1126,7 +1126,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 8 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 14 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1455,8 +1455,7 @@ svg {
         <h3 id="name-randomized-algorithms">
 <a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-randomized-algorithms" class="section-name selfRef">Randomized algorithms</a>
         </h3>
-<p id="section-2.2-1">The prover commitment algorithm requires fresh, single-use randomness. This document denotes with <code>rng</code> a cryptographically secure random number generator (CSPRNG), and uses <code>Group.random_scalar(rng)</code> to denote sampling a uniformly random element of the scalar field, similarly to <code>RandomScalar()</code> of <span><a href="https://rfc-editor.org/rfc/rfc9497#section-2.1" class="relref">Section 2.1</a> of [<a href="#RFC9497" class="cite xref">RFC9497</a>]</span>.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
-<p id="section-2.2-2">Sampling a random scalar takes two steps: obtaining high-quality entropy via a CSPRNG (e.g., <code>getrandom()</code>; see <span>[<a href="#RFC4086" class="cite xref">RFC4086</a>]</span> for randomness requirements), and reducing the resulting bytes to a scalar. It is <strong>RECOMMENDED</strong> that the latter be done via <code>DecodeField</code> as in <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>, which is equivalent to the wide reduction of <code>hash_to_field</code> (<span><a href="https://rfc-editor.org/rfc/rfc9380#section-5.2" class="relref">Section 5.2</a> of [<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>) and the integer conversion of Appendix A.4.1 of <span>[<a href="#FIPS186-5" class="cite xref">FIPS186-5</a>]</span>. The "discard method" of Appendix A.4.2 of <span>[<a href="#FIPS186-5" class="cite xref">FIPS186-5</a>]</span> <strong>SHOULD NOT</strong> be used <a href="#constant-time" class="auto internal xref">Section 7.6</a>. Different sampling mechanisms do not affect interoperability of proofs.<a href="#section-2.2-2" class="pilcrow">¶</a></p>
+<p id="section-2.2-1">The prover commitment algorithm requires fresh, single-use randomness to ensure privacy of the witness. This document denotes with <code>rng</code> a cryptographically secure random number generator (CSPRNG), and uses <code>Group.random_scalar(rng)</code> to denote sampling a uniformly random element of the scalar field, similarly to <code>RandomScalar()</code> of <span><a href="https://rfc-editor.org/rfc/rfc9497#section-2.1" class="relref">Section 2.1</a> of [<a href="#RFC9497" class="cite xref">RFC9497</a>]</span>.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="group-abstraction">
@@ -1473,7 +1472,7 @@ svg {
           </h4>
 <p id="section-2.3.1-1"><code>identity()</code> is the neutral element, <code>generator()</code> returns the canonical generator of the prime-order subgroup (<a href="#ciphersuites" class="auto internal xref">Section 8</a>), and <code>order()</code> returns its order <code>p</code>. Addition, negation, equality, and scalar multiplication by a <code>Scalar</code> are written <code>+</code>, <code>-</code>, <code>==</code>, and <code>*</code>.<a href="#section-2.3.1-1" class="pilcrow">¶</a></p>
 <p id="section-2.3.1-2"><code>serialize(elements: [Group; N])</code> and <code>deserialize(buffer)</code> convert <code>N</code> non-neutral group elements into a fixed-length <code>Ne * N</code>-byte encoding, where <code>Ne</code> is fixed per ciphersuite (<a href="#ciphersuites" class="auto internal xref">Section 8</a>).<a href="#section-2.3.1-2" class="pilcrow">¶</a></p>
-<p id="section-2.3.1-3">Both <code>serialize</code> and <code>deserialize</code> are defined only on non-neutral elements. Serialization <strong>MUST</strong> fail on the identity element, and deserialization <strong>MUST</strong> raise an error in case of failure, including on any encoding of the identity. An honest prover statistically hits this event only with negligible probability. See <span><a href="https://rfc-editor.org/rfc/rfc9380#section-10.1" class="relref">Section 10.1</a> of [<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>, Appendix C of <span>[<a href="#PAIRING" class="cite xref">PAIRING</a>]</span>, <span><a href="https://rfc-editor.org/rfc/rfc9497#section-2.1" class="relref">Section 2.1</a> of [<a href="#RFC9497" class="cite xref">RFC9497</a>]</span>, <span>[<a href="#ARC" class="cite xref">ARC</a>]</span>.<a href="#section-2.3.1-3" class="pilcrow">¶</a></p>
+<p id="section-2.3.1-3">Both <code>serialize</code> and <code>deserialize</code> are defined only on non-neutral elements. Serialization <strong>MUST</strong> fail on the identity element, and deserialization <strong>MUST</strong> fail for invalid encodings, including on the encoding of the identity. An honest prover statistically hits this event only with negligible probability. See <span><a href="https://rfc-editor.org/rfc/rfc9380#section-10.1" class="relref">Section 10.1</a> of [<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>, Appendix C of <span>[<a href="#PAIRING" class="cite xref">PAIRING</a>]</span>, <span><a href="https://rfc-editor.org/rfc/rfc9497#section-2.1" class="relref">Section 2.1</a> of [<a href="#RFC9497" class="cite xref">RFC9497</a>]</span>, <span>[<a href="#ARC" class="cite xref">ARC</a>]</span>.<a href="#section-2.3.1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="scalar">
@@ -1481,9 +1480,9 @@ svg {
           <h4 id="name-scalar">
 <a href="#section-2.3.2" class="section-number selfRef">2.3.2. </a><a href="#name-scalar" class="section-name selfRef">Scalar</a>
           </h4>
-<p id="section-2.3.2-1">A <code>Scalar</code> is an element of the group's <em>scalar field</em>, the prime field of integers modulo the group order <code>p</code>. Addition and multiplication are written <code>+</code> and <code>*</code> (via operator overloading).<a href="#section-2.3.2-1" class="pilcrow">¶</a></p>
+<p id="section-2.3.2-1">A <code>Scalar</code> is an element of the group's <em>scalar field</em>, the prime field of integers modulo the group order <code>p</code>. Addition and multiplication are written <code>+</code> and <code>*</code> via operator overloading.<a href="#section-2.3.2-1" class="pilcrow">¶</a></p>
 <p id="section-2.3.2-2"><code>serialize(scalars: list[Scalar; N])</code> and <code>deserialize(buffer)</code> batch convert between <code>[Scalar; N]</code> and its canonical, fixed-length <code>Ns * N</code>-byte encoding.<a href="#section-2.3.2-2" class="pilcrow">¶</a></p>
-<p id="section-2.3.2-3">A uniformly random scalar is sampled with <code>Group.random_scalar(rng)</code> (<a href="#rng-definition" class="auto internal xref">Section 2.2</a>).<a href="#section-2.3.2-3" class="pilcrow">¶</a></p>
+<p id="section-2.3.2-3">Sampling a random scalar takes two steps: obtaining high-quality entropy via a CSPRNG (e.g., <code>getrandom()</code>; see <span>[<a href="#RFC4086" class="cite xref">RFC4086</a>]</span> for randomness requirements), and reducing the resulting bytes to a scalar. It is <strong>RECOMMENDED</strong> that the latter be done via <code>DecodeField</code> as in <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>. Different sampling mechanisms, such as the wide reduction of <code>hash_to_field</code> (<span><a href="https://rfc-editor.org/rfc/rfc9380#section-5.2" class="relref">Section 5.2</a> of [<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>) and the integer conversion of Appendix A.4.1 of <span>[<a href="#FIPS186-5" class="cite xref">FIPS186-5</a>]</span> do not affect interoperability of proofs. The "discard method" of Appendix A.4.2 of <span>[<a href="#FIPS186-5" class="cite xref">FIPS186-5</a>]</span> <strong>SHOULD NOT</strong> be used <a href="#constant-time" class="auto internal xref">Section 7.6</a>.<a href="#section-2.3.2-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1525,7 +1524,7 @@ M = [[G],
 </div>
 <p id="section-3.1-10">Variants of the Chaum-Pedersen relation are widely used for VRFs <span>[<a href="#RFC9381" class="cite xref">RFC9381</a>]</span> and anonymous tokens <span>[<a href="#RFC9497" class="cite xref">RFC9497</a>]</span>. Proofs of knowledge of the opening <code>(m, r)</code> of a Pedersen commitment <span>[<a href="#Pedersen91" class="cite xref">Pedersen91</a>]</span> <code>C = m * G + r * H</code> are Okamoto-Schnorr proofs <span>[<a href="#Okamoto92" class="cite xref">Okamoto92</a>]</span>.<a href="#section-3.1-10" class="pilcrow">¶</a></p>
 <p id="section-3.1-11">Affine equations with constant terms can be expressed directly through image terms and coefficients (<a href="#representation" class="auto internal xref">Section 3.2</a>); more elaborate relations, such as quadratic equations, reduce to this same form by letting instance elements themselves serve as bases (<a href="#relation-notation" class="auto internal xref">Section 3.4</a>).<a href="#section-3.1-11" class="pilcrow">¶</a></p>
-<p id="section-3.1-12">The group <code>Group</code>, and its generator, are provided by the ciphersuite <a href="#ciphersuites" class="auto internal xref">Section 8</a>. The caller has the responsibility to select the appropriate <code>M</code>, and this requires care. Computationally-independent bases, sometimes also called <em>auxiliary generators</em>, or <em>nothing up my sleeve (NUMS) generators</em>, may be computed via hash to the curve (<span><a href="https://rfc-editor.org/rfc/rfc9380#section-3" class="relref">Section 3</a> of [<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>).<a href="#section-3.1-12" class="pilcrow">¶</a></p>
+<p id="section-3.1-12">The group <code>Group</code>, and its generator, are provided by the ciphersuite <a href="#ciphersuites" class="auto internal xref">Section 8</a>. The statement author has the responsibility to select the appropriate <code>M</code>, and this requires care. Computationally-independent bases, sometimes also called <em>auxiliary generators</em>, or <em>nothing up my sleeve (NUMS) generators</em>, may be computed via hash to the curve (<span><a href="https://rfc-editor.org/rfc/rfc9380#section-3" class="relref">Section 3</a> of [<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>).<a href="#section-3.1-12" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="representation">
@@ -1553,10 +1552,10 @@ class Equation:
 <p id="section-3.2-5">The <code>image</code> terms (the left-hand side) are pairs <code>(element_index, coeff)</code>. The image is the sum of <code>coeff * elements[element_index]</code>.<a href="#section-3.2-5" class="pilcrow">¶</a></p>
 <p id="section-3.2-6">The <code>terms</code> (the right-hand side) are triplets <code>(scalar_index, element_index, coeff)</code>. Each <code>coeff</code> is a scalar (<a href="#scalar" class="auto internal xref">Section 2.3.2</a>) fixed by the instance.<a href="#section-3.2-6" class="pilcrow">¶</a></p>
 <p id="section-3.2-7">A <code>LinearRelation</code> <strong>MUST</strong> have at least one equation, and every equation's <code>image</code> and <code>terms</code> <strong>MUST</strong> be non-empty. A constant of the statement (an element carrying no witness scalar) is encoded as an image term (<a href="#relation-notation" class="auto internal xref">Section 3.4</a>). It <strong>MUST NOT</strong> be encoded as a right-hand side term whose witness scalar is "fixed" to <code>1</code>. A coefficient <strong>MAY</strong> be zero.<a href="#section-3.2-7" class="pilcrow">¶</a></p>
-<p id="section-3.2-8">The instance <strong>MUST</strong> contain, as individually-indexed elements, every group element on which the statement depends. In particular, linear combinations of statement elements <strong>MUST NOT</strong> be evaluated before the instance is encoded, else the resulting argument is malleable across its preimages (<a href="#sigma-ni-security" class="auto internal xref">Section 7.2</a>).<a href="#section-3.2-8" class="pilcrow">¶</a></p>
+<p id="section-3.2-8">The instance <strong>MUST</strong> contain, as individually-indexed elements, every group element on which the statement depends. In particular, all group elements processed by the verifier <strong>MUST</strong> appear in the statement, else the resulting argument is malleable across its preimages (<a href="#sigma-ni-security" class="auto internal xref">Section 7.2</a>).<a href="#section-3.2-8" class="pilcrow">¶</a></p>
 <p id="section-3.2-9">For instance, the verifiable-decryption statement <code>M + E1 = x * E0</code> is encoded with the two image terms <code>(M, 1), (E1, 1)</code>, never as the single element <code>F = M + E1</code>. Otherwise, the same proof will verify for any <code>F = M' + E1'</code>, even when <code>M' != M</code>. As another example, a statement multiplying a scalar by a sum of elements, such as <code>Y = x * (E0 + E1)</code>, is expressed by repeating the scalar index across terms, as <code>terms = [(0, 1, 1), (0, 2, 1)]</code>, never as the single element <code>K = E0 + E1</code>. An element may appear multiple times in the same equation, even with the same coefficient and scalar.<a href="#section-3.2-9" class="pilcrow">¶</a></p>
 <p id="section-3.2-10">Every group element index <strong>MUST</strong> have an associated group element. Every element <strong>MUST</strong> appear in the terms or image terms of at least one equation, except for the generator (index 0), which is present in every instance whether or not an equation uses it. Every scalar index <strong>MUST</strong> appear in at least one term, else the corresponding response is accepted unchecked.<a href="#section-3.2-10" class="pilcrow">¶</a></p>
-<p id="section-3.2-11">A valid instance has:<a href="#section-3.2-11" class="pilcrow">¶</a></p>
+<p id="section-3.2-11">For a valid instance, let:<a href="#section-3.2-11" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3.2-12">
 <pre>
 num_elements(instance)  = len(instance.elements)
@@ -1677,7 +1676,7 @@ Relation Bit(H, C):
 </pre><a href="#section-3.4-24" class="pilcrow">¶</a>
 </div>
 <p id="section-3.4-25"><code>Bit</code> compiles to <code>elements = [G, H, C]</code> and <code>equations = [Equation(image=[(2, 1)], terms=[(0, 0, 1), (1, 1, 1)]), Equation(image=[(2, 1)], terms=[(0, 2, 1), (2, 1, 1)])]</code>: the element index <code>2</code> (the commitment <code>C</code>) appears both in each equation's image and among the bases of the second equation.<a href="#section-3.4-25" class="pilcrow">¶</a></p>
-<p id="section-3.4-26">AND composition comes for free: concatenate the parameter lists, <code>Witness:</code>, and <code>Equations:</code> of each sub-relation. Under concatenation, a name kept in common denotes the same scalar or element in every sub-relation, and is declared exactly once in the combined declaration. Names not intended to be shared <strong>MUST</strong> be renamed apart before concatenating.<a href="#section-3.4-26" class="pilcrow">¶</a></p>
+<p id="section-3.4-26">AND composition comes for free for this relation family. To do so, concatenate the parameter lists, <code>Witness:</code>, and <code>Equations:</code> of each sub-relation. Under concatenation, a name kept in common should denote the same scalar or element in every sub-relation, and is declared exactly once in the combined declaration. Names not intended to be shared <strong>MUST</strong> be renamed apart before concatenating.<a href="#section-3.4-26" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="instance-validation">
@@ -1720,7 +1719,7 @@ Together with check 4, this ensures <code>num_elements(instance)-1</code> is the
 </li>
         </ol>
 <p id="section-3.5-3">The prover <strong>SHOULD</strong> reject an invalid instance, and <strong>MAY</strong> additionally check that <code>image == map(instance, witness)</code> before proving; <a href="#privacy-considerations" class="auto internal xref">Section 7.5</a> and <a href="#instance-security" class="auto internal xref">Section 7.4</a> state when this check, or a stronger precaution, is required. The verifier <strong>MUST</strong> fail on an invalid instance (<a href="#verifier" class="auto internal xref">Section 4.3</a>, <a href="#non-interactive" class="auto internal xref">Section 5</a>), either when the instance is constructed or during verification itself.<a href="#section-3.5-3" class="pilcrow">¶</a></p>
-<p id="section-3.5-4">In pseudocode, <code>ValidateInstance(instance)</code> denotes the function returning <code>true</code> if all above predicates are met. Instance validation won't flag all violations of <a href="#representation" class="auto internal xref">Section 3.2</a> (for instance, a registered element obtained as a precomputed linear combination from one obtained independently) because the instance generation can't know how a group element is obtained. A structurally valid instance may still yield an unsound argument.<a href="#section-3.5-4" class="pilcrow">¶</a></p>
+<p id="section-3.5-4"><code>ValidateInstance(instance)</code> denotes the function returning <code>true</code> if all above predicates are met. Instance validation won't flag all violations of <a href="#representation" class="auto internal xref">Section 3.2</a> (for instance, a registered element obtained as a precomputed linear combination from one obtained independently) because the instance generation can't know how a group element is obtained. A structurally valid instance may still yield an unsound argument.<a href="#section-3.5-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="serialize-linear-relations">
@@ -1791,7 +1790,7 @@ Group.serialize([H, X, Y])                      # statement elements
 <p id="section-4.1-1">A Sigma Protocol provides the following interface:<a href="#section-4.1-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-4.1-2.1">
-            <p id="section-4.1-2.1.1"><code>ProverCommitment(instance, witness, rng)</code>: produces a pair <code>(commitment, prover_state)</code> consisting of the <strong>commitment</strong> message, and a private <code>prover_state</code>. The prover state <strong>MUST</strong> be used only once per proof. The random number generator <code>rng</code> is defined in <a href="#rng-definition" class="auto internal xref">Section 2.2</a>.<a href="#section-4.1-2.1.1" class="pilcrow">¶</a></p>
+            <p id="section-4.1-2.1.1"><code>ProverCommitment(instance, witness, rng)</code>: produces a pair <code>(commitment, prover_state)</code> consisting of the <strong>commitment</strong> message, and a private <code>prover_state</code>. The prover state <strong>MUST</strong> be used at most once. The random number generator <code>rng</code> is defined in <a href="#rng-definition" class="auto internal xref">Section 2.2</a>.<a href="#section-4.1-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-4.1-2.2">
             <p id="section-4.1-2.2.1"><code>ProverResponse(prover_state, challenge)</code> produces the <strong>response</strong>.<a href="#section-4.1-2.2.1" class="pilcrow">¶</a></p>
@@ -1803,13 +1802,13 @@ Group.serialize([H, X, Y])                      # statement elements
 <p id="section-4.1-3">These are the <em>interactive</em> protocol's building blocks. Implementations <strong>MAY</strong> also provide the <strong>zero-knowledge simulator</strong>:<a href="#section-4.1-3" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-4.1-4.1">
-            <p id="section-4.1-4.1.1"><code>SimulateResponse(instance, rng)</code>, which returns a simulated response, and a simulator state.<a href="#section-4.1-4.1.1" class="pilcrow">¶</a></p>
+            <p id="section-4.1-4.1.1"><code>SimulateResponse(instance, rng) -&gt; (response, state)</code>, which returns a simulated response, and a simulator state.<a href="#section-4.1-4.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-4.1-4.2">
-            <p id="section-4.1-4.2.1"><code>SimulateCommitment(state, response, challenge)</code>, which returns the <code>simulated_commitment</code> such that <code>Verifier(instance, simulated_commitment, challenge, response)</code> accepts.<a href="#section-4.1-4.2.1" class="pilcrow">¶</a></p>
+            <p id="section-4.1-4.2.1"><code>SimulateCommitment(state, response, challenge) -&gt; simulated_commitment</code>, which returns the <code>simulated_commitment</code> such that <code>Verifier(instance, simulated_commitment, challenge, response)</code> accepts.<a href="#section-4.1-4.2.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-4.1-5">Both are specified concretely for the linear-map Sigma Protocol in <a href="#simulator" class="auto internal xref">Section 4.4</a>. The simulator is useful for proof composition (e.g. OR-composition <span>[<a href="#CramerDS94" class="cite xref">CramerDS94</a>]</span>) and for compact NARG string serialization <a href="#narg-string-compact" class="auto internal xref">Section 5.5</a>.<a href="#section-4.1-5" class="pilcrow">¶</a></p>
+<p id="section-4.1-5">Both are specified concretely for the linear-map Sigma Protocol in <a href="#simulator" class="auto internal xref">Section 4.4</a>. The simulator is useful for proof composition (e.g. OR-composition <span>[<a href="#CramerDS94" class="cite xref">CramerDS94</a>]</span>) and for compact serialization <a href="#narg-string-compact" class="auto internal xref">Section 5.5</a>.<a href="#section-4.1-5" class="pilcrow">¶</a></p>
 <p id="section-4.1-6">This interface allows for composition, and <strong>SHOULD NOT</strong> be exposed directly to consumers of the non-interactive argument. In particular, <code>ProverResponse</code> <strong>MUST NOT</strong> be invoked with a <code>challenge</code> that was not either sent by an honest interactive verifier or derived from the instance and commitment via the Fiat-Shamir transformation (<a href="#non-interactive" class="auto internal xref">Section 5</a>). Supplying an invalid challenge or an arbitrary prover state will compromise soundness and zero-knowledge.<a href="#section-4.1-6" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -1848,7 +1847,7 @@ Procedure:
 4. return (commitment, prover_state := (witness, nonces))
 </pre><a href="#section-4.2.1-1" class="pilcrow">¶</a>
 </div>
-<p id="section-4.2.1-2">The prover <strong>MAY</strong> produce an output (and not fail) if the witness is not valid for the instance provided. The prover <strong>MUST</strong> fail if the witness length does not match <code>num_scalars(instance)</code>: a mismatch cannot yield a valid proof and, depending on the implementation language, may otherwise leak the witness.<a href="#section-4.2.1-2" class="pilcrow">¶</a></p>
+<p id="section-4.2.1-2">The prover <strong>MAY</strong> produce an output (and not fail) if the witness is not valid for the instance provided. The prover <strong>MUST</strong> fail if the witness length does not match <code>num_scalars(instance)</code>: a mismatch cannot yield a valid proof.<a href="#section-4.2.1-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="prover-response">
@@ -1870,11 +1869,12 @@ Output: the response message, an array of scalars
 Procedure:
 
 1. witness, nonces = prover_state
-2. return [nonces[i] + witness[i] * challenge
+2. fail if len(witness) != len(nonces)
+3. return [nonces[i] + witness[i] * challenge
            for i in 0, ..., len(nonces) - 1]
 </pre><a href="#section-4.2.2-1" class="pilcrow">¶</a>
 </div>
-<p id="section-4.2.2-2">The prover <strong>MUST</strong> fail if <code>len(witness) != len(nonces)</code>.<a href="#section-4.2.2-2" class="pilcrow">¶</a></p>
+<p id="section-4.2.2-2">The prover <strong>MUST</strong> fail if the lengths of witness and nonces mismatch.<a href="#section-4.2.2-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1884,7 +1884,7 @@ Procedure:
         <h3 id="name-verifier">
 <a href="#section-4.3" class="section-number selfRef">4.3. </a><a href="#name-verifier" class="section-name selfRef">Verifier</a>
         </h3>
-<p id="section-4.3-1">The <strong>challenge</strong> is a scalar drawn uniformly at random from the <em>challenge set</em> <code>C</code>, a subset of the scalar field fixed by the protocol. Non-interactive Sigma Protocols derive the challenge via the Fiat-Shamir transformation (<a href="#non-interactive" class="auto internal xref">Section 5</a>).<a href="#section-4.3-1" class="pilcrow">¶</a></p>
+<p id="section-4.3-1">The <strong>challenge</strong> is a scalar drawn uniformly at random from the scalar field. Non-interactive Sigma Protocols derive the challenge via the Fiat-Shamir transformation (<a href="#non-interactive" class="auto internal xref">Section 5</a>).<a href="#section-4.3-1" class="pilcrow">¶</a></p>
 <p id="section-4.3-2">The verification equation is as follows:<a href="#section-4.3-2" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.3-3">
 <pre>
@@ -1907,7 +1907,7 @@ Procedure:
 3. expected = map(instance, response)
 4. got = [commitment[i] + challenge * image(instance)[i]
           for i in 0, ..., num_equations(instance) - 1]
-5. return got == expected
+5. fail if got != expected
 </pre><a href="#section-4.3-3" class="pilcrow">¶</a>
 </div>
 <p id="section-4.3-4">The verifier <strong>MUST</strong> enforce instance validity (Step 1, see <a href="#instance-validation" class="auto internal xref">Section 3.5</a>), and that the shape of the transcript matches that of the instance.<a href="#section-4.3-4" class="pilcrow">¶</a></p>
@@ -1945,7 +1945,7 @@ simulated_commitment[i] = map(state, response)[i]
 <a href="#section-5" class="section-number selfRef">5. </a><a href="#name-non-interactive-sigma-proto" class="section-name selfRef">Non-interactive Sigma Protocols</a>
       </h2>
 <p id="section-5-1">The Fiat-Shamir transformation applied to Sigma Protocols yields a non-interactive zero-knowledge argument of knowledge.<a href="#section-5-1" class="pilcrow">¶</a></p>
-<p id="section-5-2"><span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> describes how to instantiate the transformation, for the group and field codecs given. This section specifies the session identifier binding a proof to its application (<a href="#sigma-proofs-tag" class="auto internal xref">Section 5.1</a>), the challenge derivation shared by prover and verifier (<a href="#challenge-derivation" class="auto internal xref">Section 5.2</a>), the two NARG string serializations (<a href="#sigma-narg" class="auto internal xref">Section 5.3</a>), and batch verification (<a href="#batch-verification" class="auto internal xref">Section 5.6</a>).<a href="#section-5-2" class="pilcrow">¶</a></p>
+<p id="section-5-2"><span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> describes how to instantiate the transformation, for the group and field codecs given. This section specifies the session identifier binding a proof to its application (<a href="#sigma-proofs-tag" class="auto internal xref">Section 5.1</a>), the challenge derivation shared by prover and verifier (<a href="#challenge-derivation" class="auto internal xref">Section 5.2</a>), the two non-interactive argument (NARG) string serializations (<a href="#sigma-narg" class="auto internal xref">Section 5.3</a>), and batch verification (<a href="#batch-verification" class="auto internal xref">Section 5.6</a>).<a href="#section-5-2" class="pilcrow">¶</a></p>
 <div id="sigma-proofs-tag">
 <section id="section-5.1">
         <h3 id="name-tag-and-session-identifier">
@@ -1958,14 +1958,14 @@ simulated_commitment[i] = map(state, response)[i]
 FOO-V{xx}-{tttt}-{flavor}-with-{ciphersuiteID}
 </pre><a href="#section-5.1-3" class="pilcrow">¶</a>
 </div>
-<p id="section-5.1-4">where <code>xx</code> is the two-digit number indicating the version, <code>tttt</code> is the four-digit number identifying the epoch, <code>flavor</code> is the flavor marker, and <code>ciphersuiteID</code> is the ciphersuite identifier of <a href="#ciphersuites" class="auto internal xref">Section 8</a>. For instance, for batchable NARG strings:<a href="#section-5.1-4" class="pilcrow">¶</a></p>
+<p id="section-5.1-4">where <code>xx</code> is the two-digit number indicating the version, <code>tttt</code> is the four-digit number identifying the epoch, <code>flavor</code> is the serialization flavor marker, and <code>ciphersuiteID</code> is the ciphersuite identifier of <a href="#ciphersuites" class="auto internal xref">Section 8</a>. For instance, for batchable NARG strings:<a href="#section-5.1-4" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-5.1-5">
 <pre>
 FOO-V01-0001-DSFS-with-sigma-proofs_Shake128_P256
 </pre><a href="#section-5.1-5" class="pilcrow">¶</a>
 </div>
-<p id="section-5.1-6">The corresponding tag for compact NARG strings replaces <code>DSFS</code> with <code>CMPT</code>.<a href="#section-5.1-6" class="pilcrow">¶</a></p>
-<p id="section-5.1-7">The session identifier <strong>MUST</strong> be generated from trusted input, and not supplied by an untrusted entity.<a href="#section-5.1-7" class="pilcrow">¶</a></p>
+<p id="section-5.1-6">The corresponding tag for compact NARG strings replaces the flavor marker <code>DSFS</code> (duplex sponge Fiat-Shamir) with <code>CMPT</code>.<a href="#section-5.1-6" class="pilcrow">¶</a></p>
+<p id="section-5.1-7">The prover and the verifier each construct the tag (or session identifier). Neither should accept a session identifier supplied by a third party. An adversary who controls the entire session identifier can cause a proof to be accepted where it was never intended.<a href="#section-5.1-7" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="challenge-derivation">
@@ -2048,7 +2048,6 @@ Group.serialize(commitment) || Scalar.serialize(response)
             </ol>
 </li>
         </ul>
-<p id="section-5.4-5">Absorbing the received bytes and absorbing <code>Group.serialize(commitment)</code> are interchangeable for the given encoding functions <span>[<a href="#ChalkiasGN20" class="cite xref">ChalkiasGN20</a>]</span>.<a href="#section-5.4-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="narg-string-compact">
@@ -2114,7 +2113,7 @@ Procedure:
         <h3 id="name-batch-verification">
 <a href="#section-5.6" class="section-number selfRef">5.6. </a><a href="#name-batch-verification" class="section-name selfRef">Batch verification</a>
         </h3>
-<p id="section-5.6-1">Verification of multiple batchable NARG strings <strong>MAY</strong> be done more efficiently than verifying each NARG string on its own. Batch verification is a local verifier-side optimization, which affects neither the prover nor the NARG string.<a href="#section-5.6-1" class="pilcrow">¶</a></p>
+<p id="section-5.6-1">Verification of multiple batchable NARG strings <strong>MAY</strong> be done more efficiently than verifying each NARG string on its own, via batch verification. Batch verification can be more efficient even in the presence of a single instance, provided the instance has at least a few equations. Batch verification is a local verifier-side optimization, which affects neither the prover nor the NARG string.<a href="#section-5.6-1" class="pilcrow">¶</a></p>
 <p id="section-5.6-2">Batch verification is done by re-computing the verifier challenge of each NARG string individually (<a href="#challenge-derivation" class="auto internal xref">Section 5.2</a>), and then checking a single random linear combination of the verification equations of the whole batch. See <span><a href="https://rfc-editor.org/rfc/rfc8032#section-8.2" class="relref">Section 8.2</a> of [<a href="#RFC8032" class="cite xref">RFC8032</a>]</span>, <span>[<a href="#BDLSY11" class="cite xref">BDLSY11</a>]</span>, and <span>[<a href="#BellareGR98" class="cite xref">BellareGR98</a>]</span>.<a href="#section-5.6-2" class="pilcrow">¶</a></p>
 <p id="section-5.6-3">The verification equation for <code>Nt</code> transcripts <code>(commitment, challenge, response)</code> of preimages of linear relations is:<a href="#section-5.6-3" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-5.6-4">
@@ -2137,7 +2136,7 @@ sum(
 </pre><a href="#section-5.6-6" class="pilcrow">¶</a>
 </div>
 <p id="section-5.6-7">Similarly to batch verification of Ed25519 signatures <span>[<a href="#BDLSY11" class="cite xref">BDLSY11</a>]</span>, a false NARG string will be accepted with probability at most <code>2^-128</code>, which is negligible. In general, for <code>batching_randomness</code> elements drawn uniformly from a set of <code>2^t</code> scalars, a false NARG string will be accepted with probability at most <code>2^-t</code>.<a href="#section-5.6-7" class="pilcrow">¶</a></p>
-<p id="section-5.6-8">It is <strong>RECOMMENDED</strong> that the batching randomness be generated deterministically, with the duplex sponge of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> as follows. Below, <code>session_ids[i]</code> is the 32-byte session identifier of the <code>i</code>-th NARG string being verified (<a href="#sigma-proofs-tag" class="auto internal xref">Section 5.1</a>).<a href="#section-5.6-8" class="pilcrow">¶</a></p>
+<p id="section-5.6-8">It is <strong>RECOMMENDED</strong> that the batching randomness be generated deterministically, with the duplex sponge of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> as follows; it <strong>MAY</strong> instead be freshly sampled from a cryptographically secure random number generator. Below, <code>session_ids[i]</code> is the 32-byte session identifier of the <code>i</code>-th NARG string being verified (<a href="#sigma-proofs-tag" class="auto internal xref">Section 5.1</a>).<a href="#section-5.6-8" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-5.6-9">
 <pre>
  1. batching_sid = DeriveSessionID(
@@ -2164,7 +2163,7 @@ sum(
 </pre><a href="#section-5.6-12" class="pilcrow">¶</a>
 </div>
 <p id="section-5.6-13">The batch verifier <strong>MUST</strong> perform instance validation for each instance, and <strong>MUST</strong> compute each of the verifier challenges with <code>DeriveChallenge</code> (<a href="#challenge-derivation" class="auto internal xref">Section 5.2</a>). Empty batches are accepted as valid; the batch size <strong>MUST</strong> be less than <code>2^32</code>. Upon failure, batch verification does not identify the offending NARG string; an application may fall back to verifying the NARG strings individually.<a href="#section-5.6-13" class="pilcrow">¶</a></p>
-<p id="section-5.6-14">Batch verification is sound only if the batching randomness is unpredictable to the prover(s). The batching randomness <strong>MUST</strong> therefore be derived only after every value in the batched equation is fixed. In particular, this includes the response message! Omitting prover messages from the batching randomness will compromise soundness of batch verification <span>[<a href="#SOLANA-ZK" class="cite xref">SOLANA-ZK</a>]</span> <span>[<a href="#SOLANA-PHANTOM" class="cite xref">SOLANA-PHANTOM</a>]</span>. The batch verification procedure <strong>MUST NOT</strong> reuse the duplex sponge of a NARG verifier.<a href="#section-5.6-14" class="pilcrow">¶</a></p>
+<p id="section-5.6-14">Batch verification is sound only if the prover(s) cannot choose their messages as a function of the batching randomness. When derived deterministically, the batching randomness <strong>MUST</strong> therefore absorb every value in the batched equation before squeezing. In particular, this includes the response message. Omitting prover messages from the derivation will compromise soundness of batch verification <span>[<a href="#SOLANA-ZK" class="cite xref">SOLANA-ZK</a>]</span> <span>[<a href="#SOLANA-PHANTOM" class="cite xref">SOLANA-PHANTOM</a>]</span>. When sampled, the batching randomness <strong>MUST</strong> be drawn only after every NARG string in the batch is received, and <strong>MUST NOT</strong> be reused across batches. The batch verification procedure <strong>MUST NOT</strong> reuse the duplex sponge of a NARG verifier.<a href="#section-5.6-14" class="pilcrow">¶</a></p>
 <p id="section-5.6-15">The batching randomness elements <strong>MAY</strong> be replaced by the successive powers <code>1, mu, mu^2, ...</code> of a single uniformly random scalar <code>mu</code>, assigned in row-major order (transcripts, then equations) to the pairs <code>(i, j)</code> and computed in the scalar field. In this case, step 7 squeezes 16 bytes instead of <code>16 * K</code>, where <code>K = sum(num_equations(instances[i]) for i in 0, ..., Nt - 1)</code> is the total number of batched equations, and <code>mu</code> is the little-endian integer they encode, read via <code>LE2IP</code> (<a href="#bytes-and-integers" class="auto internal xref">Section 2.1</a>), uniformly distributed in <code>[0, 2^128)</code>. In this case, an invalid batch is accepted with probability at most <code>(K - 1)/2^128</code>, rather than the <code>2^-128</code> achieved by independent sampling.<a href="#section-5.6-15" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2177,7 +2176,7 @@ sum(
       </h2>
 <p id="section-6-1">Constant arithmetic operations <strong>MAY</strong> be preprocessed, provided the security requirements of <a href="#representation" class="auto internal xref">Section 3.2</a> hold: evaluation-time precomputation, such as fixed-base multiplication tables, is safe; registering a precomputed linear combination as a new instance element is not.<a href="#section-6-1" class="pilcrow">¶</a></p>
 <p id="section-6-2">Multi-scalar multiplication (MSM) algorithms can help evaluate <code>map(instance, scalars)</code> (<a href="#map-evaluation" class="auto internal xref">Section 3.3</a>) and the verification equation. For example, the verifier of <a href="#verifier" class="auto internal xref">Section 4.3</a> is specified as the equality <code>map(instance, response) == commitment + challenge * image(instance)</code>, evaluated as two separate vectors for clarity. Implementations <strong>MAY</strong> instead verify each equation <code>i</code> by checking that <code>commitment[i] + challenge * image(instance)[i] - sum(response[j] * M[i][j] for j in 0, ..., num_scalars(instance) - 1)</code> is <code>identity()</code>, accumulating all terms in a single MSM per equation. Prioritizing field operations, by evaluating expressions over terms and scalar coefficients, will be faster than computing and summing each term individually.<a href="#section-6-2" class="pilcrow">¶</a></p>
-<p id="section-6-3">The fastest MSM algorithms, such as Pippenger's bucket method or windowed non-adjacent forms, run in time that depends on the scalars. This is safe in the verification equation above, and in <code>SimulateCommitment</code> (<a href="#simulator" class="auto internal xref">Section 4.4</a>), which computes the same expression: there, every scalar is public.<a href="#section-6-3" class="pilcrow">¶</a></p>
+<p id="section-6-3">The fastest MSM algorithms, such as Pippenger's bucket method or windowed non-adjacent forms, run in time that depends on the scalars. This is safe, for instance, in the verification equation above, for image computation <code>image(instance)</code>, and in <code>SimulateCommitment</code> (<a href="#simulator" class="auto internal xref">Section 4.4</a>): there, every scalar is public.<a href="#section-6-3" class="pilcrow">¶</a></p>
 <p id="section-6-4">The efficiency considerations of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> apply here too. Implementations that produce or verify many proofs for the same instance can precompute and reuse the duplex sponge state after the instance is absorbed (steps 1-3 of <code>DeriveChallenge</code>, <a href="#challenge-derivation" class="auto internal xref">Section 5.2</a>) across proofs. <code>ValidateInstance</code> (<a href="#instance-validation" class="auto internal xref">Section 3.5</a>) likewise depends only on the instance, and can be checked once per instance rather than once per proof.<a href="#section-6-4" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2204,7 +2203,7 @@ sum(
         </h3>
 <p id="section-7.2-1">The security considerations of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> apply here as well.<a href="#section-7.2-1" class="pilcrow">¶</a></p>
 <p id="section-7.2-2">Soundness holds only if the encoded instance contains the entire statement being proven (<a href="#serialize-linear-relations" class="auto internal xref">Section 3.6</a>). Omitting any statement element will compromise knowledge soundness of the resulting non-interactive argument <span>[<a href="#CVE-2022-29566" class="cite xref">CVE-2022-29566</a>]</span>. For example, consider the verifiable-decryption statement <code>M + E1 = x * E0</code>. If encoded with the single image element <code>F = M + E1</code>, then <code>M</code> and <code>E1</code> never enter the instance encoding function, and the resulting NARG string is malleable across statements: it verifies (unchanged) for every pair <code>(M', E1')</code> with <code>M' + E1' = F</code>. An attacker can thus present a NARG string generated for one plaintext-ciphertext pair as valid for a different one. Another example: encoding <code>Y = x * (E0 + E1)</code> with the single element <code>K = E0 + E1</code> as base instead of the two terms <code>x * E0 + x * E1</code> verifies unchanged for every pair <code>(E0', E1')</code> with <code>E0' + E1' = K</code>. <a href="#representation" class="auto internal xref">Section 3.2</a> requires the instance to contain, individually, every group element on which the application's acceptance depends; both examples above violate that requirement while remaining structurally valid (<a href="#instance-validation" class="auto internal xref">Section 3.5</a>).<a href="#section-7.2-2" class="pilcrow">¶</a></p>
-<p id="section-7.2-3">The challenge is drawn uniformly from the challenge set <code>C</code> (<a href="#verifier" class="auto internal xref">Section 4.3</a>). In this document, <code>C</code> is the full scalar field, and the non-interactive instantiations of <a href="#non-interactive" class="auto internal xref">Section 5</a> always derive full-field challenges, so <code>1/|C| &lt; 2^-250</code> for the ciphersuites of <a href="#ciphersuites" class="auto internal xref">Section 8</a>. Compositions <strong>MAY</strong> restrict <code>C</code> to a smaller subset of the scalar field.<a href="#section-7.2-3" class="pilcrow">¶</a></p>
+<p id="section-7.2-3">The challenge is drawn uniformly at random from the scalar field (<a href="#verifier" class="auto internal xref">Section 4.3</a>), and the non-interactive instantiations of <a href="#non-interactive" class="auto internal xref">Section 5</a> always derive full-field challenges. Writing <code>C</code> for the set the challenge is drawn from, <code>1/|C| &lt; 2^-250</code> for the ciphersuites of <a href="#ciphersuites" class="auto internal xref">Section 8</a>. Compositions of Sigma Protocols (out of scope for this document) <strong>MAY</strong> restrict the challenge to a smaller <em>challenge set</em> <code>C</code>.<a href="#section-7.2-3" class="pilcrow">¶</a></p>
 <p id="section-7.2-4">Knowledge extraction in the random oracle model requires rewinding the adversary: by the Forking Lemma <span>[<a href="#PointchevalS00" class="cite xref">PointchevalS00</a>]</span>, an adversary that outputs an accepting proof with probability <code>epsilon</code> after <code>q</code> hash queries yields a witness with probability about <code>epsilon^2/q</code>, a quadratic loss. In the algebraic group model (with a random oracle), extraction is instead straight-line (when, for each row of <code>M</code>, finding a non-trivial linear relation among its elements is computationally hard) with total extraction error on the order of <code>q/|C|</code> (Section 9 of <span>[<a href="#Orru24" class="cite xref">Orru24</a>]</span>).<a href="#section-7.2-4" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2260,7 +2259,7 @@ sum(
 <p id="section-7.7-2">For instance, in the statement <code>C = m * G + r * H, R = r * G</code>, the witness <code>m</code> is only computationally hidden. The NARG string does not leak the witness. Yet, a quantum adversary may recover <code>r</code> from <code>R</code> and then <code>m</code> from <code>C - r * H</code>, with two discrete logarithm computations.<a href="#section-7.7-2" class="pilcrow">¶</a></p>
 <p id="section-7.7-3">As another example, the statement <code>C = m * G + r * H, D = m * G + s * H</code>, asserting that two commitments open to the same value, is meaningless to a quantum adversary: the commitments bind <code>m</code> only computationally, and an adversary that computes the discrete logarithm of <code>H</code> to the base <code>G</code> can open either of them to any value of its choice.<a href="#section-7.7-3" class="pilcrow">¶</a></p>
 <p id="section-7.7-4">The quantum random-oracle model (QROM) <span>[<a href="#BDFLSZ11" class="cite xref">BDFLSZ11</a>]</span>, where the adversary may query the hash function in superposition, is not considered in this document. An analysis of the Fiat-Shamir transformation in the QROM can be found in <span>[<a href="#DFMS19" class="cite xref">DFMS19</a>]</span>.<a href="#section-7.7-4" class="pilcrow">¶</a></p>
-<p id="section-7.7-5">Other families of Sigma Protocols, e.g. MPC-in-the-Head <span>[<a href="#IKOS07" class="cite xref">IKOS07</a>]</span>, lattice-based <span>[<a href="#AttemaCK21" class="cite xref">AttemaCK21</a>]</span>, or code-based <span>[<a href="#Stern93" class="cite xref">Stern93</a>]</span> approaches, can provide post-quantum guarantees, but are not specified in this document. The generic AND composition of a classical-sound and a post-quantum-sound Sigma Protocol does not upgrade security of the former. For example, the binding of a Pedersen commitment fails against a quantum adversary regardless of the strength of the other conjunct, so the combined statement is meaningful only while <strong>both</strong> underlying problems remain hard. See <span>[<a href="#BonehS23" class="cite xref">BonehS23</a>]</span>.<a href="#section-7.7-5" class="pilcrow">¶</a></p>
+<p id="section-7.7-5">Other families of Sigma Protocols, e.g. MPC-in-the-Head <span>[<a href="#IKOS07" class="cite xref">IKOS07</a>]</span>, lattice-based <span>[<a href="#AttemaCK21" class="cite xref">AttemaCK21</a>]</span>, or code-based <span>[<a href="#Stern93" class="cite xref">Stern93</a>]</span> approaches, can provide post-quantum guarantees, but are not specified in this document. The generic AND composition with a post-quantum-sound Sigma Protocol does not upgrade security. For example, the binding of a Pedersen commitment fails against a quantum adversary regardless of the strength of the conjunct statement, so the combined statement is meaningful only while <strong>both</strong> underlying problems remain hard. See <span>[<a href="#BonehS23" class="cite xref">BonehS23</a>]</span>.<a href="#section-7.7-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
