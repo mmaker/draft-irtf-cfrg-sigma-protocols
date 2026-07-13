@@ -2930,7 +2930,7 @@ CompactProof = e8c65a06a08e5573f7b29c56246dc4efe5bd9d834ed12aa32e62a
           <h4 id="name-adversarial-vectors">
 <a href="#appendix-A.2.2" class="section-number selfRef">A.2.2. </a><a href="#name-adversarial-vectors" class="section-name selfRef">Adversarial vectors</a>
           </h4>
-<p id="appendix-A.2.2-1">SEC1 uncompressed prefix 0x04.<a href="#appendix-A.2.2-1" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-1">Deserialization fails on the SEC1 uncompressed prefix 0x04.<a href="#appendix-A.2.2-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-2">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -2946,7 +2946,7 @@ NargString = 047e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 </pre><a href="#appendix-A.2.2-2" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-3">SEC1 hybrid prefix 0x06.<a href="#appendix-A.2.2-3" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-3">Deserialization fails on the SEC1 hybrid prefix 0x06.<a href="#appendix-A.2.2-3" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-4">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -2962,7 +2962,7 @@ NargString = 067e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 </pre><a href="#appendix-A.2.2-4" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-5">SEC1 hybrid prefix 0x07.<a href="#appendix-A.2.2-5" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-5">Deserialization fails on the SEC1 hybrid prefix 0x07.<a href="#appendix-A.2.2-5" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-6">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -2978,8 +2978,9 @@ NargString = 077e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 </pre><a href="#appendix-A.2.2-6" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-7">x-coordinate lifted by the field characteristic (x = 5, encoded as x +
-p); non-canonical coordinate.<a href="#appendix-A.2.2-7" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-7">Deserialization fails if the x-coordinate is lifted by the field
+characteristic (x = 5, encoded as x + p): the coordinate is
+non-canonical.<a href="#appendix-A.2.2-7" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-8">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -2995,8 +2996,7 @@ NargString = 02ffffffff000000010000000000000000000000010000000000000
 Expected = reject
 </pre><a href="#appendix-A.2.2-8" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-9">Identity stand-in: 0x00 padded to Ne bytes (the P-256 compressed
-encoding has no identity form).<a href="#appendix-A.2.2-9" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-9">Deserialization fails on 0x00 padded to Ne bytes.<a href="#appendix-A.2.2-9" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-10">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3012,7 +3012,7 @@ NargString = 0000000000000000000000000000000000000000000000000000000
 Expected = reject
 </pre><a href="#appendix-A.2.2-10" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-11">x = 1 has no square root for y; decompression fails.<a href="#appendix-A.2.2-11" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-11">Deserialization fails on x = 1, which has no square root for y.<a href="#appendix-A.2.2-11" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-12">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3028,8 +3028,7 @@ NargString = 0200000000000000000000000000000000000000000000000000000
 Expected = reject
 </pre><a href="#appendix-A.2.2-12" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-13"><code>response[0]</code> set to order + 1 (non-canonical); the s + order mutation
-does not fit in Ns bytes for this suite, so this only tests rejection.<a href="#appendix-A.2.2-13" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-13">Deserialization fails if <code>response[0]</code> is set to order + 1.<a href="#appendix-A.2.2-13" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-14">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3045,7 +3044,7 @@ c632552
 Expected = reject
 </pre><a href="#appendix-A.2.2-14" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-15"><code>challenge</code> set to order + 1 (non-canonical).<a href="#appendix-A.2.2-15" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-15">Deserialization fails if <code>challenge</code> is set to order + 1.<a href="#appendix-A.2.2-15" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-16">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3061,7 +3060,8 @@ b1c28
 Expected = reject
 </pre><a href="#appendix-A.2.2-16" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-17">Valid proof with one trailing 0x00 byte appended.<a href="#appendix-A.2.2-17" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-17">Verification fails if one trailing 0x00 byte is appended to a valid
+proof.<a href="#appendix-A.2.2-17" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-18">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3077,7 +3077,7 @@ NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 </pre><a href="#appendix-A.2.2-18" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-19">Valid proof truncated by one byte.<a href="#appendix-A.2.2-19" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-19">Verification fails if a valid proof is truncated by one byte.<a href="#appendix-A.2.2-19" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-20">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3093,7 +3093,8 @@ NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 </pre><a href="#appendix-A.2.2-20" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-21">Valid proof with one trailing 0x00 byte appended.<a href="#appendix-A.2.2-21" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-21">Verification fails if one trailing 0x00 byte is appended to a valid
+proof.<a href="#appendix-A.2.2-21" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-22">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3109,7 +3110,7 @@ b1c2800
 Expected = reject
 </pre><a href="#appendix-A.2.2-22" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-23">Valid proof truncated by one byte.<a href="#appendix-A.2.2-23" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-23">Verification fails if a valid proof is truncated by one byte.<a href="#appendix-A.2.2-23" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-24">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3125,9 +3126,8 @@ b1c
 Expected = reject
 </pre><a href="#appendix-A.2.2-24" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-25">All-zero compact proof: challenge = 0 and all-zero response. The
-simulated commitment is the identity; the verifier must reject before
-re-serialising.<a href="#appendix-A.2.2-25" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-25">Verification fails on the all-zero compact proof: challenge and response
+are zero.<a href="#appendix-A.2.2-25" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-26">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3143,8 +3143,9 @@ NargString = 0000000000000000000000000000000000000000000000000000000
 Expected = reject
 </pre><a href="#appendix-A.2.2-26" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-27">Scalar index 1 appears in no equation (check 6); the proof satisfies the
-verification equations, so rejection must come from instance validation.<a href="#appendix-A.2.2-27" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-27">Instance validation fails if scalar index 1 appears in no equation
+(check 6); the proof satisfies the verification equations, so rejection
+must come from instance validation.<a href="#appendix-A.2.2-27" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-28">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3164,9 +3165,8 @@ NargString = 033d85fedbddfd463f0392eeea57107720404fbce572e420fe54fba
 Expected = reject
 </pre><a href="#appendix-A.2.2-28" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-29">Same instance and a second proof with the unconstrained response scalar
-changed; both verify, so accepting either is a malleability
-demonstration.<a href="#appendix-A.2.2-29" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-29">Instance validation fails on the same instance, here with the
+unconstrained <code>response[1]</code> perturbed.<a href="#appendix-A.2.2-29" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-30">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3186,8 +3186,8 @@ NargString = 033d85fedbddfd463f0392eeea57107720404fbce572e420fe54fba
 Expected = reject
 </pre><a href="#appendix-A.2.2-30" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-31">The image terms X + (-X) sum to the identity (check 9): the equation is
-trivially satisfied by the all-zero witness.<a href="#appendix-A.2.2-31" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-31">Instance validation fails if the image terms X + (-X) sum to the
+identity (check 9).<a href="#appendix-A.2.2-31" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-32">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3205,9 +3205,9 @@ NargString = 022fb88456a6a7f8d974b129ec99f3745ffd9e3dcbae9771815571d
 Expected = reject
 </pre><a href="#appendix-A.2.2-32" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-33">Statement element at index 1 is the identity (stand-in bytes (P-256 has
-no identity encoding)); an implementation parsing statements from bytes
-may instead reject at group deserialization.<a href="#appendix-A.2.2-33" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-33">Instance validation fails if a statement element is the identity (check
+8), here at index 1, encoded as stand-in bytes (P-256 has no identity
+encoding).<a href="#appendix-A.2.2-33" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-34">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3226,9 +3226,7 @@ NargString = 02b9d1353c5f3bf39418f2ea4bb8f8ba63cef1e8cc7eb14f51242c3
 Expected = reject
 </pre><a href="#appendix-A.2.2-34" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-35">Header wires element index 2 into a term but supplies a single element
-(len(elements) would be 3): the index-bound check of ValidateInstance;
-parsers may see it as a length mismatch.<a href="#appendix-A.2.2-35" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-35">Instance validation fails on a scalar index out of bounds.<a href="#appendix-A.2.2-35" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-36">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3245,7 +3243,7 @@ NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 </pre><a href="#appendix-A.2.2-36" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-37">Accepts under the tag it was produced for.<a href="#appendix-A.2.2-37" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-37">A valid NARG string verifies under the tag it was produced for.<a href="#appendix-A.2.2-37" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-38">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3261,8 +3259,7 @@ NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = accept
 </pre><a href="#appendix-A.2.2-38" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-39">Same statement and proof under a different (well-formed) tag: session
-binding.<a href="#appendix-A.2.2-39" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-39">Verification fails under a different tag.<a href="#appendix-A.2.2-39" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-40">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3279,7 +3276,7 @@ NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 </pre><a href="#appendix-A.2.2-40" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-41">Accepts under the tag it was produced for.<a href="#appendix-A.2.2-41" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-41">A valid NARG string verifies under the tag it was produced for.<a href="#appendix-A.2.2-41" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-42">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3295,8 +3292,7 @@ b1c28
 Expected = accept
 </pre><a href="#appendix-A.2.2-42" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-43">Same statement and proof under a different (well-formed) tag: session
-binding.<a href="#appendix-A.2.2-43" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-43">Verification fails under a different tag.<a href="#appendix-A.2.2-43" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-44">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3313,7 +3309,7 @@ b1c28
 Expected = reject
 </pre><a href="#appendix-A.2.2-44" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-45">dleq proof under the declared equation ordering: accepts.<a href="#appendix-A.2.2-45" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-45">A valid NARG string verifies against the statement it was produced for.<a href="#appendix-A.2.2-45" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-46">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3335,9 +3331,7 @@ NargString = 0203ed31e0d73b821eba236b903f83ddd6e60e59a77249462be32fc
 Expected = accept
 </pre><a href="#appendix-A.2.2-46" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-47">Same relation with its two equations swapped (a valid instance):
-serialization is ordering-sensitive, so the challenge differs and the
-proof fails.<a href="#appendix-A.2.2-47" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-47">Verification fails if the statement's two equations are swapped.<a href="#appendix-A.2.2-47" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-48">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3359,7 +3353,7 @@ NargString = 0203ed31e0d73b821eba236b903f83ddd6e60e59a77249462be32fc
 Expected = reject
 </pre><a href="#appendix-A.2.2-48" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-49">dleq proof under the declared equation ordering: accepts.<a href="#appendix-A.2.2-49" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-49">A valid NARG string verifies against the statement it was produced for.<a href="#appendix-A.2.2-49" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-50">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3380,9 +3374,7 @@ NargString = 5351e8969b72d4bdc0f2688ff68c69bb36154dc9074e534d954c889
 Expected = accept
 </pre><a href="#appendix-A.2.2-50" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-51">Same relation with its two equations swapped (a valid instance):
-serialization is ordering-sensitive, so the challenge differs and the
-proof fails.<a href="#appendix-A.2.2-51" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-51">Verification fails if the statement's two equations are swapped.<a href="#appendix-A.2.2-51" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-52">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3403,9 +3395,7 @@ NargString = 5351e8969b72d4bdc0f2688ff68c69bb36154dc9074e534d954c889
 Expected = reject
 </pre><a href="#appendix-A.2.2-52" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-53">A valid discrete_logarithm proof verified against a statement whose
-element X is replaced by 999 * G (a valid instance): the instance
-serialization enters the challenge derivation, so the challenge differs.<a href="#appendix-A.2.2-53" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-53">Verification fails if a statement element is changed after proving.<a href="#appendix-A.2.2-53" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-54">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3421,9 +3411,7 @@ NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 </pre><a href="#appendix-A.2.2-54" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-55">A valid discrete_logarithm proof verified against a statement whose
-element X is replaced by 999 * G (a valid instance): the instance
-serialization enters the challenge derivation, so the challenge differs.<a href="#appendix-A.2.2-55" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-55">Verification fails if a statement element is changed after proving.<a href="#appendix-A.2.2-55" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-56">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3439,9 +3427,8 @@ b1c28
 Expected = reject
 </pre><a href="#appendix-A.2.2-56" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-57">The batchable proof's transcript re-encoded as a compact NARG string:
-the flavor markers make the tags differ, so the challenge recomputed
-under the compact tag does not match.<a href="#appendix-A.2.2-57" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-57">Verification fails if the batchable proof's transcript is re-encoded as
+a compact NARG string.<a href="#appendix-A.2.2-57" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-58">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3457,9 +3444,9 @@ NargString = e44d6cb80e7b099d06525dbb3567fc05ebfc9b7d3da0624e5cf6431
 Expected = reject
 </pre><a href="#appendix-A.2.2-58" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-59">The compact proof's transcript re-encoded as a batchable NARG string:
-the challenge derived under the batchable tag differs, so the
-verification equation fails.<a href="#appendix-A.2.2-59" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-59">Verification fails if the compact proof's transcript is re-encoded as a
+batchable NARG string: the challenge derived under the batchable tag
+differs.<a href="#appendix-A.2.2-59" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-60">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3475,8 +3462,7 @@ NargString = 0221f8d84da0727022bf043b23de7c67590535109a3a6c24f4fba9c
 Expected = reject
 </pre><a href="#appendix-A.2.2-60" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-61"><code>response[0]</code> replaced by s + 1 (still canonical); the verification
-equation fails.<a href="#appendix-A.2.2-61" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-61">Verification fails if <code>response[0]</code> is increased by 1.<a href="#appendix-A.2.2-61" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-62">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3492,8 +3478,8 @@ NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 </pre><a href="#appendix-A.2.2-62" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-63"><code>commitment[0]</code> replaced by a different valid group element; the
-recomputed challenge differs.<a href="#appendix-A.2.2-63" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-63">Verification fails if <code>commitment[0]</code> is replaced by a different valid
+group element.<a href="#appendix-A.2.2-63" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-64">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3509,8 +3495,7 @@ NargString = 036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13
 Expected = reject
 </pre><a href="#appendix-A.2.2-64" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-65">challenge replaced by a different canonical scalar; the challenge
-comparison fails.<a href="#appendix-A.2.2-65" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-65">Verification fails if <code>challenge</code> is replaced by a different scalar.<a href="#appendix-A.2.2-65" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-66">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -3811,7 +3796,7 @@ CompactProof = 57a809847f916a14f39d848a26d1f17fb0158b2b88aaa3263d447
           <h4 id="name-adversarial-vectors-2">
 <a href="#appendix-A.3.2" class="section-number selfRef">A.3.2. </a><a href="#name-adversarial-vectors-2" class="section-name selfRef">Adversarial vectors</a>
           </h4>
-<p id="appendix-A.3.2-1">Compression bit cleared.<a href="#appendix-A.3.2-1" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-1">Deserialization fails if the compression bit is cleared.<a href="#appendix-A.3.2-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-2">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -3828,8 +3813,8 @@ cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
 Expected = reject
 </pre><a href="#appendix-A.3.2-2" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-3">x-coordinate lifted by the field characteristic (x = 4, encoded as x +
-p); non-canonical coordinate.<a href="#appendix-A.3.2-3" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-3">Deserialization fails if the x-coordinate is lifted by the field
+characteristic (x = 4, encoded as x + p).<a href="#appendix-A.3.2-3" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-4">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -3846,8 +3831,8 @@ NargString = 9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a
 Expected = reject
 </pre><a href="#appendix-A.3.2-4" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-5">Canonical compressed encoding of the point at infinity; the identity
-must be rejected in prover messages.<a href="#appendix-A.3.2-5" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-5">Deserialization fails on the canonical compressed encoding of the point
+at infinity: the identity is invalid in prover messages.<a href="#appendix-A.3.2-5" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-6">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -3864,8 +3849,8 @@ NargString = c000000000000000000000000000000000000000000000000000000
 Expected = reject
 </pre><a href="#appendix-A.3.2-6" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-7">Point (x = 0) on the curve but outside the prime-order subgroup G1; the
-subgroup check must reject.<a href="#appendix-A.3.2-7" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-7">Deserialization fails on a point (x = 0) on the curve but outside the
+prime-order subgroup G1.<a href="#appendix-A.3.2-7" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-8">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -3882,8 +3867,8 @@ NargString = 8000000000000000000000000000000000000000000000000000000
 Expected = reject
 </pre><a href="#appendix-A.3.2-8" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-9">Compressed encoding of x = 1, which is not on the curve (x^3 + 4 is a
-non-residue); decompression fails.<a href="#appendix-A.3.2-9" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-9">Deserialization fails on x = 1, which is not on the curve (x^3 + 4 is a
+non-residue).<a href="#appendix-A.3.2-9" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-10">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -3900,8 +3885,9 @@ NargString = 8000000000000000000000000000000000000000000000000000000
 Expected = reject
 </pre><a href="#appendix-A.3.2-10" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-11"><code>response[0]</code> re-encoded as s + order: same value mod p, non-canonical
-bytes. Reducing instead of rejecting yields malleability.<a href="#appendix-A.3.2-11" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-11">Deserialization fails if <code>response[0]</code> is re-encoded as s + order: same
+value mod p, non-canonical bytes. Reducing instead of rejecting yields
+malleability.<a href="#appendix-A.3.2-11" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-12">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -3918,7 +3904,8 @@ cddda5ece0abe8338bef0293d96d924dafd80ddcbcaa396b96915e9ea45449ee848e
 Expected = reject
 </pre><a href="#appendix-A.3.2-12" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-13">challenge re-encoded as c + order (non-canonical bytes).<a href="#appendix-A.3.2-13" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-13">Deserialization fails if <code>challenge</code> is re-encoded as c + order
+(non-canonical bytes).<a href="#appendix-A.3.2-13" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-14">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -3935,7 +3922,8 @@ b7696c7ef5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f
 Expected = reject
 </pre><a href="#appendix-A.3.2-14" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-15">Valid proof with one trailing 0x00 byte appended.<a href="#appendix-A.3.2-15" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-15">Verification fails if one trailing 0x00 byte is appended to a valid
+proof.<a href="#appendix-A.3.2-15" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-16">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -3952,7 +3940,7 @@ cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
 Expected = reject
 </pre><a href="#appendix-A.3.2-16" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-17">Valid proof truncated by one byte.<a href="#appendix-A.3.2-17" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-17">Verification fails if a valid proof is truncated by one byte.<a href="#appendix-A.3.2-17" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-18">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -3969,7 +3957,8 @@ cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
 Expected = reject
 </pre><a href="#appendix-A.3.2-18" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-19">Valid proof with one trailing 0x00 byte appended.<a href="#appendix-A.3.2-19" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-19">Verification fails if one trailing 0x00 byte is appended to a valid
+proof.<a href="#appendix-A.3.2-19" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-20">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -3986,7 +3975,7 @@ c7696c7ee5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f
 Expected = reject
 </pre><a href="#appendix-A.3.2-20" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-21">Valid proof truncated by one byte.<a href="#appendix-A.3.2-21" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-21">Verification fails if a valid proof is truncated by one byte.<a href="#appendix-A.3.2-21" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-22">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4003,9 +3992,8 @@ c7696c7ee5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f
 Expected = reject
 </pre><a href="#appendix-A.3.2-22" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-23">All-zero compact proof: challenge = 0 and all-zero response. The
-simulated commitment is the identity; the verifier must reject before
-re-serialising.<a href="#appendix-A.3.2-23" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-23">Verification fails on the all-zero compact proof: challenge and response
+are zero.<a href="#appendix-A.3.2-23" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-24">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4022,8 +4010,9 @@ NargString = 0000000000000000000000000000000000000000000000000000000
 Expected = reject
 </pre><a href="#appendix-A.3.2-24" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-25">Scalar index 1 appears in no equation (check 6); the proof satisfies the
-verification equations, so rejection must come from instance validation.<a href="#appendix-A.3.2-25" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-25">Instance validation fails if scalar index 1 appears in no equation
+(check 6); the proof satisfies the verification equations, so rejection
+must come from instance validation.<a href="#appendix-A.3.2-25" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-26">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4045,9 +4034,8 @@ aaf71cb6a55bc1e41ac4fb4ab03b2
 Expected = reject
 </pre><a href="#appendix-A.3.2-26" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-27">Same instance and a second proof with the unconstrained response scalar
-changed; both verify, so accepting either is a malleability
-demonstration.<a href="#appendix-A.3.2-27" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-27">Instance validation fails on the same instance, here with the
+unconstrained <code>response[1]</code> perturbed.<a href="#appendix-A.3.2-27" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-28">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4069,8 +4057,8 @@ aaf71cb6a55bc1e41ac4fb4ab03b2
 Expected = reject
 </pre><a href="#appendix-A.3.2-28" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-29">The image terms X + (-X) sum to the identity (check 9): the equation is
-trivially satisfied by the all-zero witness.<a href="#appendix-A.3.2-29" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-29">Instance validation fails if the image terms X + (-X) sum to the
+identity (check 9).<a href="#appendix-A.3.2-29" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-30">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4090,9 +4078,9 @@ NargString = 8bf4a4e7cca2a2f88859d0b012289500a49db0b5e4e5df3d7782484
 Expected = reject
 </pre><a href="#appendix-A.3.2-30" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-31">Statement element at index 1 is the identity (the canonical compressed
-encoding of infinity); an implementation parsing statements from bytes
-may instead reject at group deserialization.<a href="#appendix-A.3.2-31" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-31">Instance validation fails if a statement element is the identity (check
+8), here at index 1, encoded as the canonical compressed encoding of
+infinity.<a href="#appendix-A.3.2-31" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-32">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4113,9 +4101,7 @@ NargString = adc1c8943d8bfa5ab165ff1ed2c0f45f71567a404849da3e0b9fbd3
 Expected = reject
 </pre><a href="#appendix-A.3.2-32" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-33">Header wires element index 2 into a term but supplies a single element
-(len(elements) would be 3): the index-bound check of ValidateInstance;
-parsers may see it as a length mismatch.<a href="#appendix-A.3.2-33" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-33">Instance validation fails on a scalar index out of bounds.<a href="#appendix-A.3.2-33" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-34">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4133,7 +4119,7 @@ cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
 Expected = reject
 </pre><a href="#appendix-A.3.2-34" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-35">Accepts under the tag it was produced for.<a href="#appendix-A.3.2-35" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-35">A valid NARG string verifies under the tag it was produced for.<a href="#appendix-A.3.2-35" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-36">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4150,8 +4136,7 @@ cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
 Expected = accept
 </pre><a href="#appendix-A.3.2-36" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-37">Same statement and proof under a different (well-formed) tag: session
-binding.<a href="#appendix-A.3.2-37" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-37">Verification fails under a different tag.<a href="#appendix-A.3.2-37" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-38">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4169,7 +4154,7 @@ cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
 Expected = reject
 </pre><a href="#appendix-A.3.2-38" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-39">Accepts under the tag it was produced for.<a href="#appendix-A.3.2-39" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-39">A valid NARG string verifies under the tag it was produced for.<a href="#appendix-A.3.2-39" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-40">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4186,8 +4171,7 @@ c7696c7ee5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f
 Expected = accept
 </pre><a href="#appendix-A.3.2-40" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-41">Same statement and proof under a different (well-formed) tag: session
-binding.<a href="#appendix-A.3.2-41" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-41">Verification fails under a different tag.<a href="#appendix-A.3.2-41" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-42">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4205,7 +4189,7 @@ c7696c7ee5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f
 Expected = reject
 </pre><a href="#appendix-A.3.2-42" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-43">dleq proof under the declared equation ordering: accepts.<a href="#appendix-A.3.2-43" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-43">A valid NARG string verifies against the statement it was produced for.<a href="#appendix-A.3.2-43" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-44">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4228,9 +4212,7 @@ d74d7ea59d64b17f3e612b0a5790bad93d77ea46291f38f62b25f78dae7420076560
 Expected = accept
 </pre><a href="#appendix-A.3.2-44" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-45">Same relation with its two equations swapped (a valid instance):
-serialization is ordering-sensitive, so the challenge differs and the
-proof fails.<a href="#appendix-A.3.2-45" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-45">Verification fails if the statement's two equations are swapped.<a href="#appendix-A.3.2-45" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-46">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4253,7 +4235,7 @@ d74d7ea59d64b17f3e612b0a5790bad93d77ea46291f38f62b25f78dae7420076560
 Expected = reject
 </pre><a href="#appendix-A.3.2-46" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-47">dleq proof under the declared equation ordering: accepts.<a href="#appendix-A.3.2-47" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-47">A valid NARG string verifies against the statement it was produced for.<a href="#appendix-A.3.2-47" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-48">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4275,9 +4257,7 @@ NargString = 6756a6afe70dc8b509ece61173992cd9970d6219332d289fecf58e2
 Expected = accept
 </pre><a href="#appendix-A.3.2-48" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-49">Same relation with its two equations swapped (a valid instance):
-serialization is ordering-sensitive, so the challenge differs and the
-proof fails.<a href="#appendix-A.3.2-49" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-49">Verification fails if the statement's two equations are swapped.<a href="#appendix-A.3.2-49" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-50">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4299,9 +4279,7 @@ NargString = 6756a6afe70dc8b509ece61173992cd9970d6219332d289fecf58e2
 Expected = reject
 </pre><a href="#appendix-A.3.2-50" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-51">A valid discrete_logarithm proof verified against a statement whose
-element X is replaced by 999 * G (a valid instance): the instance
-serialization enters the challenge derivation, so the challenge differs.<a href="#appendix-A.3.2-51" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-51">Verification fails if a statement element is changed after proving.<a href="#appendix-A.3.2-51" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-52">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4318,9 +4296,7 @@ cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
 Expected = reject
 </pre><a href="#appendix-A.3.2-52" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-53">A valid discrete_logarithm proof verified against a statement whose
-element X is replaced by 999 * G (a valid instance): the instance
-serialization enters the challenge derivation, so the challenge differs.<a href="#appendix-A.3.2-53" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-53">Verification fails if a statement element is changed after proving.<a href="#appendix-A.3.2-53" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-54">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4337,9 +4313,8 @@ c7696c7ee5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f
 Expected = reject
 </pre><a href="#appendix-A.3.2-54" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-55">The batchable proof's transcript re-encoded as a compact NARG string:
-the flavor markers make the tags differ, so the challenge recomputed
-under the compact tag does not match.<a href="#appendix-A.3.2-55" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-55">Verification fails if the batchable proof's transcript is re-encoded as
+a compact NARG string.<a href="#appendix-A.3.2-55" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-56">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4356,9 +4331,9 @@ ec42d461c56b5ef663f786ca2120ac6e03f454e8eb6105238a2b3fe8250042aec5bd
 Expected = reject
 </pre><a href="#appendix-A.3.2-56" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-57">The compact proof's transcript re-encoded as a batchable NARG string:
-the challenge derived under the batchable tag differs, so the
-verification equation fails.<a href="#appendix-A.3.2-57" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-57">Verification fails if the compact proof's transcript is re-encoded as a
+batchable NARG string: the challenge derived under the batchable tag
+differs.<a href="#appendix-A.3.2-57" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-58">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4375,8 +4350,7 @@ NargString = b87d072b8238866651b08da8276e9ea30125617a5ac1b7fcb6934f4
 Expected = reject
 </pre><a href="#appendix-A.3.2-58" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-59"><code>response[0]</code> replaced by s + 1 (still canonical); the verification
-equation fails.<a href="#appendix-A.3.2-59" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-59">Verification fails if <code>response[0]</code> is increased by 1.<a href="#appendix-A.3.2-59" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-60">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4393,8 +4367,8 @@ cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
 Expected = reject
 </pre><a href="#appendix-A.3.2-60" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-61"><code>commitment[0]</code> replaced by a different valid group element; the
-recomputed challenge differs.<a href="#appendix-A.3.2-61" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-61">Verification fails if <code>commitment[0]</code> is replaced by a different valid
+group element.<a href="#appendix-A.3.2-61" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-62">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381
@@ -4411,8 +4385,7 @@ f171bac586c55e83ff97a1aeffb3af00adb22c6bb56b5ef663f786ca2120ac6e03f4
 Expected = reject
 </pre><a href="#appendix-A.3.2-62" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-63">challenge replaced by a different canonical scalar; the challenge
-comparison fails.<a href="#appendix-A.3.2-63" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-63">Verification fails if <code>challenge</code> is replaced by a different scalar.<a href="#appendix-A.3.2-63" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-64">
 <pre>
 Ciphersuite = sigma-proofs_Shake128_BLS12381

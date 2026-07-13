@@ -2048,7 +2048,7 @@ A.2.1.  Valid proofs
 
 A.2.2.  Adversarial vectors
 
-   SEC1 uncompressed prefix 0x04.
+   Deserialization fails on the SEC1 uncompressed prefix 0x04.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2062,7 +2062,7 @@ A.2.2.  Adversarial vectors
    5e1713b
    Expected = reject
 
-   SEC1 hybrid prefix 0x06.
+   Deserialization fails on the SEC1 hybrid prefix 0x06.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2076,7 +2076,7 @@ A.2.2.  Adversarial vectors
    5e1713b
    Expected = reject
 
-   SEC1 hybrid prefix 0x07.
+   Deserialization fails on the SEC1 hybrid prefix 0x07.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2090,8 +2090,9 @@ A.2.2.  Adversarial vectors
    5e1713b
    Expected = reject
 
-   x-coordinate lifted by the field characteristic (x = 5, encoded as x
-   + p); non-canonical coordinate.
+   Deserialization fails if the x-coordinate is lifted by the field
+   characteristic (x = 5, encoded as x + p): the coordinate is non-
+   canonical.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2105,8 +2106,7 @@ A.2.2.  Adversarial vectors
    5e1713b
    Expected = reject
 
-   Identity stand-in: 0x00 padded to Ne bytes (the P-256 compressed
-   encoding has no identity form).
+   Deserialization fails on 0x00 padded to Ne bytes.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2120,7 +2120,7 @@ A.2.2.  Adversarial vectors
    5e1713b
    Expected = reject
 
-   x = 1 has no square root for y; decompression fails.
+   Deserialization fails on x = 1, which has no square root for y.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2134,9 +2134,7 @@ A.2.2.  Adversarial vectors
    5e1713b
    Expected = reject
 
-   response[0] set to order + 1 (non-canonical); the s + order mutation
-   does not fit in Ns bytes for this suite, so this only tests
-   rejection.
+   Deserialization fails if response[0] is set to order + 1.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2150,7 +2148,7 @@ A.2.2.  Adversarial vectors
    c632552
    Expected = reject
 
-   challenge set to order + 1 (non-canonical).
+   Deserialization fails if challenge is set to order + 1.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2164,7 +2162,8 @@ A.2.2.  Adversarial vectors
    b1c28
    Expected = reject
 
-   Valid proof with one trailing 0x00 byte appended.
+   Verification fails if one trailing 0x00 byte is appended to a valid
+   proof.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2178,7 +2177,7 @@ A.2.2.  Adversarial vectors
    5e1713b00
    Expected = reject
 
-   Valid proof truncated by one byte.
+   Verification fails if a valid proof is truncated by one byte.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2192,7 +2191,8 @@ A.2.2.  Adversarial vectors
    5e171
    Expected = reject
 
-   Valid proof with one trailing 0x00 byte appended.
+   Verification fails if one trailing 0x00 byte is appended to a valid
+   proof.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2206,7 +2206,7 @@ A.2.2.  Adversarial vectors
    b1c2800
    Expected = reject
 
-   Valid proof truncated by one byte.
+   Verification fails if a valid proof is truncated by one byte.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2220,9 +2220,8 @@ A.2.2.  Adversarial vectors
    b1c
    Expected = reject
 
-   All-zero compact proof: challenge = 0 and all-zero response.  The
-   simulated commitment is the identity; the verifier must reject before
-   re-serialising.
+   Verification fails on the all-zero compact proof: challenge and
+   response are zero.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2236,9 +2235,9 @@ A.2.2.  Adversarial vectors
    00000
    Expected = reject
 
-   Scalar index 1 appears in no equation (check 6); the proof satisfies
-   the verification equations, so rejection must come from instance
-   validation.
+   Instance validation fails if scalar index 1 appears in no equation
+   (check 6); the proof satisfies the verification equations, so
+   rejection must come from instance validation.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2256,9 +2255,8 @@ A.2.2.  Adversarial vectors
    776e4555c95e4b42275076c8523f4ee48be8835478f8b0262fce9279e2bcb8c7a94
    Expected = reject
 
-   Same instance and a second proof with the unconstrained response
-   scalar changed; both verify, so accepting either is a malleability
-   demonstration.
+   Instance validation fails on the same instance, here with the
+   unconstrained response[1] perturbed.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2276,8 +2274,8 @@ A.2.2.  Adversarial vectors
    777e4555c95e4b42275076c8523f4ee48be8835478f8b0262fce9279e2bcb8c7a94
    Expected = reject
 
-   The image terms X + (-X) sum to the identity (check 9): the equation
-   is trivially satisfied by the all-zero witness.
+   Instance validation fails if the image terms X + (-X) sum to the
+   identity (check 9).
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2293,9 +2291,9 @@ A.2.2.  Adversarial vectors
    37696d9
    Expected = reject
 
-   Statement element at index 1 is the identity (stand-in bytes (P-256
-   has no identity encoding)); an implementation parsing statements from
-   bytes may instead reject at group deserialization.
+   Instance validation fails if a statement element is the identity
+   (check 8), here at index 1, encoded as stand-in bytes (P-256 has no
+   identity encoding).
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2312,9 +2310,7 @@ A.2.2.  Adversarial vectors
    1bc
    Expected = reject
 
-   Header wires element index 2 into a term but supplies a single
-   element (len(elements) would be 3): the index-bound check of
-   ValidateInstance; parsers may see it as a length mismatch.
+   Instance validation fails on a scalar index out of bounds.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2329,7 +2325,7 @@ A.2.2.  Adversarial vectors
    5e1713b
    Expected = reject
 
-   Accepts under the tag it was produced for.
+   A valid NARG string verifies under the tag it was produced for.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2343,8 +2339,7 @@ A.2.2.  Adversarial vectors
    5e1713b
    Expected = accept
 
-   Same statement and proof under a different (well-formed) tag: session
-   binding.
+   Verification fails under a different tag.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2359,7 +2354,7 @@ A.2.2.  Adversarial vectors
    5e1713b
    Expected = reject
 
-   Accepts under the tag it was produced for.
+   A valid NARG string verifies under the tag it was produced for.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2373,8 +2368,7 @@ A.2.2.  Adversarial vectors
    b1c28
    Expected = accept
 
-   Same statement and proof under a different (well-formed) tag: session
-   binding.
+   Verification fails under a different tag.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2389,7 +2383,8 @@ A.2.2.  Adversarial vectors
    b1c28
    Expected = reject
 
-   dleq proof under the declared equation ordering: accepts.
+   A valid NARG string verifies against the statement it was produced
+   for.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2409,9 +2404,7 @@ A.2.2.  Adversarial vectors
    4c045
    Expected = accept
 
-   Same relation with its two equations swapped (a valid instance):
-   serialization is ordering-sensitive, so the challenge differs and the
-   proof fails.
+   Verification fails if the statement's two equations are swapped.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2431,7 +2424,8 @@ A.2.2.  Adversarial vectors
    4c045
    Expected = reject
 
-   dleq proof under the declared equation ordering: accepts.
+   A valid NARG string verifies against the statement it was produced
+   for.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2450,9 +2444,7 @@ A.2.2.  Adversarial vectors
    71d37
    Expected = accept
 
-   Same relation with its two equations swapped (a valid instance):
-   serialization is ordering-sensitive, so the challenge differs and the
-   proof fails.
+   Verification fails if the statement's two equations are swapped.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2471,10 +2463,7 @@ A.2.2.  Adversarial vectors
    71d37
    Expected = reject
 
-   A valid discrete_logarithm proof verified against a statement whose
-   element X is replaced by 999 * G (a valid instance): the instance
-   serialization enters the challenge derivation, so the challenge
-   differs.
+   Verification fails if a statement element is changed after proving.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2488,10 +2477,7 @@ A.2.2.  Adversarial vectors
    5e1713b
    Expected = reject
 
-   A valid discrete_logarithm proof verified against a statement whose
-   element X is replaced by 999 * G (a valid instance): the instance
-   serialization enters the challenge derivation, so the challenge
-   differs.
+   Verification fails if a statement element is changed after proving.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2505,9 +2491,8 @@ A.2.2.  Adversarial vectors
    b1c28
    Expected = reject
 
-   The batchable proof's transcript re-encoded as a compact NARG string:
-   the flavor markers make the tags differ, so the challenge recomputed
-   under the compact tag does not match.
+   Verification fails if the batchable proof's transcript is re-encoded
+   as a compact NARG string.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2521,9 +2506,9 @@ A.2.2.  Adversarial vectors
    1713b
    Expected = reject
 
-   The compact proof's transcript re-encoded as a batchable NARG string:
-   the challenge derived under the batchable tag differs, so the
-   verification equation fails.
+   Verification fails if the compact proof's transcript is re-encoded as
+   a batchable NARG string: the challenge derived under the batchable
+   tag differs.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2537,8 +2522,7 @@ A.2.2.  Adversarial vectors
    4ab1c28
    Expected = reject
 
-   response[0] replaced by s + 1 (still canonical); the verification
-   equation fails.
+   Verification fails if response[0] is increased by 1.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2552,8 +2536,8 @@ A.2.2.  Adversarial vectors
    5e1713c
    Expected = reject
 
-   commitment[0] replaced by a different valid group element; the
-   recomputed challenge differs.
+   Verification fails if commitment[0] is replaced by a different valid
+   group element.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2567,8 +2551,7 @@ A.2.2.  Adversarial vectors
    5e1713b
    Expected = reject
 
-   challenge replaced by a different canonical scalar; the challenge
-   comparison fails.
+   Verification fails if challenge is replaced by a different scalar.
 
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2839,7 +2822,7 @@ A.3.1.  Valid proofs
 
 A.3.2.  Adversarial vectors
 
-   Compression bit cleared.
+   Deserialization fails if the compression bit is cleared.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -2854,8 +2837,8 @@ A.3.2.  Adversarial vectors
    54e8eb6105238a2b3fe8250042aec5bd1b641
    Expected = reject
 
-   x-coordinate lifted by the field characteristic (x = 4, encoded as x
-   + p); non-canonical coordinate.
+   Deserialization fails if the x-coordinate is lifted by the field
+   characteristic (x = 4, encoded as x + p).
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -2870,8 +2853,8 @@ A.3.2.  Adversarial vectors
    54e8eb6105238a2b3fe8250042aec5bd1b641
    Expected = reject
 
-   Canonical compressed encoding of the point at infinity; the identity
-   must be rejected in prover messages.
+   Deserialization fails on the canonical compressed encoding of the
+   point at infinity: the identity is invalid in prover messages.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -2886,8 +2869,8 @@ A.3.2.  Adversarial vectors
    54e8eb6105238a2b3fe8250042aec5bd1b641
    Expected = reject
 
-   Point (x = 0) on the curve but outside the prime-order subgroup G1;
-   the subgroup check must reject.
+   Deserialization fails on a point (x = 0) on the curve but outside the
+   prime-order subgroup G1.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -2902,8 +2885,8 @@ A.3.2.  Adversarial vectors
    54e8eb6105238a2b3fe8250042aec5bd1b641
    Expected = reject
 
-   Compressed encoding of x = 1, which is not on the curve (x^3 + 4 is a
-   non-residue); decompression fails.
+   Deserialization fails on x = 1, which is not on the curve (x^3 + 4 is
+   a non-residue).
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -2918,8 +2901,9 @@ A.3.2.  Adversarial vectors
    54e8eb6105238a2b3fe8250042aec5bd1b641
    Expected = reject
 
-   response[0] re-encoded as s + order: same value mod p, non-canonical
-   bytes.  Reducing instead of rejecting yields malleability.
+   Deserialization fails if response[0] is re-encoded as s + order: same
+   value mod p, non-canonical bytes.  Reducing instead of rejecting
+   yields malleability.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -2934,7 +2918,8 @@ A.3.2.  Adversarial vectors
    7269409cdf63ba2b25a8150042aeb5bd1b642
    Expected = reject
 
-   challenge re-encoded as c + order (non-canonical bytes).
+   Deserialization fails if challenge is re-encoded as c + order (non-
+   canonical bytes).
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -2949,7 +2934,8 @@ A.3.2.  Adversarial vectors
    7ad94
    Expected = reject
 
-   Valid proof with one trailing 0x00 byte appended.
+   Verification fails if one trailing 0x00 byte is appended to a valid
+   proof.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -2964,7 +2950,7 @@ A.3.2.  Adversarial vectors
    54e8eb6105238a2b3fe8250042aec5bd1b64100
    Expected = reject
 
-   Valid proof truncated by one byte.
+   Verification fails if a valid proof is truncated by one byte.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -2979,7 +2965,8 @@ A.3.2.  Adversarial vectors
    54e8eb6105238a2b3fe8250042aec5bd1b6
    Expected = reject
 
-   Valid proof with one trailing 0x00 byte appended.
+   Verification fails if one trailing 0x00 byte is appended to a valid
+   proof.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -2994,7 +2981,7 @@ A.3.2.  Adversarial vectors
    7ad9400
    Expected = reject
 
-   Valid proof truncated by one byte.
+   Verification fails if a valid proof is truncated by one byte.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3009,9 +2996,8 @@ A.3.2.  Adversarial vectors
    7ad
    Expected = reject
 
-   All-zero compact proof: challenge = 0 and all-zero response.  The
-   simulated commitment is the identity; the verifier must reject before
-   re-serialising.
+   Verification fails on the all-zero compact proof: challenge and
+   response are zero.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3026,9 +3012,9 @@ A.3.2.  Adversarial vectors
    00000
    Expected = reject
 
-   Scalar index 1 appears in no equation (check 6); the proof satisfies
-   the verification equations, so rejection must come from instance
-   validation.
+   Instance validation fails if scalar index 1 appears in no equation
+   (check 6); the proof satisfies the verification equations, so
+   rejection must come from instance validation.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3048,9 +3034,8 @@ A.3.2.  Adversarial vectors
    aaf71cb6a55bc1e41ac4fb4ab03b2
    Expected = reject
 
-   Same instance and a second proof with the unconstrained response
-   scalar changed; both verify, so accepting either is a malleability
-   demonstration.
+   Instance validation fails on the same instance, here with the
+   unconstrained response[1] perturbed.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3070,8 +3055,8 @@ A.3.2.  Adversarial vectors
    aaf71cb6a55bc1e41ac4fb4ab03b2
    Expected = reject
 
-   The image terms X + (-X) sum to the identity (check 9): the equation
-   is trivially satisfied by the all-zero witness.
+   Instance validation fails if the image terms X + (-X) sum to the
+   identity (check 9).
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3089,9 +3074,9 @@ A.3.2.  Adversarial vectors
    591a8c1d24c1f3d42a2535161c7b7a9c556a3
    Expected = reject
 
-   Statement element at index 1 is the identity (the canonical
-   compressed encoding of infinity); an implementation parsing
-   statements from bytes may instead reject at group deserialization.
+   Instance validation fails if a statement element is the identity
+   (check 8), here at index 1, encoded as the canonical compressed
+   encoding of infinity.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3110,9 +3095,7 @@ A.3.2.  Adversarial vectors
    6122f563a9163c3d3f74876f8b25b0298
    Expected = reject
 
-   Header wires element index 2 into a term but supplies a single
-   element (len(elements) would be 3): the index-bound check of
-   ValidateInstance; parsers may see it as a length mismatch.
+   Instance validation fails on a scalar index out of bounds.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3128,7 +3111,7 @@ A.3.2.  Adversarial vectors
    54e8eb6105238a2b3fe8250042aec5bd1b641
    Expected = reject
 
-   Accepts under the tag it was produced for.
+   A valid NARG string verifies under the tag it was produced for.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3143,8 +3126,7 @@ A.3.2.  Adversarial vectors
    54e8eb6105238a2b3fe8250042aec5bd1b641
    Expected = accept
 
-   Same statement and proof under a different (well-formed) tag: session
-   binding.
+   Verification fails under a different tag.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3160,7 +3142,7 @@ A.3.2.  Adversarial vectors
    54e8eb6105238a2b3fe8250042aec5bd1b641
    Expected = reject
 
-   Accepts under the tag it was produced for.
+   A valid NARG string verifies under the tag it was produced for.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3175,8 +3157,7 @@ A.3.2.  Adversarial vectors
    7ad94
    Expected = accept
 
-   Same statement and proof under a different (well-formed) tag: session
-   binding.
+   Verification fails under a different tag.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3192,7 +3173,8 @@ A.3.2.  Adversarial vectors
    7ad94
    Expected = reject
 
-   dleq proof under the declared equation ordering: accepts.
+   A valid NARG string verifies against the statement it was produced
+   for.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3213,9 +3195,7 @@ A.3.2.  Adversarial vectors
    053843da83608b616cb57c042f0d21160317095e5ab1706e02299dfd47f67b453
    Expected = accept
 
-   Same relation with its two equations swapped (a valid instance):
-   serialization is ordering-sensitive, so the challenge differs and the
-   proof fails.
+   Verification fails if the statement's two equations are swapped.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3236,7 +3216,8 @@ A.3.2.  Adversarial vectors
    053843da83608b616cb57c042f0d21160317095e5ab1706e02299dfd47f67b453
    Expected = reject
 
-   dleq proof under the declared equation ordering: accepts.
+   A valid NARG string verifies against the statement it was produced
+   for.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3256,9 +3237,7 @@ A.3.2.  Adversarial vectors
    58844
    Expected = accept
 
-   Same relation with its two equations swapped (a valid instance):
-   serialization is ordering-sensitive, so the challenge differs and the
-   proof fails.
+   Verification fails if the statement's two equations are swapped.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3278,10 +3257,7 @@ A.3.2.  Adversarial vectors
    58844
    Expected = reject
 
-   A valid discrete_logarithm proof verified against a statement whose
-   element X is replaced by 999 * G (a valid instance): the instance
-   serialization enters the challenge derivation, so the challenge
-   differs.
+   Verification fails if a statement element is changed after proving.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3296,10 +3272,7 @@ A.3.2.  Adversarial vectors
    54e8eb6105238a2b3fe8250042aec5bd1b641
    Expected = reject
 
-   A valid discrete_logarithm proof verified against a statement whose
-   element X is replaced by 999 * G (a valid instance): the instance
-   serialization enters the challenge derivation, so the challenge
-   differs.
+   Verification fails if a statement element is changed after proving.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3314,9 +3287,8 @@ A.3.2.  Adversarial vectors
    7ad94
    Expected = reject
 
-   The batchable proof's transcript re-encoded as a compact NARG string:
-   the flavor markers make the tags differ, so the challenge recomputed
-   under the compact tag does not match.
+   Verification fails if the batchable proof's transcript is re-encoded
+   as a compact NARG string.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3331,9 +3303,9 @@ A.3.2.  Adversarial vectors
    1b641
    Expected = reject
 
-   The compact proof's transcript re-encoded as a batchable NARG string:
-   the challenge derived under the batchable tag differs, so the
-   verification equation fails.
+   Verification fails if the compact proof's transcript is re-encoded as
+   a batchable NARG string: the challenge derived under the batchable
+   tag differs.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3348,8 +3320,7 @@ A.3.2.  Adversarial vectors
    3d6c39929b9d21f10e5ba1df2b44071f7ad94
    Expected = reject
 
-   response[0] replaced by s + 1 (still canonical); the verification
-   equation fails.
+   Verification fails if response[0] is increased by 1.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3364,8 +3335,8 @@ A.3.2.  Adversarial vectors
    54e8eb6105238a2b3fe8250042aec5bd1b642
    Expected = reject
 
-   commitment[0] replaced by a different valid group element; the
-   recomputed challenge differs.
+   Verification fails if commitment[0] is replaced by a different valid
+   group element.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3380,8 +3351,7 @@ A.3.2.  Adversarial vectors
    54e8eb6105238a2b3fe8250042aec5bd1b641
    Expected = reject
 
-   challenge replaced by a different canonical scalar; the challenge
-   comparison fails.
+   Verification fails if challenge is replaced by a different scalar.
 
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
