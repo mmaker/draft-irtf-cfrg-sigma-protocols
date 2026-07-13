@@ -76,8 +76,8 @@ Table of Contents
      2.1.  Bytes and integers
      2.2.  Randomized algorithms
      2.3.  Group abstraction
-       2.3.1.  Group
-       2.3.2.  Scalar
+       2.3.1.  Group elements
+       2.3.2.  Scalars
    3.  Linear relations
      3.1.  Linear map
      3.2.  Representation
@@ -123,18 +123,12 @@ Table of Contents
      Informative References
    Appendix A.  Test Vectors
      A.1.  Seeded PRNG
-     A.2.  sigma-proofs(P-256, SHAKE128)
-     A.3.  discrete_logarithm
-     A.4.  dleq
-     A.5.  pedersen_commitment
-     A.6.  pedersen_commitment_dleq
-     A.7.  bbs_blind_commitment_computation
-     A.8.  sigma-proofs(BLS12-381, SHAKE128)
-     A.9.  discrete_logarithm
-     A.10. dleq
-     A.11. pedersen_commitment
-     A.12. pedersen_commitment_dleq
-     A.13. bbs_blind_commitment_computation
+     A.2.  sigma-proofs_Shake128_P256
+       A.2.1.  Valid proofs
+       A.2.2.  Adversarial vectors
+     A.3.  sigma-proofs_Shake128_BLS12381
+       A.3.1.  Valid proofs
+       A.3.2.  Adversarial vectors
    Authors' Addresses
 
 1.  Introduction
@@ -247,7 +241,7 @@ Table of Contents
    (Section 2.3.1).  Pseudocode and interface names are descriptive
    (e.g. commitment, image, witness) and do not follow this rule.
 
-2.3.1.  Group
+2.3.1.  Group elements
 
    identity() is the neutral element, generator() returns the canonical
    generator of the prime-order subgroup (Section 8), and order()
@@ -265,7 +259,7 @@ Table of Contents
    event only with negligible probability.  See Section 10.1 of
    [RFC9380], Appendix C of [PAIRING], Section 2.1 of [RFC9497], [ARC].
 
-2.3.2.  Scalar
+2.3.2.  Scalars
 
    A Scalar is an element of the group's _scalar field_, the prime field
    of integers modulo the group order p.  Addition and multiplication
@@ -595,9 +589,9 @@ Table of Contents
    2.   Every equation in instance.equations has a non-empty terms list
         and a non-empty image list.
 
-   3.   Every scalar_index and every element_index is less than 2^32; so
-        are num_equations(instance), and each equation's term count and
-        image-term count.
+   3.   Every scalar_index and every element_index is a non-negative
+        integer less than 2^32; so are num_equations(instance), and each
+        equation's term count and image-term count.
 
    4.   Every element index is less than num_elements(instance).  In
         other words, every index references a group element.
@@ -612,8 +606,8 @@ Table of Contents
    6.   Every scalar index appears in the terms of at least one
         equation.
 
-   7.   instance.elements[0] is the group generator Group.generator()
-        (Section 3.2).
+   7.   num_elements(instance) > 0, and instance.elements[0] is the
+        group generator Group.generator() (Section 3.2).
 
    8.   No element of instance.elements is the identity element.
 
@@ -832,15 +826,13 @@ Table of Contents
    the compact verifier (Section 5) relies on to recover the prover's
    commitment from (challenge, response).
 
-   For the linear-map Sigma Protocol:
+   SimulateResponse(instance, rng) returns as simulated response a
+   vector of num_scalars(instance) uniformly random scalars, and as
+   simulator state the instance itself.
 
-   *  SimulateResponse(instance, rng) returns as simulated response a
-      vector of num_scalars(instance) uniformly random scalars, and as
-      simulator state the instance itself.
-
-   *  SimulateCommitment(state, response, challenge) solves the
-      verification equation (Section 4.3) for the commitment, returning
-      the vector of num_equations(state) group elements
+   SimulateCommitment(state, response, challenge) solves the
+   verification equation (Section 4.3) for the commitment, returning the
+   vector of num_equations(state) group elements
 
    simulated_commitment[i] = map(state, response)[i]
                                  - challenge * image(state)[i]
@@ -1763,260 +1755,1646 @@ Informative References
 
 Appendix A.  Test Vectors
 
+   This appendix contains test vectors for the non-interactive Sigma
+   Protocols specified in this document, one section per ciphersuite
+   (Appendix A.2, Appendix A.3).  Each ciphersuite section has two
+   subsections: valid proofs, and adversarial vectors.  Each adversarial
+   vector carries an Expected verdict: most are invalid proofs that a
+   conformant verifier *MUST* reject, and the few entries with Expected
+   = accept are the valid baselines of accept/reject pairs — the paired
+   reject entry re-verifies the same transcript under a different tag,
+   statement, or encoding, and a conformant verifier *MUST* produce both
+   verdicts.  The prose accompanying each reject vector states which
+   check fails; where the rejection step depends on the implementation's
+   check order, any of the stated rejection points is conformant.
+   Appendix A.1 pins the randomness used, so that the vectors are
+   reproducible from this document alone.  Batch verification
+   (Section 5.6) can be tested on any subset of these vectors: a batch
+   of valid batchable proofs *MUST* verify, and a batch containing any
+   invalid batchable proof *MUST* be rejected.  The Witness field, which
+   never appears on the wire, is encoded as the concatenation of
+   Scalar.serialize of the witness scalars, in the order given by each
+   relation.
+
 A.1.  Seeded PRNG
 
-   The random number generator used for test vectors is implemented
-   using the SHAKE128 duplex sponge [fiat-shamir] with session
-   identifier __sigma-proofs/TestDRNG/SHAKE128.  For these vectors,
-   Group.random_scalar(rng) squeezes bytes from the sponge and reduces
-   them to a scalar via DecodeField of [fiat-shamir].
+   The randomness for these vectors is drawn from a seeded PRNG,
+   instantiated via a duplex sponge [fiat-shamir] initialized with the
+   session identifier DeriveSessionID(prng_tag).
 
-   The following sections contain test vectors for the Sigma Protocols
-   specified in this document.
+   The US-ASCII tag:
 
-   Test vectors are grouped by ciphersuite.  Each vector includes a
-   Relation field naming the relation being proved and a Ciphersuite
-   field identifying the non-interactive instantiation used to generate
-   the NARG strings.
+   TestDRNG-SIGMA-PROOFS-{Ciphersuite}-{Relation}
 
-A.2.  sigma-proofs(P-256, SHAKE128)
+   Yields the scalars that build the instance and witness, in the order
+   given by each relation.
+
+   The tag:
+
+   TestDRNG-SIGMA-PROOFS-DSFS-{Ciphersuite}-{Relation}
+
+   Provides the randomness for the prover in the batchable NARG string.
+   That is, it is used to sample num_scalars(instance) commitment nonces
+   of the batchable proof.
+
+   Finally, the tag:
+
+   TestDRNG-SIGMA-PROOFS-CMPT-{Ciphersuite}-{Relation}
+
+   Provides the randomness for the prover in the compact NARG strings.
+
+   Applications *MUST NOT* use this deterministic pseudorandom
+   generator.  The prover's randomness *MUST* be seeded from operating-
+   system entropy (Section 2.3.2).
+
+A.2.  sigma-proofs_Shake128_P256
 
    This section contains vectors for the ciphersuite identified as
    sigma-proofs_Shake128_P256.
 
-A.3.  discrete_logarithm
+A.2.1.  Valid proofs
+
+   Knowledge of a discrete logarithm, X = x * G: the Schnorr relation
+   given as example in Section 3.1.
 
    Relation = discrete_logarithm
    Ciphersuite = sigma-proofs_Shake128_P256
-   SessionId = 64697363726574655f6c6f6761726974686d
-   Statement = 0100000001000000010000000000000000000000036b17d1f2e12c42
-   47f8bce6e563a440f277037d812deb33a0f4a13945d898c29602d135e66a8b8d656f
-   a8e892501d931895ec031701a72aa550039742a8f6325336
-   Witness = daca1508279cce9abb7fdefc540ec4b9bcf1b689bbcf74ea3123dbd3f5
-   b611b0
-   Proof = d08bc0386f6ef8b3a431d490a1b30c0ab58341043aa76e59b74493417e65
-   a46ee9488aaa9b728b9ccd5231f1d99daae697e454d67d83522e5bc8de52324f06bd
-   Batchable Proof = 031af107806a9d4f14c569d5a255904f682a7e1cc289ca70f5
-   306d690609bf8f7231ffdce808d01c2ee9354c49c3dcbe6361cce35b81c304abd3a8
-   13909ec3c16a
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   Witness = 9b7b9af133b35ea96e662c4662956909fe465084fe929506980e025022
+   d750be
+   BatchableTag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P2
+   56
+   BatchableSessionId = 72eeaaf4b2af14a6020b59d9b0501f7263bdbb16a403d93
+   d7af1635546dcc503
+   BatchableProof = 037e00143a98c515388e00397c050c46729f010e30752f00172
+   c2e9444cd323e199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a
+   8d2f5e1713b
+   CompactTag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
+   CompactSessionId = 2934314b80877ce535bf39bb9074bc541c98e171b563b74df
+   f82a63a921c6858
+   CompactProof = 3f29987a13e3ea094f2f7ee8f1ccc37ef3239bd303535a9959ca3
+   aacca1f216ccfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a4304
+   4ab1c28
 
-A.4.  dleq
+   Discrete-logarithm equality, X = x * G and Y = x * H (Section 3.4).
 
    Relation = dleq
    Ciphersuite = sigma-proofs_Shake128_P256
-   SessionId = 646c6571
-   Statement = 02000000010000000100000000000000000000000300000001000000
-   0000000002000000036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4
-   a13945d898c29602e7747263366b618a771a284e6139947b17e9c3a96cb573d045db
-   511336fea2b502d135e66a8b8d656fa8e892501d931895ec031701a72aa550039742
-   a8f632533603c2170432aefa48cbbe91aa5be0da997e663528c96bd5652da0b71dbc
-   44b4a157
-   Witness = 92526b41ae23f4820a911c9ba1bdc6493f68ce123871c76a6e74ec43b8
-   5494c0
-   Proof = 8e9bd4ddb4c4cf342c4b29e9cb6447d1ed7268cbea7bd163408925c6058f
-   1e9a32b29cb837a982782e771e90665cceaae4c2051cd2f9de70a57b5661ae9b4cf4
-   Batchable Proof = 031af107806a9d4f14c569d5a255904f682a7e1cc289ca70f5
-   306d690609bf8f7202b9e055385e773efed02af727e2ac21b9dc411ede1789a3186a
-   b779e32c3ebec3fa58b127a6ea224395244ee5a0fc4ed0e99b9e576a7d6bc132e052
-   47bcb658a0
+   Instance = 020000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000101000000030000000
+   00000000000000000000000000000000000000000000000000000000000000101000
+   00000000000020000000000000000000000000000000000000000000000000000000
+   00000000000000103a0d262ccb556df026581adf2ea6ea52cf69ca39f0644b89e434
+   71cb40d921b0503dc308f6d1c515121d2334015b95254336a608a78031809b31099a
+   adadcb566350241d6b25cf581b93fb4f769f1d88aa571dfe9d3f2e451b2f779e8da7
+   10ae0015b
+   Witness = b4fbb257ea2f224915a82a630ff348069e2b25bafdcf6255322c9fa0df
+   b6340a
+   BatchableTag = dleq-DSFS-with-sigma-proofs_Shake128_P256
+   BatchableSessionId = 322adf7cff2aca1c08e9c7053b1d1d75016d22f1903f1b1
+   09f0267034645478c
+   BatchableProof = 0203ed31e0d73b821eba236b903f83ddd6e60e59a77249462be
+   32fc43ab4d5dd7e038ad4a96b49f6e29ea0afcb6a329632b5e3cdea70137e9655152
+   19da19be4497655ca705567b987c6f9c5dd5bd866d069dfdcbc415b2036dab9ec63a
+   821d4c045
+   CompactTag = dleq-CMPT-with-sigma-proofs_Shake128_P256
+   CompactSessionId = 6f3abd4c1daaa824fce769441e9f5c724021ee72317419074
+   5be999dbfeca92f
+   CompactProof = 5351e8969b72d4bdc0f2688ff68c69bb36154dc9074e534d954c8
+   899b6c813b5284cb4905860f4b1db7edc4473f5ee2b4ab178c5c2a8cbe57056ac330
+   fc71d37
 
-A.5.  pedersen_commitment
+   Knowledge of the opening of a Pedersen commitment, C = x * G + r * H
+   (Section 3.4).
 
    Relation = pedersen_commitment
    Ciphersuite = sigma-proofs_Shake128_P256
-   SessionId = 706564657273656e5f636f6d6d69746d656e74
-   Statement = 01000000020000000200000000000000000000000100000001000000
-   036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c29602
-   d135e66a8b8d656fa8e892501d931895ec031701a72aa550039742a8f6325336033f
-   5eec2203e5d6cf13564a3884637cba8d6a835edfe1e7127ed544efa734f33c
-   Witness = 92526b41ae23f4820a911c9ba1bdc6493f68ce123871c76a6e74ec43b8
-   5494c0c93640008f20c1c7e267c16a7acef56ce53605f763e94cca43be52e7ad2607
-   64
-   Proof = 03c2fed5978acc3cf8aaa0ca27ba0f8c594f0f30d54fd480c984c7af1627
-   de1c15d44da987f02c4d9e0fa01f081efa719e8cc778338faa04134017481924f06d
-   c3ee6f245c56bb20aaf97dea5380e09594b7d5d0dce38496e976d2d1a84893f5
-   Batchable Proof = 022b3a82ba319b6bb06e1c0df02639fabff6644f03737a6a31
-   29a080abbcbb994279dc23d43310f40de3d3e3a5567dfd74c5c87e7ecb8fae1e0617
-   2cfd9d4246eedadbce5fef61c99fc3cea903adfee9d8311943966a63ebc3abbe9556
-   6c2094f6
+   Instance = 010000000100000002000000000000000000000000000000000000000
+   00000000000000000000000000000010200000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000101000000010000000
+   0000000000000000000000000000000000000000000000000000000000000010206c
+   16fcf4c4017adb8908fb2ec0aba8ea9edd683ae38eac52d59f040956be8f803e8372
+   937cb2d0d9d0d48263ecd0a1d4b96207bceb3806739757fcad774f92642
+   Witness = 25c9fd63403d0da31081857537ade64b637c80ed2338639148a9938b35
+   62ea06afc354c8985ee3cb61b83af2f7a5bb2abeb7d510db5168b6ede21b4910594a
+   2b
+   BatchableTag = pedersen_commitment-DSFS-with-sigma-proofs_Shake128_P
+   256
+   BatchableSessionId = 6d12e90fc2e3d74d9496ff609cd49f1013c6319da01b7ab
+   a5383f6b46789985e
+   BatchableProof = 03491976f248dcde9ecf9c4536754cb2e81b61be73999efd8e8
+   2d061cabf3a49439eaa3fd376be7bb7a599b5bd03397d967174f61b27c514e4541a0
+   5cfaea37b2d05c8c392bcc53462ce9b997cec950c02f6d023537137b3586e2ec277a
+   3c32880
+   CompactTag = pedersen_commitment-CMPT-with-sigma-proofs_Shake128_P25
+   6
+   CompactSessionId = 4d241bd0f43a3a162d0671aa263a8285f51d22d848d08b0f9
+   e2e747f20b19d89
+   CompactProof = 9e11b127fa8984da359687ba95ce5b1bb4e82ea252e0df9562d62
+   e8c60acc013ecfcd356f2476e287e3f043f7cf11d1fb3a3dce9a190ce605819d1a05
+   bbd23c55630f834648c294b6f39d23e9f0f507119ecdf8691ee3ac5dcfd4b669bbdf
+   3f7
 
-A.6.  pedersen_commitment_dleq
+   Two Pedersen-form equations sharing both witness scalars, X = x0 * G0
+   + x1 * G1 and Y = x0 * G2 + x1 * G3 (Section 3.4).
 
    Relation = pedersen_commitment_dleq
    Ciphersuite = sigma-proofs_Shake128_P256
-   SessionId = 706564657273656e5f636f6d6d69746d656e745f646c6571
-   Statement = 02000000020000000200000000000000000000000100000001000000
-   05000000020000000000000003000000010000000400000002d135e66a8b8d656fa8
-   e892501d931895ec031701a72aa550039742a8f632533602e7747263366b618a771a
-   284e6139947b17e9c3a96cb573d045db511336fea2b503494cd0367a7478312233f9
-   a9645d2f3f9a68dcfe018d052325c4431b4dc4f78c032aaafb5d7a5a3dd1bad36f58
-   0cde19e8995a7a0c0cb79bc4f736b832de95320803dfcb42c94940e5ac6c5ffbabfb
-   b9a8da0132e0db8f414d8bdd01f5ae8fa2143103052d1bd120487fa37744c6da3295
-   f56e76be9c61a4de8a0b0c6c5de177935482
-   Witness = 5be9cc0de93d47ccaf8637f1c5a9e26e92b5bc38f6265a96d64bd437ac
-   7d597ab6116295a8d23d4cd60fb53b1ddf7177f95aee639a59dacecf37334a914bde
-   d6
-   Proof = 131348247c1d6c7b66402a0c5ed4a47af55e37b44c12b7ab0103c00440f9
-   773ddcf334188a910e111c0cf81a1ce25ac13ecdd7dbc8228a93d6f698a87af9d5f5
-   8d7b568fbb121a9f81fe2534d2f24a942a81e8daa08f48b09ea773befef5e8f0
-   Batchable Proof = 0384afaabfca8df99914b58ac83c1f16cc0871c95167c672b4
-   0f8b79eac10193ae021ebe92eec53b568bc65b0e6bddf3c9ca159fd493690dd28c60
-   a12fa672e163e205ef3af821437ddfd0eb080d0e1babdff75437c1004cc6273164f0
-   352850b73238701b45d0ee56d1be5359f5a25a81acf3f4942bb05f724a8f6713075c
-   fe8b89
+   Instance = 020000000100000003000000000000000000000000000000000000000
+   00000000000000000000000000000010200000000000000010000000000000000000
+   00000000000000000000000000000000000000000000000000101000000020000000
+   00000000000000000000000000000000000000000000000000000000000000101000
+   00006000000000000000000000000000000000000000000000000000000000000000
+   00000010200000000000000040000000000000000000000000000000000000000000
+   00000000000000000000000000101000000050000000000000000000000000000000
+   00000000000000000000000000000000000000102120b29125003d5d494503fd47fa
+   4057e761c1cb1632e8965233b8f8dfadd9d2503dc92fe87397abd7e0beded9099032
+   d680f46280672afeb1682e46b45e046d5b302a28a33dc8792cb198a9d7942eb1a349
+   09373a5f382e8e68983a54f6fba7587550276d70754e0a8f249a41695d5db16f8765
+   d27a46a19dfcd8c1fdc7ac5896f46f503ccdb0adda1a852cac38054215e298b8d4b1
+   9823e3a66b9a80e44d063935de409028ef1cfa2468871b4b5116a6709c8df1f72218
+   0fc4fc1ad6e5db991660be78915
+   Witness = 1242ef15dea6fafe29b8d3e9ba859d0489744d46cc8b52563c445dcd0e
+   e62854b80c18e412222e458decdfbecd398b8036df12500008fac1a8f16eecb517bf
+   54
+   BatchableTag = pedersen_commitment_dleq-DSFS-with-sigma-proofs_Shake
+   128_P256
+   BatchableSessionId = 688476139ac68ba996cc86d0331830b18fe2b5c8ab87038
+   d4cf622d7c897c1cf
+   BatchableProof = 03e2aa1a7e5b705690b8fc4859dc9353a8ca262c6f11016306a
+   9a84664e55f48fc0268b6aeff56dbd1517e0721f62a59fe09fa2f523972ad06f3a6c
+   cd75d82f86e95febeaa429522ab5e7bc356178a08cf50442e991f4a70db479f65090
+   3104a92fa26e56545c5957e6e0ec86adbe6ca1675d8a713f39abeef120c72edeae7b
+   fa9ad
+   CompactTag = pedersen_commitment_dleq-CMPT-with-sigma-proofs_Shake12
+   8_P256
+   CompactSessionId = ef423a52be5ad7d7d8e499aa870634f5ac3fc424b89fdc96a
+   a72d8c5361e79d1
+   CompactProof = 6cb7a0e88a0aa524c402339e9891851ed483bbe2f2ac4c2cea879
+   99d33bef2833c4bfd5c2a8de1abcd9a7134fd13391680dc7c9321b7e517b7bacf375
+   5a6b17748c11272f913bb15744d25f97e1f21885a948c952567463f289d6e3828663
+   14b
 
-A.7.  bbs_blind_commitment_computation
+   The blind commitment computation of [BBSBlind], C = blind * Q2 +
+   msg_1 * J1 + msg_2 * J2 + msg_3 * J3.
 
    Relation = bbs_blind_commitment_computation
    Ciphersuite = sigma-proofs_Shake128_P256
-   SessionId = 6262735f626c696e645f636f6d6d69746d656e745f636f6d70757461
-   74696f6e
-   Statement = 01000000040000000400000000000000000000000100000001000000
-   0200000002000000030000000300000002d135e66a8b8d656fa8e892501d931895ec
-   031701a72aa550039742a8f632533602e7747263366b618a771a284e6139947b17e9
-   c3a96cb573d045db511336fea2b5032aaafb5d7a5a3dd1bad36f580cde19e8995a7a
-   0c0cb79bc4f736b832de95320803dfcb42c94940e5ac6c5ffbabfbb9a8da0132e0db
-   8f414d8bdd01f5ae8fa21431024a243b6f8a0030941fde57d57f1a4d418d01e7f398
-   962739fba3bbdb3adfb285
-   Witness = 895007d818e8c20774be15273e5b8733e345ba359205cbcd98a046f263
-   a7a0ce5be9cc0de93d47ccaf8637f1c5a9e26e92b5bc38f6265a96d64bd437ac7d59
-   7ab6116295a8d23d4cd60fb53b1ddf7177f95aee639a59dacecf37334a914bded6c6
-   038561954f5b4d4052c77d8c149a74767e1c478e09dc33e7cfc801f7dfb722
-   Proof = cc8e3072ee8c305b8409d01a25902d928692d4d29a56655e416afe30efbd
-   97f8b7a3141b009229ea5ebb3e15b8771bbc1317cf125feb902e151a7d29ce254e60
-   ad390b486329d18430e684ef46863524e8be301d21832b2a5dd070a6443070eeb292
-   e90a3808fae2e56417693f4023387e698b2cb2d41f2ffa2551d4124da40bbb343026
-   17a8bf67c7e0b6c73fce3697b15c1c2ef49f4991c27873f0b70a602d
-   Batchable Proof = 038b7263580bb33a66bf5b1c1d4dcadce46e89fd58c6224df2
-   c495e4d8447ee24b3caa3feab0ebaa85847f3d2161dccbd22947cdf33ebf5ca0793e
-   31e193b024e1f672cf51e471b286e3161e1dd18f0448cd42d3d8f30e813a6c2f2ccb
-   6a5eb6ce4cb3bc0043639723e6aa48541a4172ab4ebd36e7f7a85aecbf1de4dcc649
-   ff84147c4041813146e03e18d6f916a5b54633a0f68cca2153bc6d7f91bed9c6e351
+   Instance = 010000000100000005000000000000000000000000000000000000000
+   00000000000000000000000000000010400000000000000010000000000000000000
+   00000000000000000000000000000000000000000000000000101000000020000000
+   00000000000000000000000000000000000000000000000000000000000000102000
+   00003000000000000000000000000000000000000000000000000000000000000000
+   00000010300000004000000000000000000000000000000000000000000000000000
+   00000000000000000010202eaa274def05ab048396033e7f2d7638851a60131af975
+   9a016e3eff592941c02b4f47e54f51d447c160ecf71c456a8e0d513d593c07bfaac2
+   3a373a4b51ca868034f75a59df8f7f10f97fcd9bdaf24a3b0c5ea403167929f4fcab
+   9d4e3f483747c02f86566f754588d585264dac4f3650cf8ff53ec716ed21dfd07213
+   058d8fc78020390ef88459ded35acdbe56d986dad595f45a8b6f190bbce3ddb59083
+   08f6115b5
+   Witness = af35a44a86ed7403467f49203e8c79501e70f039b113cd1753993f8497
+   7d95ac13cadbba0e76ff85edd77b7340ba0396e45671dff7229dc424faa180dba435
+   ba334d189229fa64202a6182e85d80497f21f250fa467ded4cf8152154af76c2410a
+   3c8706d1a6d4623d89b5b9213c59e1163975d6ef7abc8311682ddfe6d7390b
+   BatchableTag = bbs_blind_commitment_computation-DSFS-with-sigma-proo
+   fs_Shake128_P256
+   BatchableSessionId = 72af721d175eb7b0c975ab01d37b8770077ce6bf9e81779
+   188f59cb51a31bcbc
+   BatchableProof = 03206f70cc509ce8660cca8caa1f3b403f143c006705fe72daf
+   4cb083be824958499b37f26362a50c596ec4885b97e8deeae5b3da96329e3e715cee
+   e04b9f32b026945804d8d0f3594587be911a9809a61bb200b23b30cc94f246f8250b
+   e4882df8128a391c9deefda6d96daa4c5977f902d137a0b4130e7e2fe3f14f3e0106
+   c3052e00a1c9b9607a5d7a502ac0d419fc87b0636289fdabd05824091e07140e01d
+   CompactTag = bbs_blind_commitment_computation-CMPT-with-sigma-proofs
+   _Shake128_P256
+   CompactSessionId = 079c5d8e65618f746d72d2881bbb630155565d95375eb2761
+   9581b1e937a697d
+   CompactProof = 431c50915e63bb13e4c89556d736cea30703c6235711c62aa3a3f
+   de58e25052693c3b5716f935f1052bb9fb97dd5635a7f14b3254ccdeeffc8fad01f2
+   f4fed36db0324e47ffdf5218646411ca9ccbcdde13001686a63997ea358f88c95652
+   4dba190b324f47d021fc6b4373414e99aa68e673eb517e04fb169923418dec5d44bf
+   b208ece8117954283043ab111babce94b9d5716ef75f696f8c4492e2def66e7
 
-A.8.  sigma-proofs(BLS12-381, SHAKE128)
+   Correct ElGamal decryption, X = x * G and M = x * E0 - E1
+   (Section 3.4).
+
+   Relation = elgamal_decryption
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Instance = 020000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000102000000040000000
+   00000000000000000000000000000000000000000000000000000000000000103000
+   00000000000000000000000000000000000000000000000000000000000000000010
+   10000000000000002000000000000000000000000000000000000000000000000000
+   00000000000000000010372462b86837aaadb6ec2348fc4a6029f7ae77e9aea23801
+   7bebbbe469dd299be039f3ab1733887055e7f18884bc8d666d2461925888f366009a
+   eefcaaffd94900e02597c2dd8b7bd7c2c9864efa356ed285103582e75c001fbd8400
+   aaf618790fa93036d21e24e585051080212d7eeb3884dcb28017e91d50967bcd432b
+   bd9a8cf4986
+   Witness = 14375a0f9d92dd6fd4b67cb11de6f81b54c101f6e846cd8817dce6db7b
+   30fb4c
+   BatchableTag = elgamal_decryption-DSFS-with-sigma-proofs_Shake128_P2
+   56
+   BatchableSessionId = b9125fe73ce90119db10799a9669a1ee47f6bc7b1dc7e0e
+   8ab00296df6159657
+   BatchableProof = 02f2de68f98653dc53ef1832f363b62fd68837f7b5d17080e06
+   8e4450ef35bc52f036ae8948f8836f4c38bf16298de1179a4641f6a11e2222457160
+   ff4f8963b72868c2b3964e4fc66374f635bb8a497d34592420c5b2ebd653ed30f80f
+   e56bb3776
+   CompactTag = elgamal_decryption-CMPT-with-sigma-proofs_Shake128_P256
+   CompactSessionId = cf4b3a76432ab31da160eb35049dde5afea29635eaadc9a79
+   c59a04771b0908f
+   CompactProof = 827f88105d6a14c364c070fcdc5a53f0208b42ec6d8a6e397eea1
+   d24382676bb7af67b61c733281b12822892a29da92326df8fd6921802462909ace20
+   d42e632
+
+   The ChaumPedersen relation of Section 3.4 again, with Y = x * H
+   derived by the prover from its witness rather than received: the
+   compiled instance matches dleq, and only the tag (hence the proof
+   bytes) differs.
+
+   Relation = dleq_derived_element
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Instance = 020000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000101000000030000000
+   00000000000000000000000000000000000000000000000000000000000000101000
+   00000000000020000000000000000000000000000000000000000000000000000000
+   00000000000000103f56baee56b8f80b4bae59bb48c615a7b34ab47c8f0de3fe6bc2
+   3706511a90a0d037100a881faf4f73982c7e3113810c6e56a69c42c98562a121c15a
+   d1951c8eafa031def6155fd67b1be8e4fd49c7227e576c1abe0886e5d6a928a015f5
+   d8f08e436
+   Witness = 45d78f1fff7555932001aa84fb525f9caa8a0949bb8406aaacdd9ce9f0
+   6dfdea
+   BatchableTag = dleq_derived_element-DSFS-with-sigma-proofs_Shake128_
+   P256
+   BatchableSessionId = c14c1f05e26976121b0842e9a64270893d4d7ca1b24e09c
+   7d6b4147e74e9af0d
+   BatchableProof = 029e903a7f21e67b403658a8b55c2097d0b5ec918a10b4ac965
+   dbbddca20d216d50374b96946905242651598a20721cce60aaa1a1d84f4f4644ad1a
+   bb2ea61eb435f785e12da6947bdcaa0b49176170df8a65f54f828e03412df5b31744
+   433be5e7c
+   CompactTag = dleq_derived_element-CMPT-with-sigma-proofs_Shake128_P2
+   56
+   CompactSessionId = 5ed1c6effe868eaf259136b7702a342c2bd7aee2028e29dce
+   e0364f8cbe88e2d
+   CompactProof = e8c65a06a08e5573f7b29c56246dc4efe5bd9d834ed12aa32e62a
+   427875b852cffb5e51026648606a6f78a935c334c86c1a930c515e852db06e010f74
+   18e8871
+
+A.2.2.  Adversarial vectors
+
+   SEC1 uncompressed prefix 0x04.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 047e00143a98c515388e00397c050c46729f010e30752f00172c2e9
+   444cd323e199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f
+   5e1713b
+   Expected = reject
+
+   SEC1 hybrid prefix 0x06.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 067e00143a98c515388e00397c050c46729f010e30752f00172c2e9
+   444cd323e199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f
+   5e1713b
+   Expected = reject
+
+   SEC1 hybrid prefix 0x07.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 077e00143a98c515388e00397c050c46729f010e30752f00172c2e9
+   444cd323e199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f
+   5e1713b
+   Expected = reject
+
+   x-coordinate lifted by the field characteristic (x = 5, encoded as x
+   + p); non-canonical coordinate.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 02ffffffff000000010000000000000000000000010000000000000
+   000000000049dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f
+   5e1713b
+   Expected = reject
+
+   Identity stand-in: 0x00 padded to Ne bytes (the P-256 compressed
+   encoding has no identity form).
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 0000000000000000000000000000000000000000000000000000000
+   000000000009dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f
+   5e1713b
+   Expected = reject
+
+   x = 1 has no square root for y; decompression fails.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 0200000000000000000000000000000000000000000000000000000
+   000000000019dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f
+   5e1713b
+   Expected = reject
+
+   response[0] set to order + 1 (non-canonical); the s + order mutation
+   does not fit in Ns bytes for this suite, so this only tests
+   rejection.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
+   444cd323e19ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2f
+   c632552
+   Expected = reject
+
+   challenge set to order + 1 (non-canonical).
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac
+   2fc632552cfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044a
+   b1c28
+   Expected = reject
+
+   Valid proof with one trailing 0x00 byte appended.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
+   444cd323e199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f
+   5e1713b00
+   Expected = reject
+
+   Valid proof truncated by one byte.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
+   444cd323e199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f
+   5e171
+   Expected = reject
+
+   Valid proof with one trailing 0x00 byte appended.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 3f29987a13e3ea094f2f7ee8f1ccc37ef3239bd303535a9959ca3aa
+   cca1f216ccfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044a
+   b1c2800
+   Expected = reject
+
+   Valid proof truncated by one byte.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 3f29987a13e3ea094f2f7ee8f1ccc37ef3239bd303535a9959ca3aa
+   cca1f216ccfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044a
+   b1c
+   Expected = reject
+
+   All-zero compact proof: challenge = 0 and all-zero response.  The
+   simulated commitment is the identity; the verifier must reject before
+   re-serialising.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 0000000000000000000000000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000000
+   00000
+   Expected = reject
+
+   Scalar index 1 appears in no equation (check 6); the proof satisfies
+   the verification equations, so rejection must come from instance
+   validation.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = instance_unconstrained_scalar-DSFS-with-sigma-proofs_Shake128_
+   P256
+   Instance = 010000000100000002000000000000000000000000000000000000000
+   00000000000000000000000000000010200000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000102000000010000000
+   000000000000000000000000000000000000000000000000000000000000001031ac
+   02e1fd7d885b1e5eb1811abd9c4d03eee8eada37d9c1a860ca3c649b8e2a302ccab6
+   2b6a53592a5bc088188532faa9eee974c21150d6276da6c6d924b6e2dc1
+   NargString = 033d85fedbddfd463f0392eeea57107720404fbce572e420fe54fba
+   77bad18b4b94358208ea29237036630d19ee48191bf7626c37730249a3951083345b
+   19ed4e6c2e07d1d92976e9398c5cc356ce644df48ecb1362ccf31d97166a3e40048c
+   776e4555c95e4b42275076c8523f4ee48be8835478f8b0262fce9279e2bcb8c7a94
+   Expected = reject
+
+   Same instance and a second proof with the unconstrained response
+   scalar changed; both verify, so accepting either is a malleability
+   demonstration.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = instance_unconstrained_scalar-DSFS-with-sigma-proofs_Shake128_
+   P256
+   Instance = 010000000100000002000000000000000000000000000000000000000
+   00000000000000000000000000000010200000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000102000000010000000
+   000000000000000000000000000000000000000000000000000000000000001031ac
+   02e1fd7d885b1e5eb1811abd9c4d03eee8eada37d9c1a860ca3c649b8e2a302ccab6
+   2b6a53592a5bc088188532faa9eee974c21150d6276da6c6d924b6e2dc1
+   NargString = 033d85fedbddfd463f0392eeea57107720404fbce572e420fe54fba
+   77bad18b4b94358208ea29237036630d19ee48191bf7626c37730249a3951083345b
+   19ed4e6c2e07d1d92976e9398c5cc356ce644df48ecb1362ccf31d97166a3e40048c
+   777e4555c95e4b42275076c8523f4ee48be8835478f8b0262fce9279e2bcb8c7a94
+   Expected = reject
+
+   The image terms X + (-X) sum to the identity (check 9): the equation
+   is trivially satisfied by the all-zero witness.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = instance_trivial_equation-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000200000001000000000000000000000000000000000000000
+   00000000000000000000000000000010200000000000000000000000000000000000
+   00000000000000000000000000000000001010000000000000000000000000000000
+   0000000000000000000000000000000000000000000000000000001031db20bc00c5
+   012329627c85174b00ade13788636ce3ce3842e0fc1dde4179ca5021db20bc00c501
+   2329627c85174b00ade13788636ce3ce3842e0fc1dde4179ca5
+   NargString = 022fb88456a6a7f8d974b129ec99f3745ffd9e3dcbae9771815571d
+   4c4087a12088aa155e5f5e22708f62eec3e7425026489340ed065e835229f1a50106
+   37696d9
+   Expected = reject
+
+   Statement element at index 1 is the identity (stand-in bytes (P-256
+   has no identity encoding)); an implementation parsing statements from
+   bytes may instead reject at group deserialization.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = instance_identity_element-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000002000000000000000000000000000000000000000
+   00000000000000000000000000000010200000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000101000000010000000
+   00000000000000000000000000000000000000000000000000000000000000100000
+   000000000000000000000000000000000000000000000000000000000000003871d1
+   4718441e23004e5c432427775bde2e9244f75550e839d210556bde1cad0
+   NargString = 02b9d1353c5f3bf39418f2ea4bb8f8ba63cef1e8cc7eb14f51242c3
+   1ec17765a5fa919d7f15f2e14c494b5e199eaf0b70735118e7ae2b7a278edee4b27a
+   0135ffb2cb0ed2a76d9c583db0758976f24bc3eb65764691a2a51779f84acca97e16
+   1bc
+   Expected = reject
+
+   Header wires element index 2 into a term but supplies a single
+   element (len(elements) would be 3): the index-bound check of
+   ValidateInstance; parsers may see it as a length mismatch.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = instance_index_out_of_bounds-DSFS-with-sigma-proofs_Shake128_P
+   256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000020000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
+   444cd323e199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f
+   5e1713b
+   Expected = reject
+
+   Accepts under the tag it was produced for.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
+   444cd323e199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f
+   5e1713b
+   Expected = accept
+
+   Same statement and proof under a different (well-formed) tag: session
+   binding.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm/wrong-session-DSFS-with-sigma-proofs_Shake1
+   28_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
+   444cd323e199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f
+   5e1713b
+   Expected = reject
+
+   Accepts under the tag it was produced for.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 3f29987a13e3ea094f2f7ee8f1ccc37ef3239bd303535a9959ca3aa
+   cca1f216ccfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044a
+   b1c28
+   Expected = accept
+
+   Same statement and proof under a different (well-formed) tag: session
+   binding.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = compact
+   Tag = discrete_logarithm/wrong-session-CMPT-with-sigma-proofs_Shake1
+   28_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 3f29987a13e3ea094f2f7ee8f1ccc37ef3239bd303535a9959ca3aa
+   cca1f216ccfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044a
+   b1c28
+   Expected = reject
+
+   dleq proof under the declared equation ordering: accepts.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = dleq-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 020000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000101000000030000000
+   00000000000000000000000000000000000000000000000000000000000000101000
+   00000000000020000000000000000000000000000000000000000000000000000000
+   00000000000000103a0d262ccb556df026581adf2ea6ea52cf69ca39f0644b89e434
+   71cb40d921b0503dc308f6d1c515121d2334015b95254336a608a78031809b31099a
+   adadcb566350241d6b25cf581b93fb4f769f1d88aa571dfe9d3f2e451b2f779e8da7
+   10ae0015b
+   NargString = 0203ed31e0d73b821eba236b903f83ddd6e60e59a77249462be32fc
+   43ab4d5dd7e038ad4a96b49f6e29ea0afcb6a329632b5e3cdea70137e965515219da
+   19be4497655ca705567b987c6f9c5dd5bd866d069dfdcbc415b2036dab9ec63a821d
+   4c045
+   Expected = accept
+
+   Same relation with its two equations swapped (a valid instance):
+   serialization is ordering-sensitive, so the challenge differs and the
+   proof fails.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = dleq-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 020000000100000003000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000020000000000000000000
+   00000000000000000000000000000000000000000000000000101000000010000000
+   00000000000000000000000000000000000000000000000000000000000000101000
+   00000000000000000000000000000000000000000000000000000000000000000000
+   00000000000000103a0d262ccb556df026581adf2ea6ea52cf69ca39f0644b89e434
+   71cb40d921b0503dc308f6d1c515121d2334015b95254336a608a78031809b31099a
+   adadcb566350241d6b25cf581b93fb4f769f1d88aa571dfe9d3f2e451b2f779e8da7
+   10ae0015b
+   NargString = 0203ed31e0d73b821eba236b903f83ddd6e60e59a77249462be32fc
+   43ab4d5dd7e038ad4a96b49f6e29ea0afcb6a329632b5e3cdea70137e965515219da
+   19be4497655ca705567b987c6f9c5dd5bd866d069dfdcbc415b2036dab9ec63a821d
+   4c045
+   Expected = reject
+
+   dleq proof under the declared equation ordering: accepts.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = compact
+   Tag = dleq-CMPT-with-sigma-proofs_Shake128_P256
+   Instance = 020000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000101000000030000000
+   00000000000000000000000000000000000000000000000000000000000000101000
+   00000000000020000000000000000000000000000000000000000000000000000000
+   00000000000000103a0d262ccb556df026581adf2ea6ea52cf69ca39f0644b89e434
+   71cb40d921b0503dc308f6d1c515121d2334015b95254336a608a78031809b31099a
+   adadcb566350241d6b25cf581b93fb4f769f1d88aa571dfe9d3f2e451b2f779e8da7
+   10ae0015b
+   NargString = 5351e8969b72d4bdc0f2688ff68c69bb36154dc9074e534d954c889
+   9b6c813b5284cb4905860f4b1db7edc4473f5ee2b4ab178c5c2a8cbe57056ac330fc
+   71d37
+   Expected = accept
+
+   Same relation with its two equations swapped (a valid instance):
+   serialization is ordering-sensitive, so the challenge differs and the
+   proof fails.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = compact
+   Tag = dleq-CMPT-with-sigma-proofs_Shake128_P256
+   Instance = 020000000100000003000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000020000000000000000000
+   00000000000000000000000000000000000000000000000000101000000010000000
+   00000000000000000000000000000000000000000000000000000000000000101000
+   00000000000000000000000000000000000000000000000000000000000000000000
+   00000000000000103a0d262ccb556df026581adf2ea6ea52cf69ca39f0644b89e434
+   71cb40d921b0503dc308f6d1c515121d2334015b95254336a608a78031809b31099a
+   adadcb566350241d6b25cf581b93fb4f769f1d88aa571dfe9d3f2e451b2f779e8da7
+   10ae0015b
+   NargString = 5351e8969b72d4bdc0f2688ff68c69bb36154dc9074e534d954c889
+   9b6c813b5284cb4905860f4b1db7edc4473f5ee2b4ab178c5c2a8cbe57056ac330fc
+   71d37
+   Expected = reject
+
+   A valid discrete_logarithm proof verified against a statement whose
+   element X is replaced by 999 * G (a valid instance): the instance
+   serialization enters the challenge derivation, so the challenge
+   differs.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001039db6eb62700691c
+   3580fbda8fc7ee33f6cfdd5b43203507c1b0533b15d0d1b7e
+   NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
+   444cd323e199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f
+   5e1713b
+   Expected = reject
+
+   A valid discrete_logarithm proof verified against a statement whose
+   element X is replaced by 999 * G (a valid instance): the instance
+   serialization enters the challenge derivation, so the challenge
+   differs.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001039db6eb62700691c
+   3580fbda8fc7ee33f6cfdd5b43203507c1b0533b15d0d1b7e
+   NargString = 3f29987a13e3ea094f2f7ee8f1ccc37ef3239bd303535a9959ca3aa
+   cca1f216ccfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044a
+   b1c28
+   Expected = reject
+
+   The batchable proof's transcript re-encoded as a compact NARG string:
+   the flavor markers make the tags differ, so the challenge recomputed
+   under the compact tag does not match.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = e44d6cb80e7b099d06525dbb3567fc05ebfc9b7d3da0624e5cf6431
+   63d7a51e39dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e
+   1713b
+   Expected = reject
+
+   The compact proof's transcript re-encoded as a batchable NARG string:
+   the challenge derived under the batchable tag differs, so the
+   verification equation fails.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 0221f8d84da0727022bf043b23de7c67590535109a3a6c24f4fba9c
+   8732190c6eacfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a4304
+   4ab1c28
+   Expected = reject
+
+   response[0] replaced by s + 1 (still canonical); the verification
+   equation fails.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
+   444cd323e199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f
+   5e1713c
+   Expected = reject
+
+   commitment[0] replaced by a different valid group element; the
+   recomputed challenge differs.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13
+   945d898c2969dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f
+   5e1713b
+   Expected = reject
+
+   challenge replaced by a different canonical scalar; the challenge
+   comparison fails.
+
+   Ciphersuite = sigma-proofs_Shake128_P256
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000103f0f109368d010f5
+   adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
+   NargString = 3f29987a13e3ea094f2f7ee8f1ccc37ef3239bd303535a9959ca3aa
+   cca1f216dcfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044a
+   b1c28
+   Expected = reject
+
+A.3.  sigma-proofs_Shake128_BLS12381
 
    This section contains vectors for the ciphersuite identified as
    sigma-proofs_Shake128_BLS12381.
 
-A.9.  discrete_logarithm
+A.3.1.  Valid proofs
+
+   Knowledge of a discrete logarithm, X = x * G: the Schnorr relation
+   given as example in Section 3.1.
 
    Relation = discrete_logarithm
    Ciphersuite = sigma-proofs_Shake128_BLS12381
-   SessionId = 64697363726574655f6c6f6761726974686d
-   Statement = 010000000100000001000000000000000000000097f1d3a73197d794
-   2695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3a
-   f00adb22c6bb81f56ff90504e08e3af0211b8b60d8a834af3bd7a63eb6d3a1e1f974
-   4fdbf915697ecb8a6ebd7d4db0885bedc2e02c8b
-   Witness = 722df275e5be8df73fe322083a661a5a02910bae74f5d3674b648af813
-   81cab0
-   Proof = 2d07db2a46daeb32ba019194b4e6f9319f9eae259c1e80c15f71f3db1d9c
-   4c5f25d92eb0743a8f3cd004b59cead8f325563c8d23d265cc2d35f596ea86a32816
-   Batchable Proof = 876bd688db9e4d0c1501d5f80ceb865958d1699998cd226a42
-   22a6826370702cceb6c966d61f1d80e3f8b7faef5b158b152c7865932f0b73c2f002
-   c299dbc778a3f587e34d9943410b2d46536a5b8bc7
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   Witness = 641c3cdcc72c9b3a84b85df5808de5f37cf4489ca15f1cffdfd105b780
+   ec0682
+   BatchableTag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BL
+   S12381
+   BatchableSessionId = b9a184f47a2038072177099bdfe75e6663e86f0cb6790b7
+   b618102b3f3b2d787
+   BatchableProof = a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bc
+   bc1acddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e
+   03f454e8eb6105238a2b3fe8250042aec5bd1b641
+   CompactTag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS1
+   2381
+   CompactSessionId = 8651b5e07aef46852f93102b9e9432370b671d4bd84fbfcfd
+   1e224a06e7ae182
+   CompactProof = 2b2af194b74fff452d74060e514e36a43f4b7405bff46781a78f4
+   2bc7696c7ee5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b4407
+   1f7ad94
 
-A.10.  dleq
+   Discrete-logarithm equality, X = x * G and Y = x * H (Section 3.4).
 
    Relation = dleq
    Ciphersuite = sigma-proofs_Shake128_BLS12381
-   SessionId = 646c6571
-   Statement = 02000000010000000100000000000000000000000300000001000000
-   000000000200000097f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e
-   3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb8cc0db261e028e0d81676c78
-   5dfd7d71976753c7ec9fb9166abfb6b262aaa36cfbde771460b70b06d2b4ab2f4faf
-   878d81f56ff90504e08e3af0211b8b60d8a834af3bd7a63eb6d3a1e1f9744fdbf915
-   697ecb8a6ebd7d4db0885bedc2e02c8bac83f5e8bc97f38b92d976067b1532f89442
-   0a74c549bf25026bb9067a5b5ba43293b7ba272180ade19c81d451e76012
-   Witness = 301dc6e2a7f14746146a2c281e2922cacda7c5613e26c72b3d57e06fa6
-   7831e0
-   Proof = 2bc9e1e80d3b14e2214a2792e7bf30162763cffe655238bfdce1196f3906
-   81481d4148ec767e3ca5ddb1a05efaf377a82dca623e863aa45af5caf58091a2fd92
-   Batchable Proof = 876bd688db9e4d0c1501d5f80ceb865958d1699998cd226a42
-   22a6826370702cceb6c966d61f1d80e3f8b7faef5b158b824c14d32ad86a34761314
-   bf3f2f46ed9f993a86b48cf9adc076153a736da4b0670bfa7263ab81c435dee0186a
-   721f5d465ff84606c95efa8a22d01d24c64f179d31d044164e2c90ae2122e796a161
-   41
+   Instance = 020000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000101000000030000000
+   00000000000000000000000000000000000000000000000000000000000000101000
+   00000000000020000000000000000000000000000000000000000000000000000000
+   000000000000001b8a52d4f929a5fc9a27b16941d102b632bac0b0661265ed04ec9e
+   59d35480f93d4ebefc5af6a06090964444a5ed9abfdac2a3348158e801ab8f314905
+   43b66ddf04a103dd0bc7f41194f72b575b62d08900aaf6e7ba8f3672c1b7064b19ec
+   f968f3af22d60210b724fc400f8b8e8547a3f82ba017d24199087b0bd1941c21f4c6
+   afa8e1d636914790ee4b80e44908926
+   Witness = 4a27c7be9fb7612efe553eb66c7120b978433c35625c00c9c530da6e72
+   14db08
+   BatchableTag = dleq-DSFS-with-sigma-proofs_Shake128_BLS12381
+   BatchableSessionId = 8a5c790e1a988d7ad14e5eecdfbd2fc1ce87e01e788c38e
+   3c2487f8d8898c9cc
+   BatchableProof = b13432cd2a44f3287e1ee64986f77cfd30bc6e27cb5bb245e5e
+   0d5cd74d7ea59d64b17f3e612b0a5790bad93d77ea46291f38f62b25f78dae742007
+   65604f560b5b0459b45404eb953e498497a94757841739571c4fa83ba5b27fb2cd9c
+   01c2053843da83608b616cb57c042f0d21160317095e5ab1706e02299dfd47f67b45
+   3
+   CompactTag = dleq-CMPT-with-sigma-proofs_Shake128_BLS12381
+   CompactSessionId = 244120cf7e64e64f0230270461e2011b7e7a37a4ddd1f1061
+   3c5a9ea3d69afb5
+   CompactProof = 6756a6afe70dc8b509ece61173992cd9970d6219332d289fecf58
+   e240f1497ca1712fb2963a360c4bc783fa9764bb115b7162e014c5f6c8859fbcd71f
+   bc58844
 
-A.11.  pedersen_commitment
+   Knowledge of the opening of a Pedersen commitment, C = x * G + r * H
+   (Section 3.4).
 
    Relation = pedersen_commitment
    Ciphersuite = sigma-proofs_Shake128_BLS12381
-   SessionId = 706564657273656e5f636f6d6d69746d656e74
-   Statement = 01000000020000000200000000000000000000000100000001000000
-   97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55
-   e83ff97a1aeffb3af00adb22c6bb81f56ff90504e08e3af0211b8b60d8a834af3bd7
-   a63eb6d3a1e1f9744fdbf915697ecb8a6ebd7d4db0885bedc2e02c8bb29e444ccc3f
-   9ca21049e8188ccbaf50995c2b0b44c8ec93c742afc29b5ad90baff8a133baf318ee
-   a626df9b29b05995
-   Witness = 301dc6e2a7f14746146a2c281e2922cacda7c5613e26c72b3d57e06fa6
-   7831e00e46ec1da3e35fc11a2b91b272794ea40c6e283930e5cc981c7bd61f661726
-   84
-   Proof = 237aa321c1827aad548ecdbdf4f8e7f14baf24f2ba8a53d7d2304bc9d804
-   25ee222da47223c980f9008467c12054795a8601b3ad4ec566c777463775cdfe8805
-   3d825e17a65875d352e3e68a2d8825ba4a31a60ea4e4a8e8e622e93afb0de9a9
-   Batchable Proof = a97bc242710165e97eb80d556d66ee25c239b3e4d55e4e5e7b
-   43963139b57dab95931f3dac353b486e2bd3a9b26a184c3faec15beca7733326c654
-   6122d6ca2465d01dc17ccf4f6fe2cc588bc5e201c734106878cb40e65c921322e877
-   e965dee872ca106b7187556a5c13a15dc1ea14
+   Instance = 010000000100000002000000000000000000000000000000000000000
+   00000000000000000000000000000010200000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000101000000010000000
+   00000000000000000000000000000000000000000000000000000000000000198a75
+   ce3f191eebaed9f6a49b445f423ac6ba6dd2caad41ff2d5a05db9531f350d9125914
+   ddacd670af9e851d44c05239482122220076c1aa251a964e649aec83af91fb2660b1
+   e1dd1932353a88020c3ef09a805be4d8af09a094eaf2263695f
+   Witness = 513794634e24e09f9eb668c0c1f4dfd6857e303b6b8bc5d08bae5a19e3
+   961ed327b79d17769ee1f8c1d774380a3acdb8d70c96f4869fa17fdcaf7a5729804a
+   12
+   BatchableTag = pedersen_commitment-DSFS-with-sigma-proofs_Shake128_B
+   LS12381
+   BatchableSessionId = e029c091ebd8fea4edbd7025de04170104768f284ab9693
+   ede56a0a6ffb299fc
+   BatchableProof = a35cdeff7ecb8c09e2527e98c6da38d23d8f9ac25affe1be3fe
+   c9976428f0b837b8b9c62b8726f4ee3522e59a64e6b402e26ba8823477689798c38b
+   a703692f5156f5d39febaa33eacf1a0ecbc2973a813e0e02d5c72770b6397cfab931
+   5e5cf3c2402516220b2ac1ec139c9bfdc020f
+   CompactTag = pedersen_commitment-CMPT-with-sigma-proofs_Shake128_BLS
+   12381
+   CompactSessionId = 0d54417e1f7bbbb652a9230e7e47701d1654bee35c8ae8623
+   5864576c86521a4
+   CompactProof = 0af9ef56a2968b32d07654a7de630732e9cad9625c51f7b7975cd
+   3056ef710211be5f52ee640769f3fd276008102aa8ee5041f859aa509d2bf8bc3522
+   4eb284136a8475ab594387b75de3af7e2ff51464c6b518172604308ede2dac3fc97f
+   9bc
 
-A.12.  pedersen_commitment_dleq
+   Two Pedersen-form equations sharing both witness scalars, X = x0 * G0
+   + x1 * G1 and Y = x0 * G2 + x1 * G3 (Section 3.4).
 
    Relation = pedersen_commitment_dleq
    Ciphersuite = sigma-proofs_Shake128_BLS12381
-   SessionId = 706564657273656e5f636f6d6d69746d656e745f646c6571
-   Statement = 02000000020000000200000000000000000000000100000001000000
-   05000000020000000000000003000000010000000400000081f56ff90504e08e3af0
-   211b8b60d8a834af3bd7a63eb6d3a1e1f9744fdbf915697ecb8a6ebd7d4db0885bed
-   c2e02c8b8cc0db261e028e0d81676c785dfd7d71976753c7ec9fb9166abfb6b262aa
-   a36cfbde771460b70b06d2b4ab2f4faf878dae12bff9e60b2ba88bd9da69c55948d0
-   a6cdbffcce0379a3becbdd57c6aa17e858cf10f722f1c67c710541be9e1d2204a207
-   735523e9de213a4a84dde81c26e9291763c585e152b791f96f1d710dd0e981c6d7d9
-   d96a2bc42a057bd6bbaefd71aa75899f88793c24e526c90da736e3df71b358ac6d09
-   0a7fb10f421782eb062bf0400ea8ffacf3e0fff87130e8e9def594186d3501350830
-   da852e4ad460ec8ecb5868891df413d34972699f0b8005388c45c0d51de9b05b7be0
-   050f26c8e7fa
-   Witness = 48b922ab24da7d352e8184ffce98dd1513eea0a7c175193769b0b30464
-   ca30ba3217d0a0a623bb652283dda5c6aada76d14dd2a7b1461105a6f67e31946b4b
-   b6
-   Proof = 39e79064f980cfc9aeb953e5cd2ec2ac5a6abdbcb3ead98ece20becf7c32
-   75450e0b27a75216e4cb4a8975f5b8ab0492a9a98a9b6ebb79713ea8a7a277572b94
-   0a05027cb65354e5b92dd32d15d2b96fe89748a1a1149b7d979d3e5c645c67ff
-   Batchable Proof = a3ccd50dcb1fea6b89c83bcd6add352ad3db4eda268236a906
-   b41f59e3edde60b7a69ba7501d91176fdf08f5a21caef88a8fa7f9f44caa78674efd
-   2660f0d3327195e1f39421bf57fa0dc2874ccfc68e220f2b3bc5bdf71ef144743725
-   68616f6709b5b7e02b88f9cf5ead9cb5969d496adeac334584300cc86258a8e205c8
-   d61e506c8bbf56ff7815149b61a6f5e892bf14befbb9e3bdf49d9d230edcdb146b
+   Instance = 020000000100000003000000000000000000000000000000000000000
+   00000000000000000000000000000010200000000000000010000000000000000000
+   00000000000000000000000000000000000000000000000000101000000020000000
+   00000000000000000000000000000000000000000000000000000000000000101000
+   00006000000000000000000000000000000000000000000000000000000000000000
+   00000010200000000000000040000000000000000000000000000000000000000000
+   00000000000000000000000000101000000050000000000000000000000000000000
+   00000000000000000000000000000000000000192e906e985c25121c422faf4c618b
+   d1a1b9a31a563997e0300fc79a90752ec3423b0b6077a8f1efbf89c4feee7e6f55b8
+   5fe8aa4926c2c83d53466c50d7e61f51b071708e0886e493aec496695ca47ec167c2
+   32c892c4dbfb5ab7f62208af10489f0a3311573d65bc23cb94ff627e7e5855348e47
+   6b5d6a2b7fa4daa31d77c20f7a6f44b059d3fe72dde06ec2b3e29f4973cf3101e95d
+   7c046d2984c5bde86e5ca114357ef165d2d15018d420aa35a96c109631357d5c2f61
+   997cb3004b5a0d49785c04c35f1feccfe251efff48c5dcedfaffbab72620d295c0fc
+   e75698a7d07ae46d5f4b2f44602f8cb21af77c53e07b3134ce7555cb8088050c5284
+   8913e400eb191416af4356dadc545c7e12333ebe29658ab0c3a01d890f9ff0a250bc
+   926
+   Witness = 6633fad945a9da933660070571afb1deb184bb2d24f542bdee864493dc
+   b3002705f1a4f40164cbbe8b8a33038ad8458afb6b262c0691f7442b1fb2ad253b60
+   c3
+   BatchableTag = pedersen_commitment_dleq-DSFS-with-sigma-proofs_Shake
+   128_BLS12381
+   BatchableSessionId = ce017f3f5b3462089c1b374cdd47271a0d0d3bae7381eb3
+   435830eeaf9c48879
+   BatchableProof = 93a9baa8ac481ad40ffb0c046c03cc8d05f698c9cce9f24aa00
+   4f86d8f2b1756304a4c9e213c36b95628c1e606d2f448b5f0c6903de76e160f03450
+   0b499cb05ea59240e4e616206e444b2f3842a30a78a50ee8551dda8fb532d07b3f94
+   118951e6c7803723853a5a5b655ec96bf793dbac487d93804573544d9b16a43cf9fa
+   14bc77e8961c638fa11f7eb0a9623f1e665272e2b9140a989b3638b896217e015
+   CompactTag = pedersen_commitment_dleq-CMPT-with-sigma-proofs_Shake12
+   8_BLS12381
+   CompactSessionId = 9be697e93cbf8dc535caadba2629113c6c63bb12b6f46a866
+   68e28fb2c9e09ef
+   CompactProof = 543dd59971ee254384ae6fef1d36c0dcdbfc1b3ce47ad97d33599
+   e4b6d27f17e607cf3588579214c206fbd389eab0e45fd6b72ae79100468e12ed5e7a
+   866c17701c611bb833a1518f0588deb29d04dbc3e43f2adfdaa378fda3c0489fbb1c
+   4cf
 
-A.13.  bbs_blind_commitment_computation
+   The blind commitment computation of [BBSBlind], C = blind * Q2 +
+   msg_1 * J1 + msg_2 * J2 + msg_3 * J3.
 
    Relation = bbs_blind_commitment_computation
    Ciphersuite = sigma-proofs_Shake128_BLS12381
-   SessionId = 6262735f626c696e645f636f6d6d69746d656e745f636f6d70757461
-   74696f6e
-   Statement = 01000000040000000400000000000000000000000100000001000000
-   0200000002000000030000000300000081f56ff90504e08e3af0211b8b60d8a834af
-   3bd7a63eb6d3a1e1f9744fdbf915697ecb8a6ebd7d4db0885bedc2e02c8b8cc0db26
-   1e028e0d81676c785dfd7d71976753c7ec9fb9166abfb6b262aaa36cfbde771460b7
-   0b06d2b4ab2f4faf878da207735523e9de213a4a84dde81c26e9291763c585e152b7
-   91f96f1d710dd0e981c6d7d9d96a2bc42a057bd6bbaefd71aa75899f88793c24e526
-   c90da736e3df71b358ac6d090a7fb10f421782eb062bf0400ea8ffacf3e0fff87130
-   e8e9def58494d8275db37296859ea24febe40bed9520bb30277e8356ab2fe9528708
-   3154cc5a191de3f2d4d90fe865265e782785
-   Witness = 0b77611f0ec1f6ed026d6d5cc02e1c8e0966b4fafb7796107174acb071
-   78b36e48b922ab24da7d352e8184ffce98dd1513eea0a7c175193769b0b30464ca30
-   ba3217d0a0a623bb652283dda5c6aada76d14dd2a7b1461105a6f67e31946b4bb63e
-   fe086aa913df787d02e2852da1c6eb900166c3987a32b85d46dba8a9cc09d2
-   Proof = 2b07fb2441b85dba5410c1a549ea03e3761cfff54d1e50239ff35a1e165b
-   4fa45c9ab831dde8b3ef217f629bda0acdff0c8630ca6319734101c008752a6bd17e
-   4d96e5aaba6b85696aebcc8b0d0b374d933f13e8a911a26dbb238b1b8bf66e3a23b1
-   5bbf3b08a20df3aed9c2e49529048d89d8757dc1b8d9262589302e4f0498718453a1
-   b683616c84d753b90f3f58946c40198255829672115f17b704097ae6
-   Batchable Proof = 8cdacd8de18dde04c58140d873b590b0f8aeaac32889909d15
-   5fb0723f3859742f6cb39189186de355426704d42a6c314733d3fa2d439ff72bd2cc
-   b9650efb8a62f61345f03a9ade2a8249a75fb816ec2d07797d80e4375c0ef748d22f
-   f4f130f1eb623da121fb4a549621bd61ea8c0d415b884e537733abddbc93992da4e4
-   52017e388af29cdca8850d516aba4b5de5033cd8b8dab06a6d68c30191fec014daef
-   a27a6aeecdc7024e7cedfe74ef74ff
+   Instance = 010000000100000005000000000000000000000000000000000000000
+   00000000000000000000000000000010400000000000000010000000000000000000
+   00000000000000000000000000000000000000000000000000101000000020000000
+   00000000000000000000000000000000000000000000000000000000000000102000
+   00003000000000000000000000000000000000000000000000000000000000000000
+   00000010300000004000000000000000000000000000000000000000000000000000
+   0000000000000000001a1d2f5b67fab08902ded92336405309c6b37f32b3e435ed7b
+   0213555f58fa1f55394ddf070c7b2c1ffeb9a4e72043ce3a6c3922e0802086d57687
+   391066cf25827154b05982bc17b585272d98ba7a3be222acb845fef67fc29ae0e9aa
+   e085c7ab40ee516a7d08c3a178c5ff6818c598bed05176adcd57e5ef03fca4d7f3db
+   3a457b47529cd2af4a47845b38e0de2df1db2c01bd2aa2ff4b0cbe41e8b04de59ce2
+   8d60849621b7409a19d51c7ef83ca68f1d6b1f78665c9735477bb4f354880a0a8186
+   2f2e43f3c01765ce2104b0f1f228bc890da4a3ae973d7a14a7584af797b952606259
+   1b1735f4bd01396beaad8ea
+   Witness = 28288611c102591a64e5d092e2ce83cc10f8d15f094f1342e7d74bd13b
+   85da56148a573a14e1c0c340ed3b0505ef72f3e308410156ed657b6690662bf22b73
+   c6393c117132d5a600b63968dfd4b03480b89cf5aff74ec52749a6086b50878c621e
+   6ea7c86713a9e429396b2be43a403ed1d435367f157b9c8370e9f223ba479a
+   BatchableTag = bbs_blind_commitment_computation-DSFS-with-sigma-proo
+   fs_Shake128_BLS12381
+   BatchableSessionId = 2a5805ac1b5454c5ee85c1d1dd9edcd417a992a718de963
+   f24b188c962457877
+   BatchableProof = 977956f7bad0c7473dfffc0fc9c83e6a875dc84944c8d7e6d43
+   e37111f26b4ce1e34dc254886cf4560b5ca988c8b4a1116fae4c649c9c45aa1d18b9
+   1befafa3ec3c5d33d696b08668651de18abcb0f2f146d2ddade6629b540783e11e18
+   0b8e49bacef2d6ff14d1ec1c10153b0c277321d2df04da792deb0e7be13e9c754a41
+   80b8706446d986ee791f8523a1f5125c8027de941da6d6f6f20de5ef10271cb01574
+   08dad73376457ed50efa9fb07f996
+   CompactTag = bbs_blind_commitment_computation-CMPT-with-sigma-proofs
+   _Shake128_BLS12381
+   CompactSessionId = d44869a3b7c697750425649f4ff70570a192a6afc76d86f23
+   3d1d11c6f88e996
+   CompactProof = 3b32ef1ba00ed483b5494e33305df9a260dac8ae87e95eed9de83
+   617de093b714955e5e99e066b6bc828c6ab6f282d38e3f11f5edbdf8857d6ddad0c8
+   788bfb568f2d25c344c5f27226941d199e5a25f129544cccfa5c0e751c9622752d19
+   ac93314321c51a7c2853483e7239b3e567f6785f863ef4a8bf558fbf228e2c0bd4d4
+   056b35bfa8f6868d298d50d76c640c67a59fa67c35793b4123c49fa03a88198
+
+   Correct ElGamal decryption, X = x * G and M = x * E0 - E1
+   (Section 3.4).
+
+   Relation = elgamal_decryption
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Instance = 020000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000102000000040000000
+   00000000000000000000000000000000000000000000000000000000000000103000
+   00000000000000000000000000000000000000000000000000000000000000000010
+   10000000000000002000000000000000000000000000000000000000000000000000
+   0000000000000000001a73aa2551fd1f24865adb5b9a84f63efb8d2cab44fcf21dfa
+   9e587dcabff2a0ffa36a93a82df2027ec32288160f0ebd3835f420c8a573cde22b41
+   e8b427fda9427e9ab5d6bca17cdc4d045c8dd37091aa7315f499646c01861faf1a96
+   f863776a002ade8d4092fd89a457856e9b7afd6cbe26135981799f75042353f6e9a3
+   eabf205e3788417e21d67741f16b69837c586309903b1709ca1b7aca43326415b5bf
+   7e9eb8f259c631913fc55b3a78021ccbdfde509aa8168b3d949ef129247cfd9
+   Witness = 6f92d7965b9cb245c7656316af218d42c5625f5234bbbd3eba630c9d6f
+   058a76
+   BatchableTag = elgamal_decryption-DSFS-with-sigma-proofs_Shake128_BL
+   S12381
+   BatchableSessionId = f3606306ba6a9e7497185a0dd337bee9364dd4b4cd88970
+   4fc40ce74412dffeb
+   BatchableProof = abc0eca21b6faea727caf039722661724aa0ffa84df6cff0540
+   292c4b339b2cbd8a06d8b64846bd48d9f194be457a14785c969bc6583aea3aa84fb9
+   a1be42b903a9de7be864d9f50f3ab7cf4c1fa4465ac65ee456fb7c652048ba4a0658
+   d3ef803c8f8cba745239dc02dac475278009f48a4c3b4e8c77b698d7403396b684f5
+   d
+   CompactTag = elgamal_decryption-CMPT-with-sigma-proofs_Shake128_BLS1
+   2381
+   CompactSessionId = 7e4a5e42b1686205633d27701ae29f682fb2c748e21c0a8a8
+   7d021486652c899
+   CompactProof = 69a11eea4a1ee7d995219a7b0f5df7bf18ee156b4b4e66b95147b
+   090c07cb8cb26816cc9aac1a2b14e5adbebbf973a42e2826591392787fddca9e13b8
+   443b904
+
+   The ChaumPedersen relation of Section 3.4 again, with Y = x * H
+   derived by the prover from its witness rather than received: the
+   compiled instance matches dleq, and only the tag (hence the proof
+   bytes) differs.
+
+   Relation = dleq_derived_element
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Instance = 020000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000101000000030000000
+   00000000000000000000000000000000000000000000000000000000000000101000
+   00000000000020000000000000000000000000000000000000000000000000000000
+   00000000000000199dab5463df27b0f83b0608d830294a57f53d279fd3c5b719bd25
+   ca5bb9a25a57787f6c92bb933ccaa421588ee4554ff8673f08e10bee9fe8e7eb4f6a
+   1ef0b60571e84c26710a2d4b0bacf0a49033dc814b2c0c93d1e83025f0d9fde75835
+   ac4b1aa95d5868f12734c8183e2222f3c321bd19403802e635dd2c12731e366be9e5
+   e37af51c283afb582fa8a153f494b1c
+   Witness = 48775faa1051b0df070268dee5c4163b9635ebecb049f9016f3538423a
+   7d227c
+   BatchableTag = dleq_derived_element-DSFS-with-sigma-proofs_Shake128_
+   BLS12381
+   BatchableSessionId = 54bbba96ccae65df6e806d77e8869cd48afdbc785038d6f
+   90fa905a14f7d53bf
+   BatchableProof = abc30c203650564c3318f34ca0a4140728631799358f1004bff
+   7708e2e0e1c80e5d3550cf546bd78734f35c50a0ef599b3f2f83ece52e1d93bdaff1
+   f9344b03fc5b0f324f0a397f4ba8d10d7bb954e9ae884eaa07dd11d942f925f14ebd
+   d3e291b5757ca9c1cf7f34a3fe51c5803c9996f9ae0092d24059aecaf12352268d1d
+   6
+   CompactTag = dleq_derived_element-CMPT-with-sigma-proofs_Shake128_BL
+   S12381
+   CompactSessionId = f284a4d31c70b703930a48a8f420606f8997f3b52ce41458e
+   d8c827257f01a08
+   CompactProof = 57a809847f916a14f39d848a26d1f17fb0158b2b88aaa3263d447
+   50e10a275835f9a4abeedd6c411defe5803910725b117fd1eee92ea9b38ae576fb83
+   177f457
+
+A.3.2.  Adversarial vectors
+
+   Compression bit cleared.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = 221df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1a
+   cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
+   54e8eb6105238a2b3fe8250042aec5bd1b641
+   Expected = reject
+
+   x-coordinate lifted by the field characteristic (x = 4, encoded as x
+   + p); non-canonical coordinate.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = 9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a
+   0f6b0f6241eabfffeb153ffffb9feffffffffaaaf56b5ef663f786ca2120ac6e03f4
+   54e8eb6105238a2b3fe8250042aec5bd1b641
+   Expected = reject
+
+   Canonical compressed encoding of the point at infinity; the identity
+   must be rejected in prover messages.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = c000000000000000000000000000000000000000000000000000000
+   0000000000000000000000000000000000000000056b5ef663f786ca2120ac6e03f4
+   54e8eb6105238a2b3fe8250042aec5bd1b641
+   Expected = reject
+
+   Point (x = 0) on the curve but outside the prime-order subgroup G1;
+   the subgroup check must reject.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = 8000000000000000000000000000000000000000000000000000000
+   0000000000000000000000000000000000000000056b5ef663f786ca2120ac6e03f4
+   54e8eb6105238a2b3fe8250042aec5bd1b641
+   Expected = reject
+
+   Compressed encoding of x = 1, which is not on the curve (x^3 + 4 is a
+   non-residue); decompression fails.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = 8000000000000000000000000000000000000000000000000000000
+   0000000000000000000000000000000000000000156b5ef663f786ca2120ac6e03f4
+   54e8eb6105238a2b3fe8250042aec5bd1b641
+   Expected = reject
+
+   response[0] re-encoded as s + order: same value mod p, non-canonical
+   bytes.  Reducing instead of rejecting yields malleability.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1a
+   cddda5ece0abe8338bef0293d96d924dafd80ddcbcaa396b96915e9ea45449ee848e
+   7269409cdf63ba2b25a8150042aeb5bd1b642
+   Expected = reject
+
+   challenge re-encoded as c + order (non-canonical bytes).
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = 9f1898e7e0ed7c8d60adde165af00ea993091808bff2c380a78f42b
+   b7696c7ef5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f
+   7ad94
+   Expected = reject
+
+   Valid proof with one trailing 0x00 byte appended.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1a
+   cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
+   54e8eb6105238a2b3fe8250042aec5bd1b64100
+   Expected = reject
+
+   Valid proof truncated by one byte.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1a
+   cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
+   54e8eb6105238a2b3fe8250042aec5bd1b6
+   Expected = reject
+
+   Valid proof with one trailing 0x00 byte appended.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = 2b2af194b74fff452d74060e514e36a43f4b7405bff46781a78f42b
+   c7696c7ee5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f
+   7ad9400
+   Expected = reject
+
+   Valid proof truncated by one byte.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = 2b2af194b74fff452d74060e514e36a43f4b7405bff46781a78f42b
+   c7696c7ee5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f
+   7ad
+   Expected = reject
+
+   All-zero compact proof: challenge = 0 and all-zero response.  The
+   simulated commitment is the identity; the verifier must reject before
+   re-serialising.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = 0000000000000000000000000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000000000000000000000
+   00000
+   Expected = reject
+
+   Scalar index 1 appears in no equation (check 6); the proof satisfies
+   the verification equations, so rejection must come from instance
+   validation.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = instance_unconstrained_scalar-DSFS-with-sigma-proofs_Shake128_
+   BLS12381
+   Instance = 010000000100000002000000000000000000000000000000000000000
+   00000000000000000000000000000010200000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000102000000010000000
+   000000000000000000000000000000000000000000000000000000000000001a52f6
+   3244810b5e28b235f33df487fce15bc509eac539e19275e1a0c1ae36de179fa41229
+   2007a1d6df975de5b8ca0a6a62b428f90a014557c5744b69c6303d0db7a9c876dd15
+   743738b432a9dd1cfad79790d101eedee3bb441bccd262db1c0
+   NargString = 8a31aa9ace6268707d6a0213fdf4bd9a4231fc4fec35338998a38b5
+   334723d84f3c46d55c6ff9104aba7bde3e38b46cd3b5d6d79ba363cb1f75f304c0af
+   27b3c717d6c2048126fb60147c58ce188a5bc0c18c708366e5b159dc527ef76ac46f
+   5fb5f58bd1acdc8a9e425c7f99d7f4b4a45a360ed659e5b5db089c8f07cf725b14d7
+   aaf71cb6a55bc1e41ac4fb4ab03b2
+   Expected = reject
+
+   Same instance and a second proof with the unconstrained response
+   scalar changed; both verify, so accepting either is a malleability
+   demonstration.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = instance_unconstrained_scalar-DSFS-with-sigma-proofs_Shake128_
+   BLS12381
+   Instance = 010000000100000002000000000000000000000000000000000000000
+   00000000000000000000000000000010200000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000102000000010000000
+   000000000000000000000000000000000000000000000000000000000000001a52f6
+   3244810b5e28b235f33df487fce15bc509eac539e19275e1a0c1ae36de179fa41229
+   2007a1d6df975de5b8ca0a6a62b428f90a014557c5744b69c6303d0db7a9c876dd15
+   743738b432a9dd1cfad79790d101eedee3bb441bccd262db1c0
+   NargString = 8a31aa9ace6268707d6a0213fdf4bd9a4231fc4fec35338998a38b5
+   334723d84f3c46d55c6ff9104aba7bde3e38b46cd3b5d6d79ba363cb1f75f304c0af
+   27b3c717d6c2048126fb60147c58ce188a5bc0c18c708366e5b159dc527ef76ac46f
+   5fb5f58bd1acdc8a9e425c7f99d7f4b4b45a360ed659e5b5db089c8f07cf725b14d7
+   aaf71cb6a55bc1e41ac4fb4ab03b2
+   Expected = reject
+
+   The image terms X + (-X) sum to the identity (check 9): the equation
+   is trivially satisfied by the all-zero witness.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = instance_trivial_equation-DSFS-with-sigma-proofs_Shake128_BLS1
+   2381
+   Instance = 010000000200000001000000000000000000000000000000000000000
+   00000000000000000000000000000010200000000000000000000000000000000000
+   00000000000000000000000000000000001010000000000000000000000000000000
+   0000000000000000000000000000000000000000000000000000001b8d20484960f1
+   741eabb4d0dd0c43e72931d646c09440bf1880a1720daaa3308e763466177aa88c31
+   3f8a9ad1e406c0e98d20484960f1741eabb4d0dd0c43e72931d646c09440bf1880a1
+   720daaa3308e763466177aa88c313f8a9ad1e406c0e
+   NargString = 8bf4a4e7cca2a2f88859d0b012289500a49db0b5e4e5df3d7782484
+   35ed8b51d0fb3ca489c9f45e8811bb4cc8d0096f96ad6f36b97912382f39758d4e9f
+   591a8c1d24c1f3d42a2535161c7b7a9c556a3
+   Expected = reject
+
+   Statement element at index 1 is the identity (the canonical
+   compressed encoding of infinity); an implementation parsing
+   statements from bytes may instead reject at group deserialization.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = instance_identity_element-DSFS-with-sigma-proofs_Shake128_BLS1
+   2381
+   Instance = 010000000100000002000000000000000000000000000000000000000
+   00000000000000000000000000000010200000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000101000000010000000
+   000000000000000000000000000000000000000000000000000000000000001c0000
+   00000000000000000000000000000000000000000000000000000000000000000000
+   00000000000000000000000b8722b4b2a3cc66976d848739df2bfb66ae371da496a1
+   e239add4646c35c8b8758409ad4b6312b74d4a98bb83284cb87
+   NargString = adc1c8943d8bfa5ab165ff1ed2c0f45f71567a404849da3e0b9fbd3
+   7266681c1089d6d9b33116aebdab2972d0cb6db1343a4376149f6584e69ef48dac31
+   4f448ec00ac5b96fa50ce5a369327bb6649775a460213642cf7055af8c4bb0bcbc6b
+   6122f563a9163c3d3f74876f8b25b0298
+   Expected = reject
+
+   Header wires element index 2 into a term but supplies a single
+   element (len(elements) would be 3): the index-bound check of
+   ValidateInstance; parsers may see it as a length mismatch.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = instance_index_out_of_bounds-DSFS-with-sigma-proofs_Shake128_B
+   LS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000020000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1a
+   cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
+   54e8eb6105238a2b3fe8250042aec5bd1b641
+   Expected = reject
+
+   Accepts under the tag it was produced for.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1a
+   cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
+   54e8eb6105238a2b3fe8250042aec5bd1b641
+   Expected = accept
+
+   Same statement and proof under a different (well-formed) tag: session
+   binding.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = discrete_logarithm/wrong-session-DSFS-with-sigma-proofs_Shake1
+   28_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1a
+   cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
+   54e8eb6105238a2b3fe8250042aec5bd1b641
+   Expected = reject
+
+   Accepts under the tag it was produced for.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = 2b2af194b74fff452d74060e514e36a43f4b7405bff46781a78f42b
+   c7696c7ee5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f
+   7ad94
+   Expected = accept
+
+   Same statement and proof under a different (well-formed) tag: session
+   binding.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = compact
+   Tag = discrete_logarithm/wrong-session-CMPT-with-sigma-proofs_Shake1
+   28_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = 2b2af194b74fff452d74060e514e36a43f4b7405bff46781a78f42b
+   c7696c7ee5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f
+   7ad94
+   Expected = reject
+
+   dleq proof under the declared equation ordering: accepts.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = dleq-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 020000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000101000000030000000
+   00000000000000000000000000000000000000000000000000000000000000101000
+   00000000000020000000000000000000000000000000000000000000000000000000
+   000000000000001b8a52d4f929a5fc9a27b16941d102b632bac0b0661265ed04ec9e
+   59d35480f93d4ebefc5af6a06090964444a5ed9abfdac2a3348158e801ab8f314905
+   43b66ddf04a103dd0bc7f41194f72b575b62d08900aaf6e7ba8f3672c1b7064b19ec
+   f968f3af22d60210b724fc400f8b8e8547a3f82ba017d24199087b0bd1941c21f4c6
+   afa8e1d636914790ee4b80e44908926
+   NargString = b13432cd2a44f3287e1ee64986f77cfd30bc6e27cb5bb245e5e0d5c
+   d74d7ea59d64b17f3e612b0a5790bad93d77ea46291f38f62b25f78dae7420076560
+   4f560b5b0459b45404eb953e498497a94757841739571c4fa83ba5b27fb2cd9c01c2
+   053843da83608b616cb57c042f0d21160317095e5ab1706e02299dfd47f67b453
+   Expected = accept
+
+   Same relation with its two equations swapped (a valid instance):
+   serialization is ordering-sensitive, so the challenge differs and the
+   proof fails.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = dleq-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 020000000100000003000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000020000000000000000000
+   00000000000000000000000000000000000000000000000000101000000010000000
+   00000000000000000000000000000000000000000000000000000000000000101000
+   00000000000000000000000000000000000000000000000000000000000000000000
+   000000000000001b8a52d4f929a5fc9a27b16941d102b632bac0b0661265ed04ec9e
+   59d35480f93d4ebefc5af6a06090964444a5ed9abfdac2a3348158e801ab8f314905
+   43b66ddf04a103dd0bc7f41194f72b575b62d08900aaf6e7ba8f3672c1b7064b19ec
+   f968f3af22d60210b724fc400f8b8e8547a3f82ba017d24199087b0bd1941c21f4c6
+   afa8e1d636914790ee4b80e44908926
+   NargString = b13432cd2a44f3287e1ee64986f77cfd30bc6e27cb5bb245e5e0d5c
+   d74d7ea59d64b17f3e612b0a5790bad93d77ea46291f38f62b25f78dae7420076560
+   4f560b5b0459b45404eb953e498497a94757841739571c4fa83ba5b27fb2cd9c01c2
+   053843da83608b616cb57c042f0d21160317095e5ab1706e02299dfd47f67b453
+   Expected = reject
+
+   dleq proof under the declared equation ordering: accepts.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = compact
+   Tag = dleq-CMPT-with-sigma-proofs_Shake128_BLS12381
+   Instance = 020000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   00000000000000000000000000000000000000000000000000101000000030000000
+   00000000000000000000000000000000000000000000000000000000000000101000
+   00000000000020000000000000000000000000000000000000000000000000000000
+   000000000000001b8a52d4f929a5fc9a27b16941d102b632bac0b0661265ed04ec9e
+   59d35480f93d4ebefc5af6a06090964444a5ed9abfdac2a3348158e801ab8f314905
+   43b66ddf04a103dd0bc7f41194f72b575b62d08900aaf6e7ba8f3672c1b7064b19ec
+   f968f3af22d60210b724fc400f8b8e8547a3f82ba017d24199087b0bd1941c21f4c6
+   afa8e1d636914790ee4b80e44908926
+   NargString = 6756a6afe70dc8b509ece61173992cd9970d6219332d289fecf58e2
+   40f1497ca1712fb2963a360c4bc783fa9764bb115b7162e014c5f6c8859fbcd71fbc
+   58844
+   Expected = accept
+
+   Same relation with its two equations swapped (a valid instance):
+   serialization is ordering-sensitive, so the challenge differs and the
+   proof fails.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = compact
+   Tag = dleq-CMPT-with-sigma-proofs_Shake128_BLS12381
+   Instance = 020000000100000003000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000020000000000000000000
+   00000000000000000000000000000000000000000000000000101000000010000000
+   00000000000000000000000000000000000000000000000000000000000000101000
+   00000000000000000000000000000000000000000000000000000000000000000000
+   000000000000001b8a52d4f929a5fc9a27b16941d102b632bac0b0661265ed04ec9e
+   59d35480f93d4ebefc5af6a06090964444a5ed9abfdac2a3348158e801ab8f314905
+   43b66ddf04a103dd0bc7f41194f72b575b62d08900aaf6e7ba8f3672c1b7064b19ec
+   f968f3af22d60210b724fc400f8b8e8547a3f82ba017d24199087b0bd1941c21f4c6
+   afa8e1d636914790ee4b80e44908926
+   NargString = 6756a6afe70dc8b509ece61173992cd9970d6219332d289fecf58e2
+   40f1497ca1712fb2963a360c4bc783fa9764bb115b7162e014c5f6c8859fbcd71fbc
+   58844
+   Expected = reject
+
+   A valid discrete_logarithm proof verified against a statement whose
+   element X is replaced by 999 * G (a valid instance): the instance
+   serialization enters the challenge derivation, so the challenge
+   differs.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001b94ba65546846b439
+   edbfc9da84c1c2d2af3d0ede8c88ec50fce2e1c3f782e932205982683f0802a4dce3
+   13610bbb2db
+   NargString = a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1a
+   cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
+   54e8eb6105238a2b3fe8250042aec5bd1b641
+   Expected = reject
+
+   A valid discrete_logarithm proof verified against a statement whose
+   element X is replaced by 999 * G (a valid instance): the instance
+   serialization enters the challenge derivation, so the challenge
+   differs.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001b94ba65546846b439
+   edbfc9da84c1c2d2af3d0ede8c88ec50fce2e1c3f782e932205982683f0802a4dce3
+   13610bbb2db
+   NargString = 2b2af194b74fff452d74060e514e36a43f4b7405bff46781a78f42b
+   c7696c7ee5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f
+   7ad94
+   Expected = reject
+
+   The batchable proof's transcript re-encoded as a compact NARG string:
+   the flavor markers make the tags differ, so the challenge recomputed
+   under the compact tag does not match.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = 0bfd67330803e2f88ba4d8f54723e95c53a032c2aa976b0f7e54099
+   ec42d461c56b5ef663f786ca2120ac6e03f454e8eb6105238a2b3fe8250042aec5bd
+   1b641
+   Expected = reject
+
+   The compact proof's transcript re-encoded as a batchable NARG string:
+   the challenge derived under the batchable tag differs, so the
+   verification equation fails.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = b87d072b8238866651b08da8276e9ea30125617a5ac1b7fcb6934f4
+   3bdfed5134624ffe8040caccc46560bd101c648885bc2ffa13e32b693d76be6e548a
+   3d6c39929b9d21f10e5ba1df2b44071f7ad94
+   Expected = reject
+
+   response[0] replaced by s + 1 (still canonical); the verification
+   equation fails.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1a
+   cddda5ece0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f4
+   54e8eb6105238a2b3fe8250042aec5bd1b642
+   Expected = reject
+
+   commitment[0] replaced by a different valid group element; the
+   recomputed challenge differs.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = batchable
+   Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = 97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3
+   f171bac586c55e83ff97a1aeffb3af00adb22c6bb56b5ef663f786ca2120ac6e03f4
+   54e8eb6105238a2b3fe8250042aec5bd1b641
+   Expected = reject
+
+   challenge replaced by a different canonical scalar; the challenge
+   comparison fails.
+
+   Ciphersuite = sigma-proofs_Shake128_BLS12381
+   Flavor = compact
+   Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
+   Instance = 010000000100000001000000000000000000000000000000000000000
+   00000000000000000000000000000010100000000000000000000000000000000000
+   000000000000000000000000000000000000000000000000001ac2de2d5ca1310a43
+   b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bfa648c
+   1c4e8b4b444
+   NargString = 2b2af194b74fff452d74060e514e36a43f4b7405bff46781a78f42b
+   c7696c7ef5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f
+   7ad94
+   Expected = reject
 
 Authors' Addresses
 
