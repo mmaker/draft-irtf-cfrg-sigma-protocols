@@ -746,8 +746,7 @@ Implementations that expose the zero-knowledge simulator ({{core-interface}}) pr
 
 `SimulateResponse(instance, rng)` returns as simulated response a vector of `num_scalars(instance)` uniformly random scalars, and as simulator state the instance itself.
 
-- `SimulateResponse(instance, rng)` returns as simulated response a vector of `num_scalars(instance)` uniformly random scalars, and as simulator state the instance itself.
-- `SimulateCommitment(state, response, challenge)` solves the verification equation ({{verifier}}) for the commitment, returning the vector of `num_equations(state)` group elements
+`SimulateCommitment(state, response, challenge)` solves the verification equation ({{verifier}}) for the commitment, returning the vector of `num_equations(state)` group elements
 
 ~~~
 simulated_commitment[i] = map(state, response)[i]
@@ -1099,26 +1098,58 @@ The authors thank Giap Vu and David Wong (zkSecurity) for their help and contrib
 
 # Test Vectors
 
-## Seeded PRNG
+This appendix contains test vectors for the non-interactive Sigma Protocols specified in this document, one section per ciphersuite ({{tv-p256}}, {{tv-bls12381}}). Each ciphersuite section has two subsections: valid proofs, and adversarial vectors. Each adversarial vector carries an `Expected` verdict: most are invalid proofs that a conformant verifier **MUST** reject, and the few entries with `Expected = accept` are the valid baselines of accept/reject pairs — the paired reject entry re-verifies the same transcript under a different tag, statement, or encoding, and a conformant verifier **MUST** produce both verdicts. The prose accompanying each reject vector states which check fails; where the rejection step depends on the implementation's check order, any of the stated rejection points is conformant. {{seeded-prng}} pins the randomness used, so that the vectors are reproducible from this document alone. Batch verification ({{batch-verification}}) can be tested on any subset of these vectors: a batch of valid batchable proofs **MUST** verify, and a batch containing any invalid batchable proof **MUST** be rejected. The `Witness` field, which never appears on the wire, is encoded as the concatenation of `Scalar.serialize` of the witness scalars, in the order given by each relation.
 
-The random number generator used for test vectors is implemented using the SHAKE128 duplex sponge {{fiat-shamir}} with session identifier `__sigma-proofs/TestDRNG/SHAKE128`. For these vectors, `Group.random_scalar(rng)` squeezes bytes from the sponge and reduces them to a scalar via `DecodeField` of {{fiat-shamir}}.
+## Seeded PRNG {#seeded-prng}
 
-The following sections contain test vectors for the Sigma Protocols specified in this document.
+The randomness for these vectors is drawn from a seeded PRNG, instantiated via a duplex sponge {{fiat-shamir}} initialized with the session identifier `DeriveSessionID(prng_tag)`.
 
-Test vectors are grouped by ciphersuite. Each vector includes a `Relation`
-field naming the relation being proved and a `Ciphersuite` field identifying
-the non-interactive instantiation used to generate the NARG strings.
+The US-ASCII tag:
 
-## sigma-proofs(P-256, SHAKE128)
+~~~
+TestDRNG-SIGMA-PROOFS-{Ciphersuite}-{Relation}
+~~~
 
-This section contains vectors for the ciphersuite identified as
-`sigma-proofs_Shake128_P256`.
+Yields the scalars that build the instance and witness, in the order given by each relation.
+
+The tag:
+
+~~~
+TestDRNG-SIGMA-PROOFS-DSFS-{Ciphersuite}-{Relation}
+~~~
+
+Provides the randomness for the prover in the batchable NARG string. That is, it is used to sample `num_scalars(instance)` commitment nonces of the batchable proof.
+
+Finally, the tag:
+
+~~~
+TestDRNG-SIGMA-PROOFS-CMPT-{Ciphersuite}-{Relation}
+~~~
+
+Provides the randomness for the prover in the compact NARG strings.
+
+Applications **MUST NOT** use this deterministic pseudorandom generator. The prover's randomness **MUST** be seeded from operating-system entropy ({{scalar}}).
+
+## sigma-proofs_Shake128_P256 {#tv-p256}
+
+This section contains vectors for the ciphersuite identified as `sigma-proofs_Shake128_P256`.
+
+### Valid proofs {#tv-p256-valid}
 
 {::include ./poc/vectors/sigma-proofs_Shake128_P256.txt}
 
-## sigma-proofs(BLS12-381, SHAKE128)
+### Adversarial vectors {#tv-p256-invalid}
 
-This section contains vectors for the ciphersuite identified as
-`sigma-proofs_Shake128_BLS12381`.
+{::include ./poc/vectors/sigma-proofs-invalid_Shake128_P256.txt}
+
+## sigma-proofs_Shake128_BLS12381 {#tv-bls12381}
+
+This section contains vectors for the ciphersuite identified as `sigma-proofs_Shake128_BLS12381`.
+
+### Valid proofs {#tv-bls12381-valid}
 
 {::include ./poc/vectors/sigma-proofs_Shake128_BLS12381.txt}
+
+### Adversarial vectors {#tv-bls12381-invalid}
+
+{::include ./poc/vectors/sigma-proofs-invalid_Shake128_BLS12381.txt}
