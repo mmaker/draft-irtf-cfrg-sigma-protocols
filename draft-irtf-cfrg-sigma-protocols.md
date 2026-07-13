@@ -573,12 +573,12 @@ For an instance to be valid, it **MUST** satisfy all below conditions:
 
 1. The instance has at least one equation: `num_equations(instance) > 0`.
 2. Every equation in `instance.equations` has a non-empty `terms` list and a non-empty `image` list.
-3. Every `scalar_index` and every `element_index` is less than `2^32`; so are `num_equations(instance)`, and each equation's term count and image-term count.
+3. Every `scalar_index` and every `element_index` is a non-negative integer less than `2^32`; so are `num_equations(instance)`, and each equation's term count and image-term count.
 4. Every element index is less than `num_elements(instance)`. In other words, every index references a group element.
 5. Every element index other than `0` appears in the terms or image terms of at least one equation; the generator (index `0`) is present in every instance whether or not an equation uses it ({{representation}}).
 Together with check 4, this ensures `num_elements(instance)-1` is the largest referenced element index.
 6. Every scalar index appears in the terms of at least one equation.
-7. `instance.elements[0]` is the group generator `Group.generator()` ({{representation}}).
+7. `num_elements(instance) > 0`, and `instance.elements[0]` is the group generator `Group.generator()` ({{representation}}).
 8. No element of `instance.elements` is the identity element.
 9. No element of `image(instance)` is the identity element: an equation whose image evaluates to the identity is satisfied by the all-zero witness, so a proof of it attests nothing.
 10. No column of the matrix `M` is the identity. That is, for every scalar index, there is at least one equation for which the sum of `coeff * elements[element_index]` over the terms carrying that scalar index is not the identity.
