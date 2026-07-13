@@ -1,4 +1,4 @@
-SEC1 uncompressed prefix 0x04.
+Deserialization fails on the SEC1 uncompressed prefix 0x04.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -14,7 +14,7 @@ NargString = 047e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 ~~~
 
-SEC1 hybrid prefix 0x06.
+Deserialization fails on the SEC1 hybrid prefix 0x06.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -30,7 +30,7 @@ NargString = 067e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 ~~~
 
-SEC1 hybrid prefix 0x07.
+Deserialization fails on the SEC1 hybrid prefix 0x07.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -46,8 +46,9 @@ NargString = 077e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 ~~~
 
-x-coordinate lifted by the field characteristic (x = 5, encoded as x +
-p); non-canonical coordinate.
+Deserialization fails if the x-coordinate is lifted by the field
+characteristic (x = 5, encoded as x + p): the coordinate is
+non-canonical.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -63,8 +64,7 @@ NargString = 02ffffffff000000010000000000000000000000010000000000000
 Expected = reject
 ~~~
 
-Identity stand-in: 0x00 padded to Ne bytes (the P-256 compressed
-encoding has no identity form).
+Deserialization fails on 0x00 padded to Ne bytes.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -80,7 +80,7 @@ NargString = 0000000000000000000000000000000000000000000000000000000
 Expected = reject
 ~~~
 
-x = 1 has no square root for y; decompression fails.
+Deserialization fails on x = 1, which has no square root for y.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -96,8 +96,7 @@ NargString = 0200000000000000000000000000000000000000000000000000000
 Expected = reject
 ~~~
 
-`response[0]` set to order + 1 (non-canonical); the s + order mutation
-does not fit in Ns bytes for this suite, so this only tests rejection.
+Deserialization fails if `response[0]` is set to order + 1.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -113,7 +112,7 @@ c632552
 Expected = reject
 ~~~
 
-`challenge` set to order + 1 (non-canonical).
+Deserialization fails if `challenge` is set to order + 1.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -129,7 +128,8 @@ b1c28
 Expected = reject
 ~~~
 
-Valid proof with one trailing 0x00 byte appended.
+Verification fails if one trailing 0x00 byte is appended to a valid
+proof.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -145,7 +145,7 @@ NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 ~~~
 
-Valid proof truncated by one byte.
+Verification fails if a valid proof is truncated by one byte.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -161,7 +161,8 @@ NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 ~~~
 
-Valid proof with one trailing 0x00 byte appended.
+Verification fails if one trailing 0x00 byte is appended to a valid
+proof.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -177,7 +178,7 @@ b1c2800
 Expected = reject
 ~~~
 
-Valid proof truncated by one byte.
+Verification fails if a valid proof is truncated by one byte.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -193,9 +194,8 @@ b1c
 Expected = reject
 ~~~
 
-All-zero compact proof: challenge = 0 and all-zero response. The
-simulated commitment is the identity; the verifier must reject before
-re-serialising.
+Verification fails on the all-zero compact proof: challenge and response
+are zero.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -211,8 +211,9 @@ NargString = 0000000000000000000000000000000000000000000000000000000
 Expected = reject
 ~~~
 
-Scalar index 1 appears in no equation (check 6); the proof satisfies the
-verification equations, so rejection must come from instance validation.
+Instance validation fails if scalar index 1 appears in no equation
+(check 6); the proof satisfies the verification equations, so rejection
+must come from instance validation.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -232,9 +233,8 @@ NargString = 033d85fedbddfd463f0392eeea57107720404fbce572e420fe54fba
 Expected = reject
 ~~~
 
-Same instance and a second proof with the unconstrained response scalar
-changed; both verify, so accepting either is a malleability
-demonstration.
+Instance validation fails on the same instance, here with the
+unconstrained `response[1]` perturbed.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -254,8 +254,8 @@ NargString = 033d85fedbddfd463f0392eeea57107720404fbce572e420fe54fba
 Expected = reject
 ~~~
 
-The image terms X + (-X) sum to the identity (check 9): the equation is
-trivially satisfied by the all-zero witness.
+Instance validation fails if the image terms X + (-X) sum to the
+identity (check 9).
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -273,9 +273,9 @@ NargString = 022fb88456a6a7f8d974b129ec99f3745ffd9e3dcbae9771815571d
 Expected = reject
 ~~~
 
-Statement element at index 1 is the identity (stand-in bytes (P-256 has
-no identity encoding)); an implementation parsing statements from bytes
-may instead reject at group deserialization.
+Instance validation fails if a statement element is the identity (check
+8), here at index 1, encoded as stand-in bytes (P-256 has no identity
+encoding).
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -294,9 +294,7 @@ NargString = 02b9d1353c5f3bf39418f2ea4bb8f8ba63cef1e8cc7eb14f51242c3
 Expected = reject
 ~~~
 
-Header wires element index 2 into a term but supplies a single element
-(len(elements) would be 3): the index-bound check of ValidateInstance;
-parsers may see it as a length mismatch.
+Instance validation fails on a scalar index out of bounds.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -313,7 +311,7 @@ NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 ~~~
 
-Accepts under the tag it was produced for.
+A valid NARG string verifies under the tag it was produced for.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -329,8 +327,7 @@ NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = accept
 ~~~
 
-Same statement and proof under a different (well-formed) tag: session
-binding.
+Verification fails under a different tag.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -347,7 +344,7 @@ NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 ~~~
 
-Accepts under the tag it was produced for.
+A valid NARG string verifies under the tag it was produced for.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -363,8 +360,7 @@ b1c28
 Expected = accept
 ~~~
 
-Same statement and proof under a different (well-formed) tag: session
-binding.
+Verification fails under a different tag.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -381,7 +377,7 @@ b1c28
 Expected = reject
 ~~~
 
-dleq proof under the declared equation ordering: accepts.
+A valid NARG string verifies against the statement it was produced for.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -403,9 +399,7 @@ NargString = 0203ed31e0d73b821eba236b903f83ddd6e60e59a77249462be32fc
 Expected = accept
 ~~~
 
-Same relation with its two equations swapped (a valid instance):
-serialization is ordering-sensitive, so the challenge differs and the
-proof fails.
+Verification fails if the statement's two equations are swapped.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -427,7 +421,7 @@ NargString = 0203ed31e0d73b821eba236b903f83ddd6e60e59a77249462be32fc
 Expected = reject
 ~~~
 
-dleq proof under the declared equation ordering: accepts.
+A valid NARG string verifies against the statement it was produced for.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -448,9 +442,7 @@ NargString = 5351e8969b72d4bdc0f2688ff68c69bb36154dc9074e534d954c889
 Expected = accept
 ~~~
 
-Same relation with its two equations swapped (a valid instance):
-serialization is ordering-sensitive, so the challenge differs and the
-proof fails.
+Verification fails if the statement's two equations are swapped.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -471,9 +463,7 @@ NargString = 5351e8969b72d4bdc0f2688ff68c69bb36154dc9074e534d954c889
 Expected = reject
 ~~~
 
-A valid discrete_logarithm proof verified against a statement whose
-element X is replaced by 999 * G (a valid instance): the instance
-serialization enters the challenge derivation, so the challenge differs.
+Verification fails if a statement element is changed after proving.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -489,9 +479,7 @@ NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 ~~~
 
-A valid discrete_logarithm proof verified against a statement whose
-element X is replaced by 999 * G (a valid instance): the instance
-serialization enters the challenge derivation, so the challenge differs.
+Verification fails if a statement element is changed after proving.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -507,9 +495,8 @@ b1c28
 Expected = reject
 ~~~
 
-The batchable proof's transcript re-encoded as a compact NARG string:
-the flavor markers make the tags differ, so the challenge recomputed
-under the compact tag does not match.
+Verification fails if the batchable proof's transcript is re-encoded as
+a compact NARG string.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -525,9 +512,9 @@ NargString = e44d6cb80e7b099d06525dbb3567fc05ebfc9b7d3da0624e5cf6431
 Expected = reject
 ~~~
 
-The compact proof's transcript re-encoded as a batchable NARG string:
-the challenge derived under the batchable tag differs, so the
-verification equation fails.
+Verification fails if the compact proof's transcript is re-encoded as a
+batchable NARG string: the challenge derived under the batchable tag
+differs.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -543,8 +530,7 @@ NargString = 0221f8d84da0727022bf043b23de7c67590535109a3a6c24f4fba9c
 Expected = reject
 ~~~
 
-`response[0]` replaced by s + 1 (still canonical); the verification
-equation fails.
+Verification fails if `response[0]` is increased by 1.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -560,8 +546,8 @@ NargString = 037e00143a98c515388e00397c050c46729f010e30752f00172c2e9
 Expected = reject
 ~~~
 
-`commitment[0]` replaced by a different valid group element; the
-recomputed challenge differs.
+Verification fails if `commitment[0]` is replaced by a different valid
+group element.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
@@ -577,8 +563,7 @@ NargString = 036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13
 Expected = reject
 ~~~
 
-challenge replaced by a different canonical scalar; the challenge
-comparison fails.
+Verification fails if `challenge` is replaced by a different scalar.
 
 ~~~
 Ciphersuite = sigma-proofs_Shake128_P256
