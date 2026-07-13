@@ -356,7 +356,7 @@ Elliptic curves are presented using additive notation.
 
 Group elements are upper-case (`G`, `X`, `M`) and scalars lower-case (`x`, `s`). The name `G` denotes the group generator `Group.generator()` ({{group}}). Pseudocode and interface names are descriptive (e.g. `commitment`, `image`, `witness`) and do not follow this rule.
 
-### Group {#group}
+### Group elements {#group}
 
 `identity()` is the neutral element, `generator()` returns the canonical generator of the prime-order subgroup ({{ciphersuites}}), and `order()` returns its order `p`. Addition, negation, equality, and scalar multiplication by a `Scalar` are written `+`, `-`, `==`, and `*`.
 
@@ -364,7 +364,7 @@ Group elements are upper-case (`G`, `X`, `M`) and scalars lower-case (`x`, `s`).
 
 Both `serialize` and `deserialize` are defined only on non-neutral elements. Serialization **MUST** fail on the identity element, and deserialization **MUST** fail for invalid encodings, including on the encoding of the identity. An honest prover statistically hits this event only with negligible probability. See {{Section 10.1 of RFC9380}}, Appendix C of {{PAIRING}}, {{Section 2.1 of ?RFC9497}}, {{ARC}}.
 
-### Scalar {#scalar}
+### Scalars {#scalar}
 
 A `Scalar` is an element of the group's *scalar field*, the prime field of integers modulo the group order `p`. Addition and multiplication are written `+` and `*` via operator overloading.
 
@@ -744,7 +744,7 @@ The verifier **MUST** enforce instance validity (Step 1, see {{instance-validati
 
 Implementations that expose the zero-knowledge simulator ({{core-interface}}) provide the two algorithms below; they are also what the compact verifier ({{non-interactive}}) relies on to recover the prover's commitment from `(challenge, response)`.
 
-For the linear-map Sigma Protocol:
+`SimulateResponse(instance, rng)` returns as simulated response a vector of `num_scalars(instance)` uniformly random scalars, and as simulator state the instance itself.
 
 - `SimulateResponse(instance, rng)` returns as simulated response a vector of `num_scalars(instance)` uniformly random scalars, and as simulator state the instance itself.
 - `SimulateCommitment(state, response, challenge)` solves the verification equation ({{verifier}}) for the commitment, returning the vector of `num_equations(state)` group elements
