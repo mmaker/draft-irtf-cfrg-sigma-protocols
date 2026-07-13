@@ -72,11 +72,13 @@ Note that non-interactive Sigma Protocols do not have deniability, as the non-in
 
 ## Correlation-Intractability and Computational Depth
 
-When the Fiat-Shamir transformation is applied to interactive proofs, a potential concern is the correlation intractability of the hash function, particularly in relation to self-referential attacks. If the verification logic of the relation itself evaluates or simulates the transcript generator internally (such as in recursive proofs or proofs of computation), a malicious prover might exploit relation-dependent inputs where the computational depth of the relation and the computational depth of the transcript generator interact.
+The security of the Fiat-Shamir transformation relies on the hash function satisfying a property known as *correlation intractability*. Intuitively, this property ensures that a malicious prover cannot find a prefix of a proof transcript (such as initial commitments) that maps to a verifier challenge allowing the prover to produce a convincing, yet invalid, suffix (such as the final response).
 
-To mitigate this attack heuristically, implementations SHOULD ensure that the computational depth (or sequential complexity) of the transcript computation is strictly greater than the depth/complexity of evaluating the relation.
+Attacks on the Fiat-Shamir transformation typically exploit relations where this correlation intractability can be violated. In particular, if the verification logic of the relation being proven evaluates or simulates the transcript generator internally (such as in recursive proofs or proofs of computation), a malicious prover might construct relation-dependent inputs where the computational steps of the relation check and the transcript generation interact self-referentially.
 
-Specifically, when applying this transformation where correlation intractability is a concern, implementations SHOULD append a padding string of zero-bytes proportional to the relation's representation size or complexity (e.g., $0^{|C|}$ where $|C|$ represents the number of constraints, gates, or steps in the verification logic) to the transcript immediately after the statement encoding. This ensures that the transcript's computational depth exceeds that of the relation's verification logic, rendering self-referential evaluations infeasible.
+To heuristically mitigate such self-referential attacks, implementations SHOULD ensure that the computational depth (or sequential complexity) of the transcript generation is strictly greater than the computational depth of evaluating the relation itself.
+
+Specifically, implementations can achieve this by appending a padding string of zero-bytes proportional to the relation's representation size or complexity (e.g., zero-bytes equal in length to the number of constraints, gates, or steps in the verification logic) to the transcript immediately after the statement encoding. This ensures that the transcript's computational depth exceeds that of the relation's verification logic, rendering self-referential evaluations infeasible within the bounds of the relation's check.
 
 # The Transcript Interface
 
@@ -110,7 +112,7 @@ Where:
 - `prover_message(self, state, elements)` denotes the absorb operation of the codec. This function takes as input the transcript, and elements with which to mutate the transcript.
 - `verifier_challenge(self, state) -> verifier_challenge` denotes the squeeze operation of the codec. This function takes as input the transcript to produce an unpredictable verifier challenge `verifier_challenge`.
 
-The `verifier_challenge` function must generate a challenge that is statistically close to uniform over the target challenge domain (such as a scalar field, a binary extension field, a bounded range of natural numbers, or a subset combination), using deterministic decoding or sampling algorithms as described in {{Codecs registry}}.
+The `verifier_challenge` function must generate a challenge that is statistically close to uniform over the target challenge domain (such as a scalar field, a binary extension field, a bounded range of natural numbers, or a subset combination), using deterministic decoding or sampling algorithms as described in {{codecs-registry}}.
 
 # Initialization of the Transcript State
 
@@ -123,7 +125,6 @@ For standard Sigma and Schnorr protocols, the transcript state is initialized by
 - A `protocol_id`: the unique identifier for the interactive protocol and the associated relation being proven. This identifier MUST be 64 bytes.
 - A `session_id`: the session identifier, for user-provided contextual information about the context where the proof is made (e.g. a URL, or a timestamp). This identifier is currently generated as 32 zero-bytes concatenated with a 32-byte digest derived using the transcript.
 - An `instance_label`: the instance identifier for the statement being proven.
-- A `circuit_depth_padding`: an optional padding string of zero-bytes proportional to the ZK circuit size (e.g., $0^{|C|}$) immediately after the statement encoding, if correlation intractability is a concern.
 
 The `session_id` is computed as:
 
@@ -138,10 +139,10 @@ Therefore, the encoding used to produce `instance_label` MUST be prefix-free.
 
 For more general interactive oracle proofs or circuit-based ZK arguments (where statements are defined by ZK relations or circuits), the transcript state is initialized by sequentially absorbing:
 
-1. A domain separator or `protocol_id` (typically used as the initialization vector `iv` to `Transcript.init`).
-2. A `session_id`.
-3. A circuit identifier (e.g., a hash or unique name representing the ZK relation/circuit being evaluated) and the statement's input/output (I/O) variables.
-4. Any optional padding (such as `circuit_depth_padding`) immediately following the statement encoding, if correlation intractability is a concern.
+- A `protocol_id`: the unique identifier for the interactive protocol and the associated relation being proven. This identifier MUST be 64 bytes.
+- A `session_id`: the session identifier, for user-provided contextual information about the context where the proof is made (e.g. a URL, or a timestamp). This identifier is currently generated as 32 zero-bytes concatenated with a 32-byte digest derived using the transcript.
+- An `instance_label`: the instance identifier for the statement being proven, which should include a circuit identifier (e.g., a hash or unique name representing the ZK relation/circuit being evaluated) and the statement's input/output (I/O) variables.
+- Any optional padding immediately following the statement encoding, if correlation intractability is a concern.
 
 # Fiat-Shamir transformation for Sigma Protocols
 
@@ -443,7 +444,7 @@ Alternatively, the Transcript interface CAN be instantiated using a Hash-and-Exp
     1. If self.key is None:
     2.     self.key = self.Hash(self.transcript)
     3.     self.counter = 0
-    4. 
+    4.
     5. output = b''
     6. while len(output) < length:
     7.     block = self.PRF(self.key, self.counter)
@@ -546,7 +547,7 @@ The Universal ZK TLV (Type-Length-Value) Codec provides a structured, prefix-fre
 To comply with the `Codec` interface:
 
 - **`prover_message(self, state, elements)`**: Serializes each prover element in `elements` (e.g., field elements, byte arrays, or arrays of elements) using the TLV encoding rules below, and absorbs the resulting serialized byte stream into the transcript state.
-- **`verifier_challenge(self, state)`**: Squeezes pseudo-random bytes from the transcript state to sample a challenge in the target challenge domain (e.g., using the scalar field decoding in {{decode-random-bytes-scalars}} or the sampling procedures described in {{Challenge Sampling Algorithms}}).
+- **`verifier_challenge(self, state)`**: Squeezes pseudo-random bytes from the transcript state to sample a challenge in the target challenge domain (e.g., using the scalar field decoding in {{decode-random-bytes-scalars}} or the sampling procedures described in {{challenge-sampling-algorithms}}).
 
 ### Encoding Rules
 
@@ -559,19 +560,19 @@ Every element encoded by the Universal ZK TLV Codec is formatted as a tuple `(Ta
 The following tags and formats are defined:
 
 - **Field Element (Tag `0x01`)**: Represents a single scalar or field element. The length of a field element is fixed by the field definition, so the `Length` field is omitted. The encoding is:
-  
+
       0x01 || serialized_bytes
 
 - **Byte Array (Tag `0x02`)**: Represents an arbitrary array of bytes. The encoding is:
-  
+
       0x02 || I2OSP(len(bytes), 8) || bytes
-  
+
   where `I2OSP(..., 8)` is formatted in little-endian order.
 
 - **Field Element Array (Tag `0x03`)**: Represents an array of field elements. The encoding is:
-  
+
       0x03 || I2OSP(len(serialized_elements), 8) || serialized_elements
-  
+
   where `serialized_elements` is the concatenation of the serialized field elements in the array.
 
 # Challenge Sampling Algorithms
