@@ -4,9 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                                    C. Yun
-Expires: 14 January 2027                                     Apple, Inc.
-                                                            13 July 2026
+Intended status: Informational                              14 July 2026
+Expires: 15 January 2027
 
 
                        Fiat-Shamir Transformation
@@ -56,7 +55,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 14 January 2027.
+   This Internet-Draft will expire on 15 January 2027.
 
 Copyright Notice
 
@@ -122,9 +121,10 @@ Table of Contents
      8.5.  Instance encoding
      8.6.  Implementation guidance
    9.  IANA Considerations
-   10. References
-     10.1.  Normative References
-     10.2.  Informative References
+   Acknowledgments
+   References
+     Normative References
+     Informative References
    Appendix A.  Test Vectors
      A.1.  Codec test vectors
        A.1.1.  Length-prefixed byte-string encoding
@@ -158,7 +158,7 @@ Table of Contents
                (DecodeUint)
        A.3.10. One round of the sumcheck protocol: round polynomial,
                challenge, reduced claim
-   Authors' Addresses
+   Author's Address
 
 1.  Introduction
 
@@ -317,7 +317,7 @@ Table of Contents
    | <-----------------| decode[k] |<--| Squeeze |                     |
    |                   +-----------+   +---------+                     |
    |                                                                   |
-   | 3. check IP decision:                                             |
+   | 3. Run the interactive verifier                                   |
    |                                                                   |
    | +--------------------------------------+                          |
    | | Interactive Verifier                 |                          |
@@ -430,8 +430,8 @@ Table of Contents
    be a value of any type for which a codec (Section 4) is defined, such
    as a byte string, an unsigned integer, or a group element.  The
    *transcript* is the ordered sequence of prover and verifier messages.
-   In particular, the transcript does _not_ include the session
-   identifier.
+   In particular, the transcript does _not_ include the instance and
+   session identifier.
 
    The *instance* specifies the statement being proven and is held by
    both the prover and the verifier.  The (encoded) instance *MUST* be
@@ -452,13 +452,14 @@ Table of Contents
    output of the non-interactive prover.
 
    The notation in this document is for an interactive argument with k
-   rounds in which the prover moves first and the verifier moves last.
-   Other types of interactions can be expressed in the same notation by
-   setting the unused messages to the empty string: a protocol whose
-   verifier moves first (such as a batch argument) sets its first prover
-   message to "", and one whose prover moves last (such as a sigma
-   protocol) sets its final verifier message to "".  Prover and verifier
-   round messages 2, ..., k-1 *MUST* be non-empty.
+   rounds in which the prover moves first (that is, sends the first
+   message) and the verifier moves last.  Other types of interactions
+   can be expressed in the same notation by setting the unused messages
+   to the empty string: a protocol whose verifier moves first (such as a
+   batch argument) sets its first prover message to "", and one whose
+   prover moves last (such as a sigma protocol) sets its final verifier
+   message to "".  Prover and verifier round messages 2, ..., k-1 *MUST*
+   be non-empty.
 
 2.4.  Codec and serialization
 
@@ -506,7 +507,7 @@ Table of Contents
 
    *  state.Absorb(x): absorb x into the state.
 
-   *  state.Squeeze(n) -> buf: produce n bytes from the state.
+   *  state.Squeeze(n) -> buf: produce n elements from the state.
 
    In the duplex sponge interface, messages can be absorbed
    incrementally, and insert no separators: state.Absorb(x) followed by
@@ -609,8 +610,7 @@ Table of Contents
    into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits).
    The corresponding collision and second-preimage-resistance are
    min(n/2,128) and min(n,128) bits for an n-bit output string,
-   respectively (see [RFC9861]).  This instantiation targets 128-bit
-   security.
+   respectively.  This instantiation targets 128-bit security.
 
    In this instantiation, every verifier message is the TurboSHAKE128
    XOF evaluation TurboSHAKE128(M, D, L), where M is the concatenation
@@ -632,7 +632,7 @@ Table of Contents
 
    The session identifier is padded with R - 32 = 136 zero bytes so that
    the instance and prover messages begin on a fresh rate-block boundary
-   (see Section 3.3.1).
+   (see Section 3.3.1) for efficiency Section 7.
 
 3.3.1.  Init
 
@@ -688,20 +688,18 @@ Table of Contents
 
 4.  Codecs
 
-   A codec is a set of functions that map prover and verifier messages
-   to the hash function's alphabet:
+   A codec is a set of functions that map prover messages to, and
+   verifier messages from, the hash function's alphabet:
 
    *  Encoding converts the instance and the prover messages into the
-      bytes absorbed by the duplex sponge.  Encoding functions *MUST* be
-      prefix-free.
+      bytes absorbed by the duplex sponge.  The only security
+      requirement on encoding functions is that they be prefix-free.
 
    *  Decoding converts squeezed bytes into verifier messages.  Decoding
-      *MUST* preserve the uniform distribution (up to a small codec
-      error).
+      *MUST* preserve the uniform distribution in the verifier message
+      space (up to a small codec error).  Decoding is infallible.
 
 4.1.  Encoding into byte strings
-
-   All encoding functions *MUST* be prefix-free.
 
 4.1.1.  Byte strings
 
@@ -783,9 +781,8 @@ Table of Contents
    that 256^Ns >= p, in place of the default LE(x, Ns).  As with the
    default, deserialization *MUST* reject non-canonical encodings (a
    coordinate is valid only if the decoded integer is less than p).
-   When the chosen field serialization departs from the above rule, that
-   choice is part of the codec identity and *MUST* be reflected in the
-   session tag (see Section 5.1).
+   When using a different codec, that selection *MUST* be reflected in
+   the session tag (see Section 5.1).
 
    With respect to a fixed basis, a field element is represented by its
    m coordinates in the prime field, each an integer in [0, p).  It is
@@ -995,11 +992,8 @@ Table of Contents
 
    5.  the tag *SHOULD* include a version number.
 
-   An application that bypasses DeriveSessionID and sets the 32-byte
-   session_id directly *MUST* ensure it satisfies the same requirements:
-   distinct contexts (as characterized by requirements 1--3) map to
-   distinct session identifiers.  Deriving it from a tag as above is the
-   *RECOMMENDED* way to obtain this property.
+   An application that bypasses DeriveSessionID, and sets the 32-byte
+   session_id directly *MUST* ensure it satisfies the same requirements.
 
    DeriveSessionID(tag)
 
@@ -1053,20 +1047,6 @@ Table of Contents
    and the verifier squeezes (S) one field element challenge.  This is
    similar to the SAFE API [SAFE] _IO pattern_, which is checked by the
    prover and verifier during execution.
-
-   The tag *MAY* also carry per-proof context: associated data such as
-   presentation headers, nonces, or other values that are not bound by
-   the instance (Section 5.2) or the transcript, yet must be
-   authenticated by the proof.  Because such data is application-
-   supplied and variable-length, it *MUST* be combined with the other
-   fields unambiguously (see above); prefixing each field with its
-   length is sufficient.  For example, associated data ad can be
-   appended to a fixed application prefix as
-
-   tag = APP-V01-DSFS-TS128 || LE(len(ad), 4) || ad
-
-   Note that per-proof context makes the session identifier vary from
-   one proof to the next; see Section 7 for the resulting cost.
 
 5.2.  Instance
 
@@ -1143,8 +1123,8 @@ Table of Contents
 
    Deserialization of the NARG string consists of reading the prover
    messages and computing the inverse of the serialization procedure:
-   each message is read by consuming a fixed number of bytes, determined
-   by its type and the instance, and advancing past them.
+   each message is read by consuming a byte string whose length
+   determined by its type and the instance, and advancing past them.
 
    Verification *MUST* fail if any of the prover messages cannot be
    deserialized successfully.  After the last expected prover message
@@ -1286,20 +1266,14 @@ Table of Contents
    Init(session_id) (see Section 5.1) can be precomputed.
    Implementations can therefore start each prover and verifier
    execution from a copy of the duplex sponge state, instead of
-   initializing it every time.  In the suites of Section 3.2 and
-   Section 3.3, the padded session identifier fills exactly one rate
-   block (Section 3.2.1), saving one invocation of the permutation
-   function per execution.  Similarly, DeriveSessionID can be
-   precomputed when the session identifier is derived from a tag.  The
-   same observation extends to longer shared prefixes: proofs for the
-   same instance can additionally start from a stored copy of the state
-   obtained after absorbing encode[0](instance).  A tag that carries
-   per-proof context (Section 5.1) changes from one proof to the next,
-   so the derived session identifier and the seeded state cannot be
-   cached across proofs; this merely forfeits the precomputation above,
-   costing roughly two extra permutations per proof (one to re-derive
-   the session identifier, one to re-seed the state), independent of the
-   number of rounds.
+   initializing it every time.  In the Section 3.2 and Section 3.3, the
+   padded session identifier fills exactly one rate block
+   (Section 3.2.1), saving one invocation of the permutation function
+   per execution.  Similarly, DeriveSessionID can be precomputed when
+   the session identifier is derived from a tag.  The same observation
+   extends to longer shared prefixes: proofs for the same instance can
+   additionally start from a stored copy of the state obtained after
+   absorbing encode[0](instance).
 
    XOF evaluations (Section 3.2, Section 3.3) without copying the XOF
    state (see the notation ctx.Copy() in the pseudocode) will yield
@@ -1390,8 +1364,9 @@ Table of Contents
    each proof from a cryptographically secure entropy source, as noted
    in Section 1.  Reusing the same randomness (or correlated randomness)
    across two proofs will compromise zero-knowledge.  Implementations
-   *MUST* sample independent random coins for each proof using the
-   operating system's secure entropy source.
+   *MUST* sample independent random coins for each proof using a
+   cryptographically secure random number generator with sufficient
+   entropy from the system (e.g. using getrandom [RFC4086]).
 
 8.4.3.  Quantum adversaries
 
@@ -1482,9 +1457,18 @@ Table of Contents
 
    This document has no IANA actions.
 
-10.  References
+Acknowledgments
 
-10.1.  Normative References
+   The authors thank Thomas Pornin, Vishruti Ganesh, Brent Zundel, Hart
+   Montgomery, Opal Wright for reviewing a previous edition of this
+   specification.
+
+   The authors thank Giap Vu and David Wong (zkSecurity) for their help
+   and contributions.
+
+References
+
+Normative References
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -1509,7 +1493,7 @@ Table of Contents
               <https://nvlpubs.nist.gov/nistpubs/FIPS/
               NIST.FIPS.202.pdf>.
 
-10.2.  Informative References
+Informative References
 
    [BPW16]    Bernhard, D., Pereira, O., and B. Warinschi, "How not to
               Prove Yourself: Pitfalls of the Fiat-Shamir Heuristic and
@@ -1572,6 +1556,11 @@ Table of Contents
               Grassi, L., Khovratovich, D., and M. Schofnegger,
               "Poseidon2: A Faster Version of the Poseidon Hash
               Function", 2023, <https://eprint.iacr.org/2023/323>.
+
+   [RFC4086]  Eastlake 3rd, D., Schiller, J., and S. Crocker,
+              "Randomness Requirements for Security", BCP 106, RFC 4086,
+              DOI 10.17487/RFC4086, June 2005,
+              <https://www.rfc-editor.org/rfc/rfc4086>.
 
    [RFC7748]  Langley, A., Hamburg, M., and S. Turner, "Elliptic Curves
               for Security", RFC 7748, DOI 10.17487/RFC7748, January
@@ -2011,13 +2000,8 @@ A.3.10.  One round of the sumcheck protocol: round polynomial,
    22d06111f36ce1504e03e2c1e408cc9be02dc74963e9decb4333eb6ca819afa588b4
    65c4dd26679472cbed0b50bf03b9b673a733840f1b2fde07a5721f4f4b6b5c34
 
-Authors' Addresses
+Author's Address
 
    Michele Orrù
    CNRS
    Email: m@orru.net
-
-
-   Cathie Yun
-   Apple, Inc.
-   Email: cathieyun@gmail.com
