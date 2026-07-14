@@ -26,10 +26,6 @@ author:
     fullname: "Michele Orrù"
     organization: CNRS
     email: "m@orru.net"
--
-    fullname: "Cathie Yun"
-    organization: Apple, Inc.
-    email: "cathieyun@gmail.com"
 
 normative:
   SHA3:
