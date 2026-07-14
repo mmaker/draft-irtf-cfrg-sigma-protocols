@@ -232,58 +232,60 @@ Other types of non-interactive transformations (with and without random oracles)
 {: #fig-fiat-shamir-prover title="Non-interactive prover for the Fiat-Shamir transformation"}
 
 ~~~ aasvg
-+-----------------------------------------------------------------------+
-| NARG Verifier V(session_id, instance, narg_string)                    |
-|                                                                       |
-| 1. prover_msg[..] := deserialize(narg_string)                         |
-| 2. derive verifier messages:                                          |
-|                                                                       |
-|                                     +------+                          |
-| session_id ------------------------>| Init |                          |
-|                                     +------+                          |
-|                                         |                             |
-|                                         v                             |
-|              +-----------+          +--------+                        |
-| instance --->| encode[0] |--------->| Absorb |                        |
-|              +-----------+          +--------+                        |
-|                                         |                             |
-|                                         v                             |
-|prover_msg[1] +-----------+          +--------+                        |
-|------------->| encode[1] |--------->| Absorb |                        |
-|              +-----------+          +--------+                        |
-|                                         |                             |
-|                                         v                             |
-| verifier_msg[1] +-----------+       +---------+                       |
-| <---------------| decode[1] |<------| Squeeze |                       |
-|                 +-----------+       +---------+                       |
-|                                         |                             |
-|                                         v                             |
-|prover_msg[2] +-----------+          +--------+                        |
-|------------->| encode[2] |--------->| Absorb |                        |
-|              +-----------+          +--------+                        |
-|                                         |                             |
-|                                         v                             |
-| verifier_msg[2] +-----------+       +---------+                       |
-| <---------------| decode[2] |<------| Squeeze |                       |
-|                 +-----------+       +---------+                       |
-|       .                                 .                             |
-|       .                                 .                             |
-|       .                                 .                             |
-|prover_msg[k]  +-----------+       +--------+                          |
-|-------------->| encode[k] |------>| Absorb |                          |
-|               +-----------+       +--------+                          |
-|                                         |                             |
-|                                         v                             |
-| verifier_msg[k]   +-----------+   +---------+                         |
-| <-----------------| decode[k] |<--| Squeeze |                         |
-|                   +-----------+   +---------+                         |
-|                                                                       |
-| 3. check IP decision:                                                 |
-|                                                                       |
-| +-------------------------------------------------------------------+ |
-| | Interactive Verifier (instance, prover_msg[..], verifier_msg[..]) | |
-| +-------------------------------------------------------------------+ |
-+-----------------------------------------------------------------------+
++-------------------------------------------------------------------+
+| NARG Verifier V(session_id, instance, narg_string)                |
+|                                                                   |
+| 1. prover_msg[..] := deserialize(narg_string)                     |
+| 2. derive verifier messages:                                      |
+|                                                                   |
+|                                     +------+                      |
+| session_id ------------------------>| Init |                      |
+|                                     +------+                      |
+|                                         |                         |
+|                                         v                         |
+|              +-----------+          +--------+                    |
+| instance --->| encode[0] |--------->| Absorb |                    |
+|              +-----------+          +--------+                    |
+|                                         |                         |
+|                                         v                         |
+|prover_msg[1] +-----------+          +--------+                    |
+|------------->| encode[1] |--------->| Absorb |                    |
+|              +-----------+          +--------+                    |
+|                                         |                         |
+|                                         v                         |
+| verifier_msg[1] +-----------+       +---------+                   |
+| <---------------| decode[1] |<------| Squeeze |                   |
+|                 +-----------+       +---------+                   |
+|                                         |                         |
+|                                         v                         |
+|prover_msg[2] +-----------+          +--------+                    |
+|------------->| encode[2] |--------->| Absorb |                    |
+|              +-----------+          +--------+                    |
+|                                         |                         |
+|                                         v                         |
+| verifier_msg[2] +-----------+       +---------+                   |
+| <---------------| decode[2] |<------| Squeeze |                   |
+|                 +-----------+       +---------+                   |
+|       .                                 .                         |
+|       .                                 .                         |
+|       .                                 .                         |
+|prover_msg[k]  +-----------+       +--------+                      |
+|-------------->| encode[k] |------>| Absorb |                      |
+|               +-----------+       +--------+                      |
+|                                         |                         |
+|                                         v                         |
+| verifier_msg[k]   +-----------+   +---------+                     |
+| <-----------------| decode[k] |<--| Squeeze |                     |
+|                   +-----------+   +---------+                     |
+|                                                                   |
+| 3. Run the interactive verifier                                   |
+|                                                                   |
+| +--------------------------------------+                          |
+| | Interactive Verifier                 |                          |
+| |  (instance, prover_msg[..],          |                          |
+| |   verifier_msg[..])                  |                          |
+| +--------------------------------------+                          |
++-------------------------------------------------------------------+
 ~~~
 {: #fig-fiat-shamir-verifier title="Non-interactive verifier for the Fiat-Shamir transformation"}
 
@@ -348,7 +350,7 @@ The interface generalizes the **sponge** {{SPONGE}}, which maps a variable-lengt
 
 The **session identifier** is a 32-byte string that identifies the application context and the specific non-interactive argument in use; it is held by both the prover and the verifier (see {{session-id}}).
 
-A **prover message** is a message sent by the interactive prover, and a **verifier message** is a message sent by the interactive verifier (a uniformly random value, sometimes called _challenge_). A message can be a value of any type for which a codec ({{codecs}}) is defined, such as a byte string, an unsigned integer, or a group element. The **transcript** is the ordered sequence of prover and verifier messages. In particular, the transcript does _not_ include the session identifier.
+A **prover message** is a message sent by the interactive prover, and a **verifier message** is a message sent by the interactive verifier (a uniformly random value, sometimes called _challenge_). A message can be a value of any type for which a codec ({{codecs}}) is defined, such as a byte string, an unsigned integer, or a group element. The **transcript** is the ordered sequence of prover and verifier messages. In particular, the transcript does _not_ include the instance and session identifier.
 
 The **instance** specifies the statement being proven and is held by both the prover and the verifier. The (encoded) instance **MUST** be non-empty.
 
@@ -358,7 +360,7 @@ For an NP language, the instance is a word, the witness is proof of its membersh
 
 The **NARG string** (non-interactive argument string) is the serialized output of the non-interactive prover.
 
-The notation in this document is for an interactive argument with `k` rounds in which the prover moves first and the verifier moves last. Other types of interactions can be expressed in the same notation by setting the unused messages to the empty string: a protocol whose verifier moves first (such as a batch argument) sets its first prover message to `""`, and one whose prover moves last (such as a sigma protocol) sets its final verifier message to `""`. Prover and verifier round messages `2`, ..., `k-1` **MUST** be non-empty.
+The notation in this document is for an interactive argument with `k` rounds in which the prover moves first (that is, sends the first message) and the verifier moves last. Other types of interactions can be expressed in the same notation by setting the unused messages to the empty string: a protocol whose verifier moves first (such as a batch argument) sets its first prover message to `""`, and one whose prover moves last (such as a sigma protocol) sets its final verifier message to `""`. Prover and verifier round messages `2`, ..., `k-1` **MUST** be non-empty.
 
 ## Codec and serialization
 
@@ -386,7 +388,7 @@ Prover and verifier messages are handled via three operations:
 
 - `Init(session_id) -> state`: create a new duplex sponge state, seeded by the 32-byte string `session_id`.
 - `state.Absorb(x)`: absorb `x` into the state.
-- `state.Squeeze(n) -> buf`: produce `n` bytes from the state.
+- `state.Squeeze(n) -> buf`: produce `n` elements from the state.
 
 In the duplex sponge interface, messages can be absorbed incrementally, and insert no separators: `state.Absorb(x)` followed by `state.Absorb(y)` (with no `state.Squeeze` in between) is equivalent to `state.Absorb(x || y)`.
 
@@ -482,7 +484,7 @@ verifier_msg[i] := decode[i](TurboSHAKE128(
                    0x1F, len_i))
 ~~~
 
-The session identifier is padded with `R - 32 = 136` zero bytes so that the instance and prover messages begin on a fresh rate-block boundary (see {{turboshake128-init}}).
+The session identifier is padded with `R - 32 = 136` zero bytes so that the instance and prover messages begin on a fresh rate-block boundary (see {{turboshake128-init}}) for efficiency {{efficiency}}.
 
 ### Init {#turboshake128-init}
 
@@ -538,14 +540,12 @@ Output: a uniformly-distributed random n-byte string
 
 # Codecs
 
-A codec is a set of functions that map prover and verifier messages to the hash function's alphabet:
+A codec is a set of functions that map prover messages to, and verifier messages from, the hash function's alphabet:
 
-- Encoding converts the instance and the prover messages into the bytes absorbed by the duplex sponge. Encoding functions **MUST** be prefix-free.
-- Decoding converts squeezed bytes into verifier messages. Decoding **MUST** preserve the uniform distribution (up to a small codec error).
+- Encoding converts the instance and the prover messages into the bytes absorbed by the duplex sponge. The only security requirement on encoding functions is that they be prefix-free.
+- Decoding converts squeezed bytes into verifier messages. Decoding **MUST** preserve the uniform distribution in the verifier message space (up to a small codec error). Decoding is infallible.
 
 ## Encoding into byte strings {#encoding-bytes}
-
-All encoding functions **MUST** be prefix-free.
 
 ### Byte strings {#encoding-varlen-string}
 
@@ -605,7 +605,7 @@ This section specifies the _default_ encoding of a finite field of order `q = p^
 
 If the field already has a canonical serialization fixed by a standard, that serialization **SHOULD** be used in place of the default specified below, and it **MUST** be prefix-free. The default below encodes each prime-field coordinate as a fixed-width little-endian integer via `EncodeUint` ({{encoding-uint}}).
 
-For example, Curve25519 {{?RFC7748}}, Ed25519 {{?RFC8032}}, ristretto255 {{Section 4.4 of ?RFC9496}} serialize field elements as a fixed-width little-endian integer. Similarly, in Section 7.1 of {{FIPS204}}, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 {{SEC1}} and BLS12-381 {{?I-D.irtf-cfrg-pairing-friendly-curves}} serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization **MUST** be used in place: a prime-field coordinate `x` in `[0, p)` is encoded as `I2OSP(x, Ns)`, with `Ns` the smallest integer such that `256^Ns >= p`, in place of the default `LE(x, Ns)`. As with the default, deserialization **MUST** reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than `p`). When the chosen field serialization departs from the above rule, that choice is part of the codec identity and **MUST** be reflected in the session tag (see {{session-id}}).
+For example, Curve25519 {{?RFC7748}}, Ed25519 {{?RFC8032}}, ristretto255 {{Section 4.4 of ?RFC9496}} serialize field elements as a fixed-width little-endian integer. Similarly, in Section 7.1 of {{FIPS204}}, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 {{SEC1}} and BLS12-381 {{?I-D.irtf-cfrg-pairing-friendly-curves}} serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization **MUST** be used in place: a prime-field coordinate `x` in `[0, p)` is encoded as `I2OSP(x, Ns)`, with `Ns` the smallest integer such that `256^Ns >= p`, in place of the default `LE(x, Ns)`. As with the default, deserialization **MUST** reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than `p`). When using a different codec, that selection **MUST** be reflected in the session tag (see {{session-id}}).
 
 With respect to a fixed basis, a field element is represented by its `m` coordinates in the prime field, each an integer in `[0, p)`. It is encoded as the concatenation of the per-coordinate encodings produced by `EncodeUint` ({{encoding-uint}}) with modulus `p`. Let `Ns` be the smallest integer with `256^Ns >= p`; a field element encodes to `m * Ns` bytes.
 
@@ -836,7 +836,7 @@ Serialization is the concatenation of the byte encoding of each prover message, 
 
 ## Deserialization
 
-Deserialization of the NARG string consists of reading the prover messages and computing the inverse of the serialization procedure: each message is read by consuming a fixed number of bytes, determined by its type and the instance, and advancing past them.
+Deserialization of the NARG string consists of reading the prover messages and computing the inverse of the serialization procedure: each message is read by consuming a byte string whose length determined by its type and the instance, and advancing past them.
 
 Verification **MUST** fail if any of the prover messages cannot be deserialized successfully. After the last expected prover message has been read, the verifier **MUST** verify that no bytes remain. Bytes that are never read or that are decoded despite being invalid will cause the proof to be malleable: an adversary will be able to malleate a valid proof to obtain a second, distinct accepting proof for the same statement.
 
@@ -986,7 +986,7 @@ If the interactive proof is honest-verifier zero-knowledge, then so is the non-i
 
 The additive zero-knowledge loss introduced by the transformation is linear in the number of queries the adversary makes to the random oracle {{CO25}}.
 
-Zero-knowledge holds only when the prover draws fresh randomness for each proof from a cryptographically secure entropy source, as noted in {{introduction}}. Reusing the same randomness (or correlated randomness) across two proofs will compromise zero-knowledge. Implementations **MUST** sample independent random coins for each proof using the operating system's secure entropy source.
+Zero-knowledge holds only when the prover draws fresh randomness for each proof from a cryptographically secure entropy source, as noted in {{introduction}}. Reusing the same randomness (or correlated randomness) across two proofs will compromise zero-knowledge. Implementations **MUST** sample independent random coins for each proof using a cryptographically secure random number generator with sufficient entropy from the system (e.g. using `getrandom` {{?RFC4086}}).
 
 ### Quantum adversaries
 
