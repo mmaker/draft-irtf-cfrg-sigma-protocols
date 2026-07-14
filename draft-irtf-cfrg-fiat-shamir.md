@@ -176,54 +176,57 @@ This transformation is also well-suited for recursive proving, since the in-circ
 Other types of non-interactive transformations (with and without random oracles) are possible, but outside the scope of this specification.
 
 ~~~ aasvg
-+--------------------------------------------------------------------------+
-| NARG Prover (session_id, instance, witness)                              |
-|                                                                          |
-|                                                              +------+    |
-|  session_id ------------------------------------------------>| Init |    |
-|                                                              +------+    |
-|                                                                   |      |
-|                                                                   v      |
-|                                          +------------+      +--------+  |
-|  instance ------------------------------>| encode[0]  |----->| Absorb |  |
-|  +---------------------+                 +------------+      +--------+  |
-|  | Interactive Prover  |                                          |      |
-|  |  (instance, witness)|                                          v      |
-|  |                     | prover_msg[1]   +------------+      +--------+  |
-|  |                     +---------------->| encode[1]  |----->| Absorb |  |
-|  |                     |                 +------------+      +--------+  |
-|  |                     |                                          |      |
-|  |                     |                                          v      |
-|  |                     | verifier_msg[1] +------------+      +---------+ |
-|  |                     |<----------------| decode[1]  |<-----| Squeeze | |
-|  |                     |                 +------------+      +---------+ |
-|  |                     |                                          |      |
-|  |                     |                                          v      |
-|  |                     | prover_msg[2]   +------------+      +--------+  |
-|  |                     +---------------->| encode[2]  |----->| Absorb |  |
-|  |                     |                 +------------+      +--------+  |
-|  |                     |                                          |      |
-|  |                     |                                          v      |
-|  |                     | verifier_msg[2] +------------+      +---------+ |
-|  |                     |<----------------| decode[2]  |<-----| Squeeze | |
-|  |                     |                 +------------+      +---------+ |
-|  |                     |        .                                 .      |
-|  |                     |        .                                 .      |
-|  |                     |        .                                 .      |
-|  |                     | prover_msg[k-1] +-------------+     +--------+  |
-|  |                     +---------------->| encode[k-1] |---->| Absorb |  |
-|  |                     |                 +-------------+     +--------+  |
-|  |                     |                                          |      |
-|  |                     |                                          v      |
-|  |                     | verifier_msg[k-1] +-------------+   +---------+ |
-|  |                     |<------------------| decode[k-1] |<--| Squeeze | |
-|  |                     |                   +-------------+   +---------+ |
-|  |                     | prover_msg[k]                                   |
-|  |                     +------------------>                              |
-|  +---------------------+                                                 |
-|                                                                          |
-|       narg_string := serialize(prover_msg[..])                           |
-+--------------------------------------------------------------------------+
++-------------------------------------------------------------------+
+| NARG Prover (session_id, instance, witness)                       |
+|                                                                   |
+|                                                        +------+   |
+| session_id ------------------------------------------->| Init |   |
+|                                                        +------+   |
+|                                                            |      |
+|                                                            v      |
+|                                       +------------+   +--------+ |
+| instance ---------------------------->| encode[0]  |-->| Absorb | |
+| +-------------------+                 +------------+   +--------+ |
+| | Interactive Prover|                                      |      |
+| |(instance, witness)|                                      |      |
+| |                   | prover_msg[1]                        v      |
+| |                   |                 +------------+   +--------+ |
+| |                   +---------------->| encode[1]  |-->| Absorb | |
+| |                   |                 +------------+   +--------+ |
+| |                   |                                      |      |
+| |                   | verifier_msg[1]                      v      |
+| |                   |                 +------------+   +---------+|
+| |                   |<----------------| decode[1]  |<--| Squeeze ||
+| |                   |                 +------------+   +---------+|
+| |                   |                                      |      |
+| |                   | prover_msg[2]                        v      |
+| |                   |                 +------------+   +--------+ |
+| |                   +---------------->| encode[2]  |-->| Absorb | |
+| |                   |                 +------------+   +--------+ |
+| |                   |                                      |      |
+| |                   | verifier_msg[2]                      v      |
+| |                   |                 +------------+   +---------+|
+| |                   |<----------------| decode[2]  |<--| Squeeze ||
+| |                   |                 +------------+   +---------+|
+| |                   |        .                             .      |
+| |                   |        .                             .      |
+| |                   |        .                             .      |
+| |                   |                                      |      |
+| |                   | prover_msg[k-1]                      v      |
+| |                   |                 +------------+   +--------+ |
+| |                   +---------------->| encode[k-1]|-->| Absorb | |
+| |                   |                 +------------+   +--------+ |
+| |                   |                                      |      |
+| |                   | verifier_msg[k-1]                    v      |
+| |                   |                 +------------+   +---------+|
+| |                   |<----------------| decode[k-1]|<--| Squeeze ||
+| |                   |                 +------------+   +---------+|
+| |                   | prover_msg[k]                               |
+| |                   +---------------->                            |
+| +-------------------+                                             |
+|                                                                   |
+|    narg_string := serialize(prover_msg[..])                       |
++-------------------------------------------------------------------+
 ~~~
 {: #fig-fiat-shamir-prover title="Non-interactive prover for the Fiat-Shamir transformation"}
 
@@ -736,6 +739,8 @@ The tag has the following security requirements:
 4. the tag **SHOULD** begin with a fixed identification string that is unique to the application.
 5. the tag **SHOULD** include a version number.
 
+An application that bypasses `DeriveSessionID`, and sets the 32-byte `session_id` directly **MUST** ensure it satisfies the same requirements.
+
 ~~~
 DeriveSessionID(tag)
 
@@ -779,7 +784,7 @@ where `xx` is the two-digit version number, `hashID` is the hash identifier, and
 The instance is input to the non-interactive prover and the non-interactive verifier; it fixes the specific statement being proven.
 
 The instance is the first value absorbed after `Init(session_id)` and before any prover message. The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map.
-The encoded instance **MUST** be non-empty. While the session identifier of the previous section ({{session-id}}) fixes the language, the instance selects one of its members.
+The encoded instance **MUST** be non-empty. While the session identifier of the previous section {{session-id}} fixes the language, the instance selects one of its members.
 
 As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the encodings of {{encoding-bytes}}.
 
@@ -803,10 +808,10 @@ EncodeField(S, p, m) || EncodeUint(N, 2^32) || COM.Serialize(C)
 
 where `COM.Serialize` is the commitment-serialization function of the scheme `COM` (the opening check `COM.Open` is used above).
 
-As another example, in the discrete logarithm setting, the Chaum-Pedersen relation over an additive elliptic curve group with generators `G`, `H` (for which the relative discrete logarithm is not known). The relation consists of:
+As another example, consider, in the discrete logarithm setting, the Chaum-Pedersen relation over an additive elliptic curve group with generators `G`, `H` (for which the relative discrete logarithm is not known). The relation consists of:
 
-- instance `(C, D)` are Pedersen commitments
-- witness `(x, r, s)` scalar field elements with `x` the commitment message and `r`, `s` independent random commitment openings
+- the instance `(C, D)`, a pair of Pedersen commitments;
+- the witness `(x, r, s)`, scalar field elements with `x` the commitment message and `r`, `s` independent random commitment openings
 
 such that
 
@@ -822,7 +827,7 @@ enc(G) || enc(H) || enc(C) || enc(D)
 
 where `enc` is the group element-serialization function described in {{encoding-ec-point}}.
 
-Omitting public statement data from the transformation, such as `N` in the first example or the group generators `G`, `H` in the second, can can compromise soundness of the proof system. See {{instance-encoding}}.
+Omitting public statement data from the transformation, such as `N` in the first example or the group generators `G`, `H` in the second, can compromise soundness of the proof system. See {{instance-encoding}}.
 
 # Non-interactive argument string {#narg-string}
 
@@ -950,7 +955,7 @@ This section contains additional security considerations about the Fiat-Shamir t
 
 Encoding maps are inverted only in the security analysis (by the knowledge extractor), never by the prover or verifier. The proof relies on a left inverse existing and being efficiently computable, which the knowledge-soundness extractor uses to recover prover messages from the absorbed bytes {{CO25}}.
 
-Decoding preserves the uniform distribution only when its input is uniform. Verifier messages **MUST** therefore be derived from `Squeeze` output and never from prover-controlled, or non-uniform bytes: decoding a non-uniform input yields a verifier message that is distinguishable from uniform, which would break the public-coin property the transformation depends on.
+Decoding preserves the uniform distribution only when its input is uniform. Verifier messages **SHOULD** therefore be derived from `Squeeze` output and never from prover-controlled, or non-uniform bytes: decoding a non-uniform input yields a verifier message that is distinguishable from uniform, which would break the public-coin property the transformation depends on.
 
 ## Constant-time requirements {#constant-time}
 
@@ -998,19 +1003,19 @@ To provide knowledge soundness and zero-knowledge, stronger capabilities than in
 
 ## Instance encoding
 
-Incorrect encoding of the instance has historically led to a number of critical security vulnerabilities, often grouped under the term *weak Fiat-Shamir transformation* {{BPW16}}. In each of them, the cryptographic hash function was not provided the full statement being proven. A malicious prover can then compute the verifier message first, and choose the omitted part of the instance afterwards so that the verification equation is satisfied on a statement whose witness it does not hold.
+Incorrect encoding of the instance has historically led to a number of critical security vulnerabilities, often grouped under the term *weak Fiat-Shamir transformation*. In each of them, the cryptographic hash function was not provided the full statement being proven. A malicious prover can then compute the verifier message first, and choose the omitted part of the instance afterwards so that the verification equation is satisfied on a statement whose witness it does not hold.
 
-One such example is in {{BPW16}}. A Chaum-Pedersen proof of equality for an instance `(G, H, X, Y)` proves knowledge of a witness `x` such that `X = x * G` and `Y = x * H`. The prover sends commitments `(A, B)`, obtains a challenge `c`, and replies with a scalar `f`. The verifier accepts if the verification equations hold: `f * G == A + c * X` and `f * H == B + c * Y`. Suppose the challenge `c` is derived only by absorbing `(A, B)` and omitting the instance `(G, H, X, Y)`. A malicious prover can pick `A`, `B`, `H`, and `f` at random, derive `c`, and then set `X` and `Y` to satisfy the verification equations. Verification passes, yet no single `x` satisfies both `X = x * G` and `Y = x * H`. A false statement has been proven. Other examples are available in {{DMWG23}} {{CVE-2022-29566}}.
+As an example {{BPW16}}, Chaum-Pedersen proof of equality for an instance `(G, H, X, Y)` proves knowledge of a witness `x` such that `X = x * G` and `Y = x * H`. The prover sends commitments `(A, B)`, obtains a challenge `c`, and replies with a scalar `f`. The verifier accepts if the verification equations hold: `f * G == A + c * X` and `f * H == B + c * Y`. Suppose the challenge `c` is derived only by absorbing `(A, B)` and omitting the instance `(G, H, X, Y)`. A malicious prover can pick `A`, `B`, `H`, and `f` at random, derive `c`, and then set `X` and `Y` to satisfy the verification equations. Verification passes, yet no single `x` satisfies both `X = x * G` and `Y = x * H`. A false statement has been proven. Other examples are available in {{DMWG23}} {{CVE-2022-29566}}.
 
 All security guarantees are conditioned on the instance being part of the relation being proven. The Fiat-Shamir transformation does not verify that the statement being proven is well-formed, or valid. If the instance or the witness provided as input are not in the relation (e.g. they are malformed), the output is undefined and no security guarantee is provided.
 
 ## Implementation guidance {#implementation-guidance}
 
-The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities. Some incorrect implementations involve out-of-order (or missing) prover messages {{CVE-2024-45039}} {{CVE-2026-46654}}.
+The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities.
+
+Some incorrect implementations involve out-of-order (or missing) prover messages {{CVE-2024-45039}} {{CVE-2026-46654}}. Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered. A byte level interface, as described in this document, is advisable in place of proof data structures whose fields are randomly addressable. A sequential interface, by contrast, enforces in-order processing. An end-of-input check is necessary to prevent malleability.
 
 Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes, and by replacing each prover message in turn with a different value.
-
-Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered.
 
 The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers **MUST** check that length indicators are correct, that integers fall within their expected range, and that the proof length is correct. For example, in {{deserialize-byte-strings}} the 4-byte length prefix read by `LE2IP` in `DeserializeVarLenString` is attacker-controlled, and can be as large as `2^32 - 1`, so computing `4 + N` can overflow 32-bit integers. As another example, a crafted length indicator can make verification checks trivial, or exhaust memory on deserialization before any cryptographic check runs {{GNARK-OOM}}.
 
