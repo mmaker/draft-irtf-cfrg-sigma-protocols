@@ -6,7 +6,6 @@
 <meta content="initial-scale=1.0" name="viewport">
 <title>Fiat-Shamir Transformation</title>
 <meta content="Michele Orrù" name="author">
-<meta content="Cathie Yun" name="author">
 <meta content="
        This document describes the Fiat-Shamir transformation, which allows making a public-coin protocol non-interactive by means of a cryptographic hash function. 
        It specifies how the hash function is employed, how prover messages are encoded as hash-function input, and how verifier messages are decoded from the hash function's output, as well as the serialization and deserialization of the non-interactive argument string. 
@@ -1050,7 +1049,7 @@ svg {
 <td class="right">July 2026</td>
 </tr></thead>
 <tfoot><tr>
-<td class="left">Orrù &amp; Yun</td>
+<td class="left">Orrù</td>
 <td class="center">Expires 15 January 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
@@ -1070,15 +1069,11 @@ svg {
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
 <dd class="expires"><time datetime="2027-01-15">15 January 2027</time></dd>
-<dt class="label-authors">Authors:</dt>
+<dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
       <div class="author-name">M. Orrù</div>
 <div class="org">CNRS</div>
-</div>
-<div class="author">
-      <div class="author-name">C. Yun</div>
-<div class="org">Apple, Inc.</div>
 </div>
 </dd>
 </dl>
@@ -1431,7 +1426,7 @@ svg {
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13">
-            <p id="section-toc.1-1.13.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-authors-addresses" class="internal xref">Authors' Addresses</a></p>
+            <p id="section-toc.1-1.13.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-authors-address" class="internal xref">Author's Address</a></p>
 </li>
         </ul>
 </nav>
@@ -1472,162 +1467,175 @@ svg {
 <figure id="figure-1">
         <div id="section-1-10.1">
           <div class="alignLeft art-svg artwork" id="section-1-10.1.1">
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="800" width="616" viewBox="0 0 616 800" class="diagram" text-anchor="middle" font-family="monospace" font-size="13px" stroke-linecap="round">
-              <path d="M 8,32 L 8,784" fill="none" stroke="black"></path>
-              <path d="M 32,192 L 32,736" fill="none" stroke="black"></path>
-              <path d="M 208,192 L 208,736" fill="none" stroke="black"></path>
-              <path d="M 352,160 L 352,192" fill="none" stroke="black"></path>
-              <path d="M 352,240 L 352,272" fill="none" stroke="black"></path>
-              <path d="M 352,320 L 352,352" fill="none" stroke="black"></path>
-              <path d="M 352,400 L 352,432" fill="none" stroke="black"></path>
-              <path d="M 352,480 L 352,512" fill="none" stroke="black"></path>
-              <path d="M 352,576 L 352,608" fill="none" stroke="black"></path>
-              <path d="M 368,656 L 368,688" fill="none" stroke="black"></path>
-              <path d="M 456,160 L 456,192" fill="none" stroke="black"></path>
-              <path d="M 456,240 L 456,272" fill="none" stroke="black"></path>
-              <path d="M 456,320 L 456,352" fill="none" stroke="black"></path>
-              <path d="M 456,400 L 456,432" fill="none" stroke="black"></path>
-              <path d="M 456,480 L 456,512" fill="none" stroke="black"></path>
-              <path d="M 464,576 L 464,608" fill="none" stroke="black"></path>
-              <path d="M 480,656 L 480,688" fill="none" stroke="black"></path>
-              <path d="M 512,80 L 512,112" fill="none" stroke="black"></path>
-              <path d="M 512,160 L 512,192" fill="none" stroke="black"></path>
-              <path d="M 512,240 L 512,272" fill="none" stroke="black"></path>
-              <path d="M 512,320 L 512,352" fill="none" stroke="black"></path>
-              <path d="M 512,400 L 512,432" fill="none" stroke="black"></path>
-              <path d="M 512,480 L 512,512" fill="none" stroke="black"></path>
-              <path d="M 512,576 L 512,608" fill="none" stroke="black"></path>
-              <path d="M 512,656 L 512,688" fill="none" stroke="black"></path>
-              <path d="M 552,120 L 552,152" fill="none" stroke="black"></path>
-              <path d="M 552,200 L 552,232" fill="none" stroke="black"></path>
-              <path d="M 552,280 L 552,312" fill="none" stroke="black"></path>
-              <path d="M 552,360 L 552,392" fill="none" stroke="black"></path>
-              <path d="M 552,440 L 552,472" fill="none" stroke="black"></path>
-              <path d="M 552,616 L 552,648" fill="none" stroke="black"></path>
-              <path d="M 568,80 L 568,112" fill="none" stroke="black"></path>
-              <path d="M 584,160 L 584,192" fill="none" stroke="black"></path>
-              <path d="M 584,240 L 584,272" fill="none" stroke="black"></path>
-              <path d="M 584,400 L 584,432" fill="none" stroke="black"></path>
-              <path d="M 584,576 L 584,608" fill="none" stroke="black"></path>
-              <path d="M 592,320 L 592,352" fill="none" stroke="black"></path>
-              <path d="M 592,480 L 592,512" fill="none" stroke="black"></path>
-              <path d="M 592,656 L 592,688" fill="none" stroke="black"></path>
-              <path d="M 608,32 L 608,784" fill="none" stroke="black"></path>
-              <path d="M 8,32 L 608,32" fill="none" stroke="black"></path>
-              <path d="M 512,80 L 568,80" fill="none" stroke="black"></path>
-              <path d="M 120,96 L 504,96" fill="none" stroke="black"></path>
-              <path d="M 512,112 L 568,112" fill="none" stroke="black"></path>
-              <path d="M 352,160 L 456,160" fill="none" stroke="black"></path>
-              <path d="M 512,160 L 584,160" fill="none" stroke="black"></path>
-              <path d="M 104,176 L 344,176" fill="none" stroke="black"></path>
-              <path d="M 464,176 L 504,176" fill="none" stroke="black"></path>
-              <path d="M 32,192 L 208,192" fill="none" stroke="black"></path>
-              <path d="M 352,192 L 456,192" fill="none" stroke="black"></path>
-              <path d="M 512,192 L 584,192" fill="none" stroke="black"></path>
-              <path d="M 352,240 L 456,240" fill="none" stroke="black"></path>
-              <path d="M 512,240 L 584,240" fill="none" stroke="black"></path>
-              <path d="M 208,256 L 344,256" fill="none" stroke="black"></path>
-              <path d="M 464,256 L 504,256" fill="none" stroke="black"></path>
-              <path d="M 352,272 L 456,272" fill="none" stroke="black"></path>
-              <path d="M 512,272 L 584,272" fill="none" stroke="black"></path>
-              <path d="M 352,320 L 456,320" fill="none" stroke="black"></path>
-              <path d="M 512,320 L 592,320" fill="none" stroke="black"></path>
-              <path d="M 216,336 L 344,336" fill="none" stroke="black"></path>
-              <path d="M 464,336 L 504,336" fill="none" stroke="black"></path>
-              <path d="M 352,352 L 456,352" fill="none" stroke="black"></path>
-              <path d="M 512,352 L 592,352" fill="none" stroke="black"></path>
-              <path d="M 352,400 L 456,400" fill="none" stroke="black"></path>
-              <path d="M 512,400 L 584,400" fill="none" stroke="black"></path>
-              <path d="M 208,416 L 344,416" fill="none" stroke="black"></path>
-              <path d="M 464,416 L 504,416" fill="none" stroke="black"></path>
-              <path d="M 352,432 L 456,432" fill="none" stroke="black"></path>
-              <path d="M 512,432 L 584,432" fill="none" stroke="black"></path>
-              <path d="M 352,480 L 456,480" fill="none" stroke="black"></path>
-              <path d="M 512,480 L 592,480" fill="none" stroke="black"></path>
-              <path d="M 216,496 L 344,496" fill="none" stroke="black"></path>
-              <path d="M 464,496 L 504,496" fill="none" stroke="black"></path>
-              <path d="M 352,512 L 456,512" fill="none" stroke="black"></path>
-              <path d="M 512,512 L 592,512" fill="none" stroke="black"></path>
-              <path d="M 352,576 L 464,576" fill="none" stroke="black"></path>
-              <path d="M 512,576 L 584,576" fill="none" stroke="black"></path>
-              <path d="M 208,592 L 344,592" fill="none" stroke="black"></path>
-              <path d="M 472,592 L 504,592" fill="none" stroke="black"></path>
-              <path d="M 352,608 L 464,608" fill="none" stroke="black"></path>
-              <path d="M 512,608 L 584,608" fill="none" stroke="black"></path>
-              <path d="M 368,656 L 480,656" fill="none" stroke="black"></path>
-              <path d="M 512,656 L 592,656" fill="none" stroke="black"></path>
-              <path d="M 216,672 L 360,672" fill="none" stroke="black"></path>
-              <path d="M 488,672 L 504,672" fill="none" stroke="black"></path>
-              <path d="M 368,688 L 480,688" fill="none" stroke="black"></path>
-              <path d="M 512,688 L 592,688" fill="none" stroke="black"></path>
-              <path d="M 208,720 L 360,720" fill="none" stroke="black"></path>
-              <path d="M 32,736 L 208,736" fill="none" stroke="black"></path>
-              <path d="M 8,784 L 608,784" fill="none" stroke="black"></path>
-              <polygon class="arrowhead" points="560,648 548,642.4 548,653.6" fill="black" transform="rotate(90,552,648)"></polygon>
-              <polygon class="arrowhead" points="560,472 548,466.4 548,477.6" fill="black" transform="rotate(90,552,472)"></polygon>
-              <polygon class="arrowhead" points="560,392 548,386.4 548,397.6" fill="black" transform="rotate(90,552,392)"></polygon>
-              <polygon class="arrowhead" points="560,312 548,306.4 548,317.6" fill="black" transform="rotate(90,552,312)"></polygon>
-              <polygon class="arrowhead" points="560,232 548,226.4 548,237.6" fill="black" transform="rotate(90,552,232)"></polygon>
-              <polygon class="arrowhead" points="560,152 548,146.4 548,157.6" fill="black" transform="rotate(90,552,152)"></polygon>
-              <polygon class="arrowhead" points="512,592 500,586.4 500,597.6" fill="black" transform="rotate(0,504,592)"></polygon>
-              <polygon class="arrowhead" points="512,416 500,410.4 500,421.6" fill="black" transform="rotate(0,504,416)"></polygon>
-              <polygon class="arrowhead" points="512,256 500,250.4 500,261.6" fill="black" transform="rotate(0,504,256)"></polygon>
-              <polygon class="arrowhead" points="512,176 500,170.4 500,181.6" fill="black" transform="rotate(0,504,176)"></polygon>
-              <polygon class="arrowhead" points="512,96 500,90.4 500,101.6" fill="black" transform="rotate(0,504,96)"></polygon>
-              <polygon class="arrowhead" points="496,672 484,666.4 484,677.6" fill="black" transform="rotate(180,488,672)"></polygon>
-              <polygon class="arrowhead" points="472,496 460,490.4 460,501.6" fill="black" transform="rotate(180,464,496)"></polygon>
-              <polygon class="arrowhead" points="472,336 460,330.4 460,341.6" fill="black" transform="rotate(180,464,336)"></polygon>
-              <polygon class="arrowhead" points="368,720 356,714.4 356,725.6" fill="black" transform="rotate(0,360,720)"></polygon>
-              <polygon class="arrowhead" points="352,592 340,586.4 340,597.6" fill="black" transform="rotate(0,344,592)"></polygon>
-              <polygon class="arrowhead" points="352,416 340,410.4 340,421.6" fill="black" transform="rotate(0,344,416)"></polygon>
-              <polygon class="arrowhead" points="352,256 340,250.4 340,261.6" fill="black" transform="rotate(0,344,256)"></polygon>
-              <polygon class="arrowhead" points="352,176 340,170.4 340,181.6" fill="black" transform="rotate(0,344,176)"></polygon>
-              <polygon class="arrowhead" points="224,672 212,666.4 212,677.6" fill="black" transform="rotate(180,216,672)"></polygon>
-              <polygon class="arrowhead" points="224,496 212,490.4 212,501.6" fill="black" transform="rotate(180,216,496)"></polygon>
-              <polygon class="arrowhead" points="224,336 212,330.4 212,341.6" fill="black" transform="rotate(180,216,336)"></polygon>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="848" width="560" viewBox="0 0 560 848" class="diagram" text-anchor="middle" font-family="monospace" font-size="13px" stroke-linecap="round">
+              <path d="M 8,32 L 8,832" fill="none" stroke="black"></path>
+              <path d="M 24,192 L 24,784" fill="none" stroke="black"></path>
+              <path d="M 184,192 L 184,784" fill="none" stroke="black"></path>
+              <path d="M 328,160 L 328,192" fill="none" stroke="black"></path>
+              <path d="M 328,256 L 328,288" fill="none" stroke="black"></path>
+              <path d="M 328,336 L 328,368" fill="none" stroke="black"></path>
+              <path d="M 328,416 L 328,448" fill="none" stroke="black"></path>
+              <path d="M 328,496 L 328,528" fill="none" stroke="black"></path>
+              <path d="M 328,624 L 328,656" fill="none" stroke="black"></path>
+              <path d="M 328,704 L 328,736" fill="none" stroke="black"></path>
+              <path d="M 432,160 L 432,192" fill="none" stroke="black"></path>
+              <path d="M 432,256 L 432,288" fill="none" stroke="black"></path>
+              <path d="M 432,336 L 432,368" fill="none" stroke="black"></path>
+              <path d="M 432,416 L 432,448" fill="none" stroke="black"></path>
+              <path d="M 432,496 L 432,528" fill="none" stroke="black"></path>
+              <path d="M 432,624 L 432,656" fill="none" stroke="black"></path>
+              <path d="M 432,704 L 432,736" fill="none" stroke="black"></path>
+              <path d="M 464,80 L 464,112" fill="none" stroke="black"></path>
+              <path d="M 464,160 L 464,192" fill="none" stroke="black"></path>
+              <path d="M 464,256 L 464,288" fill="none" stroke="black"></path>
+              <path d="M 464,336 L 464,368" fill="none" stroke="black"></path>
+              <path d="M 464,416 L 464,448" fill="none" stroke="black"></path>
+              <path d="M 464,496 L 464,528" fill="none" stroke="black"></path>
+              <path d="M 464,624 L 464,656" fill="none" stroke="black"></path>
+              <path d="M 464,704 L 464,736" fill="none" stroke="black"></path>
+              <path d="M 496,120 L 496,152" fill="none" stroke="black"></path>
+              <path d="M 496,200 L 496,248" fill="none" stroke="black"></path>
+              <path d="M 496,296 L 496,328" fill="none" stroke="black"></path>
+              <path d="M 496,376 L 496,408" fill="none" stroke="black"></path>
+              <path d="M 496,456 L 496,488" fill="none" stroke="black"></path>
+              <path d="M 496,576 L 496,616" fill="none" stroke="black"></path>
+              <path d="M 496,664 L 496,696" fill="none" stroke="black"></path>
+              <path d="M 520,80 L 520,112" fill="none" stroke="black"></path>
+              <path d="M 536,160 L 536,192" fill="none" stroke="black"></path>
+              <path d="M 536,256 L 536,288" fill="none" stroke="black"></path>
+              <path d="M 536,416 L 536,448" fill="none" stroke="black"></path>
+              <path d="M 536,624 L 536,656" fill="none" stroke="black"></path>
+              <path d="M 544,336 L 544,368" fill="none" stroke="black"></path>
+              <path d="M 544,496 L 544,528" fill="none" stroke="black"></path>
+              <path d="M 544,704 L 544,736" fill="none" stroke="black"></path>
+              <path d="M 552,32 L 552,832" fill="none" stroke="black"></path>
+              <path d="M 8,32 L 552,32" fill="none" stroke="black"></path>
+              <path d="M 464,80 L 520,80" fill="none" stroke="black"></path>
+              <path d="M 112,96 L 456,96" fill="none" stroke="black"></path>
+              <path d="M 464,112 L 520,112" fill="none" stroke="black"></path>
+              <path d="M 328,160 L 432,160" fill="none" stroke="black"></path>
+              <path d="M 464,160 L 536,160" fill="none" stroke="black"></path>
+              <path d="M 96,176 L 320,176" fill="none" stroke="black"></path>
+              <path d="M 440,176 L 456,176" fill="none" stroke="black"></path>
+              <path d="M 24,192 L 184,192" fill="none" stroke="black"></path>
+              <path d="M 328,192 L 432,192" fill="none" stroke="black"></path>
+              <path d="M 464,192 L 536,192" fill="none" stroke="black"></path>
+              <path d="M 328,256 L 432,256" fill="none" stroke="black"></path>
+              <path d="M 464,256 L 536,256" fill="none" stroke="black"></path>
+              <path d="M 184,272 L 320,272" fill="none" stroke="black"></path>
+              <path d="M 440,272 L 456,272" fill="none" stroke="black"></path>
+              <path d="M 328,288 L 432,288" fill="none" stroke="black"></path>
+              <path d="M 464,288 L 536,288" fill="none" stroke="black"></path>
+              <path d="M 328,336 L 432,336" fill="none" stroke="black"></path>
+              <path d="M 464,336 L 536,336" fill="none" stroke="black"></path>
+              <path d="M 192,352 L 320,352" fill="none" stroke="black"></path>
+              <path d="M 440,352 L 456,352" fill="none" stroke="black"></path>
+              <path d="M 328,368 L 432,368" fill="none" stroke="black"></path>
+              <path d="M 464,368 L 536,368" fill="none" stroke="black"></path>
+              <path d="M 328,416 L 432,416" fill="none" stroke="black"></path>
+              <path d="M 464,416 L 536,416" fill="none" stroke="black"></path>
+              <path d="M 184,432 L 320,432" fill="none" stroke="black"></path>
+              <path d="M 440,432 L 456,432" fill="none" stroke="black"></path>
+              <path d="M 328,448 L 432,448" fill="none" stroke="black"></path>
+              <path d="M 464,448 L 536,448" fill="none" stroke="black"></path>
+              <path d="M 328,496 L 432,496" fill="none" stroke="black"></path>
+              <path d="M 464,496 L 536,496" fill="none" stroke="black"></path>
+              <path d="M 192,512 L 320,512" fill="none" stroke="black"></path>
+              <path d="M 440,512 L 456,512" fill="none" stroke="black"></path>
+              <path d="M 328,528 L 432,528" fill="none" stroke="black"></path>
+              <path d="M 464,528 L 536,528" fill="none" stroke="black"></path>
+              <path d="M 328,624 L 432,624" fill="none" stroke="black"></path>
+              <path d="M 464,624 L 536,624" fill="none" stroke="black"></path>
+              <path d="M 184,640 L 320,640" fill="none" stroke="black"></path>
+              <path d="M 440,640 L 456,640" fill="none" stroke="black"></path>
+              <path d="M 328,656 L 432,656" fill="none" stroke="black"></path>
+              <path d="M 464,656 L 536,656" fill="none" stroke="black"></path>
+              <path d="M 328,704 L 432,704" fill="none" stroke="black"></path>
+              <path d="M 464,704 L 536,704" fill="none" stroke="black"></path>
+              <path d="M 192,720 L 320,720" fill="none" stroke="black"></path>
+              <path d="M 440,720 L 456,720" fill="none" stroke="black"></path>
+              <path d="M 328,736 L 432,736" fill="none" stroke="black"></path>
+              <path d="M 464,736 L 536,736" fill="none" stroke="black"></path>
+              <path d="M 184,768 L 320,768" fill="none" stroke="black"></path>
+              <path d="M 24,784 L 184,784" fill="none" stroke="black"></path>
+              <path d="M 8,832 L 552,832" fill="none" stroke="black"></path>
+              <path d="M 536,336 C 544.83064,336 552,343.16936 552,352" fill="none" stroke="black"></path>
+              <path d="M 536,336 C 544.83064,336 552,328.83064 552,320" fill="none" stroke="black"></path>
+              <path d="M 536,368 C 544.83064,368 552,375.16936 552,384" fill="none" stroke="black"></path>
+              <path d="M 536,368 C 544.83064,368 552,360.83064 552,352" fill="none" stroke="black"></path>
+              <path d="M 536,496 C 544.83064,496 552,503.16936 552,512" fill="none" stroke="black"></path>
+              <path d="M 536,496 C 544.83064,496 552,488.83064 552,480" fill="none" stroke="black"></path>
+              <path d="M 536,528 C 544.83064,528 552,535.16936 552,544" fill="none" stroke="black"></path>
+              <path d="M 536,528 C 544.83064,528 552,520.83064 552,512" fill="none" stroke="black"></path>
+              <path d="M 536,704 C 544.83064,704 552,711.16936 552,720" fill="none" stroke="black"></path>
+              <path d="M 536,704 C 544.83064,704 552,696.83064 552,688" fill="none" stroke="black"></path>
+              <path d="M 536,736 C 544.83064,736 552,743.16936 552,752" fill="none" stroke="black"></path>
+              <path d="M 536,736 C 544.83064,736 552,728.83064 552,720" fill="none" stroke="black"></path>
+              <polygon class="arrowhead" points="504,696 492,690.4 492,701.6" fill="black" transform="rotate(90,496,696)"></polygon>
+              <polygon class="arrowhead" points="504,616 492,610.4 492,621.6" fill="black" transform="rotate(90,496,616)"></polygon>
+              <polygon class="arrowhead" points="504,488 492,482.4 492,493.6" fill="black" transform="rotate(90,496,488)"></polygon>
+              <polygon class="arrowhead" points="504,408 492,402.4 492,413.6" fill="black" transform="rotate(90,496,408)"></polygon>
+              <polygon class="arrowhead" points="504,328 492,322.4 492,333.6" fill="black" transform="rotate(90,496,328)"></polygon>
+              <polygon class="arrowhead" points="504,248 492,242.4 492,253.6" fill="black" transform="rotate(90,496,248)"></polygon>
+              <polygon class="arrowhead" points="504,152 492,146.4 492,157.6" fill="black" transform="rotate(90,496,152)"></polygon>
+              <polygon class="arrowhead" points="464,640 452,634.4 452,645.6" fill="black" transform="rotate(0,456,640)"></polygon>
+              <polygon class="arrowhead" points="464,432 452,426.4 452,437.6" fill="black" transform="rotate(0,456,432)"></polygon>
+              <polygon class="arrowhead" points="464,272 452,266.4 452,277.6" fill="black" transform="rotate(0,456,272)"></polygon>
+              <polygon class="arrowhead" points="464,176 452,170.4 452,181.6" fill="black" transform="rotate(0,456,176)"></polygon>
+              <polygon class="arrowhead" points="464,96 452,90.4 452,101.6" fill="black" transform="rotate(0,456,96)"></polygon>
+              <polygon class="arrowhead" points="448,720 436,714.4 436,725.6" fill="black" transform="rotate(180,440,720)"></polygon>
+              <polygon class="arrowhead" points="448,512 436,506.4 436,517.6" fill="black" transform="rotate(180,440,512)"></polygon>
+              <polygon class="arrowhead" points="448,352 436,346.4 436,357.6" fill="black" transform="rotate(180,440,352)"></polygon>
+              <polygon class="arrowhead" points="328,768 316,762.4 316,773.6" fill="black" transform="rotate(0,320,768)"></polygon>
+              <polygon class="arrowhead" points="328,640 316,634.4 316,645.6" fill="black" transform="rotate(0,320,640)"></polygon>
+              <polygon class="arrowhead" points="328,432 316,426.4 316,437.6" fill="black" transform="rotate(0,320,432)"></polygon>
+              <polygon class="arrowhead" points="328,272 316,266.4 316,277.6" fill="black" transform="rotate(0,320,272)"></polygon>
+              <polygon class="arrowhead" points="328,176 316,170.4 316,181.6" fill="black" transform="rotate(0,320,176)"></polygon>
+              <polygon class="arrowhead" points="200,720 188,714.4 188,725.6" fill="black" transform="rotate(180,192,720)"></polygon>
+              <polygon class="arrowhead" points="200,512 188,506.4 188,517.6" fill="black" transform="rotate(180,192,512)"></polygon>
+              <polygon class="arrowhead" points="200,352 188,346.4 188,357.6" fill="black" transform="rotate(180,192,352)"></polygon>
               <g class="text">
                 <text x="36" y="52">NARG</text>
                 <text x="84" y="52">Prover</text>
                 <text x="164" y="52">(session_id,</text>
                 <text x="256" y="52">instance,</text>
                 <text x="332" y="52">witness)</text>
-                <text x="68" y="100">session_id</text>
-                <text x="540" y="100">Init</text>
-                <text x="60" y="180">instance</text>
-                <text x="400" y="180">encode[0]</text>
-                <text x="548" y="180">Absorb</text>
-                <text x="88" y="212">Interactive</text>
-                <text x="164" y="212">Prover</text>
-                <text x="92" y="228">(instance,</text>
-                <text x="172" y="228">witness)</text>
-                <text x="272" y="244">prover_msg[1]</text>
-                <text x="400" y="260">encode[1]</text>
-                <text x="548" y="260">Absorb</text>
-                <text x="280" y="324">verifier_msg[1]</text>
-                <text x="400" y="340">decode[1]</text>
-                <text x="552" y="340">Squeeze</text>
-                <text x="272" y="404">prover_msg[2]</text>
-                <text x="400" y="420">encode[2]</text>
-                <text x="548" y="420">Absorb</text>
-                <text x="280" y="484">verifier_msg[2]</text>
-                <text x="400" y="500">decode[2]</text>
-                <text x="552" y="500">Squeeze</text>
-                <text x="280" y="532">.</text>
-                <text x="552" y="532">.</text>
-                <text x="280" y="548">.</text>
-                <text x="552" y="548">.</text>
-                <text x="280" y="564">.</text>
-                <text x="552" y="564">.</text>
-                <text x="280" y="580">prover_msg[k-1]</text>
-                <text x="408" y="596">encode[k-1]</text>
-                <text x="548" y="596">Absorb</text>
-                <text x="288" y="660">verifier_msg[k-1]</text>
-                <text x="424" y="676">decode[k-1]</text>
-                <text x="552" y="676">Squeeze</text>
-                <text x="272" y="708">prover_msg[k]</text>
-                <text x="112" y="772">narg_string</text>
-                <text x="172" y="772">:=</text>
-                <text x="288" y="772">serialize(prover_msg[..])</text>
+                <text x="60" y="100">session_id</text>
+                <text x="492" y="100">Init</text>
+                <text x="52" y="180">instance</text>
+                <text x="376" y="180">encode[0]</text>
+                <text x="500" y="180">Absorb</text>
+                <text x="80" y="212">Interactive</text>
+                <text x="156" y="212">Prover</text>
+                <text x="68" y="228">(instance,</text>
+                <text x="148" y="228">witness)</text>
+                <text x="248" y="244">prover_msg[1]</text>
+                <text x="376" y="276">encode[1]</text>
+                <text x="500" y="276">Absorb</text>
+                <text x="256" y="324">verifier_msg[1]</text>
+                <text x="376" y="356">decode[1]</text>
+                <text x="504" y="356">Squeeze</text>
+                <text x="248" y="404">prover_msg[2]</text>
+                <text x="376" y="436">encode[2]</text>
+                <text x="500" y="436">Absorb</text>
+                <text x="256" y="484">verifier_msg[2]</text>
+                <text x="376" y="516">decode[2]</text>
+                <text x="504" y="516">Squeeze</text>
+                <text x="256" y="548">.</text>
+                <text x="496" y="548">.</text>
+                <text x="256" y="564">.</text>
+                <text x="496" y="564">.</text>
+                <text x="256" y="580">.</text>
+                <text x="256" y="612">prover_msg[k-1]</text>
+                <text x="384" y="644">encode[k-1]</text>
+                <text x="500" y="644">Absorb</text>
+                <text x="264" y="692">verifier_msg[k-1]</text>
+                <text x="384" y="724">decode[k-1]</text>
+                <text x="504" y="724">Squeeze</text>
+                <text x="248" y="756">prover_msg[k]</text>
+                <text x="88" y="820">narg_string</text>
+                <text x="148" y="820">:=</text>
+                <text x="264" y="820">serialize(prover_msg[..])</text>
               </g>
             </svg><a href="#section-1-10.1.1" class="pilcrow">¶</a>
 </div>
@@ -2388,7 +2396,8 @@ Output: out, an element of the field of order p^m, given by its
             <p id="section-5.1-5.5.1">the tag <strong>SHOULD</strong> include a version number.<a href="#section-5.1-5.5.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
-<div class="alignLeft art-text artwork" id="section-5.1-6">
+<p id="section-5.1-6">An application that bypasses <code>DeriveSessionID</code>, and sets the 32-byte <code>session_id</code> directly <strong>MUST</strong> ensure it satisfies the same requirements.<a href="#section-5.1-6" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-5.1-7">
 <pre>
 DeriveSessionID(tag)
 
@@ -2399,30 +2408,30 @@ Output: session_id, a 32-byte string
 1. duplex_sponge = DS.Init("irtf-cfrg-fiat-shamir/session-id")
 2. duplex_sponge.Absorb(tag)
 3. return duplex_sponge.Squeeze(32)
-</pre><a href="#section-5.1-6" class="pilcrow">¶</a>
+</pre><a href="#section-5.1-7" class="pilcrow">¶</a>
 </div>
-<p id="section-5.1-7">Above, <code>DS</code> denotes the duplex sponge instantiation in use (<a href="#hash-instantiations" class="auto internal xref">Section 3</a>, for example the SHAKE128 duplex sponge of <a href="#suite-shake128" class="auto internal xref">Section 3.2</a>): <code>DS.Init</code> constructs a fresh state, and <code>state.Absorb</code> and <code>state.Squeeze</code> are its operations. The 32-byte string <code>"irtf-cfrg-fiat-shamir/session-id"</code> is a domain separator for this derivation.<a href="#section-5.1-7" class="pilcrow">¶</a></p>
-<p id="section-5.1-8">As an example, consider a fictional application named Foo that implements sigma protocols over elliptic curves for encrypted messages shared during a time epoch <code>tttt</code>. A reasonable choice of tag is:<a href="#section-5.1-8" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-5.1-9">
+<p id="section-5.1-8">Above, <code>DS</code> denotes the duplex sponge instantiation in use (<a href="#hash-instantiations" class="auto internal xref">Section 3</a>, for example the SHAKE128 duplex sponge of <a href="#suite-shake128" class="auto internal xref">Section 3.2</a>): <code>DS.Init</code> constructs a fresh state, and <code>state.Absorb</code> and <code>state.Squeeze</code> are its operations. The 32-byte string <code>"irtf-cfrg-fiat-shamir/session-id"</code> is a domain separator for this derivation.<a href="#section-5.1-8" class="pilcrow">¶</a></p>
+<p id="section-5.1-9">As an example, consider a fictional application named Foo that implements sigma protocols over elliptic curves for encrypted messages shared during a time epoch <code>tttt</code>. A reasonable choice of tag is:<a href="#section-5.1-9" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-5.1-10">
 <pre>
 FOO-SV{xx}-{tttt}-DSFS-{hashID}-SIGMA-PROOFS-{yy}
-</pre><a href="#section-5.1-9" class="pilcrow">¶</a>
+</pre><a href="#section-5.1-10" class="pilcrow">¶</a>
 </div>
-<p id="section-5.1-10">where <code>xx</code> is the two-digit number indicating the version, <code>yy</code> is the two-digit number indicating the elliptic-curve ciphersuite, <code>hashID</code> is the hash identifier, and <code>tttt</code> is the epoch number written in decimal US-ASCII digits.<a href="#section-5.1-10" class="pilcrow">¶</a></p>
-<p id="section-5.1-11">As another example, consider a fictional application named Bar that implements an ad-hoc zero-knowledge virtual machine for correct execution of circuits. A reasonable choice of tag is<a href="#section-5.1-11" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-5.1-12">
+<p id="section-5.1-11">where <code>xx</code> is the two-digit number indicating the version, <code>yy</code> is the two-digit number indicating the elliptic-curve ciphersuite, <code>hashID</code> is the hash identifier, and <code>tttt</code> is the epoch number written in decimal US-ASCII digits.<a href="#section-5.1-11" class="pilcrow">¶</a></p>
+<p id="section-5.1-12">As another example, consider a fictional application named Bar that implements an ad-hoc zero-knowledge virtual machine for correct execution of circuits. A reasonable choice of tag is<a href="#section-5.1-12" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-5.1-13">
 <pre>
 BAR-COM{cc}
-</pre><a href="#section-5.1-12" class="pilcrow">¶</a>
+</pre><a href="#section-5.1-13" class="pilcrow">¶</a>
 </div>
-<p id="section-5.1-13">where <code>{cc}</code> is the commit hash of the associated version of the cryptographic specification of the protocol.<a href="#section-5.1-13" class="pilcrow">¶</a></p>
-<p id="section-5.1-14">Yet another reasonable choice for the session identifier is to append a description of the interactive argument system together with the length of each prover and verifier message, after the version string. For instance:<a href="#section-5.1-14" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-5.1-15">
+<p id="section-5.1-14">where <code>{cc}</code> is the commit hash of the associated version of the cryptographic specification of the protocol.<a href="#section-5.1-14" class="pilcrow">¶</a></p>
+<p id="section-5.1-15">Yet another reasonable choice for the session identifier is to append a description of the interactive argument system together with the length of each prover and verifier message, after the version string. For instance:<a href="#section-5.1-15" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-5.1-16">
 <pre>
 BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-messageS1challenge
-</pre><a href="#section-5.1-15" class="pilcrow">¶</a>
+</pre><a href="#section-5.1-16" class="pilcrow">¶</a>
 </div>
-<p id="section-5.1-16">where <code>xx</code> is the two-digit version number, <code>hashID</code> is the hash identifier, and <code>ff</code> is the two-digit identifier of the finite field over which the proof is computed. The suffix <code>A2round-messageS1challenge</code> describes one sumcheck round (the pattern repeats each round): the prover absorbs (<code>A</code>) two field elements <code>round-message</code>, and the verifier squeezes (<code>S</code>) one field element <code>challenge</code>. This is similar to the SAFE API <span>[<a href="#SAFE" class="cite xref">SAFE</a>]</span> <em>IO pattern</em>, which is checked by the prover and verifier during execution.<a href="#section-5.1-16" class="pilcrow">¶</a></p>
+<p id="section-5.1-17">where <code>xx</code> is the two-digit version number, <code>hashID</code> is the hash identifier, and <code>ff</code> is the two-digit identifier of the finite field over which the proof is computed. The suffix <code>A2round-messageS1challenge</code> describes one sumcheck round (the pattern repeats each round): the prover absorbs (<code>A</code>) two field elements <code>round-message</code>, and the verifier squeezes (<code>S</code>) one field element <code>challenge</code>. This is similar to the SAFE API <span>[<a href="#SAFE" class="cite xref">SAFE</a>]</span> <em>IO pattern</em>, which is checked by the prover and verifier during execution.<a href="#section-5.1-17" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="instance">
@@ -2432,7 +2441,7 @@ BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-messageS1challenge
         </h3>
 <p id="section-5.2-1">The instance is input to the non-interactive prover and the non-interactive verifier; it fixes the specific statement being proven.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
 <p id="section-5.2-2">The instance is the first value absorbed after <code>Init(session_id)</code> and before any prover message. The prover and verifier <strong>MUST</strong> absorb <code>encode[0](instance)</code>, where <code>encode[0]</code> is the first encoding map.
-The encoded instance <strong>MUST</strong> be non-empty. While the session identifier of the previous section (<a href="#session-id" class="auto internal xref">Section 5.1</a>) fixes the language, the instance selects one of its members.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
+The encoded instance <strong>MUST</strong> be non-empty. While the session identifier of the previous section <a href="#session-id" class="auto internal xref">Section 5.1</a> fixes the language, the instance selects one of its members.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
 <p id="section-5.2-3">As for every encoding map, <code>encode[0]</code> <strong>MUST</strong> be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see <a href="#instance-encoding" class="auto internal xref">Section 8.5</a>). The encoding map <code>encode[0]</code> <strong>SHOULD</strong> reuse the encodings of <a href="#encoding-bytes" class="auto internal xref">Section 4.1</a>.<a href="#section-5.2-3" class="pilcrow">¶</a></p>
 <p id="section-5.2-4">As an example, consider the sumcheck relation for multilinear polynomials in <code>N</code> variables over the field of size <code>p^m</code>. For a polynomial committed using the polynomial commitment scheme <code>COM</code>, the relation consists of:<a href="#section-5.2-4" class="pilcrow">¶</a></p>
 <ul class="normal">
@@ -2457,13 +2466,13 @@ EncodeField(S, p, m) || EncodeUint(N, 2^32) || COM.Serialize(C)
 </pre><a href="#section-5.2-9" class="pilcrow">¶</a>
 </div>
 <p id="section-5.2-10">where <code>COM.Serialize</code> is the commitment-serialization function of the scheme <code>COM</code> (the opening check <code>COM.Open</code> is used above).<a href="#section-5.2-10" class="pilcrow">¶</a></p>
-<p id="section-5.2-11">As another example, in the discrete logarithm setting, the Chaum-Pedersen relation over an additive elliptic curve group with generators <code>G</code>, <code>H</code> (for which the relative discrete logarithm is not known). The relation consists of:<a href="#section-5.2-11" class="pilcrow">¶</a></p>
+<p id="section-5.2-11">As another example, consider, in the discrete logarithm setting, the Chaum-Pedersen relation over an additive elliptic curve group with generators <code>G</code>, <code>H</code> (for which the relative discrete logarithm is not known). The relation consists of:<a href="#section-5.2-11" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.2-12.1">
-            <p id="section-5.2-12.1.1">instance <code>(C, D)</code> are Pedersen commitments<a href="#section-5.2-12.1.1" class="pilcrow">¶</a></p>
+            <p id="section-5.2-12.1.1">the instance <code>(C, D)</code>, a pair of Pedersen commitments;<a href="#section-5.2-12.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-5.2-12.2">
-            <p id="section-5.2-12.2.1">witness <code>(x, r, s)</code> scalar field elements with <code>x</code> the commitment message and <code>r</code>, <code>s</code> independent random commitment openings<a href="#section-5.2-12.2.1" class="pilcrow">¶</a></p>
+            <p id="section-5.2-12.2.1">the witness <code>(x, r, s)</code>, scalar field elements with <code>x</code> the commitment message and <code>r</code>, <code>s</code> independent random commitment openings<a href="#section-5.2-12.2.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
 <p id="section-5.2-13">such that<a href="#section-5.2-13" class="pilcrow">¶</a></p>
@@ -2479,7 +2488,7 @@ enc(G) || enc(H) || enc(C) || enc(D)
 </pre><a href="#section-5.2-16" class="pilcrow">¶</a>
 </div>
 <p id="section-5.2-17">where <code>enc</code> is the group element-serialization function described in <a href="#encoding-ec-point" class="auto internal xref">Section 4.1.5</a>.<a href="#section-5.2-17" class="pilcrow">¶</a></p>
-<p id="section-5.2-18">Omitting public statement data from the transformation, such as <code>N</code> in the first example or the group generators <code>G</code>, <code>H</code> in the second, can can compromise soundness of the proof system. See <a href="#instance-encoding" class="auto internal xref">Section 8.5</a>.<a href="#section-5.2-18" class="pilcrow">¶</a></p>
+<p id="section-5.2-18">Omitting public statement data from the transformation, such as <code>N</code> in the first example or the group generators <code>G</code>, <code>H</code> in the second, can compromise soundness of the proof system. See <a href="#instance-encoding" class="auto internal xref">Section 8.5</a>.<a href="#section-5.2-18" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2645,7 +2654,7 @@ Output: a, an element of the field of order p^m, given by its
 <a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-codecs-2" class="section-name selfRef">Codecs</a>
         </h3>
 <p id="section-8.1-1">Encoding maps are inverted only in the security analysis (by the knowledge extractor), never by the prover or verifier. The proof relies on a left inverse existing and being efficiently computable, which the knowledge-soundness extractor uses to recover prover messages from the absorbed bytes <span>[<a href="#CO25" class="cite xref">CO25</a>]</span>.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
-<p id="section-8.1-2">Decoding preserves the uniform distribution only when its input is uniform. Verifier messages <strong>MUST</strong> therefore be derived from <code>Squeeze</code> output and never from prover-controlled, or non-uniform bytes: decoding a non-uniform input yields a verifier message that is distinguishable from uniform, which would break the public-coin property the transformation depends on.<a href="#section-8.1-2" class="pilcrow">¶</a></p>
+<p id="section-8.1-2">Decoding preserves the uniform distribution only when its input is uniform. Verifier messages <strong>SHOULD</strong> therefore be derived from <code>Squeeze</code> output and never from prover-controlled, or non-uniform bytes: decoding a non-uniform input yields a verifier message that is distinguishable from uniform, which would break the public-coin property the transformation depends on.<a href="#section-8.1-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="constant-time">
@@ -2717,8 +2726,8 @@ Output: a, an element of the field of order p^m, given by its
         <h3 id="name-instance-encoding">
 <a href="#section-8.5" class="section-number selfRef">8.5. </a><a href="#name-instance-encoding" class="section-name selfRef">Instance encoding</a>
         </h3>
-<p id="section-8.5-1">Incorrect encoding of the instance has historically led to a number of critical security vulnerabilities, often grouped under the term <em>weak Fiat-Shamir transformation</em> <span>[<a href="#BPW16" class="cite xref">BPW16</a>]</span>. In each of them, the cryptographic hash function was not provided the full statement being proven. A malicious prover can then compute the verifier message first, and choose the omitted part of the instance afterwards so that the verification equation is satisfied on a statement whose witness it does not hold.<a href="#section-8.5-1" class="pilcrow">¶</a></p>
-<p id="section-8.5-2">One such example is in <span>[<a href="#BPW16" class="cite xref">BPW16</a>]</span>. A Chaum-Pedersen proof of equality for an instance <code>(G, H, X, Y)</code> proves knowledge of a witness <code>x</code> such that <code>X = x * G</code> and <code>Y = x * H</code>. The prover sends commitments <code>(A, B)</code>, obtains a challenge <code>c</code>, and replies with a scalar <code>f</code>. The verifier accepts if the verification equations hold: <code>f * G == A + c * X</code> and <code>f * H == B + c * Y</code>. Suppose the challenge <code>c</code> is derived only by absorbing <code>(A, B)</code> and omitting the instance <code>(G, H, X, Y)</code>. A malicious prover can pick <code>A</code>, <code>B</code>, <code>H</code>, and <code>f</code> at random, derive <code>c</code>, and then set <code>X</code> and <code>Y</code> to satisfy the verification equations. Verification passes, yet no single <code>x</code> satisfies both <code>X = x * G</code> and <code>Y = x * H</code>. A false statement has been proven. Other examples are available in <span>[<a href="#DMWG23" class="cite xref">DMWG23</a>]</span> <span>[<a href="#CVE-2022-29566" class="cite xref">CVE-2022-29566</a>]</span>.<a href="#section-8.5-2" class="pilcrow">¶</a></p>
+<p id="section-8.5-1">Incorrect encoding of the instance has historically led to a number of critical security vulnerabilities, often grouped under the term <em>weak Fiat-Shamir transformation</em>. In each of them, the cryptographic hash function was not provided the full statement being proven. A malicious prover can then compute the verifier message first, and choose the omitted part of the instance afterwards so that the verification equation is satisfied on a statement whose witness it does not hold.<a href="#section-8.5-1" class="pilcrow">¶</a></p>
+<p id="section-8.5-2">As an example <span>[<a href="#BPW16" class="cite xref">BPW16</a>]</span>, Chaum-Pedersen proof of equality for an instance <code>(G, H, X, Y)</code> proves knowledge of a witness <code>x</code> such that <code>X = x * G</code> and <code>Y = x * H</code>. The prover sends commitments <code>(A, B)</code>, obtains a challenge <code>c</code>, and replies with a scalar <code>f</code>. The verifier accepts if the verification equations hold: <code>f * G == A + c * X</code> and <code>f * H == B + c * Y</code>. Suppose the challenge <code>c</code> is derived only by absorbing <code>(A, B)</code> and omitting the instance <code>(G, H, X, Y)</code>. A malicious prover can pick <code>A</code>, <code>B</code>, <code>H</code>, and <code>f</code> at random, derive <code>c</code>, and then set <code>X</code> and <code>Y</code> to satisfy the verification equations. Verification passes, yet no single <code>x</code> satisfies both <code>X = x * G</code> and <code>Y = x * H</code>. A false statement has been proven. Other examples are available in <span>[<a href="#DMWG23" class="cite xref">DMWG23</a>]</span> <span>[<a href="#CVE-2022-29566" class="cite xref">CVE-2022-29566</a>]</span>.<a href="#section-8.5-2" class="pilcrow">¶</a></p>
 <p id="section-8.5-3">All security guarantees are conditioned on the instance being part of the relation being proven. The Fiat-Shamir transformation does not verify that the statement being proven is well-formed, or valid. If the instance or the witness provided as input are not in the relation (e.g. they are malformed), the output is undefined and no security guarantee is provided.<a href="#section-8.5-3" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2727,9 +2736,9 @@ Output: a, an element of the field of order p^m, given by its
         <h3 id="name-implementation-guidance">
 <a href="#section-8.6" class="section-number selfRef">8.6. </a><a href="#name-implementation-guidance" class="section-name selfRef">Implementation guidance</a>
         </h3>
-<p id="section-8.6-1">The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities. Some incorrect implementations involve out-of-order (or missing) prover messages <span>[<a href="#CVE-2024-45039" class="cite xref">CVE-2024-45039</a>]</span> <span>[<a href="#CVE-2026-46654" class="cite xref">CVE-2026-46654</a>]</span>.<a href="#section-8.6-1" class="pilcrow">¶</a></p>
-<p id="section-8.6-2">Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes, and by replacing each prover message in turn with a different value.<a href="#section-8.6-2" class="pilcrow">¶</a></p>
-<p id="section-8.6-3">Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered.<a href="#section-8.6-3" class="pilcrow">¶</a></p>
+<p id="section-8.6-1">The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities.<a href="#section-8.6-1" class="pilcrow">¶</a></p>
+<p id="section-8.6-2">Some incorrect implementations involve out-of-order (or missing) prover messages <span>[<a href="#CVE-2024-45039" class="cite xref">CVE-2024-45039</a>]</span> <span>[<a href="#CVE-2026-46654" class="cite xref">CVE-2026-46654</a>]</span>. Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered. A byte level interface, as described in this document, is advisable in place of proof data structures whose fields are randomly addressable. A sequential interface, by contrast, enforces in-order processing. An end-of-input check is necessary to prevent malleability.<a href="#section-8.6-2" class="pilcrow">¶</a></p>
+<p id="section-8.6-3">Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes, and by replacing each prover message in turn with a different value.<a href="#section-8.6-3" class="pilcrow">¶</a></p>
 <p id="section-8.6-4">The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers <strong>MUST</strong> check that length indicators are correct, that integers fall within their expected range, and that the proof length is correct. For example, in <a href="#deserialize-byte-strings" class="auto internal xref">Section 6.2.1</a> the 4-byte length prefix read by <code>LE2IP</code> in <code>DeserializeVarLenString</code> is attacker-controlled, and can be as large as <code>2^32 - 1</code>, so computing <code>4 + N</code> can overflow 32-bit integers. As another example, a crafted length indicator can make verification checks trivial, or exhaust memory on deserialization before any cryptographic check runs <span>[<a href="#GNARK-OOM" class="cite xref">GNARK-OOM</a>]</span>.<a href="#section-8.6-4" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -3481,8 +3490,8 @@ Narg = d287b6370f8ba83760146f4a616bbd9ffb87d7908ef64f60d31fb97f6168
 </div>
 <div id="authors-addresses">
 <section id="appendix-B">
-      <h2 id="name-authors-addresses">
-<a href="#name-authors-addresses" class="section-name selfRef">Authors' Addresses</a>
+      <h2 id="name-authors-address">
+<a href="#name-authors-address" class="section-name selfRef">Author's Address</a>
       </h2>
 <address class="vcard">
         <div dir="auto" class="left"><span class="fn nameRole">Michele Orrù</span></div>
@@ -3490,14 +3499,6 @@ Narg = d287b6370f8ba83760146f4a616bbd9ffb87d7908ef64f60d31fb97f6168
 <div class="email">
 <span>Email:</span>
 <a href="mailto:m@orru.net" class="email">m@orru.net</a>
-</div>
-</address>
-<address class="vcard">
-        <div dir="auto" class="left"><span class="fn nameRole">Cathie Yun</span></div>
-<div dir="auto" class="left"><span class="org">Apple, Inc.</span></div>
-<div class="email">
-<span>Email:</span>
-<a href="mailto:cathieyun@gmail.com" class="email">cathieyun@gmail.com</a>
 </div>
 </address>
 </section>
