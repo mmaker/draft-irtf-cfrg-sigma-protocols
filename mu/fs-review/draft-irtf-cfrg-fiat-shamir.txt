@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 8 January 2027                                      Apple, Inc.
-                                                             7 July 2026
+Expires: 15 January 2027                                     Apple, Inc.
+                                                            14 July 2026
 
 
                        Fiat-Shamir Transformation
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 8 January 2027.
+   This Internet-Draft will expire on 15 January 2027.
 
 Copyright Notice
 
@@ -269,60 +269,62 @@ Table of Contents
 
  Figure 1: Non-interactive prover for the Fiat-Shamir transformation
 
-+-----------------------------------------------------------------------+
-| NARG Verifier V(session_id, instance, narg_string)                    |
-|                                                                       |
-| 1. prover_msg[..] := deserialize(narg_string)                         |
-| 2. derive verifier messages:                                          |
-|                                                                       |
-|                                     +------+                          |
-| session_id ------------------------>| Init |                          |
-|                                     +------+                          |
-|                                         |                             |
-|                                         v                             |
-|              +-----------+          +--------+                        |
-| instance --->| encode[0] |--------->| Absorb |                        |
-|              +-----------+          +--------+                        |
-|                                         |                             |
-|                                         v                             |
-|prover_msg[1] +-----------+          +--------+                        |
-|------------->| encode[1] |--------->| Absorb |                        |
-|              +-----------+          +--------+                        |
-|                                         |                             |
-|                                         v                             |
-| verifier_msg[1] +-----------+       +---------+                       |
-| <---------------| decode[1] |<------| Squeeze |                       |
-|                 +-----------+       +---------+                       |
-|                                         |                             |
-|                                         v                             |
-|prover_msg[2] +-----------+          +--------+                        |
-|------------->| encode[2] |--------->| Absorb |                        |
-|              +-----------+          +--------+                        |
-|                                         |                             |
-|                                         v                             |
-| verifier_msg[2] +-----------+       +---------+                       |
-| <---------------| decode[2] |<------| Squeeze |                       |
-|                 +-----------+       +---------+                       |
-|       .                                 .                             |
-|       .                                 .                             |
-|       .                                 .                             |
-|prover_msg[k]  +-----------+       +--------+                          |
-|-------------->| encode[k] |------>| Absorb |                          |
-|               +-----------+       +--------+                          |
-|                                         |                             |
-|                                         v                             |
-| verifier_msg[k]   +-----------+   +---------+                         |
-| <-----------------| decode[k] |<--| Squeeze |                         |
-|                   +-----------+   +---------+                         |
-|                                                                       |
-| 3. check IP decision:                                                 |
-|                                                                       |
-| +-------------------------------------------------------------------+ |
-| | Interactive Verifier (instance, prover_msg[..], verifier_msg[..]) | |
-| +-------------------------------------------------------------------+ |
-+-----------------------------------------------------------------------+
+   +-------------------------------------------------------------------+
+   | NARG Verifier V(session_id, instance, narg_string)                |
+   |                                                                   |
+   | 1. prover_msg[..] := deserialize(narg_string)                     |
+   | 2. derive verifier messages:                                      |
+   |                                                                   |
+   |                                     +------+                      |
+   | session_id ------------------------>| Init |                      |
+   |                                     +------+                      |
+   |                                         |                         |
+   |                                         v                         |
+   |              +-----------+          +--------+                    |
+   | instance --->| encode[0] |--------->| Absorb |                    |
+   |              +-----------+          +--------+                    |
+   |                                         |                         |
+   |                                         v                         |
+   |prover_msg[1] +-----------+          +--------+                    |
+   |------------->| encode[1] |--------->| Absorb |                    |
+   |              +-----------+          +--------+                    |
+   |                                         |                         |
+   |                                         v                         |
+   | verifier_msg[1] +-----------+       +---------+                   |
+   | <---------------| decode[1] |<------| Squeeze |                   |
+   |                 +-----------+       +---------+                   |
+   |                                         |                         |
+   |                                         v                         |
+   |prover_msg[2] +-----------+          +--------+                    |
+   |------------->| encode[2] |--------->| Absorb |                    |
+   |              +-----------+          +--------+                    |
+   |                                         |                         |
+   |                                         v                         |
+   | verifier_msg[2] +-----------+       +---------+                   |
+   | <---------------| decode[2] |<------| Squeeze |                   |
+   |                 +-----------+       +---------+                   |
+   |       .                                 .                         |
+   |       .                                 .                         |
+   |       .                                 .                         |
+   |prover_msg[k]  +-----------+       +--------+                      |
+   |-------------->| encode[k] |------>| Absorb |                      |
+   |               +-----------+       +--------+                      |
+   |                                         |                         |
+   |                                         v                         |
+   | verifier_msg[k]   +-----------+   +---------+                     |
+   | <-----------------| decode[k] |<--| Squeeze |                     |
+   |                   +-----------+   +---------+                     |
+   |                                                                   |
+   | 3. Run the interactive verifier                                   |
+   |                                                                   |
+   | +--------------------------------------+                          |
+   | | Interactive Verifier                 |                          |
+   | |  (instance, prover_msg[..],          |                          |
+   | |   verifier_msg[..])                  |                          |
+   | +--------------------------------------+                          |
+   +-------------------------------------------------------------------+
 
-Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
+   Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    The security guarantees provided by this transformation are described
    in Section 8.
@@ -426,8 +428,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    be a value of any type for which a codec (Section 4) is defined, such
    as a byte string, an unsigned integer, or a group element.  The
    *transcript* is the ordered sequence of prover and verifier messages.
-   In particular, the transcript does _not_ include the session
-   identifier.
+   In particular, the transcript does _not_ include the instance and
+   session identifier.
 
    The *instance* specifies the statement being proven and is held by
    both the prover and the verifier.  The (encoded) instance *MUST* be
@@ -448,13 +450,14 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    output of the non-interactive prover.
 
    The notation in this document is for an interactive argument with k
-   rounds in which the prover moves first and the verifier moves last.
-   Other types of interactions can be expressed in the same notation by
-   setting the unused messages to the empty string: a protocol whose
-   verifier moves first (such as a batch argument) sets its first prover
-   message to "", and one whose prover moves last (such as a sigma
-   protocol) sets its final verifier message to "".  Prover and verifier
-   round messages 2, ..., k-1 *MUST* be non-empty.
+   rounds in which the prover moves first (that is, sends the first
+   message) and the verifier moves last.  Other types of interactions
+   can be expressed in the same notation by setting the unused messages
+   to the empty string: a protocol whose verifier moves first (such as a
+   batch argument) sets its first prover message to "", and one whose
+   prover moves last (such as a sigma protocol) sets its final verifier
+   message to "".  Prover and verifier round messages 2, ..., k-1 *MUST*
+   be non-empty.
 
 2.4.  Codec and serialization
 
@@ -502,7 +505,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    *  state.Absorb(x): absorb x into the state.
 
-   *  state.Squeeze(n) -> buf: produce n bytes from the state.
+   *  state.Squeeze(n) -> buf: produce n elements from the state.
 
    In the duplex sponge interface, messages can be absorbed
    incrementally, and insert no separators: state.Absorb(x) followed by
@@ -627,7 +630,7 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    The session identifier is padded with R - 32 = 136 zero bytes so that
    the instance and prover messages begin on a fresh rate-block boundary
-   (see Section 3.3.1).
+   (see Section 3.3.1) for efficiency Section 7.
 
 3.3.1.  Init
 
@@ -683,20 +686,18 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
 4.  Codecs
 
-   A codec is a set of functions that map prover and verifier messages
-   to the hash function's alphabet:
+   A codec is a set of functions that map prover messages to, and
+   verifier messages from, the hash function's alphabet:
 
    *  Encoding converts the instance and the prover messages into the
-      bytes absorbed by the duplex sponge.  Encoding functions *MUST* be
-      prefix-free.
+      bytes absorbed by the duplex sponge.  The only security
+      requirement on encoding functions is that they be prefix-free.
 
    *  Decoding converts squeezed bytes into verifier messages.  Decoding
-      *MUST* preserve the uniform distribution (up to a small codec
-      error).
+      *MUST* preserve the uniform distribution in the verifier message
+      space (up to a small codec error).  Decoding is infallible.
 
 4.1.  Encoding into byte strings
-
-   All encoding functions *MUST* be prefix-free.
 
 4.1.1.  Byte strings
 
@@ -778,9 +779,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    that 256^Ns >= p, in place of the default LE(x, Ns).  As with the
    default, deserialization *MUST* reject non-canonical encodings (a
    coordinate is valid only if the decoded integer is less than p).
-   When the chosen field serialization departs from the above rule, that
-   choice is part of the codec identity and *MUST* be reflected in the
-   session tag (see Section 5.1).
+   When using a different codec, that selection *MUST* be reflected in
+   the session tag (see Section 5.1).
 
    With respect to a fixed basis, a field element is represented by its
    m coordinates in the prime field, each an integer in [0, p).  It is
@@ -1118,8 +1118,8 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
 
    Deserialization of the NARG string consists of reading the prover
    messages and computing the inverse of the serialization procedure:
-   each message is read by consuming a fixed number of bytes, determined
-   by its type and the instance, and advancing past them.
+   each message is read by consuming a byte string whose length
+   determined by its type and the instance, and advancing past them.
 
    Verification *MUST* fail if any of the prover messages cannot be
    deserialized successfully.  After the last expected prover message
@@ -1359,8 +1359,9 @@ Figure 2: Non-interactive verifier for the Fiat-Shamir transformation
    each proof from a cryptographically secure entropy source, as noted
    in Section 1.  Reusing the same randomness (or correlated randomness)
    across two proofs will compromise zero-knowledge.  Implementations
-   *MUST* sample independent random coins for each proof using the
-   operating system's secure entropy source.
+   *MUST* sample independent random coins for each proof using a
+   cryptographically secure random number generator with sufficient
+   entropy from the system (e.g. using getrandom [RFC4086]).
 
 8.4.3.  Quantum adversaries
 
@@ -1547,6 +1548,11 @@ Informative References
               Grassi, L., Khovratovich, D., and M. Schofnegger,
               "Poseidon2: A Faster Version of the Poseidon Hash
               Function", 2023, <https://eprint.iacr.org/2023/323>.
+
+   [RFC4086]  Eastlake 3rd, D., Schiller, J., and S. Crocker,
+              "Randomness Requirements for Security", BCP 106, RFC 4086,
+              DOI 10.17487/RFC4086, June 2005,
+              <https://www.rfc-editor.org/rfc/rfc4086>.
 
    [RFC7748]  Langley, A., Hamburg, M., and S. Turner, "Elliptic Curves
               for Security", RFC 7748, DOI 10.17487/RFC7748, January
