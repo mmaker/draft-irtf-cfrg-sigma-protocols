@@ -421,7 +421,7 @@ verifier_msg[i] := decode[i](XOF(
                    len_i))
 ~~~
 
-The session identifier is padded with `R - 32` zero bytes so that the instance and prover messages begin on a fresh rate-block boundary (see {{init}}), for efficiency ({{efficiency}}).
+The session identifier is padded with `R - 32` zero bytes so that the instance and prover messages begin on a fresh rate-block boundary (see {{xof-init}}), for efficiency ({{efficiency}}).
 
 The security properties required of the XOF, and the security level attained, are fixed by the suite ({{suites}}); the corresponding requirements on the construction are discussed in {{indifferentiability-of-the-hash-function}}.
 
@@ -879,7 +879,7 @@ Note that for elliptic curves defined in {{SEC1}}, decoding is the Octet-String-
 
 For both codecs and serialization, batch algorithms should be preferred when available, because they amortize per-element cost over a whole sequence. For example, serializing a batch of compressed elliptic-curve points requires only one modular inversion for the entire batch (via Montgomery's trick) rather than one per point, the dominant cost in point compression. Deserialization does not batch in the same way, since point decompression requires a per-element square root.
 
-`Init(session_id)` (see {{session-id}}) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of the duplex sponge state, instead of initializing it every time. In the XOF duplex sponge ({{xof-duplex-sponge}}), the padded session identifier fills exactly one rate block ({{init}}), saving one invocation of the permutation function per execution. Similarly, `DeriveSessionID` can be precomputed when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing `encode[0](instance)`.
+`Init(session_id)` (see {{session-id}}) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of the duplex sponge state, instead of initializing it every time. In the XOF duplex sponge ({{xof-duplex-sponge}}), the padded session identifier fills exactly one rate block ({{xof-init}}), saving one invocation of the permutation function per execution. Similarly, `DeriveSessionID` can be precomputed when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing `encode[0](instance)`.
 
 XOF evaluations ({{xof-duplex-sponge}}) without copying the XOF state (see the notation `ctx.Copy()` in the pseudocode) will yield identical bytes, but incur a cost quadratic in the number of rounds. Implementations **SHOULD** instead maintain the incremental duplex sponge state of {{interface}}.
 
@@ -969,11 +969,11 @@ The suite identifier is a natural component of the `tag` ({{session-id}}), since
 
 ## SHAKE128 {#suite-shake128}
 
-In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the Keccak-f permutation: SHAKE128 and SHAKE256. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of {{SHA3}}]). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits).
+In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the Keccak-f permutation: SHAKE128 and SHAKE256. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of {{SHA3}}). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits).
 
 ## TurboSHAKE128 {#suite-turboshake128}
 
-TurboSHAKE128 {{!RFC9861}} is an eXtendable-Output Function (XOF) built on Keccak-p[1600, 12], the Keccak-f[1600] permutation reduced to its last 12 rounds. Its state is a 200-byte (1600-bit) string, split into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an n-bit output string, respectively. This instantiation targets 128-bit security.
+TurboSHAKE128 {{!RFC9861}} is an eXtendable-Output Function (XOF) built on Keccak-p\[1600, 12\], the Keccak-f\[1600\] permutation reduced to its last 12 rounds. Its state is a 200-byte (1600-bit) string, split into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an n-bit output string, respectively. This instantiation targets 128-bit security.
 
 In this instantiation, every verifier message is the TurboSHAKE128 XOF evaluation TurboSHAKE128(M, D, L), where M is the concatenation of the session identifier, the encoded instance, and the encoded prover messages up to and including the current round, D (the domain-separation byte in the range 0x01 to 0x7F) is fixed to D = 0x1F, the default value, and L is the desired output length in bytes {{!RFC9861}}.
 
@@ -992,7 +992,7 @@ The authors thank Giap Vu and David Wong (zkSecurity) for their help and contrib
 
 # Test Vectors
 
-The vectors are grouped into three suites. The codec suite is hash-independent; the SHAKE128 and TurboSHAKE128 suites exercise the duplex sponge of {{suite-shake128}} and {{suite-turboshake128}} respectively, and carry the same vector names, differing only in the hash and the resulting bytes.
+The vectors are grouped into three suites. The codec suite is hash-independent; the SHAKE128 and TurboSHAKE128 suites exercise the XOF duplex sponge ({{xof-duplex-sponge}}) instantiated with the suites of {{suite-shake128}} and {{suite-turboshake128}} respectively, and carry the same vector names, differing only in the hash and the resulting bytes.
 
 ## Codec test vectors
 
