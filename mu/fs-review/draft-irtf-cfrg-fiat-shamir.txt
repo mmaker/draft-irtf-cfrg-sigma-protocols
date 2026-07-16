@@ -4,8 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                              15 July 2026
-Expires: 16 January 2027
+Intended status: Informational                              16 July 2026
+Expires: 17 January 2027
 
 
                        Fiat-Shamir Transformation
@@ -55,7 +55,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 16 January 2027.
+   This Internet-Draft will expire on 17 January 2027.
 
 Copyright Notice
 
@@ -1433,11 +1433,9 @@ Table of Contents
 Acknowledgments
 
    The authors thank Thomas Pornin, Vishruti Ganesh, Brent Zundel, Hart
-   Montgomery, Opal Wright for reviewing a previous edition of this
+   Montgomery, Opal Wright, Giap Vu, David Wong, Théophile Wallez, and
+   Thomas Coratger for their reviews and contributions to this
    specification.
-
-   The authors thank Giap Vu and David Wong (zkSecurity) for their help
-   and contributions.
 
 References
 
