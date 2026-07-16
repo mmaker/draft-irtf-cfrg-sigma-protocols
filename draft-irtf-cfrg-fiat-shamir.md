@@ -984,9 +984,7 @@ This document has no IANA actions.
 # Acknowledgments
 {:numbered="false"}
 
-The authors thank Thomas Pornin, Vishruti Ganesh, Brent Zundel, Hart Montgomery, Opal Wright for reviewing a previous edition of this specification.
-
-The authors thank Giap Vu and David Wong (zkSecurity) for their help and contributions.
+The authors thank Thomas Pornin, Vishruti Ganesh, Brent Zundel, Hart Montgomery, Opal Wright, Giap Vu, David Wong, Théophile Wallez, and Thomas Coratger for their reviews and contributions to this specification.
 
 --- back
 
