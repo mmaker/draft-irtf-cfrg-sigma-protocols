@@ -5,9 +5,9 @@
 
 Self-contained: the few primitives the vectors exercise (the SHAKE128 and
 TurboSHAKE128 duplex sponges, session-id derivation, the byte-string,
-unsigned-integer, and field codecs, and one round of the sumcheck protocol) are
-inlined below. The standard library has no TurboSHAKE128, so its underlying
-Keccak-p[1600, 12] sponge is inlined too.
+unsigned-integer, and field codecs, and the sumcheck protocol for a
+multilinear polynomial) are inlined below. The standard library has no
+TurboSHAKE128, so its underlying Keccak-p[1600, 12] sponge is inlined too.
 
 The vectors are split into three files, each a self-contained suite:
 
@@ -20,7 +20,7 @@ The two hash suites carry the same vector Names, differing only in the `Hash`
 field and the resulting bytes. Within each file the vectors are ordered as a
 bring-up ramp for implementers: each one depends only on primitives that earlier
 vectors already exercised (sponge -> session id -> challenge -> sumcheck
-protocol; encode -> deserialize for the codecs), so the first failing vector
+protocol; serialize -> deserialize for the codecs), so the first failing vector
 points at the lowest broken layer.
 
 Record schema
@@ -32,56 +32,91 @@ same key.
 
   identity       Name           machine id; cross-references fs-interop/TESTS.md
                  Title          one-sentence human description
-                 Function       the spec operation exercised, e.g. EncodeUint,
+                 Function       the spec operation exercised, e.g. SerializeUint,
                                 DecodeUint, DeserializeField (see the draft)
   instantiation  Hash           duplex sponge instantiation (SHAKE128 or
                                 TurboSHAKE128), present whenever the sponge is
                                 involved
-                 Group          named scalar field (P-256), present whenever a
-                                field modulus is involved
+                 Group          named scalar field (P-256 or Mersenne31),
+                                present when the modulus is a standardized
+                                field's; absent when the modulus is a bare
+                                prime claimed by no standard (2^256 - 189)
   parameters     Modulus        the field characteristic p, as Ns bytes; makes
                                 the width Ns and the canonical range [0, p) explicit
                  ExtensionDegree the codec parameter m (field-codec vectors only)
   inputs         SessionId      32-byte session identifier seeding the sponge
                  Tag            application tag (DeriveSessionID)
                  Operations     ordered [{absorb: hex} | {squeeze: n}] sponge trace
-                 Value, Input, ContextTag, Degree, ClaimedSum, Coefficients
+                 Value, Input, ContextTag, ClaimedSum, Witness
   outputs        Output         primary byte output (sponge stream / encoding)
                  Challenge      a Fiat-Shamir scalar (Output reduced mod Modulus)
-                 Coordinates, ReducedClaim, Narg
+                 Coordinates, RoundMessage, FinalEvaluation, Narg
 
-A sequence-valued field (Operations, Coefficients, Coordinates) is a JSON list,
-never a set of index-suffixed keys.
+A sequence-valued field (Operations, Coordinates, RoundMessage, Challenge) is a
+JSON list, never a set of index-suffixed keys.
 
 The "answer" of a vector is always a named output field (Output / Challenge /
-ReducedClaim / ... ); there is no single catch-all key, mirroring RFC 9380's
+FinalEvaluation / ... ); there is no single catch-all key, mirroring RFC 9380's
 labeled-field style.
 
-These vectors are positive-only: every record pins a concrete output that a
-conforming implementation reproduces byte-for-byte. Writes the three suites
-above as fiatShamir{Codec,Shake128,TurboShake128}Vectors.{json,txt}.
+Most vectors are positive: the record pins a concrete output that a conforming
+implementation reproduces byte-for-byte. Records carrying `Expected = reject`
+are negative: a conforming implementation MUST refuse the pinned input. Every
+reject vector sits adjacent to an accepted boundary value (x = M next to the
+accepted x = M - 1, a payload one byte short of its length prefix, and so on),
+so each comparison in the draft is probed from both sides. Reject vectors
+carry a prose `Comment` naming the draft requirement they exercise; the
+rejection class itself (deserialize / length / verify) is asserted by the
+self-test below but deliberately not emitted, since the draft does not
+prescribe error values. Two sumcheck reject vectors (the non-canonical
+coefficient and the broken round identity) are hash-independent -- the
+rejection fires before any byte is squeezed -- and therefore live in the
+codec suite; the self-test verifies each rejects under both hash suites.
+The trailing-byte reject exercises the end-of-input check, which fires
+only after every challenge has been squeezed, so it is hash-dependent:
+each hash suite carries its own copy next to the accepted execution.
+
+Writes the three suites above as
+fiatShamir{Codec,Shake128,TurboShake128}Vectors.{json,txt}.
 """
 
 import hashlib
 import json
 import os
 import sys
+import textwrap
 
 # --- Shared constants -----------------------------------------------------
 #
 # Two instantiation axes appear in these vectors and are named per-record:
-# the duplex sponge (`Hash`) and, where a scalar field is needed, the group
-# (`Group`) and its modulus (`Modulus`). We use P-256 to match the sigma-proofs
-# P-256 ciphersuite. The sponge and byte-string vectors depend on neither
-# `Group` nor `Modulus`; only the integer and field codecs and the
-# non-interactive argument depend on M.
+# the duplex sponge (`Hash`) and, where a modulus is needed, the prime
+# (`Modulus`) plus, when that prime belongs to a standardized field, its
+# name (`Group`). Two 256-bit primes appear, deliberately distinct:
+#
+#   Q = 2^256 - 189   the largest 256-bit prime, claimed by no standard, so
+#                     the little-endian *default* serialization applies. Used
+#                     by every vector that pins default-path serialization or
+#                     deserialization bytes: the draft mandates big-endian
+#                     serialization for fields fixed big-endian by their
+#                     standard, so pinning little-endian bytes to such a
+#                     field's order would contradict that MUST.
+#   M = P-256 order   a field the draft's carve-out fixes big-endian. Used
+#                     only where P-256 is conforming: the big-endian
+#                     SerializeField vector, and the DecodeUint vectors,
+#                     which pin that decoding stays little-endian for every
+#                     field, byte-order carve-out or not.
+#
+# The sumcheck vectors use the Mersenne31 field (defined with the sumcheck
+# section below). The sponge and byte-string vectors depend on no modulus.
 
 SID = bytes(range(32))  # session id whose byte i has value i: 000102...1e1f
 HASH = "SHAKE128"  # the default duplex sponge instantiation; the `Hash` field
 GROUP = "P-256"  # the named scalar field; the `Group` field
 R = 168  # duplex sponge rate in bytes (the capacity is 32); shared by both suites
 M = 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551  # P-256 order
-NS = ((M - 1).bit_length() + 7) // 8  # scalar byte length Ns; 32 for this M
+Q = 2**256 - 189  # the largest 256-bit prime; the order of nothing standardized
+NS = ((M - 1).bit_length() + 7) // 8  # scalar byte length Ns; 32 for both M and Q
+assert ((Q - 1).bit_length() + 7) // 8 == NS
 # DecodeUint/DecodeField oversample by k/8 extra bytes for a k-bit security
 # level; SHAKE128 targets 128 bits, so 16 extra bytes bound the reduction bias
 # to 2^-128 (matching RFC 9380, Section 5).
@@ -89,6 +124,9 @@ EXTRA = 16
 MODULUS = M.to_bytes(
     NS, "little"
 ).hex()  # P-256 order as Ns bytes, for the `Modulus` field
+MODULUS_Q = Q.to_bytes(
+    NS, "little"
+).hex()  # 2^256 - 189 as Ns bytes, for the `Modulus` field
 
 # --- TurboSHAKE128 over Keccak-p[1600, 12] (RFC 9861) ---------------------
 #
@@ -238,11 +276,12 @@ class Reject(Exception):
     """A NARG string failed to parse; the verifier rejects."""
 
 
-def encode_varlen(s):  # EncodeVarLenString: 4-byte little-endian length || bytes
+def serialize_varlen(s):  # SerializeVarLenString: 4-byte little-endian length || bytes
     return len(s).to_bytes(4, "little") + s
 
 
-def encode_uint(x):  # EncodeUint: fixed-width little-endian integer mod M
+def serialize_uint(x, p):  # SerializeUint: fixed-width little-endian integer mod p
+    assert 0 <= x < p
     return x.to_bytes(NS, "little")
 
 
@@ -250,8 +289,8 @@ def decode_uint(buf):  # DecodeUint: oversampled reduction, bias <= 2^-128
     return int.from_bytes(buf, "little") % M
 
 
-def encode_field(coordinates, p, m):
-    """EncodeField: concatenate the fixed-width encodings of m coordinates."""
+def serialize_field(coordinates, p, m):
+    """SerializeField: concatenate the fixed-width encodings of m coordinates."""
     if len(coordinates) != m:
         raise ValueError("wrong number of field coordinates")
     ns = ((p - 1).bit_length() + 7) // 8
@@ -287,54 +326,133 @@ def deserialize_field(buf, off, p, m):
     return tuple(coordinates), off + m * ns
 
 
-# --- One round of the sumcheck protocol -----------------------------------
+def deserialize_uint(buf, p):
+    """DeserializeUint: exactly Ns canonical little-endian bytes, x < p."""
+    if len(buf) < NS:
+        raise Reject
+    x = int.from_bytes(buf[:NS], "little")
+    if x >= p:
+        raise Reject
+    return x
+
+
+def deserialize_varlen(buf):
+    """DeserializeVarLenString: a 4-byte length N, then N payload bytes."""
+    if len(buf) < 4:
+        raise Reject
+    n = int.from_bytes(buf[:4], "little")
+    if len(buf) - 4 < n:  # not 4 + n <= len(buf): that sum can overflow
+        raise Reject
+    return buf[4 : 4 + n]
+
+
+def serialize_field_be(coordinates, p, m):
+    """The big-endian carve-out of the field codec: I2OSP per coordinate,
+    mandated when the field's standard fixes a big-endian serialization
+    (P-256 per SEC1, BLS12-381)."""
+    ns = ((p - 1).bit_length() + 7) // 8
+    if len(coordinates) != m or any(x < 0 or x >= p for x in coordinates):
+        raise ValueError("invalid field coordinates")
+    return b"".join(x.to_bytes(ns, "big") for x in coordinates)
+
+
+# --- The sumcheck protocol over Mersenne31 --------------------------------
 #
-# The sumcheck protocol proves sum_{x in {0,1}^v} g(x) = H for a v-variate
-# polynomial g. In round 1 the prover sends the univariate "round polynomial"
-#     g_1(X) = sum_{x_2,...,x_v in {0,1}} g(X, x_2, ..., x_v),
-# of degree d (here d = 2, serialized as its d + 1 coefficients with EncodeField).
-# The verifier checks the round identity g_1(0) + g_1(1) == H, draws a challenge r
-# by Fiat-Shamir, and reduces the claim to H' = g_1(r) for the next round. We
-# exercise exactly that single round: the NARG string is the serialized g_1.
+# The sumcheck protocol proves sum_{x in {0,1}^v} f(x) = H for a v-variate
+# multilinear polynomial f, given by its 2^v evaluations on the hypercube
+# (the witness table w): entry j is f(j_0, ..., j_{v-1}), with j_0 the
+# least-significant bit of j. In each round the prover sends the degree-1
+# round polynomial of the lowest unbound variable,
+#     g(X) = sum over the remaining variables of f(X, ...),
+# whose evaluations are the two half-sums of the table: g(0) is the sum of
+# the even-indexed entries and g(1) the sum of the odd-indexed ones. The
+# round message is the coefficients (a_0, a_1) = (g(0), g(1) - g(0)). The
+# verifier checks the round identity g(0) + g(1) == current claim, squeezes
+# the challenge r, and reduces the claim to g(r); the prover folds the
+# table even/odd, entry j becoming w[2j] + r * (w[2j+1] - w[2j]), halving
+# it. After v rounds the single remaining entry is f(r_1, ..., r_v), which
+# an outer protocol would check against a polynomial-commitment opening.
+# The NARG string is the concatenation of the round messages.
+#
+# The vectors use the Mersenne31 field p = 2^31 - 1 with the little-endian
+# default serialization (Ns = 4), and the witness (1, 2, 4, ..., 2^15):
+# v = 4 variables, claimed sum 65535.
 
 SUMCHECK_TAG = b"sumcheck"
+P31 = 2**31 - 1  # the Mersenne31 prime
+NS31 = 4  # its serialization width Ns
+SUMCHECK_WITNESS = [1 << i for i in range(16)]  # 1, 2, 4, ..., 2^15
 
 
-def poly_eval(coeffs, x):  # Horner evaluation of sum_i coeffs[i] * X^i mod M
+def sumcheck_round_message(w):
+    """The round polynomial g(X) = a_0 + a_1 X of the lowest variable, as
+    its coefficients: g(0) and g(1) are the even/odd half-sums of the table."""
+    g0 = sum(w[0::2]) % P31
+    g1 = sum(w[1::2]) % P31
+    return g0, (g1 - g0) % P31
+
+
+def sumcheck_fold(w, r):
+    """Bind the lowest variable to r: entry j becomes the line through
+    (0, w[2j]) and (1, w[2j+1]) evaluated at r. Halves the table."""
+    return [(w[2 * j] + r * (w[2 * j + 1] - w[2 * j])) % P31 for j in range(len(w) // 2)]
+
+
+def multilinear_eval(w, rs):
+    """Direct evaluation of the multilinear extension of w at rs, from the
+    Lagrange basis on the hypercube; independently validates the even/odd
+    convention (bit k of the index pairs with challenge rs[k])."""
     acc = 0
-    for c in reversed(coeffs):
-        acc = (acc * x + c) % M
+    for j, wj in enumerate(w):
+        term = wj
+        for k, r in enumerate(rs):
+            term = term * ((r if (j >> k) & 1 else 1 - r) % P31) % P31
+        acc = (acc + term) % P31
     return acc
 
 
-def sumcheck_challenge(session_id, claimed_sum, round_poly, new_ctx):
+def sumcheck_prove(session_id, new_ctx):
+    """Returns (claimed_sum, round messages, challenges, final evaluation)."""
     sponge = DuplexSponge(session_id, new_ctx)
-    sponge.absorb(encode_varlen(SUMCHECK_TAG))  # encode[0]: domain tag
-    sponge.absorb(encode_uint(claimed_sum))  # instance: the claimed sum H
-    sponge.absorb(round_poly)  # prover message g_1: absorbed == serialized
-    return decode_uint(sponge.squeeze(NS + EXTRA))
+    sponge.absorb(serialize_varlen(SUMCHECK_TAG))  # encode[0]: domain tag
+    claimed = sum(SUMCHECK_WITNESS) % P31
+    sponge.absorb(serialize_field((claimed,), P31, 1))  # instance: the sum H
+    w = list(SUMCHECK_WITNESS)
+    messages, challenges = [], []
+    while len(w) > 1:
+        a0, a1 = sumcheck_round_message(w)
+        msg = serialize_field((a0, a1), P31, 2)
+        sponge.absorb(msg)  # prover message: absorbed == serialized
+        (r,) = decode_field(sponge.squeeze(NS31 + EXTRA), P31, 1)
+        w = sumcheck_fold(w, r)
+        messages.append(msg)
+        challenges.append(r)
+    return claimed, messages, challenges, w[0]
 
 
-def sumcheck_prove(session_id, claimed_sum, coeffs, new_ctx):
-    # Honest prover: the round polynomial is consistent with the claimed sum.
-    assert (poly_eval(coeffs, 0) + poly_eval(coeffs, 1)) % M == claimed_sum
-    round_poly = encode_field(coeffs, M, len(coeffs))
-    r = sumcheck_challenge(session_id, claimed_sum, round_poly, new_ctx)
-    return r, poly_eval(coeffs, r), round_poly  # narg == round_poly
-
-
-def sumcheck_verify(session_id, claimed_sum, num_coeffs, narg, new_ctx):
-    """Returns (accepted, challenge, reduced_claim); shares no prover state."""
+def sumcheck_verify(session_id, claimed, narg, new_ctx, rounds=4):
+    """Returns (accepted, challenges, final claim); shares no prover state.
+    Rejection of a malformed round message fires during deserialization,
+    before any byte is squeezed."""
+    sponge = DuplexSponge(session_id, new_ctx)
+    sponge.absorb(serialize_varlen(SUMCHECK_TAG))
+    sponge.absorb(serialize_field((claimed,), P31, 1))
+    off, current, challenges = 0, claimed, []
     try:
-        coeffs, off = deserialize_field(narg, 0, M, num_coeffs)
+        for _ in range(rounds):
+            (a0, a1), new_off = deserialize_field(narg, off, P31, 2)
+            if (2 * a0 + a1) % P31 != current:  # g(0) + g(1) == current claim
+                return False, None, None
+            sponge.absorb(narg[off:new_off])
+            off = new_off
+            (r,) = decode_field(sponge.squeeze(NS31 + EXTRA), P31, 1)
+            current = (a0 + a1 * r) % P31  # reduce the claim to g(r)
+            challenges.append(r)
         if off != len(narg):  # trailing bytes are rejected
             raise Reject
     except Reject:
         return False, None, None
-    if (poly_eval(coeffs, 0) + poly_eval(coeffs, 1)) % M != claimed_sum:
-        return False, None, None  # round identity g_1(0) + g_1(1) == H failed
-    r = sumcheck_challenge(session_id, claimed_sum, narg, new_ctx)
-    return True, r, poly_eval(coeffs, r)  # reduce the claim to H' = g_1(r)
+    return True, challenges, current
 
 
 # --- Vector construction --------------------------------------------------
@@ -382,21 +500,21 @@ def emit_sponge_and_sid(out, suite):
     sponge_vector(
         out,
         "init_squeeze",
-        "Squeeze 32 bytes immediately after initialization",
+        "Squeeze a 32-byte string after initialization",
         [squeeze(32)],
         suite,
     )
     sponge_vector(
         out,
         "absorb_squeeze",
-        "Absorb a message, then squeeze 64 bytes",
+        "Absorb the byte string `hello world`, then squeeze 64 bytes",
         [absorb(b"hello world"), squeeze(64)],
         suite,
     )
     sponge_vector(
         out,
         "absorb_split",
-        "Absorbing in parts equals absorbing all at once",
+        "Absorb is associative: `Absorb(\"abc\")` is equivalent to `Absorb(\"ab\"); Absorb(\"c\")`",
         [absorb(b"ab"), absorb(b"c"), squeeze(32)],
         suite,
     )
@@ -404,7 +522,7 @@ def emit_sponge_and_sid(out, suite):
     streamed = sponge_vector(
         out,
         "stream",
-        "Consecutive squeezes continue a single output stream",
+        "Squeeze is associative: `Squeeze(16 + 16)` is equivalent to `Squeeze(16) || Squeeze(16)`",
         [absorb(b"abc"), squeeze(16), squeeze(16)],
         suite,
     )
@@ -420,7 +538,7 @@ def emit_sponge_and_sid(out, suite):
     empty_out = sponge_vector(
         out,
         "empty_absorb",
-        "Empty absorb",
+        "Absorb of the empty string is a no-op",
         [absorb(b"abc"), squeeze(32), absorb(b""), squeeze(32)],
         suite,
     )
@@ -432,17 +550,46 @@ def emit_sponge_and_sid(out, suite):
     sponge_vector(
         out,
         "interleave",
-        "Squeeze, absorb more input, then squeeze again",
+        "Absorb and squeeze can be interleaved",
         [absorb(bytes(range(10))), squeeze(16), absorb(b"more data"), squeeze(16)],
         suite,
     )
     sponge_vector(
         out,
         "multiblock",
-        "Absorb and squeeze multiple blocks",
+        "Absorbing a byte string of length longer than the rate.",
         [absorb(bytes([0xAB] * 600)), squeeze(600)],
         suite,
     )
+    # Rate boundaries. After Init the padded session id fills exactly one
+    # rate block, so this absorb ends exactly at the next block boundary --
+    # the position where a native (incremental permutation) duplex sponge
+    # must call the permutation and where the XOF padding moves to a fresh
+    # block. The split squeeze crosses the output-block boundary at byte
+    # 168: the first call stops one byte short of it, the second reads
+    # across it.
+    sponge_vector(
+        out,
+        "rate_block",
+        "Squeeze at the rate boundary",
+        [absorb(bytes(range(R))), squeeze(R - 1), squeeze(2)],
+        suite,
+    )
+    # A zero-length squeeze is a no-op: it returns the empty string and
+    # must neither restart the output stream nor ratchet the state, so the
+    # trace (absorb "abc", squeeze 0, absorb "def") equals absorbing
+    # "abcdef" outright. A native duplex sponge that permutes on every
+    # squeeze-to-absorb transition, including the empty one, diverges here.
+    zero_out = sponge_vector(
+        out,
+        "squeeze_zero",
+        "A zero-length squeeze between absorbs is a no-op",
+        [absorb(b"abc"), squeeze(0), absorb(b"def"), squeeze(32)],
+        suite,
+    )
+    plain = DuplexSponge(SID, new_ctx)
+    plain.absorb(b"abcdef")
+    assert zero_out == plain.squeeze(32)
 
     # 2. Session identifiers: the sponge with a fixed domain-separation label.
     tag = b"interop-test-v00"
@@ -458,28 +605,30 @@ def emit_sponge_and_sid(out, suite):
     )
 
 
-def emit_encode_codecs(out):
-    """The pure encoders. Hash-independent, so they live in the shared codec
-    suite. EncodeVarLenString is field-independent; the integer codec is fixed by
-    the group (its width Ns and modulus M)."""
+def emit_serialize_codecs(out):
+    """The pure serializers. Hash-independent, so they live in the shared codec
+    suite. SerializeVarLenString is field-independent; the integer codec is fixed
+    by its modulus (the width Ns and the canonical range [0, p))."""
     out.append(
         {
-            "Name": "encode_varlen",
-            "Title": "Length-prefixed byte-string encoding (EncodeVarLenString)",
-            "Function": "EncodeVarLenString",
+            "Name": "serialize_varlen",
+            "Title": "Byte-string serialization: `SerializeVarLenString`",
+            "Function": "SerializeVarLenString",
             "Input": hx(b"proof"),
-            "Output": hx(encode_varlen(b"proof")),
+            "Output": hx(serialize_varlen(b"proof")),
         }
     )
     out.append(
         {
-            "Name": "encode_uint",
-            "Title": "Fixed-width unsigned-integer encoding (EncodeUint)",
-            "Function": "EncodeUint",
-            "Group": GROUP,
-            "Modulus": MODULUS,
+            "Name": "serialize_uint",
+            "Title": "`SerializeUint`: unsigned-integer serialization.",
+            "Comment": "The modulus is `2^256 - 189`, the largest 256-bit "
+            "prime. It is not the order of any standardized field, so the "
+            "little-endian default serialization applies.",
+            "Function": "SerializeUint",
+            "Modulus": MODULUS_Q,
             "Value": format(0xDEADBEEF, "x"),  # the integer x, as hex
-            "Output": hx(encode_uint(0xDEADBEEF)),
+            "Output": hx(serialize_uint(0xDEADBEEF, Q)),
         }
     )
 
@@ -492,18 +641,22 @@ def emit_decode_uint(out, suite):
     # Challenge is Output reduced modulo Modulus (an Ns-byte scalar). With a
     # 32-byte Modulus the operation squeezes 32 + 16 = 48 bytes.
     sponge = DuplexSponge(SID, new_ctx)
-    sponge.absorb(encode_varlen(b"instance"))
+    sponge.absorb(serialize_varlen(b"instance"))
     buf = sponge.squeeze(NS + EXTRA)
     out.append(
         {
             "Name": "decode_uint",
-            "Title": "Squeeze and reduce a P-256 scalar challenge (DecodeUint)",
+            "Title": "Squeeze and reduce a P-256 scalar challenge (`DecodeUint`)",
+            "Comment": "The P-256 scalar field *serializes* big-endian "
+            "({{serialize-field}}). However, the squeezed bytes are interpreted "
+            "little-endian, via `LE2IP`, for every modulus "
+            "({{decoding-uint}}).",
             "Function": "DecodeUint",
             "Hash": hash_name,
             "Group": GROUP,
             "Modulus": MODULUS,
             "SessionId": hx(SID),
-            "Operations": [absorb(encode_varlen(b"instance")), squeeze(NS + EXTRA)],
+            "Operations": [absorb(serialize_varlen(b"instance")), squeeze(NS + EXTRA)],
             "Output": hx(buf),
             "Challenge": hx(decode_uint(buf).to_bytes(NS, "little")),
         }
@@ -516,58 +669,310 @@ def emit_deserialize_field(out):
     DeserializeField -- the canonical NARG parser -- recovers from it.
     Hash-independent, so it lives in the shared codec suite."""
     field_m = 2
-    field_encoding = encode_field((0xDEADBEEF, M - 1), M, field_m)
-    coords, off = deserialize_field(field_encoding, 0, M, field_m)
-    assert off == len(field_encoding) and coords == (0xDEADBEEF, M - 1)
+    field_serialization = serialize_field((0xDEADBEEF, Q - 1), Q, field_m)
+    coords, off = deserialize_field(field_serialization, 0, Q, field_m)
+    assert off == len(field_serialization) and coords == (0xDEADBEEF, Q - 1)
     out.append(
         {
             "Name": "deserialize_field",
-            "Title": "Deserialize a canonical degree-2 field element (DeserializeField)",
+            "Title": "`DeserializeField`, used to deserialize a degree-2 element of the field of characteristic `2^256 - 189` (the default, little-endian serialization).",
             "Function": "DeserializeField",
-            "Group": GROUP,
-            "Modulus": MODULUS,
+            "Modulus": MODULUS_Q,
             "ExtensionDegree": field_m,
-            "Input": hx(field_encoding),
+            "Input": hx(field_serialization),
             "Coordinates": [hx(c.to_bytes(NS, "little")) for c in coords],
         }
     )
 
 
+def emit_codec_boundaries(out):
+    """Boundary and rejection vectors for the codec and deserialization
+    layer. Hash-independent. Each range comparison in the draft is probed
+    from both sides: the accepted value sits in this suite (or in
+    deserialize_field, whose second coordinate is M - 1), the adjacent
+    rejected value in the record next to it."""
+    # Degenerate valid: the empty string is a legal var-len message; its
+    # encoding is the four zero bytes of its length prefix and nothing else.
+    empty = serialize_varlen(b"")
+    assert deserialize_varlen(empty) == b""
+    out.append(
+        {
+            "Name": "varlen_empty",
+            "Title": "The empty byte string may be encoded as a variable-length string.",
+            "Comment": "It will have zero length prefix and no payload. "
+            "`DeserializeVarLenString` returns the empty string after "
+            "consuming exactly four bytes.",
+            "Function": "SerializeVarLenString",
+            "Input": "",
+            "Output": hx(empty),
+        }
+    )
+    # Decoding is infallible: DecodeUint reduces, it never rejects. The
+    # 48-byte little-endian encoding of M itself reduces to zero -- the
+    # extreme case of the modular wraparound.
+    buf = M.to_bytes(NS + EXTRA, "little")
+    assert decode_uint(buf) == 0
+    out.append(
+        {
+            "Name": "decode_uint_wraparound",
+            "Title": "Decoding is infallible and distribution-preserving",
+            "Comment": "`DecodeUint` reduces the 48 input bytes modulo the P-256 scalar-field order.",
+            "Function": "DecodeUint",
+            "Group": GROUP,
+            "Modulus": MODULUS,
+            "Input": hx(buf),
+            "Challenge": hx((0).to_bytes(NS, "little")),
+        }
+    )
+    # The big-endian carve-out: fields whose standard fixes a big-endian
+    # serialization (P-256 per SEC1) MUST use I2OSP in place of the
+    # little-endian default. This is the only vector on that branch.
+    be = serialize_field_be((0xDEADBEEF,), M, 1)
+    assert be == (0xDEADBEEF).to_bytes(NS, "big")
+    out.append(
+        {
+            "Name": "serialize_field_be",
+            "Title": "Field serialization of the P-256 scalar field happens via `I2OSP`.",
+            "Function": "SerializeField",
+            "ByteOrder": "big-endian",
+            "Group": GROUP,
+            "Modulus": MODULUS,
+            "Value": format(0xDEADBEEF, "x"),
+            "Output": hx(be),
+        }
+    )
+
+    def reject(name, title, comment, function, input_, **extra):
+        record = {"Name": name, "Title": title}
+        if comment:
+            record["Comment"] = comment
+        record.update({"Function": function, **extra, "Input": hx(input_), "Expected": "reject"})
+        out.append(record)
+
+    for buf in (Q.to_bytes(NS, "little"),):
+        try:
+            deserialize_uint(buf, Q)
+            raise AssertionError("Q must be rejected")
+        except Reject:
+            pass
+    reject(
+        "deserialize_uint_reject_modulus",
+        "The modulus itself is not accepted as a valid serialization.",
+        "",
+        "DeserializeUint",
+        Q.to_bytes(NS, "little"),
+        Modulus=MODULUS_Q,
+    )
+    short = (0xDEADBEEF).to_bytes(NS - 1, "little")
+    try:
+        deserialize_uint(short, Q)
+        raise AssertionError("short scalar must be rejected")
+    except Reject:
+        pass
+    reject(
+        "deserialize_uint_reject_short",
+        "Deserialization fails for inputs shorter than `Ns` bytes", "",
+        "DeserializeUint",
+        short,
+        Modulus=MODULUS_Q,
+    )
+    bad_field = (Q - 1).to_bytes(NS, "little") + b"\xff" * NS
+    try:
+        deserialize_field(bad_field, 0, Q, 2)
+        raise AssertionError("non-canonical coordinate must be rejected")
+    except Reject:
+        pass
+    reject(
+        "deserialize_field_reject_second_coordinate",
+        "When deserializing field extension elements, all coordinates must be validated",
+        "For instance, in this example the first value is the maximal "
+        "canonical coordinate `p - 1` and the second is `2^256 - 1`, which "
+        "exceeds it. Therefore, deserialization must fail.",
+        "DeserializeField",
+        bad_field,
+        Modulus=MODULUS_Q,
+        ExtensionDegree=2,
+    )
+    truncated = serialize_varlen(b"proof")[:-1]
+    try:
+        deserialize_varlen(truncated)
+        raise AssertionError("truncated payload must be rejected")
+    except Reject:
+        pass
+    reject(
+        "deserialize_varlen_reject_truncated",
+        "A payload one byte shorter than its length prefix is rejected.",
+        "The input is the serialization of the byte string `proof` (the "
+        "`serialize_varlen` vector) with its last byte removed: the length "
+        "prefix promises 5 payload bytes and only 4 remain.",
+        "DeserializeVarLenString",
+        truncated,
+    )
+    overflow = b"\xff\xff\xff\xff" + b"\xde\xad\xbe\xef"
+    try:
+        deserialize_varlen(overflow)
+        raise AssertionError("overflowing length prefix must be rejected")
+    except Reject:
+        pass
+    reject(
+        "deserialize_varlen_reject_overflow",
+        "The maximal length prefix 2^32 - 1 is rejected.",
+        "",
+        "DeserializeVarLenString",
+        overflow,
+    )
+
+
+MODULUS31 = P31.to_bytes(NS31, "little").hex()  # Mersenne31 as Ns bytes
+
+
+def emit_narg_battery(out):
+    """The NARG tamper vectors of the draft's implementation guidance,
+    applied to the sumcheck instance. Hash-independent: each rejection
+    fires while processing the first round message, before any byte is
+    squeezed, so one record serves both hash suites (the self-test
+    verifies this under both)."""
+    # Start from the honest SHAKE128 transcript and re-encode the first
+    # coefficient of the first round message as a_0 + p: the same value
+    # modulo p in different bytes (a_0 + p < 2^32, so it still fits Ns
+    # bytes). An implementation that reduces instead of rejecting recovers
+    # the honest coefficients, passes every round identity, and thereby
+    # accepts a second, distinct NARG string for the same statement.
+    claimed, messages, _, _ = sumcheck_prove(SID, hashlib.shake_128)
+    narg = b"".join(messages)
+    a0 = int.from_bytes(narg[:NS31], "little")
+    noncanonical = (a0 + P31).to_bytes(NS31, "little") + narg[NS31:]
+    for _, new_ctx in (SHAKE128_SUITE, TURBOSHAKE128_SUITE):
+        accepted, _, _ = sumcheck_verify(SID, claimed, noncanonical, new_ctx)
+        assert not accepted, "non-canonical coefficient must be rejected"
+    out.append(
+        {
+            "Name": "sumcheck_reject_noncanonical_coefficient",
+            "Title": "The integer `c + p` is not a valid serialization of an integer modulo `p`",
+            "Comment": "The first coefficient of the first sumcheck round "
+            "message is re-encoded as `c + p`: the same value modulo `p` in "
+            "different bytes. Deserialization rejects it before any "
+            "challenge is squeezed, so the verdict is the same under every "
+            "hash suite. An implementation that reduces instead of "
+            "rejecting accepts a second, distinct NARG string for the same "
+            "statement.",
+            "Function": "Sumcheck",
+            "Group": "Mersenne31",
+            "Modulus": MODULUS31,
+            "SessionId": hx(SID),
+            "ContextTag": hx(SUMCHECK_TAG),
+            "ClaimedSum": hx(claimed.to_bytes(NS31, "little")),
+            "Narg": hx(noncanonical),
+            "Expected": "reject",
+        }
+    )
+    # A canonical re-encoding that breaks the round identity instead: the
+    # first coefficient becomes a_0 + 1, still a canonical field element,
+    # so deserialization succeeds and the verifier rejects at the round
+    # identity g(0) + g(1) == S (2 * (a_0 + 1) + a_1 = S + 2 != S). The
+    # identity of round 1 involves no challenge, so this rejection also
+    # fires before any byte is squeezed and is hash-independent.
+    assert a0 + 1 < P31
+    tampered = (a0 + 1).to_bytes(NS31, "little") + narg[NS31:]
+    for _, new_ctx in (SHAKE128_SUITE, TURBOSHAKE128_SUITE):
+        accepted, _, _ = sumcheck_verify(SID, claimed, tampered, new_ctx)
+        assert not accepted, "broken round identity must be rejected"
+    out.append(
+        {
+            "Name": "sumcheck_reject_round_identity",
+            "Title": "An invalid NARG string for the sumcheck protocol, where a prover message does not satisfy verification",
+            "Comment": "The first coefficient of the first round message is "
+            "re-encoded as `a_0 + 1`: a canonical field element, so "
+            "deserialization succeeds and the verifier rejects at the round "
+            "identity `g(0) + g(1) == S`. The identity of the first round "
+            "involves no challenge, so the verdict is the same under every "
+            "hash suite.",
+            "Function": "Sumcheck",
+            "Group": "Mersenne31",
+            "Modulus": MODULUS31,
+            "SessionId": hx(SID),
+            "ContextTag": hx(SUMCHECK_TAG),
+            "ClaimedSum": hx(claimed.to_bytes(NS31, "little")),
+            "Narg": hx(tampered),
+            "Expected": "reject",
+        }
+    )
+
+
 def emit_sumcheck(out, suite):
-    """One round of the sumcheck protocol: a worked example of the FS transform
-    on a non-sigma IO pattern (absorb field elements, squeeze one challenge), for
-    one hash suite. The round-identity check is the sumcheck protocol's own
-    soundness concern, not a Fiat-Shamir property."""
+    """The sumcheck protocol over Mersenne31, for one hash suite: a worked
+    example of the FS transform on a non-sigma IO pattern (absorb a round
+    message, squeeze a challenge, four times), followed by the end-of-input
+    rejection of the same transcript with a trailing byte appended."""
     hash_name, new_ctx = suite
-    degree = 2
-    # Deterministic, reproducible round polynomial: full-width coefficients
-    # squeezed from a fixed seed, with the claimed sum set to g_1(0) + g_1(1).
-    prng = DuplexSponge(
-        derive_session_id(b"sumcheck-round-1-coefficients", new_ctx), new_ctx
+    claimed, messages, challenges, final = sumcheck_prove(SID, new_ctx)
+    accepted, challenges_v, final_v = sumcheck_verify(
+        SID, claimed, b"".join(messages), new_ctx
     )
-    coeffs = [decode_uint(prng.squeeze(NS + EXTRA)) for _ in range(degree + 1)]
-    claimed_sum = (poly_eval(coeffs, 0) + poly_eval(coeffs, 1)) % M
-    r, reduced_claim, narg = sumcheck_prove(SID, claimed_sum, coeffs, new_ctx)
-    accepted, r_v, reduced_v = sumcheck_verify(
-        SID, claimed_sum, degree + 1, narg, new_ctx
-    )
-    assert accepted and r_v == r and reduced_v == reduced_claim
+    assert accepted and challenges_v == challenges and final_v == final
+    # The folded value equals the multilinear extension evaluated at the
+    # challenge point, computed independently from the Lagrange basis.
+    assert final == multilinear_eval(SUMCHECK_WITNESS, challenges)
     out.append(
         {
             "Name": "sumcheck",
-            "Title": "One round of the sumcheck protocol: round polynomial, challenge, reduced claim",
+            "Title": "We run an example Interactive Proof (sumcheck) for a multilinear polynomial over Mersenne31.",
+            "Comment": "The witness is the vector of 16 field elements "
+            r"`(1, 2, 4, ..., 2^15)` over the field of order `p = 2^31 - 1`, read "
+            "as a 4-variate multilinear polynomial `f`"
+            "where the `j`-th entry is `f(j_0, j_1, j_2, j_3)`, with `j_0` the "
+            "least-significant bit of `j`. The instance is the claimed sum "
+            "of all entries, 65535. "
+            "In each round the prover sends the round polynomial of the "
+            "lowest unbound variable, `g(X) = a_0 + a_1 X`, where `g(0)` is the "
+            "sum of the even-indexed entries and `g(1)` the sum of the "
+            "odd-indexed entries. The round message is the serialization of "
+            "`(a_0, a_1)`. The verifier checks `g(0) + g(1)` against the current "
+            "claim, squeezes the sumcheck challenge `r`, and recursively invokes the sumcheck verifier on the claim `g(r)` for the folded polynomial. "
+            "The prover folds the sumcheck polynomial, halving it and computing the entry j as "
+            "`w[2j] + r * (w[2j+1] - w[2j])`. After four rounds "
+            "the single remaining entry, pinned as FinalEvaluation, equals "
+            "`f(r_1, r_2, r_3, r_4)`. The NARG string is the "
+            "concatenation of the four round messages.",
             "Function": "Sumcheck",
             "Hash": hash_name,
-            "Group": GROUP,
-            "Modulus": MODULUS,
+            "Group": "Mersenne31",
+            "Modulus": MODULUS31,
             "SessionId": hx(SID),
             "ContextTag": hx(SUMCHECK_TAG),
-            "Degree": degree,
-            "ClaimedSum": hx(claimed_sum.to_bytes(NS, "little")),
-            "Coefficients": [hx(c.to_bytes(NS, "little")) for c in coeffs],
-            "Challenge": hx(r.to_bytes(NS, "little")),
-            "ReducedClaim": hx(reduced_claim.to_bytes(NS, "little")),
-            "Narg": hx(narg),
+            "Witness": hx(serialize_field(tuple(SUMCHECK_WITNESS), P31, 16)),
+            "ClaimedSum": hx(claimed.to_bytes(NS31, "little")),
+            "RoundMessage": [hx(m) for m in messages],
+            "Challenge": [hx(r.to_bytes(NS31, "little")) for r in challenges],
+            "FinalEvaluation": hx(final.to_bytes(NS31, "little")),
+        }
+    )
+    # The end-of-input check: the honest NARG string with a single zero byte
+    # appended. Every round message parses and every round identity holds
+    # under this suite's challenges, so the rejection fires only after the
+    # last round, at the unread trailing byte. Unlike the codec-suite
+    # rejections, reaching that check requires this suite's challenges, so
+    # each hash suite pins its own copy.
+    trailing = b"".join(messages) + b"\x00"
+    accepted, _, _ = sumcheck_verify(SID, claimed, trailing, new_ctx)
+    assert not accepted, "trailing bytes must be rejected"
+    out.append(
+        {
+            "Name": "sumcheck_reject_trailing_bytes",
+            "Title": "A NARG string with trailing bytes is rejected",
+            "Comment": "The honest NARG string above with a single zero byte "
+            "appended. Every round message parses and every round identity "
+            "holds, so the rejection fires only at the end-of-input check, "
+            "after the last challenge has been squeezed.",
+            "Function": "Sumcheck",
+            "Hash": hash_name,
+            "Group": "Mersenne31",
+            "Modulus": MODULUS31,
+            "SessionId": hx(SID),
+            "ContextTag": hx(SUMCHECK_TAG),
+            "ClaimedSum": hx(claimed.to_bytes(NS31, "little")),
+            "Narg": hx(trailing),
+            "Expected": "reject",
         }
     )
 
@@ -584,10 +989,13 @@ def build_suite(suite):
 
 
 def build_codecs():
-    """The shared, hash-independent codec suite: encode -> deserialize."""
+    """The shared, hash-independent codec suite: serialize -> deserialize ->
+    boundary and reject vectors -> the NARG tamper vectors."""
     out = []
-    emit_encode_codecs(out)
+    emit_serialize_codecs(out)
     emit_deserialize_field(out)
+    emit_codec_boundaries(out)
+    emit_narg_battery(out)
     return out
 
 
@@ -606,8 +1014,7 @@ def build():
 # the machine-readable source of truth. Both share the record schema above. Hex
 # values are wrapped on byte (even-offset) boundaries so each line holds whole
 # bytes and can be diffed by eye; a wrapped value is the concatenation of its
-# continuation lines. Per-vector titles are level-3 headings so a suite can sit
-# under a level-2 heading in the draft.
+# continuation lines.
 
 
 # --- vector rendering -----------------------------------------------------

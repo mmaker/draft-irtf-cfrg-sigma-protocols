@@ -1,4 +1,4 @@
-### Squeeze 32 bytes immediately after initialization
+### Squeeze a 32-byte string after initialization
 ~~~
 Id = fiat-shamir/shake128/init_squeeze
 Function = DuplexSponge
@@ -11,7 +11,7 @@ Output =
   63e1b3543377fab6fb8cf0f7698a9980ca0211d5bc4aba213dd7a6ef7dd63cfa
 ~~~
 
-### Absorb a message, then squeeze 64 bytes
+### Absorb the byte string `hello world`, then squeeze 64 bytes
 ~~~
 Id = fiat-shamir/shake128/absorb_squeeze
 Function = DuplexSponge
@@ -26,7 +26,7 @@ Output =
   56d433cbde0ade711bdd55d7ed5de38bb9adea8b2eec4402a0df090c16371413
 ~~~
 
-### Absorbing in parts equals absorbing all at once
+### Absorb is associative: `Absorb("abc")` is equivalent to `Absorb("ab"); Absorb("c")`
 ~~~
 Id = fiat-shamir/shake128/absorb_split
 Function = DuplexSponge
@@ -41,7 +41,7 @@ Output =
   a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1dd9e41
 ~~~
 
-### Consecutive squeezes continue a single output stream
+### Squeeze is associative: `Squeeze(16 + 16)` is equivalent to `Squeeze(16) || Squeeze(16)`
 ~~~
 Id = fiat-shamir/shake128/stream
 Function = DuplexSponge
@@ -56,7 +56,7 @@ Output =
   a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1dd9e41
 ~~~
 
-### Empty absorb
+### Absorb of the empty string is a no-op
 ~~~
 Id = fiat-shamir/shake128/empty_absorb
 Function = DuplexSponge
@@ -73,7 +73,7 @@ Output =
   d88e36c20e053248b90967a90051ba319688a10783c2ce174602eccc02e8d1a6
 ~~~
 
-### Squeeze, absorb more input, then squeeze again
+### Absorb and squeeze can be interleaved
 ~~~
 Id = fiat-shamir/shake128/interleave
 Function = DuplexSponge
@@ -89,7 +89,7 @@ Output =
   2da3c7e3a65c6e92901e8b668c43917eb9f02e9988e66d5ce2fbd833a0ecb93e
 ~~~
 
-### Absorb and squeeze multiple blocks
+### Absorbing a byte string of length longer than the rate.
 ~~~
 Id = fiat-shamir/shake128/multiblock
 Function = DuplexSponge
@@ -138,6 +138,47 @@ Output =
   33281e8b6c15029202d0bb34749b962cc314515c748b74f4
 ~~~
 
+### Squeeze at the rate boundary
+~~~
+Id = fiat-shamir/shake128/rate_block
+Function = DuplexSponge
+Hash = SHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1
+    e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f4
+    04142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60616
+    2636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838
+    485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a
+    6a7
+  - squeeze 167
+  - squeeze 2
+Output =
+  edae25852c909e4acea18d96ddd407e475eeaa7070ff591b49450c7a3ed21b7d
+  0bd0ee62ab0c242e636c435b37c38ae6804a179ff434bed773c8d596cd66b928
+  b0429247b19cbfc246bb1abd3b741841b21ad0234ba7738abe64ab93914bf5ad
+  58a362d86f64d72b8f8603a888421a29769bb77579185409013a271ac258cd71
+  a71aedf2801ba6eb4784636e9bfacca229a78aa8dc72af770380a1a981120b37
+  16595564c520292578
+~~~
+
+### A zero-length squeeze between absorbs is a no-op
+~~~
+Id = fiat-shamir/shake128/squeeze_zero
+Function = DuplexSponge
+Hash = SHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 616263
+  - squeeze 0
+  - absorb 646566
+  - squeeze 32
+Output =
+  fc876a5ffbdc960106af16ca50e3b17b14a172f985f3a6f5df09c9a649ebf588
+~~~
+
 ### Derive a session identifier from an application tag
 ~~~
 Id = fiat-shamir/shake128/derive_sid
@@ -148,7 +189,7 @@ Output =
   b508aca89eecac56cd33e4a28f817f43f849d035922f354173ae8466628308cf
 ~~~
 
-### Squeeze and reduce a P-256 scalar challenge (DecodeUint)
+### Squeeze and reduce a P-256 scalar challenge (`DecodeUint`)
 ~~~
 Id = fiat-shamir/shake128/decode_uint
 Function = DecodeUint
@@ -167,30 +208,45 @@ Challenge =
   4f6d432427130deb36e0a0a19fb10193f69bb8a75934cccbbedaf8657c9960f8
 ~~~
 
-### One round of the sumcheck protocol: round polynomial, challenge, reduced claim
+### We run an example Interactive Proof (sumcheck) for a multilinear polynomial over Mersenne31.
 ~~~
 Id = fiat-shamir/shake128/sumcheck
 Function = Sumcheck
 Hash = SHAKE128
-Modulus =
-  512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
+Modulus = ffffff7f
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 ContextTag = 73756d636865636b
-Degree = 2
-ClaimedSum =
-  ba1a39a7fb56e170d59e77dd7867d8f308950912f224aaee20a57c854582a46b
-Coefficients =
-  - 6ccb2ad1934ad3ebf0e4bb8252cd5b112fc5f53c002d69f84ef0b64137711ebf
-  - 9efd98393e0de665fa54565508f53c49696806ae8f23cfb8ea4800ae5426c51b
-  - e6d010c41b4ac81a03bdd8d026cdb10141a217ea61a708459a7b0e548079a2d1
+Witness =
+  0100000002000000040000000800000010000000200000004000000080000000
+  0001000000020000000400000008000000100000002000000040000000800000
+ClaimedSum = ffff0000
+RoundMessage =
+  - 5555000055550000
+  - efa23f35cee8be1f
+  - 552f006006c60220
+  - 45004b382b45b512
 Challenge =
-  5c104787f0626a81d1dcfadd4e539db057f1d84b557dd1cb19f89affb3d7fd4e
-ReducedClaim =
-  9be9d2ee6c4b2faac4d239f1fcfe58cf723a84442517e482b23f203b62e0b707
+  - 7bc9c12a
+  - c8ab1364
+  - d74e8a6d
+  - d6e6bf38
+FinalEvaluation = b4ce5743
+~~~
+
+### A NARG string with trailing bytes is rejected
+~~~
+Id = fiat-shamir/shake128/sumcheck_reject_trailing_bytes
+Function = Sumcheck
+Hash = SHAKE128
+Modulus = ffffff7f
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+ContextTag = 73756d636865636b
+ClaimedSum = ffff0000
 Narg =
-  6ccb2ad1934ad3ebf0e4bb8252cd5b112fc5f53c002d69f84ef0b64137711ebf
-  9efd98393e0de665fa54565508f53c49696806ae8f23cfb8ea4800ae5426c51b
-  e6d010c41b4ac81a03bdd8d026cdb10141a217ea61a708459a7b0e548079a2d1
+  5555000055550000efa23f35cee8be1f552f006006c6022045004b382b45b512
+  00
+Expected = reject
 ~~~
 
