@@ -1,34 +1,131 @@
 [
   {
-    "Id": "fiat-shamir/codec/encode_varlen",
-    "Name": "encode_varlen",
-    "Title": "Length-prefixed byte-string encoding (EncodeVarLenString)",
-    "Function": "EncodeVarLenString",
+    "Id": "fiat-shamir/codec/serialize_varlen",
+    "Name": "serialize_varlen",
+    "Title": "Byte-string serialization: `SerializeVarLenString`",
+    "Function": "SerializeVarLenString",
     "Input": "70726f6f66",
     "Output": "0500000070726f6f66"
   },
   {
-    "Id": "fiat-shamir/codec/encode_uint",
-    "Name": "encode_uint",
-    "Title": "Fixed-width unsigned-integer encoding (EncodeUint)",
-    "Function": "EncodeUint",
-    "Group": "P-256",
-    "Modulus": "512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff",
+    "Id": "fiat-shamir/codec/serialize_uint",
+    "Name": "serialize_uint",
+    "Title": "`SerializeUint`: unsigned-integer serialization.",
+    "Function": "SerializeUint",
+    "Modulus": "43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     "Value": "deadbeef",
     "Output": "efbeadde00000000000000000000000000000000000000000000000000000000"
   },
   {
     "Id": "fiat-shamir/codec/deserialize_field",
     "Name": "deserialize_field",
-    "Title": "Deserialize a canonical degree-2 field element (DeserializeField)",
+    "Title": "`DeserializeField`, used to deserialize a degree-2 element of the field of characteristic `2^256 - 189` (the default, little-endian serialization).",
     "Function": "DeserializeField",
-    "Group": "P-256",
-    "Modulus": "512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff",
+    "Modulus": "43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     "ExtensionDegree": 2,
-    "Input": "efbeadde00000000000000000000000000000000000000000000000000000000502563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff",
+    "Input": "efbeadde0000000000000000000000000000000000000000000000000000000042ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     "Coordinates": [
       "efbeadde00000000000000000000000000000000000000000000000000000000",
-      "502563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff"
+      "42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
     ]
+  },
+  {
+    "Id": "fiat-shamir/codec/varlen_empty",
+    "Name": "varlen_empty",
+    "Title": "The empty byte string may be encoded as a variable-length string.",
+    "Function": "SerializeVarLenString",
+    "Input": "",
+    "Output": "00000000"
+  },
+  {
+    "Id": "fiat-shamir/codec/decode_uint_wraparound",
+    "Name": "decode_uint_wraparound",
+    "Title": "Decoding is infallible and distribution-preserving",
+    "Function": "DecodeUint",
+    "Group": "P-256",
+    "Modulus": "512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff",
+    "Input": "512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff00000000000000000000000000000000",
+    "Challenge": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    "Id": "fiat-shamir/codec/serialize_field_be",
+    "Name": "serialize_field_be",
+    "Title": "Field serialization of the P-256 scalar field happens via `I2OSP`.",
+    "Function": "SerializeField",
+    "ByteOrder": "big-endian",
+    "Group": "P-256",
+    "Modulus": "512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff",
+    "Value": "deadbeef",
+    "Output": "00000000000000000000000000000000000000000000000000000000deadbeef"
+  },
+  {
+    "Id": "fiat-shamir/codec/deserialize_uint_reject_modulus",
+    "Name": "deserialize_uint_reject_modulus",
+    "Title": "The modulus itself is not accepted as a valid serialization.",
+    "Function": "DeserializeUint",
+    "Modulus": "43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "Input": "43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "Expected": "reject"
+  },
+  {
+    "Id": "fiat-shamir/codec/deserialize_uint_reject_short",
+    "Name": "deserialize_uint_reject_short",
+    "Title": "Deserialization fails for inputs shorter than `Ns` bytes",
+    "Function": "DeserializeUint",
+    "Modulus": "43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "Input": "efbeadde000000000000000000000000000000000000000000000000000000",
+    "Expected": "reject"
+  },
+  {
+    "Id": "fiat-shamir/codec/deserialize_field_reject_second_coordinate",
+    "Name": "deserialize_field_reject_second_coordinate",
+    "Title": "When deserializing field extension elements, all coordinates must be validated",
+    "Function": "DeserializeField",
+    "Modulus": "43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ExtensionDegree": 2,
+    "Input": "42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "Expected": "reject"
+  },
+  {
+    "Id": "fiat-shamir/codec/deserialize_varlen_reject_truncated",
+    "Name": "deserialize_varlen_reject_truncated",
+    "Title": "A payload one byte shorter than its length prefix is rejected.",
+    "Function": "DeserializeVarLenString",
+    "Input": "0500000070726f6f",
+    "Expected": "reject"
+  },
+  {
+    "Id": "fiat-shamir/codec/deserialize_varlen_reject_overflow",
+    "Name": "deserialize_varlen_reject_overflow",
+    "Title": "The maximal length prefix 2^32 - 1 is rejected.",
+    "Function": "DeserializeVarLenString",
+    "Input": "ffffffffdeadbeef",
+    "Expected": "reject"
+  },
+  {
+    "Id": "fiat-shamir/codec/sumcheck_reject_noncanonical_coefficient",
+    "Name": "sumcheck_reject_noncanonical_coefficient",
+    "Title": "The integer `c + p` is not a valid serialization of an integer modulo `p`",
+    "Function": "Sumcheck",
+    "Group": "Mersenne31",
+    "Modulus": "ffffff7f",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "ContextTag": "73756d636865636b",
+    "ClaimedSum": "ffff0000",
+    "Narg": "5455008055550000efa23f35cee8be1f552f006006c6022045004b382b45b512",
+    "Expected": "reject"
+  },
+  {
+    "Id": "fiat-shamir/codec/sumcheck_reject_round_identity",
+    "Name": "sumcheck_reject_round_identity",
+    "Title": "An invalid NARG string for the sumcheck protocol, where a prover message does not satisfy verification",
+    "Function": "Sumcheck",
+    "Group": "Mersenne31",
+    "Modulus": "ffffff7f",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "ContextTag": "73756d636865636b",
+    "ClaimedSum": "ffff0000",
+    "Narg": "5655000055550000efa23f35cee8be1f552f006006c6022045004b382b45b512",
+    "Expected": "reject"
   }
 ]

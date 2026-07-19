@@ -176,57 +176,57 @@ This transformation is also well-suited for recursive proving, since the in-circ
 Other types of non-interactive transformations (with and without random oracles) are possible, but outside the scope of this specification.
 
 ~~~ aasvg
-+-------------------------------------------------------------------+
-| NARG Prover (session_id, instance, witness)                       |
-|                                                                   |
-|                                                        +------+   |
-| session_id ------------------------------------------->| Init |   |
-|                                                        +------+   |
-|                                                            |      |
-|                                                            v      |
-|                                       +------------+   +--------+ |
-| instance ---------------------------->| encode[0]  |-->| Absorb | |
-| +-------------------+                 +------------+   +--------+ |
-| | Interactive Prover|                                      |      |
-| |(instance, witness)|                                      |      |
-| |                   | prover_msg[1]                        v      |
-| |                   |                 +------------+   +--------+ |
-| |                   +---------------->| encode[1]  |-->| Absorb | |
-| |                   |                 +------------+   +--------+ |
-| |                   |                                      |      |
-| |                   | verifier_msg[1]                      v      |
-| |                   |                 +------------+   +---------+|
-| |                   |<----------------| decode[1]  |<--| Squeeze ||
-| |                   |                 +------------+   +---------+|
-| |                   |                                      |      |
-| |                   | prover_msg[2]                        v      |
-| |                   |                 +------------+   +--------+ |
-| |                   +---------------->| encode[2]  |-->| Absorb | |
-| |                   |                 +------------+   +--------+ |
-| |                   |                                      |      |
-| |                   | verifier_msg[2]                      v      |
-| |                   |                 +------------+   +---------+|
-| |                   |<----------------| decode[2]  |<--| Squeeze ||
-| |                   |                 +------------+   +---------+|
-| |                   |        .                             .      |
-| |                   |        .                             .      |
-| |                   |        .                             .      |
-| |                   |                                      |      |
-| |                   | prover_msg[k-1]                      v      |
-| |                   |                 +------------+   +--------+ |
-| |                   +---------------->| encode[k-1]|-->| Absorb | |
-| |                   |                 +------------+   +--------+ |
-| |                   |                                      |      |
-| |                   | verifier_msg[k-1]                    v      |
-| |                   |                 +------------+   +---------+|
-| |                   |<----------------| decode[k-1]|<--| Squeeze ||
-| |                   |                 +------------+   +---------+|
-| |                   | prover_msg[k]                               |
-| |                   +---------------->                            |
-| +-------------------+                                             |
-|                                                                   |
-|    narg_string := serialize(prover_msg[..])                       |
-+-------------------------------------------------------------------+
++--------------------------------------------------------------------+
+| NARG Prover (session_id, instance, witness)                        |
+|                                                                    |
+|                                                        +------+    |
+| session_id ------------------------------------------->| Init |    |
+|                                                        +------+    |
+|                                                            |       |
+|                                                            v       |
+|                                       +------------+   +--------+  |
+| instance ---------------------------->| encode[0]  |-->| Absorb |  |
+| +-------------------+                 +------------+   +--------+  |
+| | Interactive Prover|                                      |       |
+| |(instance, witness)|                                      |       |
+| |                   | prover_msg[1]                        v       |
+| |                   |                 +------------+   +--------+  |
+| |                   +---------------->| encode[1]  |-->| Absorb |  |
+| |                   |                 +------------+   +--------+  |
+| |                   |                                      |       |
+| |                   | verifier_msg[1]                      v       |
+| |                   |                 +------------+   +---------+ |
+| |                   |<----------------| decode[1]  |<--| Squeeze | |
+| |                   |                 +------------+   +---------+ |
+| |                   |                                      |       |
+| |                   | prover_msg[2]                        v       |
+| |                   |                 +------------+   +--------+  |
+| |                   +---------------->| encode[2]  |-->| Absorb |  |
+| |                   |                 +------------+   +--------+  |
+| |                   |                                      |       |
+| |                   | verifier_msg[2]                      v       |
+| |                   |                 +------------+   +---------+ |
+| |                   |<----------------| decode[2]  |<--| Squeeze | |
+| |                   |                 +------------+   +---------+ |
+| |                   |        .                             .       |
+| |                   |        .                             .       |
+| |                   |        .                             .       |
+| |                   |                                      |       |
+| |                   | prover_msg[k-1]                      v       |
+| |                   |                 +------------+   +--------+  |
+| |                   +---------------->| encode[k-1]|-->| Absorb |  |
+| |                   |                 +------------+   +--------+  |
+| |                   |                                      |       |
+| |                   | verifier_msg[k-1]                    v       |
+| |                   |                 +------------+   +---------+ |
+| |                   |<----------------| decode[k-1]|<--| Squeeze | |
+| |                   |                 +------------+   +---------+ |
+| |                   | prover_msg[k]                                |
+| |                   +---------------->                             |
+| +-------------------+                                              |
+|                                                                    |
+|    narg_string := serialize(prover_msg[..])                        |
++--------------------------------------------------------------------+
 ~~~
 {: #fig-fiat-shamir-prover title="Non-interactive prover for the Fiat-Shamir transformation"}
 
@@ -302,7 +302,7 @@ A byte is an 8-bit unsigned integer (an octet), and a **byte string** is a finit
 
 Byte strings are indexed from zero. For integers `0 <= i <= j <= len(x)`, `x[i : j]` denotes the `(j - i)`-byte substring of `x` consisting of the bytes at positions `i, i+1, ..., j-1`. In particular, `x[0 : N]` is the first `N` bytes of `x`, `x[i : i]` is the empty byte string `""`, and `x[0 : len(x)]` is `x` itself.
 
-A byte string `x` is a **prefix** of a byte string `y` if `y == x || z` for some byte string `z` (even empty). An encoding is **prefix-free** if, for any two distinct values, the encoding of one is never a prefix of the encoding of the other. A simple prefix-free encoding of a byte string `b` is `LE(len(b), 4) || b` as described in {{encoding-varlen-string}}.
+A byte string `x` is a **prefix** of a byte string `y` if `y == x || z` for some byte string `z` (even empty). An encoding is **prefix-free** if, for any two distinct values, the encoding of one is never a prefix of the encoding of the other. A simple prefix-free encoding of a byte string `b` is `LE(len(b), 4) || b` as described in {{serialize-byte-strings}}.
 
 `LE(n, w)` and `LE2IP(x)` are the integer/byte-string conversion primitives used throughout this document, in little-endian byte order. `LE(n, w)` converts a non-negative integer `n` less than `256^w` into a `w`-byte, little-endian byte string, and fails if `n >= 256^w`. `LE2IP(x)` converts a byte string `x` into a non-negative integer using the little-endian byte order.
 
@@ -375,7 +375,7 @@ A **codec** ({{codecs}}) is the pair of maps between messages and the hash funct
 - **Serialization** writes the prover messages into the NARG string produced by the non-interactive prover.
 - **Deserialization** reads the prover messages back from the NARG string, and returns an error if the message is invalid.
 
-For a prover message, the serialized bytes coincide with the encoded bytes ({{serialization}}). However, codecs and serialization serve different purposes. Codecs must maintain the soundness of the transformation, whereas deserialization keeps the NARG string unambiguous and rejects malformed proofs (see {{decoding}} and {{deserialization}}).
+For a prover message, the encoded bytes coincide with the serialized bytes: the encoding maps are the serialization functions of {{serialization}}. However, codecs and serialization serve different purposes. Codecs must maintain the soundness of the transformation, whereas deserialization keeps the NARG string unambiguous and rejects malformed proofs (see {{decoding}} and {{deserialization}}).
 
 # Duplex sponge {#hash-instantiations}
 
@@ -482,96 +482,8 @@ A codec is a set of functions that map prover messages to, and verifier messages
 
 ## Encoding into byte strings {#encoding-bytes}
 
-### Byte strings {#encoding-varlen-string}
+The encoding of the instance and of each prover message is its serialization, as described in {{serialization}}.
 
-Encoding of an `N`-byte string is the identity function.
-
-~~~
-EncodeBytes(s)
-
-Input: s, an N-byte string
-
-Output: out, an N-byte string
-
-1. return s
-~~~
-
-`EncodeBytes` carries no length information of its own: it is the identity. It is therefore prefix-free only when `N` is fixed and known by the message's type and the instance, that is: prover and verifier both agree on `N` before the NARG string is parsed (see {{deserialize-byte-strings}}). On such a fixed-length domain the identity is prefix-free as required by {{encoding-bytes}}.
-
-When the length is not fixed in advance, `EncodeBytes` **MUST NOT** be used. Instead, when the length is below 2^32 bytes, a prefix-free encoding is given by
-
-~~~
-EncodeVarLenString(s)
-
-Input: s, an N-byte string
-
-Output: out, an (N+4)-byte string
-
-1. return LE(len(s), 4) || s
-~~~
-
-### Sequences and tuples
-
-A fixed-length array or a tuple is encoded as the concatenation of the encodings of its elements, with no separators.
-
-### Unsigned integers {#encoding-uint}
-
-An integer modulo `M` is represented by its unique integer representative in the range `[0, M)` and encoded via `LE`.
-
-~~~
-EncodeUint(x, M)
-
-Inputs:
-
-- x, an integer modulo M
-- M, the order of the integer ring
-
-Output: out, an Ns-byte string
-
-1. assert 0 <= x < M
-2. return LE(x, Ns)
-~~~
-
-where `Ns` is the smallest integer with `256^Ns >= M`.
-
-### Field elements {#encoding-field}
-
-This section specifies the _default_ encoding of a finite field of order `q = p^m`, where `p` is the prime characteristic and `m >= 1` is the extension degree.
-
-If the field already has a canonical serialization fixed by a standard, that serialization **SHOULD** be used in place of the default specified below, and it **MUST** be prefix-free. The default below encodes each prime-field coordinate as a fixed-width little-endian integer via `EncodeUint` ({{encoding-uint}}).
-
-For example, Curve25519 {{?RFC7748}}, Ed25519 {{?RFC8032}}, ristretto255 {{Section 4.4 of ?RFC9496}} serialize field elements as a fixed-width little-endian integer. Similarly, in Section 7.1 of {{FIPS204}}, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 {{SEC1}} and BLS12-381 {{?I-D.irtf-cfrg-pairing-friendly-curves}} serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization **MUST** be used in place: a prime-field coordinate `x` in `[0, p)` is encoded as `I2OSP(x, Ns)`, with `Ns` the smallest integer such that `256^Ns >= p`, in place of the default `LE(x, Ns)`. As with the default, deserialization **MUST** reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than `p`). When using a different codec, that selection **MUST** be reflected in the session tag (see {{session-id}}).
-
-With respect to a fixed basis, a field element is represented by its `m` coordinates in the prime field, each an integer in `[0, p)`. It is encoded as the concatenation of the per-coordinate encodings produced by `EncodeUint` ({{encoding-uint}}) with modulus `p`. Let `Ns` be the smallest integer with `256^Ns >= p`; a field element encodes to `m * Ns` bytes.
-
-~~~
-EncodeField(a, p, m)
-
-Inputs:
-
-- a, an element of the field of order p^m, given by its
-     coordinates (a[0], ..., a[m-1]) over the prime field
-- p, the prime characteristic of the field
-- m, the extension degree
-
-Output: out, an (m * Ns)-byte string
-
-1. out = ""
-2. for i in 0, ..., m-1:
-3.    out = out || EncodeUint(a[i], p)
-4. return out
-~~~
-
-Note that a prime field is the case `m = 1`, in which case `EncodeField` is equivalent to `EncodeUint`.
-
-### Elliptic curve group elements {#encoding-ec-point}
-
-A group element is encoded using the group's element-serialization function.
-
-For many prime-order elliptic-curve groups, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of {{SEC1}}. All non-trivial group elements have exactly one `Ne`-byte representation. The value of `Ne` and the concrete conversion are fixed by the ciphersuite.
-
-The {{SEC1}} encoding of the identity element (the single byte `0x00`) is prefix-free with respect to the `Ne`-byte encodings of all other points. However, implementations **SHOULD** reject identity elements from prover messages to facilitate deserialization ({{deserialization}}).
-The ristretto255 and decaf448 {{?RFC9496}} identity encodings have a distinct, fixed-length `Ne`-byte encoding.
 
 ## Decoding from byte strings {#decoding}
 
@@ -628,7 +540,7 @@ Similar requirements and a longer discussion are available in {{Section 5 of ?RF
 
 ### Field elements {#decoding-field}
 
-A field element of a field of order `p^m` is decoded coordinate by coordinate, via `DecodeUint` ({{decoding-uint}}), starting from the least-significant. With `Ns` as in {{encoding-field}}, this consumes `m * (Ns + 16)` bytes. A prime field is the case `m = 1`.
+A field element of a field of order `p^m` is decoded coordinate by coordinate, via `DecodeUint` ({{decoding-uint}}), starting from the least-significant. With `Ns` as in {{serialize-field}}, this consumes `m * (Ns + 16)` bytes. A prime field is the case `m = 1`.
 
 ~~~
 DecodeField(buf, p, m)
@@ -722,7 +634,7 @@ The instance is input to the non-interactive prover and the non-interactive veri
 The instance is the first value absorbed after `Init(session_id)` and before any prover message. The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map.
 The encoded instance **MUST** be non-empty. While the session identifier of the previous section {{session-id}} fixes the language, the instance selects one of its members.
 
-As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the encodings of {{encoding-bytes}}.
+As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the serialization functions of {{serialization}}.
 
 As an example, consider the sumcheck relation for multilinear polynomials in `N` variables over the field of size `p^m`. For a polynomial committed using the polynomial commitment scheme `COM`, the relation consists of:
 
@@ -739,7 +651,7 @@ sum(F(b1, ..., bN) for (b1, ..., bN) in {0, 1}^N) = S
 A valid instance encoding function is:
 
 ~~~
-EncodeField(S, p, m) || EncodeUint(N, 2^32) || COM.Serialize(C)
+SerializeField(S, p, m) || SerializeUint(N, 2^32) || COM.Serialize(C)
 ~~~
 
 where `COM.Serialize` is the commitment-serialization function of the scheme `COM` (the opening check `COM.Open` is used above).
@@ -761,15 +673,106 @@ A valid instance encoding function is:
 enc(G) || enc(H) || enc(C) || enc(D)
 ~~~
 
-where `enc` is the group element-serialization function described in {{encoding-ec-point}}.
+where `enc` is the group element-serialization function described in {{serialize-ec-point}}.
 
 Omitting public statement data from the transformation, such as `N` in the first example or the group generators `G`, `H` in the second, can compromise soundness of the proof system. See {{instance-encoding}}.
 
 # Non-interactive argument string {#narg-string}
 
-## Serialization
+## Serialization {#serialization}
 
-Serialization is the concatenation of the byte encoding of each prover message, as defined in {{encoding-bytes}}.
+The NARG string is the concatenation of the serialization of each prover message, as defined below. The same bytes are absorbed into the duplex sponge to derive the verifier messages ({{encoding-bytes}}).
+
+### Byte strings {#serialize-byte-strings}
+
+Serialization of an `N`-byte string is the identity function.
+
+~~~
+SerializeBytes(s)
+
+Input: s, an N-byte string
+
+Output: out, an N-byte string
+
+1. return s
+~~~
+
+`SerializeBytes` carries no length information of its own: it is the identity. It can therefore be used only when `N` is fixed and known by the message's type and the instance, that is: prover and verifier both agree on `N` before the NARG string is parsed (see {{deserialize-byte-strings}}). On such a fixed-length domain the identity is prefix-free, as required of encodings by {{encoding-bytes}}.
+
+When the length is not fixed in advance, `SerializeBytes` **MUST NOT** be used. Instead, when the length is below 2^32 bytes, a prefix-free serialization is given by
+
+~~~
+SerializeVarLenString(s)
+
+Input: s, an N-byte string
+
+Output: out, an (N+4)-byte string
+
+1. return LE(len(s), 4) || s
+~~~
+
+### Sequences and tuples
+
+A fixed-length array or a tuple is serialized as the concatenation of the serializations of its elements, with no separators.
+
+### Unsigned integers {#serialize-uint}
+
+An integer modulo `M` is represented by its unique integer representative in the range `[0, M)` and serialized via `LE`.
+
+~~~
+SerializeUint(x, M)
+
+Inputs:
+
+- x, an integer modulo M
+- M, the order of the integer ring
+
+Output: out, an Ns-byte string
+
+1. assert 0 <= x < M
+2. return LE(x, Ns)
+~~~
+
+where `Ns` is the smallest integer with `256^Ns >= M`.
+
+### Field elements {#serialize-field}
+
+This section specifies the _default_ serialization of a finite field of order `q = p^m`, where `p` is the prime characteristic and `m >= 1` is the extension degree.
+
+If the field already has a canonical serialization fixed by a standard, that serialization **SHOULD** be used in place of the default specified below, and it **MUST** be prefix-free. The default below serializes each prime-field coordinate as a fixed-width little-endian integer via `SerializeUint` ({{serialize-uint}}).
+
+For example, Curve25519 {{?RFC7748}}, Ed25519 {{?RFC8032}}, ristretto255 {{Section 4.4 of ?RFC9496}} serialize field elements as a fixed-width little-endian integer. Similarly, in Section 7.1 of {{FIPS204}}, the integer coordinates of lattice vectors are serialized by least-significant-byte first. Other standardized fields instead fix a big-endian serialization: for example P-256 {{SEC1}} and BLS12-381 {{?I-D.irtf-cfrg-pairing-friendly-curves}} serialize each scalar as a fixed-width big-endian integer. For such fields the big-endian serialization **MUST** be used in place: a prime-field coordinate `x` in `[0, p)` is serialized as `I2OSP(x, Ns)`, with `Ns` the smallest integer such that `256^Ns >= p`, in place of the default `LE(x, Ns)`. As with the default, deserialization **MUST** reject non-canonical encodings (a coordinate is valid only if the decoded integer is less than `p`). When using a different serialization, that selection **MUST** be reflected in the session tag (see {{session-id}}).
+
+With respect to a fixed basis, a field element is represented by its `m` coordinates in the prime field, each an integer in `[0, p)`. It is serialized as the concatenation of the per-coordinate serializations produced by `SerializeUint` ({{serialize-uint}}) with modulus `p`. Let `Ns` be the smallest integer with `256^Ns >= p`; a field element serializes to `m * Ns` bytes.
+
+~~~
+SerializeField(a, p, m)
+
+Inputs:
+
+- a, an element of the field of order p^m, given by its
+     coordinates (a[0], ..., a[m-1]) over the prime field
+- p, the prime characteristic of the field
+- m, the extension degree
+
+Output: out, an (m * Ns)-byte string
+
+1. out = ""
+2. for i in 0, ..., m-1:
+3.    out = out || SerializeUint(a[i], p)
+4. return out
+~~~
+
+Note that a prime field is the case `m = 1`, in which case `SerializeField` is equivalent to `SerializeUint`.
+
+### Elliptic curve group elements {#serialize-ec-point}
+
+A group element is serialized using the group's element-serialization function.
+
+For many prime-order elliptic-curve groups, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of {{SEC1}}. All non-trivial group elements have exactly one `Ne`-byte representation. The value of `Ne` and the concrete conversion are fixed by the ciphersuite.
+
+The {{SEC1}} serialization of the identity element (the single byte `0x00`) is prefix-free with respect to the `Ne`-byte serializations of all other points. However, implementations **SHOULD** reject identity elements from prover messages to facilitate deserialization ({{deserialization}}).
+The ristretto255 and decaf448 {{?RFC9496}} identity encodings have a distinct, fixed-length `Ne`-byte encoding.
 
 ## Deserialization
 
@@ -796,9 +799,9 @@ Output: b, an N-byte string
 3. return b
 ~~~
 
-`DeserializeBytes` is the inverse of `EncodeBytes` ({{encoding-varlen-string}}), and consumes `N` bytes of the NARG string, and fails if fewer bytes remain.
+`DeserializeBytes` is the inverse of `SerializeBytes` ({{serialize-byte-strings}}), and consumes `N` bytes of the NARG string, and fails if fewer bytes remain.
 
-A byte string whose length is not known in advance is deserialized by reading a 4-byte length `N` via `LE2IP`, then reading the next `N` bytes; this is the inverse of `EncodeVarLenString` ({{encoding-varlen-string}}).
+A byte string whose length is not known in advance is deserialized by reading a 4-byte length `N` via `LE2IP`, then reading the next `N` bytes; this is the inverse of `SerializeVarLenString` ({{serialize-byte-strings}}).
 
 ~~~
 DeserializeVarLenString(input)
@@ -822,7 +825,7 @@ Deserialize each element in order. Fail if any element fails to deserialize. The
 
 ### Unsigned integers
 
-Read the next `Ns` bytes, with `Ns` as in {{encoding-uint}}, and interpret them as a little-endian integer `x = LE2IP(.)`. If `x >= M`, fail: non-canonical integer encodings **MUST** be rejected. The value returned is `x`. This is the inverse of `EncodeUint` ({{encoding-uint}}).
+Read the next `Ns` bytes, with `Ns` as in {{serialize-uint}}, and interpret them as a little-endian integer `x = LE2IP(.)`. If `x >= M`, fail: non-canonical integer encodings **MUST** be rejected. The value returned is `x`. This is the inverse of `SerializeUint` ({{serialize-uint}}).
 
 ~~~
 DeserializeUint(input, M)
@@ -844,7 +847,7 @@ This consumes `Ns` bytes of the NARG string. It fails if fewer bytes remain, or 
 
 ### Field elements
 
-A field element of a field of order `p^m` is deserialized coordinate by coordinate: read `m * Ns` bytes, with `Ns` as in {{encoding-field}}, and deserialize each `Ns`-byte coordinate as an integer modulo `p` using the unsigned-integer deserialization above. A prime field is the case `m = 1`. This is the inverse of `EncodeField` ({{encoding-field}}).
+A field element of a field of order `p^m` is deserialized coordinate by coordinate: read `m * Ns` bytes, with `Ns` as in {{serialize-field}}, and deserialize each `Ns`-byte coordinate as an integer modulo `p` using the unsigned-integer deserialization above. A prime field is the case `m = 1`. This is the inverse of `SerializeField` ({{serialize-field}}).
 
 ~~~
 DeserializeField(input, p, m)
@@ -867,11 +870,11 @@ Output: a, an element of the field of order p^m, given by its
 
 This consumes `m * Ns` bytes of the NARG string, and fails if fewer bytes remain or if any coordinate is non-canonical.
 
-If the field type already has specified serialization and deserialization functions, those **MUST** be used instead (see {{encoding-field}}). As with encoding, the default is chosen to coincide with the deserializations of most standards; where it does not, the type's own deserialization governs.
+If the field type already has specified serialization and deserialization functions, those **MUST** be used instead (see {{serialize-field}}). As with serialization, the default is chosen to coincide with the deserializations of most standards; where it does not, the type's own deserialization governs.
 
 ### Elliptic-curve group elements
 
-Read the next `Ne` bytes and convert them to a group element using the group's element-deserialization function. Deserialization **MUST** perform the ciphersuite's input-validation steps, **SHOULD** reject the identity element ({{encoding-ec-point}}), and fail unless the input is the canonical encoding of a valid group element.
+Read the next `Ne` bytes and convert them to a group element using the group's element-deserialization function. Deserialization **MUST** perform the ciphersuite's input-validation steps, **SHOULD** reject the identity element ({{serialize-ec-point}}), and fail unless the input is the canonical encoding of a valid group element.
 
 Note that for elliptic curves defined in {{SEC1}}, decoding is the Octet-String-to-Elliptic-Curve-Point conversion, which checks that the encoding is well-formed and that the point lies on the curve, and returns "invalid" otherwise. The single-byte `0x00` encoding of the identity is not a valid `Ne`-byte input and **SHOULD** be rejected.
 
@@ -992,16 +995,20 @@ The authors thank Giap Vu and David Wong (zkSecurity) for their help and contrib
 
 # Test Vectors
 
-The vectors are grouped into three suites. The codec suite is hash-independent; the SHAKE128 and TurboSHAKE128 suites exercise the XOF duplex sponge ({{xof-duplex-sponge}}) instantiated with the suites of {{suite-shake128}} and {{suite-turboshake128}} respectively, and carry the same vector names, differing only in the hash and the resulting bytes.
+## Codec test vectors {#tv-codec}
 
-## Codec test vectors
+This section contains vectors for the encoding, decoding, serialization, and deserialization functions.
 
 {::include ./poc/vectors/fiatShamirCodecVectors.txt}
 
-## SHAKE128 test vectors
+## SHAKE128 test vectors {#tv-shake128}
+
+This section contains vectors for the XOF duplex sponge instantiated with the SHAKE128 suite ({{suite-shake128}}).
 
 {::include ./poc/vectors/fiatShamirShake128Vectors.txt}
 
-## TurboSHAKE128 test vectors
+## TurboSHAKE128 test vectors {#tv-turboshake128}
+
+This section contains vectors for the XOF duplex sponge instantiated with the TurboSHAKE128 suite ({{suite-turboshake128}}).
 
 {::include ./poc/vectors/fiatShamirTurboShake128Vectors.txt}

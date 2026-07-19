@@ -1,34 +1,146 @@
-### Length-prefixed byte-string encoding (EncodeVarLenString)
+### Byte-string serialization: `SerializeVarLenString`
 ~~~
-Id = fiat-shamir/codec/encode_varlen
-Function = EncodeVarLenString
+Id = fiat-shamir/codec/serialize_varlen
+Function = SerializeVarLenString
 Input = 70726f6f66
 Output = 0500000070726f6f66
 ~~~
 
-### Fixed-width unsigned-integer encoding (EncodeUint)
+### `SerializeUint`: unsigned-integer serialization.
 ~~~
-Id = fiat-shamir/codec/encode_uint
-Function = EncodeUint
+Id = fiat-shamir/codec/serialize_uint
+Function = SerializeUint
 Modulus =
-  512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
+  43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 Value = deadbeef
 Output =
   efbeadde00000000000000000000000000000000000000000000000000000000
 ~~~
 
-### Deserialize a canonical degree-2 field element (DeserializeField)
+### `DeserializeField`, used to deserialize a degree-2 element of the field of characteristic `2^256 - 189` (the default, little-endian serialization).
 ~~~
 Id = fiat-shamir/codec/deserialize_field
 Function = DeserializeField
 Modulus =
-  512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
+  43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 ExtensionDegree = 2
 Input =
   efbeadde00000000000000000000000000000000000000000000000000000000
-  502563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
+  42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 Coordinates =
   - efbeadde00000000000000000000000000000000000000000000000000000000
-  - 502563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
+  - 42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+~~~
+
+### The empty byte string may be encoded as a variable-length string.
+~~~
+Id = fiat-shamir/codec/varlen_empty
+Function = SerializeVarLenString
+Input = ""
+Output = 00000000
+~~~
+
+### Decoding is infallible and distribution-preserving
+~~~
+Id = fiat-shamir/codec/decode_uint_wraparound
+Function = DecodeUint
+Modulus =
+  512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
+Input =
+  512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
+  00000000000000000000000000000000
+Challenge =
+  0000000000000000000000000000000000000000000000000000000000000000
+~~~
+
+### Field serialization of the P-256 scalar field happens via `I2OSP`.
+~~~
+Id = fiat-shamir/codec/serialize_field_be
+Function = SerializeField
+ByteOrder = big-endian
+Modulus =
+  512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
+Value = deadbeef
+Output =
+  00000000000000000000000000000000000000000000000000000000deadbeef
+~~~
+
+### The modulus itself is not accepted as a valid serialization.
+~~~
+Id = fiat-shamir/codec/deserialize_uint_reject_modulus
+Function = DeserializeUint
+Modulus =
+  43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+Input =
+  43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+Expected = reject
+~~~
+
+### Deserialization fails for inputs shorter than `Ns` bytes
+~~~
+Id = fiat-shamir/codec/deserialize_uint_reject_short
+Function = DeserializeUint
+Modulus =
+  43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+Input =
+  efbeadde000000000000000000000000000000000000000000000000000000
+Expected = reject
+~~~
+
+### When deserializing field extension elements, all coordinates must be validated
+~~~
+Id = fiat-shamir/codec/deserialize_field_reject_second_coordinate
+Function = DeserializeField
+Modulus =
+  43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+ExtensionDegree = 2
+Input =
+  42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+Expected = reject
+~~~
+
+### A payload one byte shorter than its length prefix is rejected.
+~~~
+Id = fiat-shamir/codec/deserialize_varlen_reject_truncated
+Function = DeserializeVarLenString
+Input = 0500000070726f6f
+Expected = reject
+~~~
+
+### The maximal length prefix 2^32 - 1 is rejected.
+~~~
+Id = fiat-shamir/codec/deserialize_varlen_reject_overflow
+Function = DeserializeVarLenString
+Input = ffffffffdeadbeef
+Expected = reject
+~~~
+
+### The integer `c + p` is not a valid serialization of an integer modulo `p`
+~~~
+Id = fiat-shamir/codec/sumcheck_reject_noncanonical_coefficient
+Function = Sumcheck
+Modulus = ffffff7f
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+ContextTag = 73756d636865636b
+ClaimedSum = ffff0000
+Narg =
+  5455008055550000efa23f35cee8be1f552f006006c6022045004b382b45b512
+Expected = reject
+~~~
+
+### An invalid NARG string for the sumcheck protocol, where a prover message does not satisfy verification
+~~~
+Id = fiat-shamir/codec/sumcheck_reject_round_identity
+Function = Sumcheck
+Modulus = ffffff7f
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+ContextTag = 73756d636865636b
+ClaimedSum = ffff0000
+Narg =
+  5655000055550000efa23f35cee8be1f552f006006c6022045004b382b45b512
+Expected = reject
 ~~~
 
