@@ -41,19 +41,36 @@ same key.
                                 present when the modulus is a standardized
                                 field's; absent when the modulus is a bare
                                 prime claimed by no standard (2^256 - 189)
-  parameters     Modulus        the field characteristic p, as Ns bytes; makes
-                                the width Ns and the canonical range [0, p) explicit
+  parameters     Modulus        the field characteristic p, an integer; fixes
+                                the width Ns and the canonical range [0, p)
                  ExtensionDegree the codec parameter m (field-codec vectors only)
+                 NumVariables   the sumcheck parameter v (sumcheck vectors only)
   inputs         SessionId      32-byte session identifier seeding the sponge
                  Tag            application tag (DeriveSessionID)
                  Operations     ordered [{absorb: hex} | {squeeze: n}] sponge trace
-                 Value, Input, ContextTag, ClaimedSum, Witness
+                 Value, Input, ClaimedSum, Witness
   outputs        Output         primary byte output (sponge stream / encoding)
                  Challenge      a Fiat-Shamir scalar (Output reduced mod Modulus)
-                 Coordinates, RoundMessage, FinalEvaluation, Narg
+                 XofInput       the full one-shot XOF input over which the last
+                                challenge is computed (sumcheck intermediates
+                                vector only)
+                 Coordinates, FinalEvaluation, Narg
 
-A sequence-valued field (Operations, Coordinates, RoundMessage, Challenge) is a
-JSON list, never a set of index-suffixed keys.
+Two value types, matching the format paragraph of the draft's Test Vectors
+appendix: byte strings are lowercase hex exactly as serialized (Input, Output,
+SessionId, Tag, Narg, absorb payloads); integers are
+JSON numbers when small (ExtensionDegree, NumVariables, Witness entries,
+squeeze lengths) and `0x`-prefixed most-significant-first strings when
+field-sized (Modulus, Value, Coordinates, ClaimedSum, Challenge,
+FinalEvaluation). The .txt rendering writes integers verbatim.
+
+A sequence-valued field (Operations, Coordinates, Witness, and the per-round
+Output and Challenge of the sumcheck intermediates vector) is a JSON list,
+never a set of index-suffixed keys. The .txt rendering differs: the Witness
+table is one comma-separated list, per-element outputs use indexed keys
+(`Coordinates[0]` numbered as the draft's `a[0], ..., a[m-1]`; `Output[1]`
+and `Challenge[1]` numbered as the draft's rounds `r[1], ..., r[v]`), and
+the Operation trace stays one line per step.
 
 The "answer" of a vector is always a named output field (Output / Challenge /
 FinalEvaluation / ... ); there is no single catch-all key, mirroring RFC 9380's
@@ -121,12 +138,15 @@ assert ((Q - 1).bit_length() + 7) // 8 == NS
 # level; SHAKE128 targets 128 bits, so 16 extra bytes bound the reduction bias
 # to 2^-128 (matching RFC 9380, Section 5).
 EXTRA = 16
-MODULUS = M.to_bytes(
-    NS, "little"
-).hex()  # P-256 order as Ns bytes, for the `Modulus` field
-MODULUS_Q = Q.to_bytes(
-    NS, "little"
-).hex()  # 2^256 - 189 as Ns bytes, for the `Modulus` field
+
+
+def ix(n):  # integer -> 0x-prefixed hex, padded to an even digit count
+    s = format(n, "x")
+    return "0x" + ("0" + s if len(s) % 2 else s)
+
+
+MODULUS = ix(M)  # P-256 order as an integer, for the `Modulus` field
+MODULUS_Q = ix(Q)  # 2^256 - 189 as an integer, for the `Modulus` field
 
 # --- TurboSHAKE128 over Keccak-p[1600, 12] (RFC 9861) ---------------------
 #
@@ -299,18 +319,6 @@ def serialize_field(coordinates, p, m):
     return b"".join(x.to_bytes(ns, "little") for x in coordinates)
 
 
-def decode_field(buf, p, m):
-    """DecodeField: independently reduce m oversampled coordinates modulo p."""
-    ns = ((p - 1).bit_length() + 7) // 8
-    chunk_len = ns + EXTRA
-    if len(buf) != m * chunk_len:
-        raise Reject
-    return tuple(
-        int.from_bytes(buf[i * chunk_len : (i + 1) * chunk_len], "little") % p
-        for i in range(m)
-    )
-
-
 def deserialize_field(buf, off, p, m):
     """DeserializeField: parse m canonical fixed-width coordinates modulo p."""
     ns = ((p - 1).bit_length() + 7) // 8
@@ -358,30 +366,33 @@ def serialize_field_be(coordinates, p, m):
 
 # --- The sumcheck protocol over Mersenne31 --------------------------------
 #
-# The sumcheck protocol proves sum_{x in {0,1}^v} f(x) = H for a v-variate
-# multilinear polynomial f, given by its 2^v evaluations on the hypercube
-# (the witness table w): entry j is f(j_0, ..., j_{v-1}), with j_0 the
-# least-significant bit of j. In each round the prover sends the degree-1
-# round polynomial of the lowest unbound variable,
-#     g(X) = sum over the remaining variables of f(X, ...),
-# whose evaluations are the two half-sums of the table: g(0) is the sum of
-# the even-indexed entries and g(1) the sum of the odd-indexed ones. The
-# round message is the coefficients (a_0, a_1) = (g(0), g(1) - g(0)). The
-# verifier checks the round identity g(0) + g(1) == current claim, squeezes
-# the challenge r, and reduces the claim to g(r); the prover folds the
-# table even/odd, entry j becoming w[2j] + r * (w[2j+1] - w[2j]), halving
-# it. After v rounds the single remaining entry is f(r_1, ..., r_v), which
-# an outer protocol would check against a polynomial-commitment opening.
-# The NARG string is the concatenation of the round messages.
+# The example protocol of the draft's "Example protocol: sumcheck" appendix,
+# implemented verbatim: SumcheckProve and SumcheckVerify below follow the
+# numbered pseudocode steps. The application context enters through the
+# session identifier, derived from the tag "sumcheck" via DeriveSessionID;
+# the instance (v, S) is absorbed as encode[0] = SerializeUint(v, 2^32)
+# || SerializeField(S, p, 1); each round absorbs the coefficient pair
+# (a_0, a_1) of the round polynomial and decodes one challenge as
+# LE2IP(Squeeze(Ns)) mod p -- the alternative small-field decoding the
+# draft's decoding section permits, in place of the default Ns + 16
+# oversampling (bias ~2^-31, below the ~2^-29 soundness error of the
+# interactive argument).
 #
 # The vectors use the Mersenne31 field p = 2^31 - 1 with the little-endian
 # default serialization (Ns = 4), and the witness (1, 2, 4, ..., 2^15):
 # v = 4 variables, claimed sum 65535.
 
-SUMCHECK_TAG = b"sumcheck"
+SUMCHECK_TAG = b"sumcheck"  # the DeriveSessionID tag binding the context
 P31 = 2**31 - 1  # the Mersenne31 prime
 NS31 = 4  # its serialization width Ns
-SUMCHECK_WITNESS = [1 << i for i in range(16)]  # 1, 2, 4, ..., 2^15
+SUMCHECK_V = 4  # the number of variables v
+SUMCHECK_WITNESS = [1 << i for i in range(1 << SUMCHECK_V)]  # 1, 2, ..., 2^15
+
+
+def sumcheck_instance_encoding(v, s):
+    """encode[0] of the example protocol: the number of variables as
+    SerializeUint(v, 2^32), and the claimed sum."""
+    return v.to_bytes(4, "little") + serialize_field((s,), P31, 1)
 
 
 def sumcheck_round_message(w):
@@ -412,31 +423,31 @@ def multilinear_eval(w, rs):
 
 
 def sumcheck_prove(session_id, new_ctx):
-    """Returns (claimed_sum, round messages, challenges, final evaluation)."""
+    """Returns (round messages, challenges, final evaluation). The claimed
+    sum is absorbed internally (step 1 of the pseudocode); the caller
+    recomputes it from the witness."""
     sponge = DuplexSponge(session_id, new_ctx)
-    sponge.absorb(serialize_varlen(SUMCHECK_TAG))  # encode[0]: domain tag
     claimed = sum(SUMCHECK_WITNESS) % P31
-    sponge.absorb(serialize_field((claimed,), P31, 1))  # instance: the sum H
+    sponge.absorb(sumcheck_instance_encoding(SUMCHECK_V, claimed))
     w = list(SUMCHECK_WITNESS)
     messages, challenges = [], []
     while len(w) > 1:
         a0, a1 = sumcheck_round_message(w)
         msg = serialize_field((a0, a1), P31, 2)
         sponge.absorb(msg)  # prover message: absorbed == serialized
-        (r,) = decode_field(sponge.squeeze(NS31 + EXTRA), P31, 1)
+        r = int.from_bytes(sponge.squeeze(NS31), "little") % P31
         w = sumcheck_fold(w, r)
         messages.append(msg)
         challenges.append(r)
-    return claimed, messages, challenges, w[0]
+    return messages, challenges, w[0]
 
 
-def sumcheck_verify(session_id, claimed, narg, new_ctx, rounds=4):
+def sumcheck_verify(session_id, claimed, narg, new_ctx, rounds=SUMCHECK_V):
     """Returns (accepted, challenges, final claim); shares no prover state.
     Rejection of a malformed round message fires during deserialization,
     before any byte is squeezed."""
     sponge = DuplexSponge(session_id, new_ctx)
-    sponge.absorb(serialize_varlen(SUMCHECK_TAG))
-    sponge.absorb(serialize_field((claimed,), P31, 1))
+    sponge.absorb(sumcheck_instance_encoding(rounds, claimed))
     off, current, challenges = 0, claimed, []
     try:
         for _ in range(rounds):
@@ -445,7 +456,7 @@ def sumcheck_verify(session_id, claimed, narg, new_ctx, rounds=4):
                 return False, None, None
             sponge.absorb(narg[off:new_off])
             off = new_off
-            (r,) = decode_field(sponge.squeeze(NS31 + EXTRA), P31, 1)
+            r = int.from_bytes(sponge.squeeze(NS31), "little") % P31
             current = (a0 + a1 * r) % P31  # reduce the claim to g(r)
             challenges.append(r)
         if off != len(narg):  # trailing bytes are rejected
@@ -627,7 +638,7 @@ def emit_serialize_codecs(out):
             "little-endian default serialization applies.",
             "Function": "SerializeUint",
             "Modulus": MODULUS_Q,
-            "Value": format(0xDEADBEEF, "x"),  # the integer x, as hex
+            "Value": ix(0xDEADBEEF),  # the integer x
             "Output": hx(serialize_uint(0xDEADBEEF, Q)),
         }
     )
@@ -658,7 +669,7 @@ def emit_decode_uint(out, suite):
             "SessionId": hx(SID),
             "Operations": [absorb(serialize_varlen(b"instance")), squeeze(NS + EXTRA)],
             "Output": hx(buf),
-            "Challenge": hx(decode_uint(buf).to_bytes(NS, "little")),
+            "Challenge": ix(decode_uint(buf)),
         }
     )
 
@@ -680,7 +691,7 @@ def emit_deserialize_field(out):
             "Modulus": MODULUS_Q,
             "ExtensionDegree": field_m,
             "Input": hx(field_serialization),
-            "Coordinates": [hx(c.to_bytes(NS, "little")) for c in coords],
+            "Coordinates": [ix(c) for c in coords],
         }
     )
 
@@ -721,7 +732,7 @@ def emit_codec_boundaries(out):
             "Group": GROUP,
             "Modulus": MODULUS,
             "Input": hx(buf),
-            "Challenge": hx((0).to_bytes(NS, "little")),
+            "Challenge": ix(0),
         }
     )
     # The big-endian carve-out: fields whose standard fixes a big-endian
@@ -737,7 +748,7 @@ def emit_codec_boundaries(out):
             "ByteOrder": "big-endian",
             "Group": GROUP,
             "Modulus": MODULUS,
-            "Value": format(0xDEADBEEF, "x"),
+            "Value": ix(0xDEADBEEF),
             "Output": hx(be),
         }
     )
@@ -823,7 +834,7 @@ def emit_codec_boundaries(out):
     )
 
 
-MODULUS31 = P31.to_bytes(NS31, "little").hex()  # Mersenne31 as Ns bytes
+MODULUS31 = ix(P31)  # Mersenne31 as an integer
 
 
 def emit_narg_battery(out):
@@ -838,7 +849,8 @@ def emit_narg_battery(out):
     # bytes). An implementation that reduces instead of rejecting recovers
     # the honest coefficients, passes every round identity, and thereby
     # accepts a second, distinct NARG string for the same statement.
-    claimed, messages, _, _ = sumcheck_prove(SID, hashlib.shake_128)
+    claimed = sum(SUMCHECK_WITNESS) % P31
+    messages, _, _ = sumcheck_prove(SID, hashlib.shake_128)
     narg = b"".join(messages)
     a0 = int.from_bytes(narg[:NS31], "little")
     noncanonical = (a0 + P31).to_bytes(NS31, "little") + narg[NS31:]
@@ -848,20 +860,14 @@ def emit_narg_battery(out):
     out.append(
         {
             "Name": "sumcheck_reject_noncanonical_coefficient",
-            "Title": "The integer `c + p` is not a valid serialization of an integer modulo `p`",
-            "Comment": "The first coefficient of the first sumcheck round "
-            "message is re-encoded as `c + p`: the same value modulo `p` in "
-            "different bytes. Deserialization rejects it before any "
-            "challenge is squeezed, so the verdict is the same under every "
-            "hash suite. An implementation that reduces instead of "
-            "rejecting accepts a second, distinct NARG string for the same "
-            "statement.",
+            "Title": "The example protocol ({{example-sumcheck}}), where the first prover message is an invalid serialization (`p`, the modulus, is added to the canonical encoding)",
+            "Comment": "",
             "Function": "Sumcheck",
             "Group": "Mersenne31",
             "Modulus": MODULUS31,
+            "NumVariables": SUMCHECK_V,
             "SessionId": hx(SID),
-            "ContextTag": hx(SUMCHECK_TAG),
-            "ClaimedSum": hx(claimed.to_bytes(NS31, "little")),
+            "ClaimedSum": ix(claimed),
             "Narg": hx(noncanonical),
             "Expected": "reject",
         }
@@ -880,19 +886,14 @@ def emit_narg_battery(out):
     out.append(
         {
             "Name": "sumcheck_reject_round_identity",
-            "Title": "An invalid NARG string for the sumcheck protocol, where a prover message does not satisfy verification",
-            "Comment": "The first coefficient of the first round message is "
-            "re-encoded as `a_0 + 1`: a canonical field element, so "
-            "deserialization succeeds and the verifier rejects at the round "
-            "identity `g(0) + g(1) == S`. The identity of the first round "
-            "involves no challenge, so the verdict is the same under every "
-            "hash suite.",
+            "Title": "An invalid NARG string for the example protocol ({{example-sumcheck}}), where a prover message does not satisfy verification",
+            "Comment": "",
             "Function": "Sumcheck",
             "Group": "Mersenne31",
             "Modulus": MODULUS31,
+            "NumVariables": SUMCHECK_V,
             "SessionId": hx(SID),
-            "ContextTag": hx(SUMCHECK_TAG),
-            "ClaimedSum": hx(claimed.to_bytes(NS31, "little")),
+            "ClaimedSum": ix(claimed),
             "Narg": hx(tampered),
             "Expected": "reject",
         }
@@ -905,9 +906,11 @@ def emit_sumcheck(out, suite):
     message, squeeze a challenge, four times), followed by the end-of-input
     rejection of the same transcript with a trailing byte appended."""
     hash_name, new_ctx = suite
-    claimed, messages, challenges, final = sumcheck_prove(SID, new_ctx)
+    sid = derive_session_id(SUMCHECK_TAG, new_ctx)
+    claimed = sum(SUMCHECK_WITNESS) % P31
+    messages, challenges, final = sumcheck_prove(sid, new_ctx)
     accepted, challenges_v, final_v = sumcheck_verify(
-        SID, claimed, b"".join(messages), new_ctx
+        sid, claimed, b"".join(messages), new_ctx
     )
     assert accepted and challenges_v == challenges and final_v == final
     # The folded value equals the multilinear extension evaluated at the
@@ -916,65 +919,77 @@ def emit_sumcheck(out, suite):
     out.append(
         {
             "Name": "sumcheck",
-            "Title": "We run an example Interactive Proof (sumcheck) for a multilinear polynomial over Mersenne31.",
-            "Comment": "The witness is the vector of 16 field elements "
-            r"`(1, 2, 4, ..., 2^15)` over the field of order `p = 2^31 - 1`, read "
-            "as a 4-variate multilinear polynomial `f`"
-            "where the `j`-th entry is `f(j_0, j_1, j_2, j_3)`, with `j_0` the "
-            "least-significant bit of `j`. The instance is the claimed sum "
-            "of all entries, 65535. "
-            "In each round the prover sends the round polynomial of the "
-            "lowest unbound variable, `g(X) = a_0 + a_1 X`, where `g(0)` is the "
-            "sum of the even-indexed entries and `g(1)` the sum of the "
-            "odd-indexed entries. The round message is the serialization of "
-            "`(a_0, a_1)`. The verifier checks `g(0) + g(1)` against the current "
-            "claim, squeezes the sumcheck challenge `r`, and recursively invokes the sumcheck verifier on the claim `g(r)` for the folded polynomial. "
-            "The prover folds the sumcheck polynomial, halving it and computing the entry j as "
-            "`w[2j] + r * (w[2j+1] - w[2j])`. After four rounds "
-            "the single remaining entry, pinned as FinalEvaluation, equals "
-            "`f(r_1, r_2, r_3, r_4)`. The NARG string is the "
-            "concatenation of the four round messages.",
+            "Title": "The sumcheck protocol example ({{example-sumcheck}}) over Mersenne31.",
+            "Comment": "",
             "Function": "Sumcheck",
             "Hash": hash_name,
             "Group": "Mersenne31",
             "Modulus": MODULUS31,
-            "SessionId": hx(SID),
-            "ContextTag": hx(SUMCHECK_TAG),
-            "Witness": hx(serialize_field(tuple(SUMCHECK_WITNESS), P31, 16)),
-            "ClaimedSum": hx(claimed.to_bytes(NS31, "little")),
-            "RoundMessage": [hx(m) for m in messages],
-            "Challenge": [hx(r.to_bytes(NS31, "little")) for r in challenges],
-            "FinalEvaluation": hx(final.to_bytes(NS31, "little")),
+            "NumVariables": SUMCHECK_V,
+            "Tag": hx(SUMCHECK_TAG),
+            "SessionId": hx(sid),
+            "Witness": list(SUMCHECK_WITNESS),
+            "ClaimedSum": ix(claimed),
+            "Narg": hx(b"".join(messages)),
+            "FinalEvaluation": ix(final),
         }
     )
-    # The end-of-input check: the honest NARG string with a single zero byte
-    # appended. Every round message parses and every round identity holds
-    # under this suite's challenges, so the rejection fires only after the
-    # last round, at the unread trailing byte. Unlike the codec-suite
-    # rejections, reaching that check requires this suite's challenges, so
-    # each hash suite pins its own copy.
+    # The end-of-input check (step 9 of SumcheckVerify): the honest NARG
+    # string with a single zero byte appended. Every round message parses
+    # and every round identity holds under this suite's challenges, so the
+    # rejection fires only after the last round, at the unread trailing
+    # byte. Unlike the codec-suite rejections, reaching step 9 requires
+    # this suite's challenges, so each hash suite pins its own copy.
     trailing = b"".join(messages) + b"\x00"
-    accepted, _, _ = sumcheck_verify(SID, claimed, trailing, new_ctx)
+    accepted, _, _ = sumcheck_verify(sid, claimed, trailing, new_ctx)
     assert not accepted, "trailing bytes must be rejected"
     out.append(
         {
             "Name": "sumcheck_reject_trailing_bytes",
             "Title": "A NARG string with trailing bytes is rejected",
-            "Comment": "The honest NARG string above with a single zero byte "
-            "appended. Every round message parses and every round identity "
-            "holds, so the rejection fires only at the end-of-input check, "
-            "after the last challenge has been squeezed.",
+            "Comment": "",
             "Function": "Sumcheck",
             "Hash": hash_name,
             "Group": "Mersenne31",
             "Modulus": MODULUS31,
-            "SessionId": hx(SID),
-            "ContextTag": hx(SUMCHECK_TAG),
-            "ClaimedSum": hx(claimed.to_bytes(NS31, "little")),
+            "NumVariables": SUMCHECK_V,
+            "Tag": hx(SUMCHECK_TAG),
+            "SessionId": hx(sid),
+            "ClaimedSum": ix(claimed),
             "Narg": hx(trailing),
             "Expected": "reject",
         }
     )
+
+
+def emit_sumcheck_intermediates(out, suite):
+    """The sumcheck instance again, with every intermediate value pinned:
+    the full one-shot XOF input and, per round, the raw squeeze and its
+    reduction, so a diverging implementation can localize the failing stage
+    (encoding, hashing, or decoding) rather than only detect it. The session
+    id is set directly rather than derived from a tag, so the SHAKE128
+    record's execution is the base of the codec-suite sumcheck rejections."""
+    hash_name, new_ctx = suite
+    claimed = sum(SUMCHECK_WITNESS) % P31
+    messages, challenges, final = sumcheck_prove(SID, new_ctx)
+    narg = b"".join(messages)
+    instance = sumcheck_instance_encoding(SUMCHECK_V, claimed)
+    xof_input = SID + bytes(R - 32) + instance + narg
+    # Replay the transcript reading each round's raw pre-reduction squeeze,
+    # and check it against the equivalent one-shot XOF evaluation over the
+    # prefix of xof_input ending at that round's message.
+    sponge = DuplexSponge(SID, new_ctx)
+    sponge.absorb(instance)
+    raws = []
+    for i, msg in enumerate(messages):
+        sponge.absorb(msg)
+        raw = sponge.squeeze(NS31)
+        prefix = xof_input[: R + len(instance) + 2 * NS31 * (i + 1)]
+        one_shot = new_ctx()
+        one_shot.update(prefix)
+        assert raw == one_shot.digest(NS31)
+        raws.append(raw)
+    assert [int.from_bytes(b, "little") % P31 for b in raws] == challenges
 
 
 def build_suite(suite):
@@ -985,6 +1000,7 @@ def build_suite(suite):
     emit_sponge_and_sid(out, suite)
     emit_decode_uint(out, suite)
     emit_sumcheck(out, suite)
+    emit_sumcheck_intermediates(out, suite)
     return out
 
 
@@ -1014,7 +1030,11 @@ def build():
 # the machine-readable source of truth. Both share the record schema above. Hex
 # values are wrapped on byte (even-offset) boundaries so each line holds whole
 # bytes and can be diffed by eye; a wrapped value is the concatenation of its
-# continuation lines.
+# continuation lines. Sequences render in three ways, matching the format
+# paragraph of the draft's Test Vectors appendix: the Operation trace is one
+# line per step (an ordered trace, not a value), per-element outputs use
+# indexed keys (_INDEX_BASE below), and any other sequence is one
+# comma-separated list wrapped only after commas.
 
 
 # --- vector rendering -----------------------------------------------------

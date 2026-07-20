@@ -990,7 +990,84 @@ The authors thank Giap Vu and David Wong (zkSecurity) for their help and contrib
 
 --- back
 
-# Test Vectors
+# Example protocol: sumcheck {#example-sumcheck}
+
+This appendix describes the Fiat-Shamir transformation for the sumcheck protocol. This protocol is not meant for standalone use; it is a toy example where the verifier's final check would still require the evaluation `y = f(r[1], ..., r[v])`, which is normally obtained via a polynomial commitment scheme opening.
+
+The protocol is parameterized by a prime `p` and a number of variables `v`. The witness is the table `w` of the `2^v` evaluations of a multilinear polynomial `f` on the hypercube: entry `w[j]` is `f(j_0, ..., j_{v-1})`, where `j_0` is the least-significant bit of `j`. The instance is `(v, S)`: the number of variables and the claimed sum `S` of all table entries. The application context is bound through the session identifier ({{session-id}}). All field arithmetic below is modulo `p`.
+
+In each round the prover message is the coefficient pair `(a0, a1)` of the round polynomial `g(X) = a0 + a1 * X` of the lowest unbound variable: `g(0)` and `g(1)` are the even- and odd-indexed half-sums of the table. Each verifier message is one field element, decoded from `Ns` squeezed bytes as `LE2IP(Squeeze(Ns)) mod p`. (For the Mersenne31 instantiation below, the bias of the reduction is approximately `2^-31`, less than the soundness error of the interactive argument.)
+
+~~~
+SumcheckProve(session_id, v, w)
+
+Inputs:
+
+- session_id, a 32-byte string
+- v, the number of variables
+- w, a table of 2^v field elements
+
+Outputs: narg_string; y, the final folded evaluation
+f(r[1], ..., r[v])
+
+ 1. S := w[0] + w[1] + ... + w[2^v - 1]
+ 2. state := Init(session_id)
+ 3. state.Absorb(SerializeUint(v, 2^32) || SerializeField(S, p, 1))
+ 4. narg_string := ""
+ 5. for i in 1, ..., v:
+ 6.    a0 := w[0] + w[2] + ... + w[len(w) - 2]
+ 7.    a1 := (w[1] + w[3] + ... + w[len(w) - 1]) - a0
+ 8.    msg := SerializeField((a0, a1), p, 2)
+ 9.    state.Absorb(msg)
+10.    narg_string := narg_string || msg
+11.    r := LE2IP(state.Squeeze(Ns)) mod p
+12.    w := (w[0] + r * (w[1] - w[0]), w[2] + r * (w[3] - w[2]), ...)
+13. return (narg_string, w[0])
+~~~
+
+After `v` rounds the single remaining entry `w[0]` is `f(r[1], ..., r[v])`, where `r[i]` is the challenge of round `i`. The NARG string is the concatenation of the round messages.
+
+~~~
+SumcheckVerify(session_id, v, S, narg_string, y)
+
+Inputs:
+
+- session_id, v, as in SumcheckProve
+- S, the claimed sum
+- narg_string, the NARG string
+- y, the evaluation f(r[1], ..., r[v]), supplied by the caller
+
+Output: accept or reject
+
+ 1. state := Init(session_id)
+ 2. state.Absorb(SerializeUint(v, 2^32) || SerializeField(S, p, 1))
+ 3. for i in 1, ..., v:
+ 4.    ((a0, a1), narg_string) := DeserializeField(narg_string, p, 2)
+ 5.    fail if 2 * a0 + a1 != S
+ 6.    state.Absorb(SerializeField((a0, a1), p, 2))
+ 7.    r := LE2IP(state.Squeeze(Ns)) mod p
+ 8.    S := a0 + a1 * r
+ 9. fail if narg_string != ""
+10. fail if S != y
+11. return accept
+~~~
+
+The test vectors instantiate `p = 2^31 - 1`, `v = 4`, and the witness `w = (1, 2, 4, ..., 2^15)`, giving `S = 65535`. The vectors report the NARG string as `Narg` and `f(r[1], ..., r[v])` as `FinalEvaluation`.
+
+# Test Vectors {#test-vectors}
+
+Each test vector is a block of lines of the form `Key = Value`, and no key repeats within a vector. A value is either an integer, written in decimal or in hexadecimal with the prefix `0x`, or a byte string, written in lowercase hexadecimal. The empty byte string is written `""`.
+
+Two rules govern how a value is laid out, and they are the whole grammar:
+
+1. A value is written inline after `Key = ` when it fits the document width. Otherwise it is written on the lines that follow, indented by two spaces, and the value is the concatenation of those lines with no separator. Byte strings wrap at a whole 32 bytes per line, so that a 32-byte value occupies exactly one line and a 64-byte value exactly two.
+2. A sequence-valued field always uses the indented form, one item per line, each item introduced by `- `. An item too long for a line is itself wrapped, and its continuation lines carry a further two spaces of indentation.
+
+So an indented line beginning `- ` starts a new item, and any other indented line continues the value above it.
+
+Every vector carries `Id`, a stable name of the form `fiat-shamir/<suite>/<vector>` by which this document and a test harness refer to it, and `Function`, the operation the remaining keys describe. The hash suite is identified with key `Hash` ({{suites}}). A vector carrying `Expected = reject` indicates a negative test; a vector with no `Expected` is a functional test, whose expectation is the output value it carries. The key `ByteOrder` marks the vectors exercising a non-default serialization ({{serialize-field}}).
+
+A machine-readable (JSON) copy of every vector below is part of this specification's repo. The two carry the same records: because no key repeats and sequences are explicit, each `~~~` block corresponds to one JSON object, key for key.
 
 ## Codec test vectors {#tv-codec}
 

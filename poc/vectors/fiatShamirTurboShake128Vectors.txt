@@ -195,7 +195,8 @@ Id = fiat-shamir/turboshake128/decode_uint
 Function = DecodeUint
 Hash = TurboSHAKE128
 Modulus =
-  512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
+  0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
+  51
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -205,33 +206,41 @@ Output =
   82a031e31b103ac01253ba3aae215f650a06a4bb24963a05ee1f8c0b82eae90d
   7bd36ea8cb560a91604ae8a97eb0d564
 Challenge =
-  8b55e9fe9b451d8719e01ddb7983fde76695a73563d7cd6f12d01650458b08c2
+  0xc2088b455016d0126fcdd76335a79566e7fd8379db1de019871d459bfee955
+  8b
 ~~~
 
-### We run an example Interactive Proof (sumcheck) for a multilinear polynomial over Mersenne31.
+### The sumcheck protocol example ({{example-sumcheck}}) over Mersenne31.
 ~~~
 Id = fiat-shamir/turboshake128/sumcheck
 Function = Sumcheck
 Hash = TurboSHAKE128
-Modulus = ffffff7f
+Modulus = 0x7fffffff
+NumVariables = 4
+Tag = 73756d636865636b
 SessionId =
-  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-ContextTag = 73756d636865636b
+  abcbcae1f2f90d02b7e6417dbb2ffe162ab00477453eac3ce83d4e7e61000280
 Witness =
-  0100000002000000040000000800000010000000200000004000000080000000
-  0001000000020000000400000008000000100000002000000040000000800000
-ClaimedSum = ffff0000
-RoundMessage =
-  - 5555000055550000
-  - 328e424397aac749
-  - eed6bb6fff97010c
-  - 96e85f44f2ad881b
-Challenge =
-  - c136dc45
-  - 8a09d96a
-  - 34b14d0f
-  - 1a70ec34
-FinalEvaluation = f2d5d56a
+  - 1
+  - 2
+  - 4
+  - 8
+  - 16
+  - 32
+  - 64
+  - 128
+  - 256
+  - 512
+  - 1024
+  - 2048
+  - 4096
+  - 8192
+  - 16384
+  - 32768
+ClaimedSum = 0xffff
+Narg =
+  55550000555500006ff9a71d4decf758430dfb69f9c6b5359d8ab2744b13d83d
+FinalEvaluation = 0x654028db
 ~~~
 
 ### A NARG string with trailing bytes is rejected
@@ -239,13 +248,14 @@ FinalEvaluation = f2d5d56a
 Id = fiat-shamir/turboshake128/sumcheck_reject_trailing_bytes
 Function = Sumcheck
 Hash = TurboSHAKE128
-Modulus = ffffff7f
+Modulus = 0x7fffffff
+NumVariables = 4
+Tag = 73756d636865636b
 SessionId =
-  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-ContextTag = 73756d636865636b
-ClaimedSum = ffff0000
+  abcbcae1f2f90d02b7e6417dbb2ffe162ab00477453eac3ce83d4e7e61000280
+ClaimedSum = 0xffff
 Narg =
-  5555000055550000328e424397aac749eed6bb6fff97010c96e85f44f2ad881b
+  55550000555500006ff9a71d4decf758430dfb69f9c6b5359d8ab2744b13d83d
   00
 Expected = reject
 ~~~

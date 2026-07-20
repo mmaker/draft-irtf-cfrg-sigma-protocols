@@ -12,8 +12,8 @@
     "Name": "serialize_uint",
     "Title": "`SerializeUint`: unsigned-integer serialization.",
     "Function": "SerializeUint",
-    "Modulus": "43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-    "Value": "deadbeef",
+    "Modulus": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff43",
+    "Value": "0xdeadbeef",
     "Output": "efbeadde00000000000000000000000000000000000000000000000000000000"
   },
   {
@@ -21,12 +21,12 @@
     "Name": "deserialize_field",
     "Title": "`DeserializeField`, used to deserialize a degree-2 element of the field of characteristic `2^256 - 189` (the default, little-endian serialization).",
     "Function": "DeserializeField",
-    "Modulus": "43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "Modulus": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff43",
     "ExtensionDegree": 2,
     "Input": "efbeadde0000000000000000000000000000000000000000000000000000000042ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     "Coordinates": [
-      "efbeadde00000000000000000000000000000000000000000000000000000000",
-      "42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      "0xdeadbeef",
+      "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff42"
     ]
   },
   {
@@ -43,9 +43,9 @@
     "Title": "Decoding is infallible and distribution-preserving",
     "Function": "DecodeUint",
     "Group": "P-256",
-    "Modulus": "512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff",
+    "Modulus": "0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551",
     "Input": "512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff00000000000000000000000000000000",
-    "Challenge": "0000000000000000000000000000000000000000000000000000000000000000"
+    "Challenge": "0x00"
   },
   {
     "Id": "fiat-shamir/codec/serialize_field_be",
@@ -54,8 +54,8 @@
     "Function": "SerializeField",
     "ByteOrder": "big-endian",
     "Group": "P-256",
-    "Modulus": "512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff",
-    "Value": "deadbeef",
+    "Modulus": "0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551",
+    "Value": "0xdeadbeef",
     "Output": "00000000000000000000000000000000000000000000000000000000deadbeef"
   },
   {
@@ -63,7 +63,7 @@
     "Name": "deserialize_uint_reject_modulus",
     "Title": "The modulus itself is not accepted as a valid serialization.",
     "Function": "DeserializeUint",
-    "Modulus": "43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "Modulus": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff43",
     "Input": "43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     "Expected": "reject"
   },
@@ -72,7 +72,7 @@
     "Name": "deserialize_uint_reject_short",
     "Title": "Deserialization fails for inputs shorter than `Ns` bytes",
     "Function": "DeserializeUint",
-    "Modulus": "43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "Modulus": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff43",
     "Input": "efbeadde000000000000000000000000000000000000000000000000000000",
     "Expected": "reject"
   },
@@ -81,7 +81,7 @@
     "Name": "deserialize_field_reject_second_coordinate",
     "Title": "When deserializing field extension elements, all coordinates must be validated",
     "Function": "DeserializeField",
-    "Modulus": "43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "Modulus": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff43",
     "ExtensionDegree": 2,
     "Input": "42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     "Expected": "reject"
@@ -105,27 +105,27 @@
   {
     "Id": "fiat-shamir/codec/sumcheck_reject_noncanonical_coefficient",
     "Name": "sumcheck_reject_noncanonical_coefficient",
-    "Title": "The integer `c + p` is not a valid serialization of an integer modulo `p`",
+    "Title": "The example protocol ({{example-sumcheck}}), where the first prover message is an invalid serialization (`p`, the modulus, is added to the canonical encoding)",
     "Function": "Sumcheck",
     "Group": "Mersenne31",
-    "Modulus": "ffffff7f",
+    "Modulus": "0x7fffffff",
+    "NumVariables": 4,
     "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
-    "ContextTag": "73756d636865636b",
-    "ClaimedSum": "ffff0000",
-    "Narg": "5455008055550000efa23f35cee8be1f552f006006c6022045004b382b45b512",
+    "ClaimedSum": "0xffff",
+    "Narg": "5455008055550000b8eefc2728ccf677b7aabd44c1001d074205d5576c3d307d",
     "Expected": "reject"
   },
   {
     "Id": "fiat-shamir/codec/sumcheck_reject_round_identity",
     "Name": "sumcheck_reject_round_identity",
-    "Title": "An invalid NARG string for the sumcheck protocol, where a prover message does not satisfy verification",
+    "Title": "An invalid NARG string for the example protocol ({{example-sumcheck}}), where a prover message does not satisfy verification",
     "Function": "Sumcheck",
     "Group": "Mersenne31",
-    "Modulus": "ffffff7f",
+    "Modulus": "0x7fffffff",
+    "NumVariables": 4,
     "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
-    "ContextTag": "73756d636865636b",
-    "ClaimedSum": "ffff0000",
-    "Narg": "5655000055550000efa23f35cee8be1f552f006006c6022045004b382b45b512",
+    "ClaimedSum": "0xffff",
+    "Narg": "5655000055550000b8eefc2728ccf677b7aabd44c1001d074205d5576c3d307d",
     "Expected": "reject"
   }
 ]
