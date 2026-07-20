@@ -11,8 +11,9 @@ Output = 0500000070726f6f66
 Id = fiat-shamir/codec/serialize_uint
 Function = SerializeUint
 Modulus =
-  43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-Value = deadbeef
+  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  43
+Value = 0xdeadbeef
 Output =
   efbeadde00000000000000000000000000000000000000000000000000000000
 ~~~
@@ -22,14 +23,15 @@ Output =
 Id = fiat-shamir/codec/deserialize_field
 Function = DeserializeField
 Modulus =
-  43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  43
 ExtensionDegree = 2
 Input =
   efbeadde00000000000000000000000000000000000000000000000000000000
   42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 Coordinates =
-  - efbeadde00000000000000000000000000000000000000000000000000000000
-  - 42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  - 0xdeadbeef
+  - 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff42
 ~~~
 
 ### The empty byte string may be encoded as a variable-length string.
@@ -45,12 +47,12 @@ Output = 00000000
 Id = fiat-shamir/codec/decode_uint_wraparound
 Function = DecodeUint
 Modulus =
-  512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
+  0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
+  51
 Input =
   512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
   00000000000000000000000000000000
-Challenge =
-  0000000000000000000000000000000000000000000000000000000000000000
+Challenge = 0x00
 ~~~
 
 ### Field serialization of the P-256 scalar field happens via `I2OSP`.
@@ -59,8 +61,9 @@ Id = fiat-shamir/codec/serialize_field_be
 Function = SerializeField
 ByteOrder = big-endian
 Modulus =
-  512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
-Value = deadbeef
+  0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
+  51
+Value = 0xdeadbeef
 Output =
   00000000000000000000000000000000000000000000000000000000deadbeef
 ~~~
@@ -70,7 +73,8 @@ Output =
 Id = fiat-shamir/codec/deserialize_uint_reject_modulus
 Function = DeserializeUint
 Modulus =
-  43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  43
 Input =
   43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 Expected = reject
@@ -81,7 +85,8 @@ Expected = reject
 Id = fiat-shamir/codec/deserialize_uint_reject_short
 Function = DeserializeUint
 Modulus =
-  43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  43
 Input =
   efbeadde000000000000000000000000000000000000000000000000000000
 Expected = reject
@@ -92,7 +97,8 @@ Expected = reject
 Id = fiat-shamir/codec/deserialize_field_reject_second_coordinate
 Function = DeserializeField
 Modulus =
-  43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  43
 ExtensionDegree = 2
 Input =
   42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -116,31 +122,31 @@ Input = ffffffffdeadbeef
 Expected = reject
 ~~~
 
-### The integer `c + p` is not a valid serialization of an integer modulo `p`
+### The example protocol ({{example-sumcheck}}), where the first prover message is an invalid serialization (`p`, the modulus, is added to the canonical encoding)
 ~~~
 Id = fiat-shamir/codec/sumcheck_reject_noncanonical_coefficient
 Function = Sumcheck
-Modulus = ffffff7f
+Modulus = 0x7fffffff
+NumVariables = 4
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-ContextTag = 73756d636865636b
-ClaimedSum = ffff0000
+ClaimedSum = 0xffff
 Narg =
-  5455008055550000efa23f35cee8be1f552f006006c6022045004b382b45b512
+  5455008055550000b8eefc2728ccf677b7aabd44c1001d074205d5576c3d307d
 Expected = reject
 ~~~
 
-### An invalid NARG string for the sumcheck protocol, where a prover message does not satisfy verification
+### An invalid NARG string for the example protocol ({{example-sumcheck}}), where a prover message does not satisfy verification
 ~~~
 Id = fiat-shamir/codec/sumcheck_reject_round_identity
 Function = Sumcheck
-Modulus = ffffff7f
+Modulus = 0x7fffffff
+NumVariables = 4
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-ContextTag = 73756d636865636b
-ClaimedSum = ffff0000
+ClaimedSum = 0xffff
 Narg =
-  5655000055550000efa23f35cee8be1f552f006006c6022045004b382b45b512
+  5655000055550000b8eefc2728ccf677b7aabd44c1001d074205d5576c3d307d
 Expected = reject
 ~~~
 
