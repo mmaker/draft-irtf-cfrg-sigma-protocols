@@ -1020,7 +1020,7 @@ The constant-time requirements of {{fiat-shamir}} apply here, and extend to the 
 
 ## Post-Quantum Considerations {#post-quantum-security-considerations}
 
-Sigma Protocols are unconditionally sound and honest-verifier zero-knowledge. What breaks in the post-quantum setting are the statements themselves. They are preimages of linear maps in groups where the discrete logarithm problem is assumed hard, and they are meaningful only while computing discrete logarithms remains infeasible. Since the discrete logarithm problem is efficiently solvable by quantum computers using Shor's algorithm, these proofs **MUST NOT** be relied upon for post-quantum soundness guarantees, and relations of {{linear-map}} **MUST NOT** be used in the presence of quantum adversaries. Implementations requiring post-quantum soundness **SHOULD** transition to alternative proof systems.
+Sigma Protocols are unconditionally sound and honest-verifier zero-knowledge. What breaks in the post-quantum setting are the statements themselves. They are preimages of linear maps in groups where the discrete logarithm problem is assumed hard, and they are meaningful only while computing discrete logarithms remains infeasible. Therefore, relations of {{linear-map}} **SHOULD NOT** be used in the presence of quantum adversaries.
 
 For instance, in the statement `C = m * G + r * H, R = r * G`, the witness `m` is only computationally hidden. The NARG string does not leak the witness. Yet, a quantum adversary may recover `r` from `R` and then `m` from `C - r * H`, with two discrete logarithm computations.
 
