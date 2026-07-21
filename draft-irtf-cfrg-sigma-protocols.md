@@ -1,11 +1,12 @@
 ---
-title: "Interactive Sigma Proofs"
+title: "Sigma Proofs for Linear Relations"
 category: info
 
 docname: draft-irtf-cfrg-sigma-protocols-latest
-submissiontype: independent
+submissiontype: IRTF
 number:
 date:
+consensus: true
 v: 3
 area: "IRTF"
 workgroup: "Crypto Forum"
@@ -28,32 +29,103 @@ author:
 
 normative:
   fiat-shamir: I-D.irtf-cfrg-fiat-shamir
-
-informative:
-  SP800:
-    title: "Recommendations for Discrete Logarithm-based Cryptography"
+  NIST-SP-800-186:
+    title: "Recommendations for Discrete Logarithm-based Cryptography: Elliptic Curve Domain Parameters"
     target: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-186.pdf
+    date: 2023
+    seriesinfo:
+      "NIST SP": "800-186"
+    author:
+      - org: "National Institute of Standards and Technology (NIST)"
   SEC1:
-    title: "SEC 1: Elliptic Curve Cryptography"
+    title: "SEC 1: Elliptic Curve Cryptography, Version 2.0"
     target: https://www.secg.org/sec1-v2.pdf
-    date: false
+    date: 2009
     author:
       -
         ins: Standards for Efficient Cryptography Group (SECG)
-  GiacomelliMO16:
-    title: "ZKBoo: Faster Zero-Knowledge for Boolean Circuits"
-    target: https://eprint.iacr.org/2016/163.pdf
+
+informative:
+  FIPS186-5:
+    title: "Digital Signature Standard (DSS)"
+    target: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-5.pdf
+    date: 2023
+    seriesinfo:
+      "FIPS": "186-5"
+    author:
+      - org: "National Institute of Standards and Technology (NIST)"
+  BDFLSZ11:
+    title: "Random Oracles in a Quantum World"
+    target: https://eprint.iacr.org/2010/428.pdf
     date: false
     author:
     -
-      fullname: "Irene Giacomelli"
+      fullname: "Dan Boneh"
     -
-      fullname: "Jesper Madsen"
+      fullname: "Özgür Dagdelen"
     -
-      fullname: "Claudio Orlandi"
+      fullname: "Marc Fischlin"
+    -
+      fullname: "Anja Lehmann"
+    -
+      fullname: "Christian Schaffner"
+    -
+      fullname: "Mark Zhandry"
+  DFMS19:
+    title: "Security of the Fiat-Shamir Transformation in the Quantum Random-Oracle Model"
+    target: https://eprint.iacr.org/2019/190.pdf
+    date: false
+    author:
+    -
+      fullname: "Jelle Don"
+    -
+      fullname: "Serge Fehr"
+    -
+      fullname: "Christian Majenz"
+    -
+      fullname: "Christian Schaffner"
+  IKOS07:
+    title: "Zero-Knowledge from Secure Multiparty Computation"
+    target: https://doi.org/10.1145/1250790.1250794
+    date: 2007
+    author:
+    -
+      fullname: "Yuval Ishai"
+    -
+      fullname: "Eyal Kushilevitz"
+    -
+      fullname: "Rafail Ostrovsky"
+    -
+      fullname: "Amit Sahai"
+  BellareGR98:
+    title: "Fast Batch Verification for Modular Exponentiation and Digital Signatures"
+    target: https://doi.org/10.1007/BFb0054130
+    date: 1998
+    author:
+      - fullname: "Mihir Bellare"
+      - fullname: "Juan A. Garay"
+      - fullname: "Tal Rabin"
+  BDLSY11:
+    title: "High-speed high-security signatures"
+    target: https://doi.org/10.1007/978-3-642-23951-9_9
+    date: 2011
+    author:
+      - fullname: "Daniel J. Bernstein"
+      - fullname: "Niels Duif"
+      - fullname: "Tanja Lange"
+      - fullname: "Peter Schwabe"
+      - fullname: "Bo-Yin Yang"
+  ChalkiasGN20:
+    title: "Taming the Many EdDSAs"
+    target: https://eprint.iacr.org/2020/1244.pdf
+    date: 2020
+    author:
+      - fullname: "Konstantinos Chalkias"
+      - fullname: "François Garillot"
+      - fullname: "Valeria Nikolaenko"
   AttemaCK21:
     title: "A Compressed Sigma-Protocol Theory for Lattices"
-    target: https://dl.acm.org/doi/10.1007/978-3-030-84245-1_19
+    target: https://doi.org/10.1007/978-3-030-84245-1_19
     date: false
     author:
     -
@@ -65,6 +137,7 @@ informative:
   BonehS23:
       title: "A Graduate Course in Applied Cryptography"
       target: https://toc.cryptobook.us/
+      date: 2023
       author:
       -
         fullname: Dan Boneh
@@ -72,7 +145,7 @@ informative:
         fullname: Victor Shoup
   Stern93:
     title: "A New Identification Scheme Based on Syndrome Decoding"
-    target: https://link.springer.com/chapter/10.1007/3-540-48329-2_2
+    target: https://doi.org/10.1007/3-540-48329-2_2
     date: 1993
     author:
       - fullname: "Jacques Stern"
@@ -82,7 +155,7 @@ informative:
     date: 1994
     author:
       - fullname: "Ronald Cramer"
-      - fullname: "Ivan Damgaard"
+      - fullname: "Ivan Damgård"
       - fullname: "Berry Schoenmakers"
   Cramer97:
     title: "Modular Design of Secure yet Practical Cryptographic Protocols"
@@ -90,30 +163,102 @@ informative:
     date: 1997
     author:
       - fullname: "Ronald Cramer"
-  CS97:
-      title: "Proof Systems for General Statements about Discrete Logarithms"
-      author:
-        - fullname: "Jan Camenisch"
-        - fullname: "Markus Stadler"
-      target: https://crypto.ethz.ch/publications/files/CamSta97b.pdf
-  FIPS.186-5: DOI.10.6028/NIST.FIPS.186-5
-  FIPS-202: DOI.10.6028/NIST.FIPS.202
-  CVE-2020-0601:
-    title: "CVE-2020-0601: Windows CryptoAPI Spoofing Vulnerability (CurveBall)"
-    target: https://nvd.nist.gov/vuln/detail/CVE-2020-0601
-    date: 2020
-  CVE-2022-21449:
-    title: "CVE-2022-21449: Improper ECDSA signature verification in Java SE / GraalVM (Psychic Signatures)"
-    target: https://nvd.nist.gov/vuln/detail/CVE-2022-21449
-    date: 2022
+  Maurer09:
+    title: "Unifying Zero-Knowledge Proofs of Knowledge"
+    target: https://doi.org/10.1007/978-3-642-02384-2_17
+    date: 2009
+    author:
+      - fullname: "Ueli M. Maurer"
+  Schnorr91:
+    title: "Efficient Signature Generation by Smart Cards"
+    target: https://doi.org/10.1007/BF00196725
+    date: 1991
+    author:
+      - fullname: "Claus-Peter Schnorr"
+  Pedersen91:
+    title: "Non-Interactive and Information-Theoretic Secure Verifiable Secret Sharing"
+    target: https://doi.org/10.1007/3-540-46766-1_9
+    date: 1991
+    author:
+      - fullname: "Torben Pryds Pedersen"
+  ChaumP92:
+    title: "Wallet Databases with Observers"
+    target: https://doi.org/10.1007/3-540-48071-4_7
+    date: 1992
+    author:
+      - fullname: "David Chaum"
+      - fullname: "Torben Pryds Pedersen"
+  Okamoto92:
+    title: "Provably Secure and Practical Identification Schemes and Corresponding Signature Schemes"
+    target: https://doi.org/10.1007/3-540-48071-4_3
+    date: 1992
+    author:
+      - fullname: "Tatsuaki Okamoto"
+  CamenischS97:
+    title: "Efficient Group Signature Schemes for Large Groups"
+    target: https://doi.org/10.1007/BFb0052252
+    date: 1997
+    author:
+      - fullname: "Jan Camenisch"
+      - fullname: "Markus Stadler"
+  JakobssonSI96:
+    title: "Designated Verifier Proofs and Their Applications"
+    target: https://doi.org/10.1007/3-540-68339-9_13
+    date: 1996
+    author:
+      - fullname: "Markus Jakobsson"
+      - fullname: "Kazue Sako"
+      - fullname: "Russell Impagliazzo"
+  Pass03:
+    title: "On Deniability in the Common Reference String and Random Oracle Model"
+    target: https://doi.org/10.1007/978-3-540-45146-4_19
+    date: 2003
+    author:
+      - fullname: "Rafael Pass"
+  PointchevalS00:
+    title: "Security Arguments for Digital Signatures and Blind Signatures"
+    target: https://doi.org/10.1007/s001450010003
+    date: 2000
+    author:
+      - fullname: "David Pointcheval"
+      - fullname: "Jacques Stern"
+  Orru24:
+    title: "Revisiting Keyed-Verification Anonymous Credentials"
+    target: https://eprint.iacr.org/2024/1552
+    date: 2024
+    author:
+      - fullname: "Michele Orrù"
+  ARC: I-D.ietf-privacypass-arc-crypto
+  BBS: I-D.irtf-cfrg-bbs-signatures
+  BBSBlind: I-D.irtf-cfrg-bbs-blind-signatures
   CVE-2022-23806:
     title: "CVE-2022-23806: crypto/elliptic Curve.IsOnCurve returns true for non-canonical field elements in Go"
     target: https://nvd.nist.gov/vuln/detail/CVE-2022-23806
     date: 2022
-  CVE-2024-42461:
-    title: "CVE-2024-42461: ECDSA signature malleability from BER-encoded signatures in the elliptic package"
-    target: https://nvd.nist.gov/vuln/detail/CVE-2024-42461
-    date: 2024
+  CVE-2022-29566:
+    title: "CVE-2022-29566: Fiat-Shamir hashing omits public values from the statement and the proof in Bulletproofs (Frozen Heart)"
+    target: https://nvd.nist.gov/vuln/detail/CVE-2022-29566
+    date: 2022
+  CVE-2023-33252:
+    title: "CVE-2023-33252: snarkjs accepts public signals not reduced modulo the field order"
+    target: https://nvd.nist.gov/vuln/detail/CVE-2023-33252
+    date: 2023
+  CVE-2025-57801:
+    title: "CVE-2025-57801: gnark in-circuit ECDSA/EdDSA verification accepts out-of-range S (signature malleability)"
+    target: https://nvd.nist.gov/vuln/detail/CVE-2025-57801
+    date: 2025
+  SOLANA-ZK:
+    title: "Post Mortem: ZK ElGamal Proof Program Bug"
+    target: https://solana.com/news/post-mortem-may-2-2025
+    date: 2025
+    author:
+      - org: "Solana Foundation"
+  SOLANA-PHANTOM:
+    title: "Uncovering the Phantom Challenge Soundness Bug in Solana's ZK ElGamal Proof Program"
+    target: https://blog.zksecurity.xyz/posts/solana-phantom-challenge-bug/
+    date: 2025
+    author:
+      - fullname: "Suneal Gong"
   JagerSS15:
     title: "Practical Invalid Curve Attacks on TLS-ECDH"
     target: https://doi.org/10.1007/978-3-319-24174-6_21
@@ -122,12 +267,69 @@ informative:
       - fullname: "Tibor Jager"
       - fullname: "Jörg Schwenk"
       - fullname: "Juraj Somorovsky"
+  HowgraveGrahamS01:
+    title: "Lattice Attacks on Digital Signature Schemes"
+    target: https://doi.org/10.1023/A:1011214926272
+    date: 2001
+    author:
+      - fullname: "Nick Howgrave-Graham"
+      - fullname: "Nigel P. Smart"
+  JancarSSS20:
+    title: "Minerva: The curse of ECDSA nonces"
+    target: https://doi.org/10.46586/tches.v2020.i4.281-308
+    date: 2020
+    author:
+      - fullname: "Jan Jancar"
+      - fullname: "Vladimir Sedlacek"
+      - fullname: "Petr Svenda"
+      - fullname: "Marek Sys"
+  PS3:
+    title: "Console Hacking 2010: PS3 Epic Fail"
+    target: https://fahrplan.events.ccc.de/congress/2010/Fahrplan/attachments/1780_27c3_console_hacking_2010.pdf
+    date: 2010
+    seriesinfo:
+      "In": "27th Chaos Communication Congress (27C3)"
+    author:
+      - fullname: "fail0verflow"
 
+  CS97:
+      title: "Proof Systems for General Statements about Discrete Logarithms"
+      author:
+        - fullname: "Jan Camenisch"
+        - fullname: "Markus Stadler"
+      target: https://crypto.ethz.ch/publications/files/CamSta97b.pdf
+  CVE-2020-0601:
+    title: "CVE-2020-0601: Windows CryptoAPI Spoofing Vulnerability (CurveBall)"
+    target: https://nvd.nist.gov/vuln/detail/CVE-2020-0601
+    date: 2020
+  CVE-2022-21449:
+    title: "CVE-2022-21449: Improper ECDSA signature verification in Java SE / GraalVM (Psychic Signatures)"
+    target: https://nvd.nist.gov/vuln/detail/CVE-2022-21449
+    date: 2022
+  CVE-2024-42461:
+    title: "CVE-2024-42461: ECDSA signature malleability from BER-encoded signatures in the elliptic package"
+    target: https://nvd.nist.gov/vuln/detail/CVE-2024-42461
+    date: 2024
+  FIPS.186-5: DOI.10.6028/NIST.FIPS.186-5
+  GiacomelliMO16:
+    title: "ZKBoo: Faster Zero-Knowledge for Boolean Circuits"
+    target: https://eprint.iacr.org/2016/163.pdf
+    date: false
+    author:
+    -
+      fullname: "Irene Giacomelli"
+    -
+      fullname: "Jesper Madsen"
+    -
+      fullname: "Claudio Orlandi"
+  SP800:
+    title: "Recommendations for Discrete Logarithm-based Cryptography"
+    target: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-186.pdf
 --- abstract
 
-A Sigma Protocol is an interactive zero-knowledge proof of knowledge that allows a prover to convince a verifier of the validity of a statement. It satisfies the properties of completeness, soundness, and zero-knowledge, as described in {{security-considerations}}.
+This document describes Sigma Protocols for proving knowledge of preimages of linear maps in prime-order elliptic curve groups. These are sometimes also called _Maurer Proofs_, or _proofs of knowledge of a preimage of a group homomorphism_.
 
-This document describes Sigma Protocols for proving knowledge of pre-images of linear maps in prime-order elliptic curve groups. Examples include zero-knowledge proofs for discrete logarithm relations, ElGamal encryptions, Pedersen commitments, and range proofs.
+Examples include zero-knowledge proofs for discrete logarithm relations, ElGamal encryptions, Pedersen commitments, and range proofs.
 
 --- middle
 
