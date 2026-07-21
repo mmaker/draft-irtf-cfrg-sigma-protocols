@@ -650,21 +650,6 @@ This ciphersuite uses P-256 {{SP800}} for the Group.
 - `serialize(s)`: Relies on the Field-Element-to-Octet-String conversion according to {{SEC1}}; `Ns = 32`.
 - `deserialize(buf)`: Reads the byte array `buf` in chunks of 32 bytes using Octet-String-to-Field-Element from {{SEC1}}. This function can fail if the input does not represent a Scalar in the range `[0, G.Order() - 1]`.
 
-### BLS12-381 (G1)
-
-This ciphersuite uses the prime-order subgroup G1 of the BLS12-381 elliptic curve {{!RFC9380}} for the Group.
-
-#### Elliptic curve group of BLS12-381 (G1) {{!RFC9380}}
-
-- `order()`: Return the integer `52435875175126190479447740508185965837690552500527637822603658699938581184513`.
-- `serialize([A])`: Implemented using the compressed serialization for G1 points defined in Appendix C of {{!PAIRING=I-D.irtf-cfrg-pairing-friendly-curves}}; `Ne = 48`.
-- `deserialize(buf)`: Reads `buf` in chunks of 48 bytes and inverts the compressed serialization above. It performs full point validation: that the encoding is canonical (the x-coordinate is less than the field characteristic and the metadata bits are consistent), that the resulting point is on the curve, and that it lies in the prime-order subgroup G1. The point at infinity is rejected. This function can raise a `DeserializeError` if deserialization fails.
-
-#### Scalar Field of BLS12-381
-
-- `serialize(s)`: Relies on the big-endian fixed-length integer encoding `I2OSP` ({{fiat-shamir}}); `Ns = 32`.
-- `deserialize(buf)`: Reads the byte array `buf` in chunks of 32 bytes using `OS2IP` ({{fiat-shamir}}). This function can fail if the input does not represent a Scalar in the range `[0, G.Order() - 1]`.
-
 # Non-interactive Sigma Protocols {#non-interactive}
 
 The Fiat-Shamir transformation applied to Sigma Protocols yields a non-interactive zero-knowledge argument of knowledge. This section bridges the transformation described in {{fiat-shamir}} with Sigma Protocols.
@@ -918,7 +903,6 @@ The ciphersuites defined by this document, and the identifiers used by the test 
 | Identifier | Group | Duplex Sponge | Security |
 |---|---|---|---|
 | `Shake128_P256_` | P-256 (secp256r1) | SHAKE128 | 128-bit pre-quantum |
-| `Shake128_BLS12381_` | BLS12-381 (G1) | SHAKE128 | 128-bit pre-quantum |
 {: #tab-ni-ciphersuites title="Non-interactive Sigma Protocol ciphersuites"}
 
 Each row uses the `SchnorrProof` of {{sigma-protocol-group}} over the named group. `Ne` and `Ns` are the element and scalar byte lengths of that group.
