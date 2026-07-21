@@ -1090,7 +1090,9 @@ This document has no IANA actions. The ciphersuite identifiers of {{ciphersuites
 # Acknowledgments
 {:numbered="false"}
 
-The authors thank Jan Bobolz, Vishruti Ganesh, Stephan Krenn, Mary Maller, Ivan Visconti, Yuwen Zhang for reviewing a previous edition of this specification.
+The authors thank Jan Bobolz, Vishruti Ganesh, Stephan Krenn, Mary Maller, Ivan Visconti, and Yuwen Zhang for reviewing a previous edition of this specification.
+
+The authors thank Giap Vu and David Wong (zkSecurity) for their help and contributions.
 
 --- back
 
