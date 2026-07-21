@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 17 January 2027                                     Apple, Inc.
-                                                            16 July 2026
+Expires: 22 January 2027                                     Apple, Inc.
+                                                            21 July 2026
 
 
                         Interactive Sigma Proofs
@@ -57,7 +57,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 17 January 2027.
+   This Internet-Draft will expire on 22 January 2027.
 
 Copyright Notice
 
@@ -93,7 +93,6 @@ Table of Contents
        4.2.10. Example: Pedersen commitments
      4.3.  Ciphersuites
        4.3.1.  P-256 (secp256r1)
-       4.3.2.  BLS12-381 (G1)
    5.  Non-interactive Sigma Protocols
      5.1.  Codecs
        5.1.1.  Instance encoding
@@ -760,37 +759,6 @@ Procedure:
       can fail if the input does not represent a Scalar in the range [0,
       G.Order() - 1].
 
-4.3.2.  BLS12-381 (G1)
-
-   This ciphersuite uses the prime-order subgroup G1 of the BLS12-381
-   elliptic curve [RFC9380] for the Group.
-
-4.3.2.1.  Elliptic curve group of BLS12-381 (G1) [RFC9380]
-
-   *  order(): Return the integer
-      52435875175126190479447740508185965837690552500527637822603658699938581184513.
-
-   *  serialize([A]): Implemented using the compressed serialization for
-      G1 points defined in Appendix C of [PAIRING]; Ne = 48.
-
-   *  deserialize(buf): Reads buf in chunks of 48 bytes and inverts the
-      compressed serialization above.  It performs full point
-      validation: that the encoding is canonical (the x-coordinate is
-      less than the field characteristic and the metadata bits are
-      consistent), that the resulting point is on the curve, and that it
-      lies in the prime-order subgroup G1.  The point at infinity is
-      rejected.  This function can raise a DeserializeError if
-      deserialization fails.
-
-4.3.2.2.  Scalar Field of BLS12-381
-
-   *  serialize(s): Relies on the big-endian fixed-length integer
-      encoding I2OSP ([fiat-shamir]); Ns = 32.
-
-   *  deserialize(buf): Reads the byte array buf in chunks of 32 bytes
-      using OS2IP ([fiat-shamir]).  This function can fail if the input
-      does not represent a Scalar in the range [0, G.Order() - 1].
-
 5.  Non-interactive Sigma Protocols
 
    The Fiat-Shamir transformation applied to Sigma Protocols yields a
@@ -1098,15 +1066,12 @@ Procedure:
    The ciphersuites defined by this document, and the identifiers used
    by the test vectors, are:
 
-    +====================+=============+===============+=============+
-    | Identifier         | Group       | Duplex Sponge | Security    |
-    +====================+=============+===============+=============+
-    | Shake128_P256_     | P-256       | SHAKE128      | 128-bit     |
-    |                    | (secp256r1) |               | pre-quantum |
-    +--------------------+-------------+---------------+-------------+
-    | Shake128_BLS12381_ | BLS12-381   | SHAKE128      | 128-bit     |
-    |                    | (G1)        |               | pre-quantum |
-    +--------------------+-------------+---------------+-------------+
+   +================+===================+===============+=============+
+   | Identifier     | Group             | Duplex Sponge | Security    |
+   +================+===================+===============+=============+
+   | Shake128_P256_ | P-256 (secp256r1) | SHAKE128      | 128-bit     |
+   |                |                   |               | pre-quantum |
+   +----------------+-------------------+---------------+-------------+
 
            Table 1: Non-interactive Sigma Protocol ciphersuites
 
@@ -1244,12 +1209,6 @@ Normative References
               DOI 10.6028/nist.sp.800-56ar3, April 2018,
               <https://doi.org/10.6028/nist.sp.800-56ar3>.
 
-   [PAIRING]  Sakemi, Y., Kanno, S., and R. S. Wahby, "Pairing-Friendly
-              Curves", Work in Progress, Internet-Draft, draft-irtf-
-              cfrg-pairing-friendly-curves-13, 6 July 2026,
-              <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
-              pairing-friendly-curves-13>.
-
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
               DOI 10.17487/RFC2119, March 1997,
@@ -1258,11 +1217,6 @@ Normative References
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
-
-   [RFC9380]  Faz-Hernandez, A., Scott, S., Sullivan, N., Wahby, R. S.,
-              and C. A. Wood, "Hashing to Elliptic Curves", RFC 9380,
-              DOI 10.17487/RFC9380, August 2023,
-              <https://www.rfc-editor.org/rfc/rfc9380>.
 
 Informative References
 
