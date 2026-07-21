@@ -348,7 +348,7 @@ A byte is an 8-bit unsigned integer (an octet), and a *byte string* is a finite 
 
 ## Randomized algorithms {#rng-definition}
 
-The prover commitment algorithm requires fresh, single-use randomness to ensure privacy of the witness. This document denotes with `rng` a cryptographically secure random number generator (CSPRNG), and uses `Group.random_scalar(rng)` to denote sampling a uniformly random element of the scalar field, similarly to `RandomScalar()` of {{Section 2.1 of ?RFC9497}}.
+The prover commitment algorithm requires fresh, single-use randomness to ensure privacy of the witness. This document denotes with `rng` a cryptographically secure random number generator (CSPRNG), and uses `Group.random_scalar(rng)` to denote sampling a uniformly random element of the scalar field, similarly to `RandomScalar()` of {{Section 2.1 of ?RFC9497}}. Implementations **MUST** use a CSPRNG to sample non-zero scalars, either by using rejection sampling methods or by reducing a large bitstring modulo the group order. Refer to Section A.4 of {{FIPS186-5}} for guidance about these methods.
 
 ## Group abstraction {#group-abstraction}
 
