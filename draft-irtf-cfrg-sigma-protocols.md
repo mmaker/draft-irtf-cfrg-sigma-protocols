@@ -1096,11 +1096,15 @@ The authors thank Jan Bobolz, Vishruti Ganesh, Stephan Krenn, Mary Maller, Ivan 
 
 # Test Vectors
 
-This appendix contains test vectors for the non-interactive Sigma Protocols specified in this document, one section per ciphersuite ({{tv-p256}}, {{tv-bls12381}}). {{seeded-prng}} pins the randomness used, so that the vectors are reproducible from this document alone.
+This appendix contains test vectors for the non-interactive Sigma Protocols specified in this document, one section per ciphersuite ({{tv-p256}}, {{tv-bls12381}}). Each ciphersuite section has two subsections: valid proofs, and adversarial vectors. {{seeded-prng}} pins the randomness used, so that the vectors are reproducible from this document alone.
 
 The vectors follow the format specified in the Test Vectors appendix of {{fiat-shamir}}: a block of `Key = Value` lines, no key repeated, values inline or indented under their key, and sequences written one `- ` item per line. Every vector carries `Id`, its stable name, and `Function`, which is `SigmaProof` throughout this document. Where {{fiat-shamir}} identifies the hash suite with `Hash`, these vectors carry `Ciphersuite`, which fixes the group and the hash together ({{ciphersuites}}). Every vector also carries `Expected`, which is `accept` or `reject`: unlike the functional vectors of {{fiat-shamir}}, each vector here is a verifier decision.
 
 The remaining keys are those of the protocol. `Relation` names the relation of {{relation-notation}} and `Flavor` is `batchable` or `compact`; one vector covers one flavor, so `Tag`, `SessionId` and `NargString` are unambiguous. The `Witness` field, which never appears on the wire, is encoded as the concatenation of `Scalar.serialize` of the witness scalars, in the order given by each relation.
+
+Every adversarial vector carries `BaseId`, naming the valid vector it is derived from: it re-verifies that transcript under a different tag, statement, or encoding, and a conformant verifier **MUST** reject it while accepting its baseline. Testing only that the adversarial vectors are rejected is therefore not sufficient; an implementation that rejects every input passes no accept/reject pair. The prose accompanying each vector states which check fails; where the rejection step depends on the implementation's check order, any of the stated rejection points is conformant.
+
+Batch verification ({{batch-verification}}) can be tested on any subset of these vectors: a batch of valid batchable proofs **MUST** verify, and a batch containing any invalid batchable proof **MUST** be rejected.
 
 ## Seeded PRNG {#seeded-prng}
 
@@ -1140,6 +1144,10 @@ This section contains vectors for the ciphersuite identified as `sigma-proofs_Sh
 
 {::include ./poc/vectors/sigma-proofs_Shake128_P256.txt}
 
+### Adversarial vectors {#tv-p256-invalid}
+
+{::include ./poc/vectors/sigma-proofs-invalid_Shake128_P256.txt}
+
 ## sigma-proofs_Shake128_BLS12381 {#tv-bls12381}
 
 This section contains vectors for the ciphersuite identified as `sigma-proofs_Shake128_BLS12381`.
@@ -1148,3 +1156,6 @@ This section contains vectors for the ciphersuite identified as `sigma-proofs_Sh
 
 {::include ./poc/vectors/sigma-proofs_Shake128_BLS12381.txt}
 
+### Adversarial vectors {#tv-bls12381-invalid}
+
+{::include ./poc/vectors/sigma-proofs-invalid_Shake128_BLS12381.txt}
