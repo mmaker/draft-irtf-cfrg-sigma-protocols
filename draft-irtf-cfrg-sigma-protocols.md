@@ -1006,7 +1006,7 @@ The `Verifier` procedure **SHOULD NOT** be used interactively with an untrusted 
 
 For verification, `VerifyBatchable` and `VerifyCompact` **SHOULD** be used. The non-interactive Fiat-Shamir transformation yields statistically zero-knowledge arguments of knowledge.
 
-Implementations **SHOULD** securely delete prover state as soon as it is no longer needed (witness and instance), and put in place safeguards to prevent re-use of the prover state. Private witness information should not be part of crash dumps and diagnostic logging.
+Implementations **MUST** securely delete prover state as soon as it is no longer needed (witness and instance), and put in place safeguards to prevent re-use of the prover state. Private witness information should not be part of crash dumps and diagnostic logging.
 
 ## Constant-Time Requirements {#constant-time}
 
