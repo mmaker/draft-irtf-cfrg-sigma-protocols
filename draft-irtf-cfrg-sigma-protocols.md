@@ -759,7 +759,7 @@ Drawing `response` uniformly at random with `SimulateResponse` and then computin
 
 The Fiat-Shamir transformation applied to Sigma Protocols yields a non-interactive zero-knowledge argument of knowledge.
 
-{{fiat-shamir}} describes how to instantiate the transformation, for the group and field codecs given. This section specifies the session identifier binding a proof to its application ({{sigma-proofs-tag}}), the challenge derivation shared by prover and verifier ({{challenge-derivation}}), and the two non-interactive argument (NARG) string serializations ({{sigma-narg}}).
+{{fiat-shamir}} describes how to instantiate the transformation, for the group and field codecs given. This section specifies the session identifier binding a proof to its application ({{sigma-proofs-tag}}), the challenge derivation shared by prover and verifier ({{challenge-derivation}}), the two non-interactive argument (NARG) string serializations ({{sigma-narg}}), and batch verification ({{batch-verification}}).
 
 ## Tag and session identifier {#sigma-proofs-tag}
 
@@ -809,7 +809,7 @@ Output: the challenge, a scalar
 
 Two serialization flavors are possible:
 
-- A **batchable** NARG string serializes the prover messages `(commitment, response)`, as in {{fiat-shamir}}, and it permits amortized verification costs.
+- A **batchable** NARG string serializes the prover messages `(commitment, response)`, as in {{fiat-shamir}}, and it permits amortized verification costs ({{batch-verification}}).
 - A **compact** NARG string serializes `(challenge, response)`. It is preferable in the common case, whenever the commitment (`num_equations` group elements) is larger than a single challenge scalar.
 
 A batchable NARG string is a `(Ne * num_equations + Ns * num_scalars)`-byte string, while a compact NARG string is a `(Ns * (num_scalars + 1))`-byte string. A NARG string verifies only under the flavor it was produced for: the flavor marker is a mandatory tag component ({{sigma-proofs-tag}}). Both flavors have the same soundness guarantees.
@@ -886,6 +886,67 @@ Procedure:
 ~~~
 
 Step 7 maintains consistency with `Group.deserialize`, which rejects the identity element. Since the simulator always outputs accepting transcripts, there is no need to run `Verifier` in this case.
+
+## Batch verification {#batch-verification}
+
+Verification of multiple batchable NARG strings **MAY** be done more efficiently than verifying each NARG string on its own, via batch verification. Batch verification can be more efficient even in the presence of a single instance, provided the instance has at least a few equations. Batch verification is a local verifier-side optimization, which affects neither the prover nor the NARG string.
+
+Batch verification is done by re-computing the verifier challenge of each NARG string individually ({{challenge-derivation}}), and then checking a single random linear combination of the verification equations of the whole batch. See {{Section 8.2 of ?RFC8032}}, {{BDLSY11}}, and {{BellareGR98}}.
+
+The verification equation for `Nt` transcripts `(commitment, challenge, response)` of preimages of linear relations is:
+
+~~~
+commitment[i][j] + challenge[i] * image(instances[i])[j]
+                 == map(instances[i], response[i])[j]
+~~~
+
+for each transcript index `i` and each equation index `j`.
+Batch verification consists of sampling uniformly random scalars `batching_randomness[i][j]` (for `i = 0, ..., Nt - 1` and `j = 0, ..., num_equations(instances[i]) - 1`) and checking the single equation:
+
+~~~
+sum(
+  batching_randomness[i][j] * commitment[i][j]
+  + batching_randomness[i][j] * challenge[i] * image(instances[i])[j]
+  - batching_randomness[i][j] * map(instances[i], response[i])[j]
+  for i in 0, ..., Nt - 1
+  for j in 0, ..., num_equations(instances[i]) - 1
+) == Group.identity()
+~~~
+
+Similarly to batch verification of Ed25519 signatures {{BDLSY11}}, a false NARG string will be accepted with probability at most `2^-128`, which is negligible. In general, for `batching_randomness` elements drawn uniformly from a set of `2^t` scalars, a false NARG string will be accepted with probability at most `2^-t`.
+
+It is **RECOMMENDED** that the batching randomness be generated deterministically, with the duplex sponge of {{fiat-shamir}} as follows; it **MAY** instead be freshly sampled from a cryptographically secure random number generator. Below, `session_ids[i]` is the 32-byte session identifier of the `i`-th NARG string being verified ({{sigma-proofs-tag}}).
+
+~~~
+ 1. batching_sid = DeriveSessionID(
+      "irtf-cfrg-sigma-protocols/batch-verify")
+ 2. duplex_sponge = DS.Init(batching_sid)
+ 3. for i in 0, ..., Nt - 1:
+ 4.   duplex_sponge.Absorb(session_ids[i])
+ 5.   duplex_sponge.Absorb(SerializeLinearRelation(instances[i]))
+ 6.   duplex_sponge.Absorb(narg_strings[i])
+ 7. batching_randomness_bytes = duplex_sponge.Squeeze(
+      16 * sum(num_equations(instances[i]) for i in 0, ..., Nt - 1))
+~~~
+
+The session identifier has fixed length, and the length of each NARG string is determined by the respective instance.
+
+The squeezed output is read in row-major order (for example, the second batching randomness corresponds to the second equation of the first transcript). Each 16-byte chunk is interpreted as a little-endian integer via `LE2IP` ({{bytes-and-integers}}). The batching randomness elements are uniform in `[0, 2^128)` and are used as scalars without further reduction.
+
+~~~
+ 8. k = 0
+ 9. for i in 0, ..., Nt - 1:
+10.   for j in 0, ..., num_equations(instances[i]) - 1:
+11.     batching_randomness[i][j] =
+          LE2IP(batching_randomness_bytes[16*k : 16*(k+1)])
+12.     k = k + 1
+~~~
+
+The batch verifier **MUST** perform instance validation for each instance, and **MUST** compute each of the verifier challenges with `DeriveChallenge` ({{challenge-derivation}}). Empty batches are accepted as valid; the batch size **MUST** be less than `2^32`. Upon failure, batch verification does not identify the offending NARG string; an application may fall back to verifying the NARG strings individually.
+
+Batch verification is sound only if the prover(s) cannot choose their messages as a function of the batching randomness. When derived deterministically, the batching randomness **MUST** therefore absorb every value in the batched equation before squeezing. In particular, this includes the response message. Omitting prover messages from the derivation will compromise soundness of batch verification {{SOLANA-ZK}} {{SOLANA-PHANTOM}}. When sampled, the batching randomness **MUST** be drawn only after every NARG string in the batch is received, and **MUST NOT** be reused across batches. The batch verification procedure **MUST NOT** reuse the duplex sponge of a NARG verifier.
+
+The batching randomness elements **MAY** be replaced by the successive powers `1, mu, mu^2, ...` of a single uniformly random scalar `mu`, assigned in row-major order (transcripts, then equations) to the pairs `(i, j)` and computed in the scalar field. In this case, step 7 squeezes 16 bytes instead of `16 * K`, where `K = sum(num_equations(instances[i]) for i in 0, ..., Nt - 1)` is the total number of batched equations, and `mu` is the little-endian integer they encode, read via `LE2IP` ({{bytes-and-integers}}), uniformly distributed in `[0, 2^128)`. In this case, an invalid batch is accepted with probability at most `(K - 1)/2^128`, rather than the `2^-128` achieved by independent sampling.
 
 # Efficiency Considerations {#efficiency-considerations}
 
