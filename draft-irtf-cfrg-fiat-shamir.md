@@ -1071,16 +1071,689 @@ A machine-readable (JSON) copy of every vector below is part of this specificati
 
 This section contains vectors for the encoding, decoding, serialization, and deserialization functions.
 
-{::include ./legacy/vectors/fiatShamirCodecVectors.txt}
+### Byte-string serialization: `SerializeVarLenString`
+~~~
+Id = fiat-shamir/codec/serialize_varlen
+Function = SerializeVarLenString
+Input = 70726f6f66
+Output = 0500000070726f6f66
+~~~
+
+### `SerializeUint`: unsigned-integer serialization.
+~~~
+Id = fiat-shamir/codec/serialize_uint
+Function = SerializeUint
+Modulus =
+  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  43
+Value = 0xdeadbeef
+Output =
+  efbeadde00000000000000000000000000000000000000000000000000000000
+~~~
+
+### `DeserializeField`, used to deserialize a degree-2 element of the field of characteristic `2^256 - 189` (the default, little-endian serialization).
+~~~
+Id = fiat-shamir/codec/deserialize_field
+Function = DeserializeField
+Modulus =
+  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  43
+ExtensionDegree = 2
+Input =
+  efbeadde00000000000000000000000000000000000000000000000000000000
+  42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+Coordinates =
+  - 0xdeadbeef
+  - 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff42
+~~~
+
+### The empty byte string may be encoded as a variable-length string.
+~~~
+Id = fiat-shamir/codec/varlen_empty
+Function = SerializeVarLenString
+Input = ""
+Output = 00000000
+~~~
+
+### Decoding is infallible and distribution-preserving
+~~~
+Id = fiat-shamir/codec/decode_uint_wraparound
+Function = DecodeUint
+Modulus =
+  0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
+  51
+Input =
+  512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
+  00000000000000000000000000000000
+Challenge = 0x00
+~~~
+
+### Field serialization of the P-256 scalar field happens via `I2OSP`.
+~~~
+Id = fiat-shamir/codec/serialize_field_be
+Function = SerializeField
+ByteOrder = big-endian
+Modulus =
+  0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
+  51
+Value = 0xdeadbeef
+Output =
+  00000000000000000000000000000000000000000000000000000000deadbeef
+~~~
+
+### The modulus itself is not accepted as a valid serialization.
+~~~
+Id = fiat-shamir/codec/deserialize_uint_reject_modulus
+Function = DeserializeUint
+Modulus =
+  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  43
+Input =
+  43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+Expected = reject
+~~~
+
+### Deserialization fails for inputs shorter than `Ns` bytes
+~~~
+Id = fiat-shamir/codec/deserialize_uint_reject_short
+Function = DeserializeUint
+Modulus =
+  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  43
+Input =
+  efbeadde000000000000000000000000000000000000000000000000000000
+Expected = reject
+~~~
+
+### When deserializing field extension elements, all coordinates must be validated
+~~~
+Id = fiat-shamir/codec/deserialize_field_reject_second_coordinate
+Function = DeserializeField
+Modulus =
+  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  43
+ExtensionDegree = 2
+Input =
+  42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+Expected = reject
+~~~
+
+### A payload one byte shorter than its length prefix is rejected.
+~~~
+Id = fiat-shamir/codec/deserialize_varlen_reject_truncated
+Function = DeserializeVarLenString
+Input = 0500000070726f6f
+Expected = reject
+~~~
+
+### The maximal length prefix 2^32 - 1 is rejected.
+~~~
+Id = fiat-shamir/codec/deserialize_varlen_reject_overflow
+Function = DeserializeVarLenString
+Input = ffffffffdeadbeef
+Expected = reject
+~~~
+
+### The example protocol ({{example-sumcheck}}), where the first prover message is an invalid serialization (`p`, the modulus, is added to the canonical encoding)
+~~~
+Id = fiat-shamir/codec/sumcheck_reject_noncanonical_coefficient
+Function = Sumcheck
+Modulus = 0x7fffffff
+NumVariables = 4
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+ClaimedSum = 0xffff
+Narg =
+  5455008055550000b8eefc2728ccf677b7aabd44c1001d074205d5576c3d307d
+Expected = reject
+~~~
+
+### An invalid NARG string for the example protocol ({{example-sumcheck}}), where a prover message does not satisfy verification
+~~~
+Id = fiat-shamir/codec/sumcheck_reject_round_identity
+Function = Sumcheck
+Modulus = 0x7fffffff
+NumVariables = 4
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+ClaimedSum = 0xffff
+Narg =
+  5655000055550000b8eefc2728ccf677b7aabd44c1001d074205d5576c3d307d
+Expected = reject
+~~~
+
 
 ## SHAKE128 test vectors {#tv-shake128}
 
 This section contains vectors for the XOF duplex sponge instantiated with the SHAKE128 suite ({{suite-shake128}}).
 
-{::include ./legacy/vectors/fiatShamirShake128Vectors.txt}
+### Squeeze a 32-byte string after initialization
+~~~
+Id = fiat-shamir/shake128/init_squeeze
+Function = DuplexSponge
+Hash = SHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - squeeze 32
+Output =
+  63e1b3543377fab6fb8cf0f7698a9980ca0211d5bc4aba213dd7a6ef7dd63cfa
+~~~
+
+### Absorb the byte string `hello world`, then squeeze 64 bytes
+~~~
+Id = fiat-shamir/shake128/absorb_squeeze
+Function = DuplexSponge
+Hash = SHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 68656c6c6f20776f726c64
+  - squeeze 64
+Output =
+  f627ff348dfee50d2aa5918a2621a0c1daf74c7ef930d49b5ea6eae73455e8c7
+  56d433cbde0ade711bdd55d7ed5de38bb9adea8b2eec4402a0df090c16371413
+~~~
+
+### Absorb is associative: `Absorb("abc")` is equivalent to `Absorb("ab"); Absorb("c")`
+~~~
+Id = fiat-shamir/shake128/absorb_split
+Function = DuplexSponge
+Hash = SHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 6162
+  - absorb 63
+  - squeeze 32
+Output =
+  a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1dd9e41
+~~~
+
+### Squeeze is associative: `Squeeze(16 + 16)` is equivalent to `Squeeze(16) || Squeeze(16)`
+~~~
+Id = fiat-shamir/shake128/stream
+Function = DuplexSponge
+Hash = SHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 616263
+  - squeeze 16
+  - squeeze 16
+Output =
+  a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1dd9e41
+~~~
+
+### Absorb of the empty string is a no-op
+~~~
+Id = fiat-shamir/shake128/empty_absorb
+Function = DuplexSponge
+Hash = SHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 616263
+  - squeeze 32
+  - absorb ""
+  - squeeze 32
+Output =
+  a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1dd9e41
+  d88e36c20e053248b90967a90051ba319688a10783c2ce174602eccc02e8d1a6
+~~~
+
+### Absorb and squeeze can be interleaved
+~~~
+Id = fiat-shamir/shake128/interleave
+Function = DuplexSponge
+Hash = SHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 00010203040506070809
+  - squeeze 16
+  - absorb 6d6f72652064617461
+  - squeeze 16
+Output =
+  2da3c7e3a65c6e92901e8b668c43917eb9f02e9988e66d5ce2fbd833a0ecb93e
+~~~
+
+### Absorbing a byte string of length longer than the rate.
+~~~
+Id = fiat-shamir/shake128/multiblock
+Function = DuplexSponge
+Hash = SHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb ababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    bababababababababababababababababababababababababab
+  - squeeze 600
+Output =
+  d0dc63443a117b76b09845af3347a6dbc29d0ff381ad093e3cfea3a326abbd0d
+  a81bfc7dd6220f785900a6d04d508439cc65107c8eb75909f277a6f2740ae55f
+  c684b851b66662c22252b6bb8028b5f7402b0beafb391835613a6c3d8116323d
+  bdcb4494a198ae886821fca3d2af345227ea06c5c2cdb131c90d3fe58eedf090
+  a55bb5a8edc614ab99da6c4ed8fe95a6c289c18dc61918a9abaa4f3ed2358711
+  7ced29b33bfb87351d4ffc562add96d384fffbcb7cfb4d4d2125bf809cb85b33
+  a3f9b7541c5d3d3f435f7d0a837f92f6878276ca3c833ecc1691f923602e9b8c
+  8adb9528d8857d7189384eabbab50f0706b82b53db1c92857c2aa84a3527ce4b
+  fcfbdbe02ad953b8517c4b91d36b45f81df67e10e4e9a7c7c064aa9e7f593710
+  10eab4fd71c7aebcf00a793e469a78c658dd9f2c1d5ed2e3110939c11e916c1f
+  51c47553b1bbceeea92649c9bcc7e5538dab18ca95c298b540b6798c065cd2b4
+  13fe3915534a5dc6e7100e012b8c53fccc1018cc24570ca09c8e1c8f6e4e523d
+  db7b6dcf313b6e98bb4abc94b8063eac8fdbbce945c35dd021a91e8227aeb165
+  02a5a6e9e1d85fbd13b6e1e523e8a24040bbb9ddab5e29315780a57d9ef0d758
+  b66e0076704f456dec1fc11577fe3644e53ff70a99a912758c289f225ad64e24
+  6af9d895d91e6972b18421ccaa2aed6f843870b9dda07d1e975e51c04d58e7ba
+  d60c0b8934fec80d4468816793879bc34d831e2689b77525439837fd15f797ed
+  3b78ccdfdec6a5574111de3e243464c77c1d7fa76fb170e3722315e70fbf855a
+  33281e8b6c15029202d0bb34749b962cc314515c748b74f4
+~~~
+
+### Squeeze at the rate boundary
+~~~
+Id = fiat-shamir/shake128/rate_block
+Function = DuplexSponge
+Hash = SHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1
+    e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f4
+    04142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60616
+    2636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838
+    485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a
+    6a7
+  - squeeze 167
+  - squeeze 2
+Output =
+  edae25852c909e4acea18d96ddd407e475eeaa7070ff591b49450c7a3ed21b7d
+  0bd0ee62ab0c242e636c435b37c38ae6804a179ff434bed773c8d596cd66b928
+  b0429247b19cbfc246bb1abd3b741841b21ad0234ba7738abe64ab93914bf5ad
+  58a362d86f64d72b8f8603a888421a29769bb77579185409013a271ac258cd71
+  a71aedf2801ba6eb4784636e9bfacca229a78aa8dc72af770380a1a981120b37
+  16595564c520292578
+~~~
+
+### A zero-length squeeze between absorbs is a no-op
+~~~
+Id = fiat-shamir/shake128/squeeze_zero
+Function = DuplexSponge
+Hash = SHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 616263
+  - squeeze 0
+  - absorb 646566
+  - squeeze 32
+Output =
+  fc876a5ffbdc960106af16ca50e3b17b14a172f985f3a6f5df09c9a649ebf588
+~~~
+
+### Derive a session identifier from an application tag
+~~~
+Id = fiat-shamir/shake128/derive_sid
+Function = DeriveSessionID
+Hash = SHAKE128
+Tag = 696e7465726f702d746573742d763030
+Output =
+  b508aca89eecac56cd33e4a28f817f43f849d035922f354173ae8466628308cf
+~~~
+
+### Squeeze and reduce a P-256 scalar challenge (`DecodeUint`)
+~~~
+Id = fiat-shamir/shake128/decode_uint
+Function = DecodeUint
+Hash = SHAKE128
+Modulus =
+  0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
+  51
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 08000000696e7374616e6365
+  - squeeze 48
+Output =
+  7124d02b7cdfec99c4033dfd05624cfe2ff3af2c0e71656f770e676bd36de622
+  8f85fcb39f34f7bfc24c9f54ab35ddba
+Challenge =
+  0xf860997c65f8dabecbcc3459a7b89bf69301b19fa1a0e036eb0d132724436d
+  4f
+~~~
+
+### The sumcheck protocol example ({{example-sumcheck}}) over Mersenne31.
+~~~
+Id = fiat-shamir/shake128/sumcheck
+Function = Sumcheck
+Hash = SHAKE128
+Modulus = 0x7fffffff
+NumVariables = 4
+Tag = 73756d636865636b
+SessionId =
+  0568cefdf774622a3854d82934915fb3e38bc89dc44b6d673fc91b972c886fc2
+Witness =
+  - 1
+  - 2
+  - 4
+  - 8
+  - 16
+  - 32
+  - 64
+  - 128
+  - 256
+  - 512
+  - 1024
+  - 2048
+  - 4096
+  - 8192
+  - 16384
+  - 32768
+ClaimedSum = 0xffff
+Narg =
+  555500005555000023e362696ba9283c90a3362a74953379afc3b041d3eb126f
+FinalEvaluation = 0x3ebfb3b3
+~~~
+
+### A NARG string with trailing bytes is rejected
+~~~
+Id = fiat-shamir/shake128/sumcheck_reject_trailing_bytes
+Function = Sumcheck
+Hash = SHAKE128
+Modulus = 0x7fffffff
+NumVariables = 4
+Tag = 73756d636865636b
+SessionId =
+  0568cefdf774622a3854d82934915fb3e38bc89dc44b6d673fc91b972c886fc2
+ClaimedSum = 0xffff
+Narg =
+  555500005555000023e362696ba9283c90a3362a74953379afc3b041d3eb126f
+  00
+Expected = reject
+~~~
+
 
 ## TurboSHAKE128 test vectors {#tv-turboshake128}
 
 This section contains vectors for the XOF duplex sponge instantiated with the TurboSHAKE128 suite ({{suite-turboshake128}}).
 
-{::include ./legacy/vectors/fiatShamirTurboShake128Vectors.txt}
+### Squeeze a 32-byte string after initialization
+~~~
+Id = fiat-shamir/turboshake128/init_squeeze
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - squeeze 32
+Output =
+  7ad8a3af35a3083c055e4a953ff001cdd9eeb1198f4be7a3a9ec5a209434619b
+~~~
+
+### Absorb the byte string `hello world`, then squeeze 64 bytes
+~~~
+Id = fiat-shamir/turboshake128/absorb_squeeze
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 68656c6c6f20776f726c64
+  - squeeze 64
+Output =
+  8b804d7a8c524c242a94e86f7ddfec329d90e29c1f584a98812e63029a0bdb07
+  5b12c545bf9e2aa17c88673b6d9df4b08e728dc47f7d7094cee59a0d7d989634
+~~~
+
+### Absorb is associative: `Absorb("abc")` is equivalent to `Absorb("ab"); Absorb("c")`
+~~~
+Id = fiat-shamir/turboshake128/absorb_split
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 6162
+  - absorb 63
+  - squeeze 32
+Output =
+  51acee1ee6f0c6a0c5a33b625ac9eaea54bc6b9b1cb85f9b2ef843e73631792e
+~~~
+
+### Squeeze is associative: `Squeeze(16 + 16)` is equivalent to `Squeeze(16) || Squeeze(16)`
+~~~
+Id = fiat-shamir/turboshake128/stream
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 616263
+  - squeeze 16
+  - squeeze 16
+Output =
+  51acee1ee6f0c6a0c5a33b625ac9eaea54bc6b9b1cb85f9b2ef843e73631792e
+~~~
+
+### Absorb of the empty string is a no-op
+~~~
+Id = fiat-shamir/turboshake128/empty_absorb
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 616263
+  - squeeze 32
+  - absorb ""
+  - squeeze 32
+Output =
+  51acee1ee6f0c6a0c5a33b625ac9eaea54bc6b9b1cb85f9b2ef843e73631792e
+  599e1dfb1bf60638046f82f5bfa28bcfcabf1404b200647d184ead03e51fbf01
+~~~
+
+### Absorb and squeeze can be interleaved
+~~~
+Id = fiat-shamir/turboshake128/interleave
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 00010203040506070809
+  - squeeze 16
+  - absorb 6d6f72652064617461
+  - squeeze 16
+Output =
+  f2745534347564bed146c95655122f14636bcc58f768296be8494208db29b6be
+~~~
+
+### Absorbing a byte string of length longer than the rate.
+~~~
+Id = fiat-shamir/turboshake128/multiblock
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb ababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    babababababababababababababababababababababababababababababababababa
+    bababababababababababababababababababababababababab
+  - squeeze 600
+Output =
+  0ef6787d725638e19364c25a2ba879af55a4e1c97bff52919e64cd37a218db44
+  a475f9d7ef0e88d87b443fe6590f12fc90c41c546c92cbeb3480e679d6e1ea37
+  fc1e10e3e41b15e80aea4745ad9ad31c22857ae360fb66848daab7df8f6135ef
+  cc940c4cc6431617cca6c05aa9b8bdf041538206ef912c0861dc07e219875509
+  24c848cb788532637cf6e7fb1a3ea233fc335077e4910e8d7da15fe89250f284
+  58ec17ecf448e05cf660ca4ffd1fdcb4379570d3a871aa759bb4d763d60d3e1b
+  36ab8efcd8cd6fcca8fa67a5071ab21a1d31e4610f7ca8825b5e81f22433c495
+  862b642c009823c312fd60fcdcd888af9c6c554da3a370946fa7bfa66ac54480
+  b9a36d73fa6ee73ccb78b425de22814667742864608a06fa7534b053a68905ff
+  532089b6fc0d597671ae4da685b96b1ac5d2513c0fc944d11155ed43461559a1
+  2b984fb0cb45b105d9f2391a137d104f7da6c82fcfe375143bf512824685913f
+  2bf61613b1a2a8f55f86d1282aa36c02384381335927259361c9e5875dbe1314
+  af82aa65264ff009f525d4f0aedcf80cb908e308132113311d0e9a6783f27a13
+  93ae28c10914018e263020dc97f219ebdae4118a79c318bef2d3766452075e35
+  79f4b1cddbb80a5bca83a2f1fbec44e9d487925ba23cbfce111ba865e0fdb164
+  589c66cbb757865d1bfb4540c01dece5b4180eef4262efc24c4ae3f76c4497a5
+  3fb7f38a0de18a7053ab59b59b180ad53e3d2318661783682298d54b9f9ee6e3
+  3b2be660295ccdd7d6cc976e21827c66880a0fbcc202743cd1ea0b7351755ee4
+  b8a0b140bbc4f6a45eb6b05798721094cebe00e08f4f7bde
+~~~
+
+### Squeeze at the rate boundary
+~~~
+Id = fiat-shamir/turboshake128/rate_block
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1
+    e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f4
+    04142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60616
+    2636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838
+    485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a
+    6a7
+  - squeeze 167
+  - squeeze 2
+Output =
+  dc4b6f89697ec7e56ad210e6244a3ff25dab91ebd60981761db8f83db3a3a781
+  ab43ffd7f325c98b912746b65d233fb5b99fd923cbff5e327b75436afd035c42
+  ac9953ca4d686e30e5729aa460b813adf96c16917471679a4de36b19c452aef4
+  47f93f4574ddcf09bdf6410774b426ffe415ff8eb2be44c8301ae071b534895b
+  0ab66aa0136ffe9656c607bb6e1acaea4069454e297ec0ad4eab437c25455c88
+  aeb77d6f33f7b578e9
+~~~
+
+### A zero-length squeeze between absorbs is a no-op
+~~~
+Id = fiat-shamir/turboshake128/squeeze_zero
+Function = DuplexSponge
+Hash = TurboSHAKE128
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 616263
+  - squeeze 0
+  - absorb 646566
+  - squeeze 32
+Output =
+  61d3fecc576c3faafb92db1cb22b60794075a024df9626436394c7b852ade899
+~~~
+
+### Derive a session identifier from an application tag
+~~~
+Id = fiat-shamir/turboshake128/derive_sid
+Function = DeriveSessionID
+Hash = TurboSHAKE128
+Tag = 696e7465726f702d746573742d763030
+Output =
+  4326208c9e56ae847be9356ca7c4447c752a9d7326a44a6cbee0c0dfc69505ac
+~~~
+
+### Squeeze and reduce a P-256 scalar challenge (`DecodeUint`)
+~~~
+Id = fiat-shamir/turboshake128/decode_uint
+Function = DecodeUint
+Hash = TurboSHAKE128
+Modulus =
+  0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
+  51
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 08000000696e7374616e6365
+  - squeeze 48
+Output =
+  82a031e31b103ac01253ba3aae215f650a06a4bb24963a05ee1f8c0b82eae90d
+  7bd36ea8cb560a91604ae8a97eb0d564
+Challenge =
+  0xc2088b455016d0126fcdd76335a79566e7fd8379db1de019871d459bfee955
+  8b
+~~~
+
+### The sumcheck protocol example ({{example-sumcheck}}) over Mersenne31.
+~~~
+Id = fiat-shamir/turboshake128/sumcheck
+Function = Sumcheck
+Hash = TurboSHAKE128
+Modulus = 0x7fffffff
+NumVariables = 4
+Tag = 73756d636865636b
+SessionId =
+  abcbcae1f2f90d02b7e6417dbb2ffe162ab00477453eac3ce83d4e7e61000280
+Witness =
+  - 1
+  - 2
+  - 4
+  - 8
+  - 16
+  - 32
+  - 64
+  - 128
+  - 256
+  - 512
+  - 1024
+  - 2048
+  - 4096
+  - 8192
+  - 16384
+  - 32768
+ClaimedSum = 0xffff
+Narg =
+  55550000555500006ff9a71d4decf758430dfb69f9c6b5359d8ab2744b13d83d
+FinalEvaluation = 0x654028db
+~~~
+
+### A NARG string with trailing bytes is rejected
+~~~
+Id = fiat-shamir/turboshake128/sumcheck_reject_trailing_bytes
+Function = Sumcheck
+Hash = TurboSHAKE128
+Modulus = 0x7fffffff
+NumVariables = 4
+Tag = 73756d636865636b
+SessionId =
+  abcbcae1f2f90d02b7e6417dbb2ffe162ab00477453eac3ce83d4e7e61000280
+ClaimedSum = 0xffff
+Narg =
+  55550000555500006ff9a71d4decf758430dfb69f9c6b5359d8ab2744b13d83d
+  00
+Expected = reject
+~~~
+

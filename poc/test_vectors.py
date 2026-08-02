@@ -19,6 +19,11 @@ Batch verification is checked on the claim of the sigma draft's appendix:
 every subset of the valid batchable proofs verifies as a batch, and a
 batch containing any rejected batchable NARG string is rejected.
 
+The same vectors are written out in the drafts' Test Vectors appendices;
+the final pass parses every fenced vector block out of the two draft
+sources and checks it field-for-field against its JSON record, so the
+hand-maintained appendices cannot drift from the machine-readable files.
+
 Standard library only; exits non-zero on the first failing check.
 """
 
@@ -313,6 +318,116 @@ def check_sigma_batch(suite, valid, invalid):
         check(rejected, f"{rec['Id']}: batch containing it must be rejected")
 
 
+# --- The vectors inlined in the drafts --------------------------------------
+#
+# The Test Vectors appendices carry the same records as the JSON files,
+# rendered by the grammar of the appendix format paragraph: `Key = value`
+# lines, values indented under their key when long (continuation lines
+# joined with no separator), and sequences one `- ` item per line. The
+# drafts are hand-maintained, so this cross-check is what keeps the two
+# forms from drifting apart.
+
+# The vector files inlined in each draft, in order of appearance.
+DRAFT_APPENDICES = {
+    "draft-irtf-cfrg-fiat-shamir.md": (
+        "fiatShamirCodecVectors",
+        "fiatShamirShake128Vectors",
+        "fiatShamirTurboShake128Vectors",
+    ),
+    "draft-irtf-cfrg-sigma-protocols.md": (
+        "sigma-proofs_Shake128_P256",
+        "sigma-proofs-invalid_Shake128_P256",
+        "sigma-proofs_Shake128_BLS12381",
+        "sigma-proofs-invalid_Shake128_BLS12381",
+    ),
+}
+
+# Fields rendered as prose around the fenced block (or dropped) rather
+# than as `Key = value` lines inside it.
+PROSE_FIELDS = {"Name", "Title", "Comment", "Group"}
+
+
+def parse_markdown_vectors(path):
+    """Every fenced block in a draft whose first line carries an `Id`,
+    parsed back into records."""
+    records = []
+    fence = None
+    with open(path) as fh:
+        for line in fh.read().split("\n"):
+            if line.startswith("~~~"):  # a fence, possibly `~~~ language`
+                if fence is None:
+                    fence = []
+                else:
+                    if fence and fence[0].startswith("Id ="):
+                        records.append(parse_vector_block(fence))
+                    fence = None
+                continue
+            if fence is not None:
+                fence.append(line)
+    return records
+
+
+def parse_vector_block(lines):
+    rec = {}
+    key = None
+    for line in lines:
+        if line.startswith("  - "):            # sequence item
+            if rec[key] is None:
+                rec[key] = []
+            rec[key].append(line[4:])
+        elif line.startswith("    "):          # sequence-item continuation
+            rec[key][-1] += line[4:]
+        elif line.startswith("  "):            # value continuation
+            if rec[key] is None:
+                rec[key] = ""
+            rec[key] += line[2:]
+        elif " = " in line:
+            key, _, value = line.partition(" = ")
+            rec[key] = value
+        else:                                  # `Key =` opens a block value
+            assert line.endswith(" ="), line
+            key = line[:-2]
+            rec[key] = None
+    return rec
+
+
+def render_operation(op):
+    """One `Operations` item as the drafts render it."""
+    if op["type"] == "absorb":
+        return "absorb " + (op["data"] or '""')
+    return f"squeeze {op['length']}"
+
+
+def rendered_record(rec):
+    """The `Key = value` form of a JSON record: `Id` first, prose fields
+    dropped, every remaining value a string."""
+    out = {"Id": rec["Id"]}
+    for key, value in rec.items():
+        if key == "Id" or key in PROSE_FIELDS:
+            continue
+        if key == "Operations":
+            out[key] = [render_operation(op) for op in value]
+        elif isinstance(value, list):
+            out[key] = [str(x) for x in value]
+        else:
+            out[key] = str(value) or '""'
+    return out
+
+
+def check_markdown_vectors():
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for draft, stems in DRAFT_APPENDICES.items():
+        expected = [rendered_record(rec) for stem in stems
+                    for rec in load(stem)]
+        got = parse_markdown_vectors(os.path.join(root, draft))
+        check(len(got) == len(expected),
+              f"{draft}: {len(got)} vectors inlined, {len(expected)} in JSON")
+        for want, have in zip(expected, got):
+            check(list(have.items()) == list(want.items()),
+                  f"{draft}: {want['Id']} diverges from its JSON record")
+        print(f"{draft}: {len(got)} inlined vectors match the JSON")
+
+
 # --- Driver -----------------------------------------------------------------
 
 def load(stem):
@@ -337,6 +452,7 @@ def main():
         check_sigma_batch(suite, valid, invalid)
         print(f"{suite}: {_checks - before} checks")
 
+    check_markdown_vectors()
     print(f"all {_checks} checks passed")
 
 
