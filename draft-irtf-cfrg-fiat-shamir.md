@@ -1071,16 +1071,16 @@ A machine-readable (JSON) copy of every vector below is part of this specificati
 
 This section contains vectors for the encoding, decoding, serialization, and deserialization functions.
 
-{::include ./poc/vectors/fiatShamirCodecVectors.txt}
+{::include ./legacy/vectors/fiatShamirCodecVectors.txt}
 
 ## SHAKE128 test vectors {#tv-shake128}
 
 This section contains vectors for the XOF duplex sponge instantiated with the SHAKE128 suite ({{suite-shake128}}).
 
-{::include ./poc/vectors/fiatShamirShake128Vectors.txt}
+{::include ./legacy/vectors/fiatShamirShake128Vectors.txt}
 
 ## TurboSHAKE128 test vectors {#tv-turboshake128}
 
 This section contains vectors for the XOF duplex sponge instantiated with the TurboSHAKE128 suite ({{suite-turboshake128}}).
 
-{::include ./poc/vectors/fiatShamirTurboShake128Vectors.txt}
+{::include ./legacy/vectors/fiatShamirTurboShake128Vectors.txt}
