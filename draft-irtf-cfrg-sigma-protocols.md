@@ -1144,11 +1144,11 @@ This section contains vectors for the ciphersuite identified as `sigma-proofs_Sh
 
 ### Valid proofs {#tv-p256-valid}
 
-{::include ./poc/vectors/sigma-proofs_Shake128_P256.txt}
+{::include ./legacy/vectors/sigma-proofs_Shake128_P256.txt}
 
 ### Adversarial vectors {#tv-p256-invalid}
 
-{::include ./poc/vectors/sigma-proofs-invalid_Shake128_P256.txt}
+{::include ./legacy/vectors/sigma-proofs-invalid_Shake128_P256.txt}
 
 ## sigma-proofs_Shake128_BLS12381 {#tv-bls12381}
 
@@ -1156,8 +1156,8 @@ This section contains vectors for the ciphersuite identified as `sigma-proofs_Sh
 
 ### Valid proofs {#tv-bls12381-valid}
 
-{::include ./poc/vectors/sigma-proofs_Shake128_BLS12381.txt}
+{::include ./legacy/vectors/sigma-proofs_Shake128_BLS12381.txt}
 
 ### Adversarial vectors {#tv-bls12381-invalid}
 
-{::include ./poc/vectors/sigma-proofs-invalid_Shake128_BLS12381.txt}
+{::include ./legacy/vectors/sigma-proofs-invalid_Shake128_BLS12381.txt}
