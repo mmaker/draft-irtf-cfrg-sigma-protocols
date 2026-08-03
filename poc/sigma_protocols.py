@@ -429,8 +429,13 @@ if __name__ == "__main__":
               + LE(1, 4) + LE(0, 4) + LE(1, 4) + one)
     assert serialize_linear_relation(cp).startswith(header)
 
-    for g in (p256, BLSG1Group()):
-        # Schnorr end to end, both flavors, plus one tamper each.
+    for g, suite in ((p256, "sigma-proofs_Shake128_P256"),
+                     (BLSG1Group(), "sigma-proofs_Shake128_BLS12381")):
+        # Schnorr end to end, both flavors, plus one tamper each. One tag
+        # per flavor, carrying the flavor marker and the ciphersuite
+        # identifier verbatim ({{sigma-proofs-tag}}): a tag shared across
+        # flavors would let a batchable proof be re-encoded as an accepting
+        # compact proof (the F4 adversarial vectors of the appendix).
         x = 7
         X = g.mul(x, g.generator())
         inst = LinearRelation(g, [g.generator(), X],
@@ -439,15 +444,16 @@ if __name__ == "__main__":
         assert linear_map(inst, [x]) == image(inst)
         assert parse_statement(
             g, serialize_linear_relation(inst)).elements == inst.elements
-        tag = b"self-test"
-        proof = prove_batchable(tag, inst, [x], CountingRNG())
-        assert verify_batchable(tag, inst, proof)
-        assert not verify_batchable(tag, inst,
+        batchable_tag = f"self-test-DSFS-with-{suite}".encode()
+        compact_tag = f"self-test-CMPT-with-{suite}".encode()
+        proof = prove_batchable(batchable_tag, inst, [x], CountingRNG())
+        assert verify_batchable(batchable_tag, inst, proof)
+        assert not verify_batchable(batchable_tag, inst,
                                     proof[:-1] + bytes([proof[-1] ^ 1]))
-        sid = derive_session_id(tag)
+        sid = derive_session_id(batchable_tag)
         assert batch_verify(g, [sid, sid], [inst, inst], [proof, proof])
-        compact = prove_compact(tag, inst, [x], CountingRNG())
-        assert verify_compact(tag, inst, compact)
-        assert not verify_compact(tag, inst,
+        compact = prove_compact(compact_tag, inst, [x], CountingRNG())
+        assert verify_compact(compact_tag, inst, compact)
+        assert not verify_compact(compact_tag, inst,
                                   compact[:-1] + bytes([compact[-1] ^ 1]))
         print(f"sigma_protocols[{g.name}]: ok")
