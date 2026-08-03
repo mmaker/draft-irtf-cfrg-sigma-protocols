@@ -293,6 +293,8 @@ def derive_challenge(group, session_id, statement_bytes, commitment_bytes):
 
 def prove_batchable(tag, inst, witness, rng):
     g = inst.group
+    if not validate_instance(inst):
+        raise InstanceError("instance validation failed")
     commitment, state = prover_commitment(inst, witness, rng)
     commitment_bytes = g.serialize(commitment)
     challenge = derive_challenge(g, derive_session_id(tag),
@@ -304,6 +306,8 @@ def prove_batchable(tag, inst, witness, rng):
 
 def prove_compact(tag, inst, witness, rng):
     g = inst.group
+    if not validate_instance(inst):
+        raise InstanceError("instance validation failed")
     commitment, state = prover_commitment(inst, witness, rng)
     commitment_bytes = g.serialize(commitment)
     challenge = derive_challenge(g, derive_session_id(tag),
