@@ -243,12 +243,16 @@ def prover_commitment(inst, witness, rng):
         raise ValueError("witness length does not match num_scalars")
     nonces = [rng.random_scalar() for _ in range(num_scalars(inst))]
     commitment = linear_map(inst, nonces)
-    return commitment, (witness, nonces)
+    return commitment, (inst, witness, nonces)
 
 
 def prover_response(state, challenge):
-    witness, nonces = state
-    return [(nonces[i] + witness[i] * challenge) for i in range(len(nonces))]
+    inst, witness, nonces = state
+    if len(witness) != len(nonces):
+        raise ValueError("witness and nonces lengths mismatch")
+    order = inst.group.order
+    return [(nonces[i] + witness[i] * challenge) % order
+            for i in range(len(nonces))]
 
 
 def verifier(inst, commitment, challenge, response):
@@ -294,7 +298,7 @@ def prove_batchable(tag, inst, witness, rng):
     challenge = derive_challenge(g, derive_session_id(tag),
                                  serialize_linear_relation(inst),
                                  commitment_bytes)
-    response = [r % g.order for r in prover_response(state, challenge)]
+    response = prover_response(state, challenge)
     return commitment_bytes + g.scalar_serialize(response)
 
 
@@ -305,7 +309,7 @@ def prove_compact(tag, inst, witness, rng):
     challenge = derive_challenge(g, derive_session_id(tag),
                                  serialize_linear_relation(inst),
                                  commitment_bytes)
-    response = [r % g.order for r in prover_response(state, challenge)]
+    response = prover_response(state, challenge)
     return g.scalar_serialize([challenge]) + g.scalar_serialize(response)
 
 
