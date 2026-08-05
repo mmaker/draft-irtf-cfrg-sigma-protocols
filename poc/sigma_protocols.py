@@ -27,7 +27,7 @@ Prover randomness MUST come from a cryptographically secure RNG; the
 vectors can pin it.
 """
 
-from fiat_shamir import DuplexSponge, decode_uint, derive_session_id
+from fiat_shamir import EXTRA, DuplexSponge, decode_uint, derive_session_id
 from groups import DeserializeError
 
 
@@ -288,7 +288,7 @@ def derive_challenge(group, session_id, statement_bytes, commitment_bytes):
     ds = DuplexSponge(session_id)
     ds.absorb(statement_bytes)
     ds.absorb(commitment_bytes)
-    return decode_uint(ds.squeeze(group.Ns + 16), group.order)
+    return decode_uint(ds.squeeze(group.Ns + EXTRA), group.order)
 
 
 def prove_batchable(tag, inst, witness, rng):
