@@ -297,9 +297,8 @@ def check_sigma_batch(suite, valid, invalid):
              for rec in batchable]
     nargs = [bytes.fromhex(rec["NargString"]) for rec in batchable]
     n = len(batchable)
-    subsets = ([[]] + [[i] for i in range(n)]
-               + [[i, j] for i in range(n) for j in range(i + 1, n)]
-               + [list(range(n))])
+    subsets = [[i for i in range(n) if mask >> i & 1]
+               for mask in range(1 << n)]
     for idx in subsets:
         check(batch_verify(group, [sids[i] for i in idx],
                            [insts[i] for i in idx],
