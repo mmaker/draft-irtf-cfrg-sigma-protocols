@@ -32,10 +32,11 @@ import json
 import os
 
 import sumcheck
-from fiat_shamir import (DuplexSponge, Reject, decode_uint, derive_session_id,
-                         deserialize_field, deserialize_uint,
-                         deserialize_varlen, serialize_field_be,
-                         serialize_uint, serialize_varlen)
+from fiat_shamir import (EXTRA, DuplexSponge, Reject, decode_uint,
+                         derive_session_id, deserialize_field,
+                         deserialize_uint, deserialize_varlen,
+                         serialize_field_be, serialize_uint,
+                         serialize_varlen)
 from groups import BLSG1Group, DeserializeError, P256Group
 from keccak import TurboSHAKE128
 from sigma_protocols import (SigmaError, image, linear_map, parse_statement,
@@ -101,7 +102,7 @@ class TestDRNG:
                                                               flavor)))
 
     def random_scalar(self):
-        return decode_uint(self.ds.squeeze(self.group.Ns + 16),
+        return decode_uint(self.ds.squeeze(self.group.Ns + EXTRA),
                            self.group.order)
 
 
