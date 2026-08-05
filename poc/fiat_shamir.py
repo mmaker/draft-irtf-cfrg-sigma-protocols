@@ -143,9 +143,9 @@ def deserialize_field(buf, p, m):
 
 def decode_uint(buf, p):
     """DecodeUint ({{decoding-uint}}): reduce squeezed bytes modulo p. The
-    bytes are interpreted little-endian for every modulus, byte-order
-    carve-out or not; infallible and, with EXTRA oversampled bytes,
-    distribution-preserving."""
+    bytes are interpreted little-endian for every modulus."""
+    if len(buf) != field_width(p) + EXTRA:
+        raise ValueError("DecodeUint takes exactly Ns + 16 bytes")
     return int.from_bytes(buf, "little") % p
 
 
@@ -178,4 +178,9 @@ if __name__ == "__main__":
         except Reject:
             pass
     assert decode_uint(p.to_bytes(48, "little"), p) == 0
+    try:
+        decode_uint(p.to_bytes(47, "little"), p)
+        raise AssertionError("must refuse a wrong-length buffer")
+    except ValueError:
+        pass
     print("fiat_shamir: ok")
