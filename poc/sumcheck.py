@@ -78,28 +78,34 @@ def prove(session_id, witness, new_ctx=hashlib.shake_128):
     return messages, challenges, w[0]
 
 
-def verify(session_id, claimed, narg, rounds, new_ctx=hashlib.shake_128):
-    """SumcheckVerify: returns (accepted, challenges, final claim); shares
-    no prover state. Rejection of a malformed round message fires during
-    deserialization, before any byte is squeezed; trailing bytes are
-    rejected only after the last round (step 9)."""
+def verify(session_id, v, claimed, narg, y, new_ctx=hashlib.shake_128):
+    """SumcheckVerify(session_id, v, S, narg_string, y), steps 1-11: the
+    caller supplies y = f(r_1, ..., r_v) and step 10 compares the final
+    folded claim against it. Returns (accepted, challenges); the challenge
+    list is not part of the draft's interface (which outputs accept or
+    reject only) and exists for cross-checks; it is None on reject.
+    Rejection of a malformed round message fires during deserialization,
+    before any byte is squeezed; trailing bytes are rejected only after
+    the last round (step 9)."""
     sponge = DuplexSponge(session_id, new_ctx)
-    sponge.absorb(instance_encoding(rounds, claimed))
+    sponge.absorb(instance_encoding(v, claimed))
     current, challenges = claimed, []
     try:
-        for _ in range(rounds):
+        for _ in range(v):
             (a0, a1), narg = deserialize_field(narg, P, 2)
             if (2 * a0 + a1) % P != current:  # g(0) + g(1) == current claim
-                return False, None, None
+                return False, None
             sponge.absorb(serialize_field((a0, a1), P, 2))
             r = int.from_bytes(sponge.squeeze(NS), "little") % P
             current = (a0 + a1 * r) % P  # reduce the claim to g(r)
             challenges.append(r)
-        if narg != b"":  # trailing bytes are rejected
-            raise Reject
+        if narg != b"":  # step 9: trailing bytes are rejected
+            return False, None
     except Reject:
-        return False, None, None
-    return True, challenges, current
+        return False, None
+    if current != y:  # step 10: the final claim must match the evaluation
+        return False, None
+    return True, challenges
 
 
 if __name__ == "__main__":
@@ -108,12 +114,15 @@ if __name__ == "__main__":
     witness = [1 << i for i in range(16)]  # v = 4 variables, sum 65535
     for new_ctx in (hashlib.shake_128, TurboSHAKE128):
         sid = bytes(32)
+        claimed = sum(witness) % P
         messages, challenges, final = prove(sid, witness, new_ctx)
         assert final == multilinear_eval(witness, challenges)
-        ok, ch, fin = verify(sid, sum(witness) % P, b"".join(messages), 4,
-                             new_ctx)
-        assert ok and ch == challenges and fin == final
-        ok, _, _ = verify(sid, sum(witness) % P,
-                          b"".join(messages) + b"\x00", 4, new_ctx)
+        ok, ch = verify(sid, 4, claimed, b"".join(messages), final, new_ctx)
+        assert ok and ch == challenges
+        ok, _ = verify(sid, 4, claimed, b"".join(messages) + b"\x00", final,
+                       new_ctx)
         assert not ok, "trailing bytes must be rejected"
+        ok, _ = verify(sid, 4, claimed, b"".join(messages), (final + 1) % P,
+                       new_ctx)
+        assert not ok, "a wrong final evaluation must be rejected"
     print("sumcheck: ok")

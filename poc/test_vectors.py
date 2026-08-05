@@ -204,8 +204,8 @@ def check_fiat_shamir_record(rec):
                                         new_ctx) == sid,
                       f"{rid}: session id")
             if rec.get("Expected") == "reject":
-                ok, _, _ = sumcheck.verify(sid, claimed, narg, rounds,
-                                           new_ctx)
+                ok, _ = sumcheck.verify(sid, rounds, claimed, narg, 0,
+                                        new_ctx)
                 check(not ok, f"{rid}: must reject")
                 continue
             witness = [to_int(w) for w in rec["Witness"]]
@@ -217,10 +217,12 @@ def check_fiat_shamir_record(rec):
                   f"{rid}: final evaluation")
             check(final == sumcheck.multilinear_eval(witness, challenges),
                   f"{rid}: multilinear extension")
-            ok, ch, fin = sumcheck.verify(sid, claimed, narg, rounds,
-                                          new_ctx)
-            check(ok and ch == challenges and fin == final,
-                  f"{rid}: verifier")
+            ok, ch = sumcheck.verify(sid, rounds, claimed, narg, final,
+                                     new_ctx)
+            check(ok and ch == challenges, f"{rid}: verifier")
+            ok, _ = sumcheck.verify(sid, rounds, claimed, narg,
+                                    (final + 1) % sumcheck.P, new_ctx)
+            check(not ok, f"{rid}: final evaluation binds (step 10)")
     else:
         check(False, f"{rid}: unknown Function {fn}")
 
