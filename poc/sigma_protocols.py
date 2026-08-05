@@ -366,6 +366,8 @@ def batch_verify(group, session_ids, instances, narg_strings):
     bytes of `batching_randomness` per batched equation, then check a
     single random linear combination of every verification equation."""
     nt = len(instances)
+    if not len(session_ids) == nt == len(narg_strings):
+        raise SigmaError("batch input lists must have equal length")
     if nt >= 2 ** 32:
         raise SigmaError("batch too large")
     parsed = []
