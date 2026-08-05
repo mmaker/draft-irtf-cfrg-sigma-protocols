@@ -49,7 +49,8 @@ class VerifyError(SigmaError):
 
 def LE(n, w):
     """Fixed-width little-endian integer, for the serialization headers."""
-    assert 0 <= n < 256 ** w
+    if not 0 <= n < 256 ** w:
+        raise ValueError("integer out of range for the given width")
     return n.to_bytes(w, "little")
 
 

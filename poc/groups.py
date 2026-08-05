@@ -21,7 +21,8 @@ production.
 
 def I2OSP(n, w):
     """Integer to big-endian octet string of width w ({{bytes-and-integers}})."""
-    assert 0 <= n < 256 ** w
+    if not 0 <= n < 256 ** w:
+        raise ValueError("integer out of range for the given width")
     return n.to_bytes(w, "big")
 
 
@@ -119,7 +120,8 @@ class PrimeOrderGroup:
     def scalar_serialize(self, scalars):
         out = b""
         for s in scalars:
-            assert 0 <= s < self.order
+            if not 0 <= s < self.order:
+                raise ValueError("scalar not in canonical range [0, p)")
             out += I2OSP(s, self.Ns)
         return out
 

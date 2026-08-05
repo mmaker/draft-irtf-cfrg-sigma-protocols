@@ -39,7 +39,8 @@ class DuplexSponge:
     back into the state."""
 
     def __init__(self, session_id, new_ctx=hashlib.shake_128):
-        assert len(session_id) == 32
+        if len(session_id) != 32:
+            raise ValueError("the session id is a 32-byte string")
         self._ctx = new_ctx()
         self._ctx.update(session_id + bytes(RATE - 32))  # pad to the rate
         self._reader = None
@@ -92,7 +93,8 @@ def deserialize_varlen(buf):
 
 def serialize_uint(x, p):
     """SerializeUint: fixed-width little-endian integer mod p."""
-    assert 0 <= x < p
+    if not 0 <= x < p:
+        raise ValueError("integer not in canonical range [0, p)")
     return x.to_bytes(field_width(p), "little")
 
 
