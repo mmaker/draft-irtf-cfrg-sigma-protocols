@@ -61,7 +61,8 @@ def prove(session_id, witness, new_ctx=hashlib.shake_128):
     The claimed sum is absorbed internally (step 1 of the pseudocode) and
     recomputed from the witness."""
     v = (len(witness) - 1).bit_length()
-    assert len(witness) == 1 << v
+    if len(witness) != 1 << v:
+        raise ValueError("the witness table must have 2^v entries")
     sponge = DuplexSponge(session_id, new_ctx)
     claimed = sum(witness) % P
     sponge.absorb(instance_encoding(v, claimed))
