@@ -85,18 +85,17 @@ def verify(session_id, claimed, narg, rounds, new_ctx=hashlib.shake_128):
     rejected only after the last round (step 9)."""
     sponge = DuplexSponge(session_id, new_ctx)
     sponge.absorb(instance_encoding(rounds, claimed))
-    off, current, challenges = 0, claimed, []
+    current, challenges = claimed, []
     try:
         for _ in range(rounds):
-            (a0, a1), new_off = deserialize_field(narg, off, P, 2)
+            (a0, a1), narg = deserialize_field(narg, P, 2)
             if (2 * a0 + a1) % P != current:  # g(0) + g(1) == current claim
                 return False, None, None
-            sponge.absorb(narg[off:new_off])
-            off = new_off
+            sponge.absorb(serialize_field((a0, a1), P, 2))
             r = int.from_bytes(sponge.squeeze(NS), "little") % P
             current = (a0 + a1 * r) % P  # reduce the claim to g(r)
             challenges.append(r)
-        if off != len(narg):  # trailing bytes are rejected
+        if narg != b"":  # trailing bytes are rejected
             raise Reject
     except Reject:
         return False, None, None

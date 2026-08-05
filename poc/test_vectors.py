@@ -152,12 +152,12 @@ def check_fiat_shamir_record(rec):
         payload = bytes.fromhex(rec["Input"])
         out = serialize_varlen(payload)
         check(out.hex() == rec["Output"], f"{rid}: serialization")
-        check(deserialize_varlen(out) == payload, f"{rid}: roundtrip")
+        check(deserialize_varlen(out) == (payload, b""), f"{rid}: roundtrip")
     elif fn == "SerializeUint":
         p = to_int(rec["Modulus"])
         out = serialize_uint(to_int(rec["Value"]), p)
         check(out.hex() == rec["Output"], f"{rid}: serialization")
-        check(deserialize_uint(out, p) == to_int(rec["Value"]),
+        check(deserialize_uint(out, p) == (to_int(rec["Value"]), b""),
               f"{rid}: roundtrip")
     elif fn == "SerializeField":
         check(rec["ByteOrder"] == "big-endian", f"{rid}: unexpected codec")
@@ -184,13 +184,13 @@ def check_fiat_shamir_record(rec):
         buf = bytes.fromhex(rec["Input"])
         if rec.get("Expected") == "reject":
             try:
-                deserialize_field(buf, 0, p, m)
+                deserialize_field(buf, p, m)
                 check(False, f"{rid}: must reject")
             except Reject:
                 check(True, rid)
         else:
-            coords, off = deserialize_field(buf, 0, p, m)
-            check(off == len(buf), f"{rid}: trailing bytes")
+            coords, rest = deserialize_field(buf, p, m)
+            check(rest == b"", f"{rid}: trailing bytes")
             check(list(coords) == [to_int(c) for c in rec["Coordinates"]],
                   f"{rid}: coordinates")
     elif fn == "Sumcheck":

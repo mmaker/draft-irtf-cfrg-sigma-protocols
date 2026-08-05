@@ -9,10 +9,8 @@ elements, with the big-endian carve-out for fields whose defining
 standards fix a big-endian serialization ({{serialize-field}}).
 
 Serialization is total on canonical inputs; deserialization is the strict
-inverse and raises `Reject` on anything else -- a non-canonical value, a
-truncated buffer, an overflowing length prefix. Decoding ({{decoding-uint}})
-is the distinct, infallible operation that turns squeezed bytes into a
-scalar: the bytes are read little-endian for every modulus and reduced.
+inverse and raises `Reject` on anything else. Every deserializer takes the
+unread remainder of the input.
 
 Standard library only. This code is for specification discussion and
 test-vector verification; it is not constant-time and not intended for
@@ -82,13 +80,14 @@ def serialize_varlen(s):
 
 
 def deserialize_varlen(buf):
-    """DeserializeVarLenString: a 4-byte length N, then N payload bytes."""
+    """DeserializeVarLenString: a 4-byte length N, then N payload bytes.
+    Returns (payload, unread remainder)."""
     if len(buf) < 4:
         raise Reject
     n = int.from_bytes(buf[:4], "little")
     if len(buf) - 4 < n:  # not 4 + n <= len(buf): that sum can overflow
         raise Reject
-    return buf[4: 4 + n]
+    return buf[4: 4 + n], buf[4 + n:]
 
 
 def serialize_uint(x, p):
@@ -98,14 +97,15 @@ def serialize_uint(x, p):
 
 
 def deserialize_uint(buf, p):
-    """DeserializeUint: exactly Ns canonical little-endian bytes, x < p."""
+    """DeserializeUint: Ns canonical little-endian bytes, x < p; returns
+    (x, unread remainder)."""
     ns = field_width(p)
     if len(buf) < ns:
         raise Reject
     x = int.from_bytes(buf[:ns], "little")
     if x >= p:
         raise Reject
-    return x
+    return x, buf[ns:]
 
 
 def serialize_field(coordinates, p, m):
@@ -131,20 +131,14 @@ def serialize_field_be(coordinates, p, m):
     return b"".join(x.to_bytes(ns, "big") for x in coordinates)
 
 
-def deserialize_field(buf, off, p, m):
-    """DeserializeField: parse m canonical fixed-width coordinates modulo p
-    starting at `off`; return (coordinates, new offset)."""
-    ns = field_width(p)
+def deserialize_field(buf, p, m):
+    """DeserializeField: parse m canonical fixed-width coordinates modulo p;
+    return (coordinates, unread remainder)."""
     coordinates = []
-    for i in range(m):
-        start = off + i * ns
-        if len(buf) - start < ns:
-            raise Reject
-        x = int.from_bytes(buf[start: start + ns], "little")
-        if x >= p:
-            raise Reject
+    for _ in range(m):
+        x, buf = deserialize_uint(buf, p)
         coordinates.append(x)
-    return tuple(coordinates), off + m * ns
+    return tuple(coordinates), buf
 
 
 def decode_uint(buf, p):
@@ -170,10 +164,11 @@ if __name__ == "__main__":
         assert len(derive_session_id(b"tag", new_ctx)) == 32
 
     p = 2 ** 255 - 19
-    assert deserialize_uint(serialize_uint(p - 1, p), p) == p - 1
-    assert deserialize_varlen(serialize_varlen(b"proof")) == b"proof"
-    assert deserialize_field(serialize_field((1, p - 1), p, 2), 0, p, 2) \
-        == ((1, p - 1), 2 * field_width(p))
+    assert deserialize_uint(serialize_uint(p - 1, p), p) == (p - 1, b"")
+    assert deserialize_varlen(serialize_varlen(b"proof")) == (b"proof", b"")
+    assert deserialize_field(serialize_field((1, p - 1), p, 2), p, 2) \
+        == ((1, p - 1), b"")
+    assert deserialize_uint(serialize_uint(3, p) + b"rest", p) == (3, b"rest")
     for bad in (serialize_uint(p - 1, p)[:-1],           # short
                 (p).to_bytes(field_width(p), "little"),  # non-canonical
                 ):
