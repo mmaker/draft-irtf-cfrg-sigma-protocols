@@ -1,0 +1,45 @@
+# The harness regenerates the proofs from the pinned PRNG streams and
+# compares them byte-for-byte against the checked-in vectors -- both the
+# JSON files and their rendering inlined in the drafts. A change that
+# breaks byte compatibility fails here unless the vectors are updated to
+# match in the same change.
+name: "Verify Test Vectors"
+
+on:
+  push:
+    paths:
+    - poc/**
+    - draft-irtf-cfrg-sigma-protocols.md
+    - draft-irtf-cfrg-fiat-shamir.md
+    - .github/workflows/poc.yml
+  pull_request:
+    paths:
+    - poc/**
+    - draft-irtf-cfrg-sigma-protocols.md
+    - draft-irtf-cfrg-fiat-shamir.md
+    - .github/workflows/poc.yml
+
+jobs:
+  vectors:
+    name: "Self-tests and vector harness"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+    - name: "Checkout"
+      uses: actions/checkout@v4
+
+    - name: "Setup Python"
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
+
+    - name: "Module self-tests"
+      run: |
+        python poc/keccak.py
+        python poc/groups.py
+        python poc/fiat_shamir.py
+        python poc/sumcheck.py
+        python poc/sigma_protocols.py
+
+    - name: "Vector harness"
+      run: python poc/test_vectors.py
