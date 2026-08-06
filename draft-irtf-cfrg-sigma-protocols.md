@@ -828,10 +828,9 @@ Group.serialize(commitment) || Scalar.serialize(response)
 
 - `ProveBatchable(tag, instance, witness, rng)` computes the commitment message with `ProverCommitment`, derives the challenge as `DeriveChallenge(tag, instance, Group.serialize(commitment))` ({{challenge-derivation}}), computes the response with `ProverResponse(prover_state, challenge)`, and outputs the NARG string above.
 - `VerifyBatchable(tag, instance, narg_string)` checks:
-  1.  `ValidateInstance(instance)`
-  2.  `len(narg_string)` is exactly `Ne * num_equations(instance) + Ns * num_scalars(instance)`
-  3.  deserialization succeeds
-  4.  `Verifier(instance, commitment, challenge, response)` accepts.
+  1.  `len(narg_string)` is exactly `Ne * num_equations(instance) + Ns * num_scalars(instance)`
+  2.  deserialization succeeds
+  3.  `Verifier(instance, commitment, challenge, response)` accepts.
 
 ## Compact NARG strings {#narg-string-compact}
 
@@ -3593,4 +3592,3 @@ NargString =
   5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f7ad94
 Expected = reject
 ~~~
-
