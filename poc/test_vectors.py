@@ -39,8 +39,8 @@ from fiat_shamir import (EXTRA, DuplexSponge, Reject, decode_uint,
                          serialize_varlen)
 from groups import BLSG1Group, DeserializeError, P256Group
 from keccak import TurboSHAKE128
-from sigma_protocols import (SigmaError, image, linear_map, parse_statement,
-                             batch_verify, prove_batchable, prove_compact,
+from sigma_protocols import (SigmaError, batch_verify, image, linear_map,
+                             parse_statement, prove_batchable, prove_compact,
                              validate_instance, verify_batchable,
                              verify_compact)
 
@@ -427,7 +427,7 @@ def check_markdown_vectors():
         got = parse_markdown_vectors(os.path.join(root, draft))
         check(len(got) == len(expected),
               f"{draft}: {len(got)} vectors inlined, {len(expected)} in JSON")
-        for want, have in zip(expected, got):
+        for want, have in zip(expected, got, strict=True):
             check(list(have.items()) == list(want.items()),
                   f"{draft}: {want['Id']} diverges from its JSON record")
         print(f"{draft}: {len(got)} inlined vectors match the JSON")
@@ -448,7 +448,7 @@ def main():
             check_fiat_shamir_record(rec)
         print(f"{stem}: {_checks - before} checks")
 
-    for suite, (short, _) in SUITES.items():
+    for suite in SUITES:
         before = _checks
         valid = load(suite)
         invalid = load(f"sigma-proofs-invalid_{suite.removeprefix('sigma-proofs_')}")

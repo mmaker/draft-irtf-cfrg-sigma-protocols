@@ -199,8 +199,8 @@ def parse_statement(group, buf):
             raise InstanceError("truncated coefficient")
         try:
             (v,) = group.scalar_deserialize(buf[pos:pos + group.Ns])
-        except DeserializeError:
-            raise InstanceError("non-canonical coefficient")
+        except DeserializeError as err:
+            raise InstanceError("non-canonical coefficient") from err
         pos += group.Ns
         return v
 
@@ -411,7 +411,7 @@ def batch_verify(group, session_ids, instances, narg_strings):
 
 
 if __name__ == "__main__":
-    from groups import BLSG1Group, I2OSP, P256Group
+    from groups import I2OSP, BLSG1Group, P256Group
 
     class CountingRNG:
         """Fixed nonces for the self-test only."""
