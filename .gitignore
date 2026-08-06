@@ -25,3 +25,4 @@ report.xml
 !requirements.txt
 /experiments/
 __pycache__/
+.DS_Store
