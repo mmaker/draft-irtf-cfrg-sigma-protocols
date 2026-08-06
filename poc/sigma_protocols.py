@@ -319,23 +319,19 @@ def prove_compact(tag, inst, witness, rng):
 
 
 def verify_batchable(tag, inst, proof):
-    """VerifyBatchable ({{narg-string-batchable}}), checks 1-4. Raises a
+    """VerifyBatchable ({{narg-string-batchable}}), checks 1-3. Raises a
     typed error on any rejection except a failed verification equation,
     for which it returns False; returns True on acceptance."""
     g = inst.group
-    if not validate_instance(inst):                              # 1
-        raise InstanceError("instance validation failed")
     nc = g.Ne * num_equations(inst)
     nr = g.Ns * num_scalars(inst)
-    if len(proof) != nc + nr:                                    # 2
+    if len(proof) != nc + nr:                                    # 1
         raise ProofLengthError("batchable NARG string has wrong length")
-    commitment = g.deserialize(proof[0:nc])                      # 3
+    commitment = g.deserialize(proof[0:nc])                      # 2
     response = g.scalar_deserialize(proof[nc:nc + nr])
     challenge = derive_challenge(g, derive_session_id(tag),
                                  serialize_linear_relation(inst), proof[0:nc])
-    # Check 4. Verifier re-validates the instance (its own step 1): the
-    # draft specifies the check in both numbered lists.
-    return verifier(inst, commitment, challenge, response)
+    return verifier(inst, commitment, challenge, response)       # 3
 
 
 def verify_compact(tag, inst, proof):
