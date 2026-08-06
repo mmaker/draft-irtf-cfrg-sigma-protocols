@@ -170,25 +170,28 @@ def check_fiat_shamir_record(rec):
         try:
             deserialize_uint(bytes.fromhex(rec["Input"]),
                              to_int(rec["Modulus"]))
-            check(False, f"{rid}: must reject")
+            rejected = False
         except Reject:
-            check(True, rid)
+            rejected = True
+        check(rejected, f"{rid}: must reject")
     elif fn == "DeserializeVarLenString":
         check(rec["Expected"] == "reject", f"{rid}: only rejects pinned")
         try:
             deserialize_varlen(bytes.fromhex(rec["Input"]))
-            check(False, f"{rid}: must reject")
+            rejected = False
         except Reject:
-            check(True, rid)
+            rejected = True
+        check(rejected, f"{rid}: must reject")
     elif fn == "DeserializeField":
         p, m = to_int(rec["Modulus"]), rec["ExtensionDegree"]
         buf = bytes.fromhex(rec["Input"])
         if rec.get("Expected") == "reject":
             try:
                 deserialize_field(buf, p, m)
-                check(False, f"{rid}: must reject")
+                rejected = False
             except Reject:
-                check(True, rid)
+                rejected = True
+            check(rejected, f"{rid}: must reject")
         else:
             coords, rest = deserialize_field(buf, p, m)
             check(rest == b"", f"{rid}: trailing bytes")
