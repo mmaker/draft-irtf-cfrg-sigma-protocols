@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 27 January 2027                                     Apple, Inc.
-                                                            26 July 2026
+Expires: 12 February 2027                                    Apple, Inc.
+                                                          11 August 2026
 
 
                    Sigma Proofs for Linear Relations
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 27 January 2027.
+   This Internet-Draft will expire on 12 February 2027.
 
 Copyright Notice
 
@@ -962,14 +962,12 @@ Table of Contents
 
    *  VerifyBatchable(tag, instance, narg_string) checks:
 
-      1.  ValidateInstance(instance)
-
-      2.  len(narg_string) is exactly Ne * num_equations(instance) + Ns
+      1.  len(narg_string) is exactly Ne * num_equations(instance) + Ns
           * num_scalars(instance)
 
-      3.  deserialization succeeds
+      2.  deserialization succeeds
 
-      4.  Verifier(instance, commitment, challenge, response) accepts.
+      3.  Verifier(instance, commitment, challenge, response) accepts.
 
 5.5.  Compact NARG strings
 
