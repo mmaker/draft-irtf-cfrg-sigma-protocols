@@ -1,3 +1,0 @@
-*.py
-!keccak.py
-!groups/hash_to_field.py
