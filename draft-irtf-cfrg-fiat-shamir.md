@@ -294,6 +294,8 @@ Note that the prover does not need to compute the last verifier message `verifie
 
 The key words "**MUST**", "**MUST NOT**", "**REQUIRED**", "**SHALL**", "**SHALL NOT**", "**SHOULD**", "**SHOULD NOT**", "**RECOMMENDED**", "**NOT RECOMMENDED**", "**MAY**", and "**OPTIONAL**" in this document are to be interpreted as described in BCP 14 {{!RFC2119}} {{!RFC8174}} when, and only when, they appear in all capitals, as shown here.
 
+The algorithms and procedures in this document are specified using Python-like pseudocode. Each function accepts defined inputs and parameters and returns one or more output values. Once a protocol variant and ciphersuite are selected, all associated parameters are treated as constants.
+
 The following notation is used throughout this document.
 
 ## Bytes and integers
