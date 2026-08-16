@@ -1258,7 +1258,7 @@ NargString =
 Expected = accept
 ~~~
 
-Knowledge of the opening of a Pedersen commitment, `C = x * G + r * H`
+Knowledge of the opening of a Pedersen commitment, `C = m * G + r * H`
 ({{relation-notation}}).
 
 ~~~
@@ -1289,7 +1289,7 @@ NargString =
 Expected = accept
 ~~~
 
-Knowledge of the opening of a Pedersen commitment, `C = x * G + r * H`
+Knowledge of the opening of a Pedersen commitment, `C = m * G + r * H`
 ({{relation-notation}}).
 
 ~~~
@@ -2471,7 +2471,7 @@ NargString =
 Expected = accept
 ~~~
 
-Knowledge of the opening of a Pedersen commitment, `C = x * G + r * H`
+Knowledge of the opening of a Pedersen commitment, `C = m * G + r * H`
 ({{relation-notation}}).
 
 ~~~
@@ -2502,7 +2502,7 @@ NargString =
 Expected = accept
 ~~~
 
-Knowledge of the opening of a Pedersen commitment, `C = x * G + r * H`
+Knowledge of the opening of a Pedersen commitment, `C = m * G + r * H`
 ({{relation-notation}}).
 
 ~~~
