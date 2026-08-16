@@ -4,8 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                            11 August 2026
-Expires: 12 February 2027
+Intended status: Informational                            16 August 2026
+Expires: 17 February 2027
 
 
                        Fiat-Shamir Transformation
@@ -55,7 +55,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 12 February 2027.
+   This Internet-Draft will expire on 17 February 2027.
 
 Copyright Notice
 
@@ -363,6 +363,12 @@ Table of Contents
    RECOMMENDED*", "*MAY*", and "*OPTIONAL*" in this document are to be
    interpreted as described in BCP 14 [RFC2119] [RFC8174] when, and only
    when, they appear in all capitals, as shown here.
+
+   The algorithms and procedures in this document are specified using
+   Python-like pseudocode.  Each function accepts defined inputs and
+   parameters and returns one or more output values.  Once a protocol
+   variant and ciphersuite are selected, all associated parameters are
+   treated as constants.
 
    The following notation is used throughout this document.
 
