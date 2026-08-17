@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 17 February 2027                                    Apple, Inc.
-                                                          16 August 2026
+Expires: 18 February 2027                                    Apple, Inc.
+                                                          17 August 2026
 
 
                    Sigma Proofs for Linear Relations
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 17 February 2027.
+   This Internet-Draft will expire on 18 February 2027.
 
 Copyright Notice
 
@@ -254,7 +254,7 @@ Table of Contents
    returns its order p.  Addition, negation, equality, and scalar
    multiplication by a Scalar are written +, -, ==, and *.
 
-   serialize(elements: [Group; N]) and deserialize(buffer) convert N
+   serialize(elements: list[Group]) and deserialize(buffer) convert N
    non-neutral group elements into a fixed-length Ne * N-byte encoding,
    where Ne is fixed per ciphersuite (Section 8).
 
@@ -271,8 +271,8 @@ Table of Contents
    of integers modulo the group order p.  Addition and multiplication
    are written + and * via operator overloading.
 
-   serialize(scalars: list[Scalar; N]) and deserialize(buffer) batch
-   convert between [Scalar; N] and its canonical, fixed-length Ns *
+   serialize(scalars: list[Scalar]) and deserialize(buffer) batch
+   convert between N scalars and their canonical, fixed-length Ns *
    N-byte encoding.
 
    Sampling a random scalar takes two steps: obtaining high-quality
@@ -1939,7 +1939,7 @@ A.2.1.  Valid proofs
      284cb4905860f4b1db7edc4473f5ee2b4ab178c5c2a8cbe57056ac330fc71d37
    Expected = accept
 
-   Knowledge of the opening of a Pedersen commitment, C = x * G + r * H
+   Knowledge of the opening of a Pedersen commitment, C = m * G + r * H
    (Section 3.4).
 
    Id = sigma-protocols/p256/pedersen_commitment/batchable
@@ -1968,7 +1968,7 @@ A.2.1.  Valid proofs
      80
    Expected = accept
 
-   Knowledge of the opening of a Pedersen commitment, C = x * G + r * H
+   Knowledge of the opening of a Pedersen commitment, C = m * G + r * H
    (Section 3.4).
 
    Id = sigma-protocols/p256/pedersen_commitment/compact
@@ -3058,7 +3058,7 @@ A.3.1.  Valid proofs
      1712fb2963a360c4bc783fa9764bb115b7162e014c5f6c8859fbcd71fbc58844
    Expected = accept
 
-   Knowledge of the opening of a Pedersen commitment, C = x * G + r * H
+   Knowledge of the opening of a Pedersen commitment, C = m * G + r * H
    (Section 3.4).
 
    Id = sigma-protocols/bls12381/pedersen_commitment/batchable
@@ -3087,7 +3087,7 @@ A.3.1.  Valid proofs
      3c2402516220b2ac1ec139c9bfdc020f
    Expected = accept
 
-   Knowledge of the opening of a Pedersen commitment, C = x * G + r * H
+   Knowledge of the opening of a Pedersen commitment, C = m * G + r * H
    (Section 3.4).
 
    Id = sigma-protocols/bls12381/pedersen_commitment/compact

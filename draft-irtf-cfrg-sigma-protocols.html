@@ -1050,7 +1050,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù &amp; Yun</td>
-<td class="center">Expires 17 February 2027</td>
+<td class="center">Expires 18 February 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1063,12 +1063,12 @@ svg {
 <dd class="internet-draft">draft-irtf-cfrg-sigma-protocols-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-08-16" class="published">16 August 2026</time>
+<time datetime="2026-08-17" class="published">17 August 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-02-17">17 February 2027</time></dd>
+<dd class="expires"><time datetime="2027-02-18">18 February 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1123,7 +1123,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 17 February 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 18 February 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1455,7 +1455,7 @@ svg {
 <a href="#section-2.3.1" class="section-number selfRef">2.3.1. </a><a href="#name-group-elements" class="section-name selfRef">Group elements</a>
           </h4>
 <p id="section-2.3.1-1"><code>identity()</code> is the neutral element, <code>generator()</code> returns the canonical generator of the prime-order subgroup (<a href="#ciphersuites" class="auto internal xref">Section 8</a>), and <code>order()</code> returns its order <code>p</code>. Addition, negation, equality, and scalar multiplication by a <code>Scalar</code> are written <code>+</code>, <code>-</code>, <code>==</code>, and <code>*</code>.<a href="#section-2.3.1-1" class="pilcrow">¶</a></p>
-<p id="section-2.3.1-2"><code>serialize(elements: [Group; N])</code> and <code>deserialize(buffer)</code> convert <code>N</code> non-neutral group elements into a fixed-length <code>Ne * N</code>-byte encoding, where <code>Ne</code> is fixed per ciphersuite (<a href="#ciphersuites" class="auto internal xref">Section 8</a>).<a href="#section-2.3.1-2" class="pilcrow">¶</a></p>
+<p id="section-2.3.1-2"><code>serialize(elements: list[Group])</code> and <code>deserialize(buffer)</code> convert <code>N</code> non-neutral group elements into a fixed-length <code>Ne * N</code>-byte encoding, where <code>Ne</code> is fixed per ciphersuite (<a href="#ciphersuites" class="auto internal xref">Section 8</a>).<a href="#section-2.3.1-2" class="pilcrow">¶</a></p>
 <p id="section-2.3.1-3">Both <code>serialize</code> and <code>deserialize</code> are defined only on non-neutral elements. Serialization <strong>MUST</strong> fail on the identity element, and deserialization <strong>MUST</strong> fail for invalid encodings, including on the encoding of the identity. An honest prover statistically hits this event only with negligible probability. See <span><a href="https://rfc-editor.org/rfc/rfc9380#section-10.1" class="relref">Section 10.1</a> of [<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>, Appendix C of <span>[<a href="#PAIRING" class="cite xref">PAIRING</a>]</span>, <span><a href="https://rfc-editor.org/rfc/rfc9497#section-2.1" class="relref">Section 2.1</a> of [<a href="#RFC9497" class="cite xref">RFC9497</a>]</span>, <span>[<a href="#ARC" class="cite xref">ARC</a>]</span>.<a href="#section-2.3.1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -1465,7 +1465,7 @@ svg {
 <a href="#section-2.3.2" class="section-number selfRef">2.3.2. </a><a href="#name-scalars" class="section-name selfRef">Scalars</a>
           </h4>
 <p id="section-2.3.2-1">A <code>Scalar</code> is an element of the group's <em>scalar field</em>, the prime field of integers modulo the group order <code>p</code>. Addition and multiplication are written <code>+</code> and <code>*</code> via operator overloading.<a href="#section-2.3.2-1" class="pilcrow">¶</a></p>
-<p id="section-2.3.2-2"><code>serialize(scalars: list[Scalar; N])</code> and <code>deserialize(buffer)</code> batch convert between <code>[Scalar; N]</code> and its canonical, fixed-length <code>Ns * N</code>-byte encoding.<a href="#section-2.3.2-2" class="pilcrow">¶</a></p>
+<p id="section-2.3.2-2"><code>serialize(scalars: list[Scalar])</code> and <code>deserialize(buffer)</code> batch convert between <code>N</code> scalars and their canonical, fixed-length <code>Ns * N</code>-byte encoding.<a href="#section-2.3.2-2" class="pilcrow">¶</a></p>
 <p id="section-2.3.2-3">Sampling a random scalar takes two steps: obtaining high-quality entropy via a CSPRNG (e.g., <code>getrandom()</code>; see <span>[<a href="#RFC4086" class="cite xref">RFC4086</a>]</span> for randomness requirements), and reducing the resulting bytes to a scalar. It is <strong>RECOMMENDED</strong> that the latter be done via <code>DecodeField</code> as in <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>. Different sampling mechanisms, such as the wide reduction of <code>hash_to_field</code> (<span><a href="https://rfc-editor.org/rfc/rfc9380#section-5.2" class="relref">Section 5.2</a> of [<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>) and the integer conversion of Appendix A.4.1 of <span>[<a href="#FIPS186-5" class="cite xref">FIPS186-5</a>]</span> do not affect interoperability of proofs. The "discard method" of Appendix A.4.2 of <span>[<a href="#FIPS186-5" class="cite xref">FIPS186-5</a>]</span> <strong>SHOULD NOT</strong> be used <a href="#constant-time" class="auto internal xref">Section 7.6</a>.<a href="#section-2.3.2-3" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2788,7 +2788,7 @@ NargString =
 Expected = accept
 </pre><a href="#appendix-A.2.1-8" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.1-9">Knowledge of the opening of a Pedersen commitment, <code>C = x * G + r * H</code>
+<p id="appendix-A.2.1-9">Knowledge of the opening of a Pedersen commitment, <code>C = m * G + r * H</code>
 (<a href="#relation-notation" class="auto internal xref">Section 3.4</a>).<a href="#appendix-A.2.1-9" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.1-10">
 <pre>
@@ -2819,7 +2819,7 @@ NargString =
 Expected = accept
 </pre><a href="#appendix-A.2.1-10" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.1-11">Knowledge of the opening of a Pedersen commitment, <code>C = x * G + r * H</code>
+<p id="appendix-A.2.1-11">Knowledge of the opening of a Pedersen commitment, <code>C = m * G + r * H</code>
 (<a href="#relation-notation" class="auto internal xref">Section 3.4</a>).<a href="#appendix-A.2.1-11" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.1-12">
 <pre>
@@ -4013,7 +4013,7 @@ NargString =
 Expected = accept
 </pre><a href="#appendix-A.3.1-8" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.1-9">Knowledge of the opening of a Pedersen commitment, <code>C = x * G + r * H</code>
+<p id="appendix-A.3.1-9">Knowledge of the opening of a Pedersen commitment, <code>C = m * G + r * H</code>
 (<a href="#relation-notation" class="auto internal xref">Section 3.4</a>).<a href="#appendix-A.3.1-9" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.1-10">
 <pre>
@@ -4044,7 +4044,7 @@ NargString =
 Expected = accept
 </pre><a href="#appendix-A.3.1-10" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.1-11">Knowledge of the opening of a Pedersen commitment, <code>C = x * G + r * H</code>
+<p id="appendix-A.3.1-11">Knowledge of the opening of a Pedersen commitment, <code>C = m * G + r * H</code>
 (<a href="#relation-notation" class="auto internal xref">Section 3.4</a>).<a href="#appendix-A.3.1-11" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.1-12">
 <pre>
