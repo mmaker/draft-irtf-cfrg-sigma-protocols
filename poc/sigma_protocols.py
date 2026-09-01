@@ -78,7 +78,8 @@ def num_equations(inst):
 
 
 def num_scalars(inst):
-    return 1 + max(s for eq in inst.equations for (s, _, _) in eq.terms)
+    return max((s + 1 for eq in inst.equations
+                for (s, _, _) in eq.terms), default=0)
 
 
 def linear_map(inst, scalars):
@@ -111,8 +112,6 @@ def image(inst):
 def validate_instance(inst):
     g = inst.group
     eqs = inst.equations
-    if len(eqs) == 0:                                            # 1
-        return False
     if any(len(eq.terms) == 0 or len(eq.image) == 0 for eq in eqs):  # 2
         return False
     bound = 2 ** 32                                              # 3
@@ -142,7 +141,7 @@ def validate_instance(inst):
     used_scalars = {si for eq in eqs for (si, _, _) in eq.terms}  # 6
     if any(j not in used_scalars for j in range(num_scalars(inst))):
         return False
-    if inst.elements[0] != g.generator():                       # 7
+    if n_el == 0 or inst.elements[0] != g.generator():          # 7
         return False
     if any(P is None for P in inst.elements):                   # 8
         return False
@@ -205,8 +204,6 @@ def parse_statement(group, buf):
         return v
 
     n_eq = read_u32()
-    if n_eq == 0:
-        raise InstanceError("no equations")
     equations = []
     max_index = 0
     for _ in range(n_eq):
@@ -440,6 +437,11 @@ if __name__ == "__main__":
 
     for g, suite in ((p256, "sigma-proofs_Shake128_P256"),
                      (BLSG1Group(), "sigma-proofs_Shake128_BLS12381")):
+        empty = LinearRelation(g, [g.generator()], [])
+        assert validate_instance(empty)
+        assert parse_statement(g, serialize_linear_relation(empty)).equations == []
+        assert not validate_instance(LinearRelation(g, [], []))
+
         # Schnorr end to end, both flavors, plus one tamper each. One tag
         # per flavor, carrying the flavor marker and the ciphersuite
         # identifier verbatim ({{sigma-proofs-tag}}): a tag shared across
