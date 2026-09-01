@@ -425,9 +425,9 @@ class LinearRelation:
 
 class Equation:
   image: list[(int, Scalar)]
-    # non-empty, (element_index, coeff)
+    # (element_index, coeff)
   terms: list[(int, int, Scalar)]
-    # non-empty, (scalar_index, element_index, coeff)
+    # (scalar_index, element_index, coeff)
 ~~~
 
 A `LinearRelation` holds a set of group elements (each corresponding to an `element_index`) and a list of equations. Each row of `M` is called an `Equation`, and consists of two lists of terms.
@@ -436,7 +436,7 @@ The `image` terms (the left-hand side) are pairs `(element_index, coeff)`. The i
 
 The `terms` (the right-hand side) are triplets `(scalar_index, element_index, coeff)`. Each `coeff` is a scalar ({{scalar}}) fixed by the instance.
 
-Every equation's `image` and `terms` **MUST** be non-empty. A constant of the statement (an element carrying no witness scalar) is encoded as an image term ({{relation-notation}}). It **MUST NOT** be encoded as a right-hand side term whose witness scalar is "fixed" to `1`. A coefficient **MAY** be zero.
+An empty `image` or `terms` list represents the identity element. A constant of the statement (an element carrying no witness scalar) is encoded as an image term ({{relation-notation}}). It **MUST NOT** be encoded as a right-hand side term whose witness scalar is "fixed" to `1`. A coefficient **MAY** be zero.
 
 The instance **MUST** contain, as individually-indexed elements, every group element on which the statement depends. In particular, all group elements processed by the verifier **MUST** appear in the statement, else the resulting argument is malleable across its preimages ({{sigma-ni-security}}).
 
@@ -574,7 +574,6 @@ AND composition comes for free for this relation family. To do so, concatenate t
 
 For an instance to be valid, it **MUST** satisfy all below conditions:
 
-2. Every equation in `instance.equations` has a non-empty `terms` list and a non-empty `image` list.
 3. Every `scalar_index` and every `element_index` is a non-negative integer less than `2^32`; so are `num_equations(instance)`, and each equation's term count and image-term count.
 4. Every element index is less than `num_elements(instance)`. In other words, every index references a group element.
 5. Every element index other than `0` appears in the terms or image terms of at least one equation; the generator (index `0`) is present in every instance whether or not an equation uses it ({{representation}}).
