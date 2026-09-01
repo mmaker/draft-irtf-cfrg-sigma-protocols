@@ -7,11 +7,11 @@ Sigma Protocol ({{sigma-protocol-group}}), the Fiat-Shamir challenge of
 {{challenge-derivation}} (DeriveSessionID -> DS.Init -> absorb
 SerializeLinearRelation -> absorb commitment -> DecodeField(Squeeze(Ns +
 16))), the batchable and compact NARG strings ({{non-interactive}}), and
-batch verification ({{batch-verification}}). The generator is the implicit
-`elements[0]` and is never serialized.
+batch verification ({{batch-verification}}). The identity and generator have
+implicit element indices 0 and 1 and are not stored or serialized.
 
-An instance is a `LinearRelation`: the group, the statement elements
-(`elements[0]` is the group generator), and a list of `Equation`s, each a
+An instance is a `LinearRelation`: the group, the statement elements (whose
+indices begin at 2), and a
 sparse row of `(element_index, coeff)` image entries and
 `(scalar_index, element_index, coeff)` terms.
 
@@ -65,12 +65,12 @@ class Equation:
 class LinearRelation:
     def __init__(self, group, elements, equations):
         self.group = group
-        self.elements = list(elements)           # elements[0] == generator()
+        self.elements = list(elements)  # elements[0] == identity(); [1] == generator()
         self.equations = list(equations)
 
 
 def num_elements(inst):
-    return len(inst.elements)
+    return 2 + len(inst.elements)
 
 
 def num_equations(inst):
@@ -82,6 +82,14 @@ def num_scalars(inst):
                 for (s, _, _) in eq.terms), default=0)
 
 
+def element(inst, element_index):
+    if element_index == 0:
+        return inst.group.identity()
+    if element_index == 1:
+        return inst.group.generator()
+    return inst.elements[element_index - 2]
+
+
 def linear_map(inst, scalars):
     """map(instance, scalars) of {{map-evaluation}}."""
     g = inst.group
@@ -90,7 +98,7 @@ def linear_map(inst, scalars):
         acc = g.identity()
         for (si, ei, coeff) in eq.terms:
             acc = g.add(acc, g.mul((coeff * scalars[si]) % g.order,
-                                   inst.elements[ei]))
+                                   element(inst, ei)))
         out.append(acc)
     return out
 
@@ -102,7 +110,7 @@ def image(inst):
     for eq in inst.equations:
         acc = g.identity()
         for (ei, coeff) in eq.image:
-            acc = g.add(acc, g.mul(coeff % g.order, inst.elements[ei]))
+            acc = g.add(acc, g.mul(coeff % g.order, element(inst, ei)))
         out.append(acc)
     return out
 
@@ -134,11 +142,7 @@ def validate_instance(inst):
             if ei >= n_el:
                 return False
             referenced.add(ei)
-    if any(i not in referenced for i in range(1, n_el)):        # 5
-        return False
-    if n_el == 0 or inst.elements[0] != g.generator():          # 7
-        return False
-    if any(P is None for P in inst.elements):                   # 8
+    if any(i not in referenced for i in range(2, n_el)):        # 5
         return False
     if any(P is None for P in image(inst)):                     # 9
         return False
@@ -149,7 +153,7 @@ def validate_instance(inst):
             for (s, ei, coeff) in eq.terms:
                 if s == si:
                     hit = True
-                    acc = g.add(acc, g.mul(coeff % g.order, inst.elements[ei]))
+                    acc = g.add(acc, g.mul(coeff % g.order, element(inst, ei)))
             if hit and acc is not None:
                 break
         else:
@@ -169,7 +173,7 @@ def serialize_linear_relation(inst):
         out += LE(len(eq.terms), 4)
         for (si, ei, coeff) in eq.terms:
             out += LE(si, 4) + LE(ei, 4) + g.scalar_serialize([coeff % g.order])
-    return out + g.serialize(inst.elements[1:num_elements(inst)])
+    return out + g.serialize(inst.elements)
 
 
 def parse_statement(group, buf):
@@ -200,7 +204,7 @@ def parse_statement(group, buf):
 
     n_eq = read_u32()
     equations = []
-    max_index = 0
+    max_index = 1
     for _ in range(n_eq):
         n_img = read_u32()
         img = []
@@ -219,9 +223,9 @@ def parse_statement(group, buf):
             max_index = max(max_index, ei)
         equations.append(Equation(img, terms))
     n_el = 1 + max_index
-    if len(buf) - pos != (n_el - 1) * group.Ne:
+    if len(buf) - pos != (n_el - 2) * group.Ne:
         raise InstanceError("statement length does not match header")
-    elements = [group.generator()] + group.deserialize(buf[pos:])
+    elements = group.deserialize(buf[pos:])
     return LinearRelation(group, elements, equations)
 
 
@@ -333,8 +337,6 @@ def verify_compact(tag, inst, proof):
     challenge = g.scalar_deserialize(proof[0:g.Ns])[0]
     response = g.scalar_deserialize(proof[g.Ns:g.Ns + nr])
     commitment = simulate_commitment(inst, response, challenge)
-    if any(P is None for P in commitment):
-        raise VerifyError("simulated commitment contains the identity")
     expected = derive_challenge(g, derive_session_id(tag),
                                 serialize_linear_relation(inst),
                                 g.serialize(commitment))
@@ -413,28 +415,34 @@ if __name__ == "__main__":
     p256 = P256Group()
 
     # The ChaumPedersen serialization example of {{serialize-linear-relations}}
-    # (elements [G, H, X, Y], all coefficients 1), checked against its header
+    # (elements [H, X, Y], all coefficients 1), checked against its header
     # bytes written out by hand.
-    cp = LinearRelation(p256, [p256.gen] * 4,
-                        [Equation([(2, 1)], [(0, 0, 1)]),
-                         Equation([(3, 1)], [(0, 1, 1)])])
+    cp = LinearRelation(p256, [p256.gen] * 3,
+                        [Equation([(3, 1)], [(0, 1, 1)]),
+                         Equation([(4, 1)], [(0, 2, 1)])])
     one = I2OSP(1, 32)
     header = (LE(2, 4)
-              + LE(1, 4) + LE(2, 4) + one
-              + LE(1, 4) + LE(0, 4) + LE(0, 4) + one
               + LE(1, 4) + LE(3, 4) + one
-              + LE(1, 4) + LE(0, 4) + LE(1, 4) + one)
+              + LE(1, 4) + LE(0, 4) + LE(1, 4) + one
+              + LE(1, 4) + LE(4, 4) + one
+              + LE(1, 4) + LE(0, 4) + LE(2, 4) + one)
     assert serialize_linear_relation(cp).startswith(header)
 
     for g, suite in ((p256, "sigma-proofs_Shake128_P256"),
                      (BLSG1Group(), "sigma-proofs_Shake128_BLS12381")):
-        empty = LinearRelation(g, [g.generator()], [])
+        empty = LinearRelation(g, [g.identity(), g.generator()], [])
         assert validate_instance(empty)
         assert parse_statement(g, serialize_linear_relation(empty)).equations == []
         assert not validate_instance(LinearRelation(g, [], []))
         constant = LinearRelation(
-            g, [g.generator()], [Equation([(0, 1)], [])])
+            g, [g.identity(), g.generator()], [Equation([(1, 1)], [])])
         assert validate_instance(constant)
+        identity = LinearRelation(
+            g, [g.identity(), g.generator()],
+            [Equation([(1, 1), (0, 1)], [(0, 1, 1)])])
+        assert validate_instance(identity)
+        assert parse_statement(
+            g, serialize_linear_relation(identity)).elements == identity.elements
 
         # Schnorr end to end, both flavors, plus one tamper each. One tag
         # per flavor, carrying the flavor marker and the ciphersuite
@@ -443,8 +451,8 @@ if __name__ == "__main__":
         # compact proof (the F4 adversarial vectors of the appendix).
         x = 7
         X = g.mul(x, g.generator())
-        inst = LinearRelation(g, [g.generator(), X],
-                              [Equation([(1, 1)], [(0, 0, 1)])])
+        inst = LinearRelation(g, [X],
+                              [Equation([(2, 1)], [(0, 1, 1)])])
         assert validate_instance(inst)
         assert linear_map(inst, [x]) == image(inst)
         assert parse_statement(

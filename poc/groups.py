@@ -10,8 +10,8 @@ for P-256 (Ne = 33) and the ZCash compressed encoding for BLS12-381 G1
 (Ne = 48); scalars serialize big-endian via I2OSP in both suites, the
 byte-order carve-out of the Fiat-Shamir draft's {{serialize-field}} for
 fields whose defining standards fix a big-endian encoding. Deserialization
-accepts only canonical encodings and rejects the identity, off-curve and
-out-of-subgroup points ({{group-abstraction}}).
+accepts only canonical encodings and rejects off-curve and out-of-subgroup
+points ({{group-abstraction}}).
 
 Standard library only. This code is for specification discussion and
 test-vector verification; it is not constant-time and not intended for
@@ -98,18 +98,15 @@ class PrimeOrderGroup:
     # -- element codec ({{group-abstraction}}) ------------------------------
 
     def serialize(self, elements):
-        """Group.serialize: fixed-width canonical encodings, concatenated.
-        Undefined on the identity, which is invalid in prover messages."""
+        """Group.serialize: fixed-width canonical encodings, concatenated."""
         out = b""
         for P in elements:
-            if P is None:
-                raise ValueError("Group.serialize is undefined for the identity")
             out += self.serialize_element(P)
         return out
 
     def deserialize(self, buffer):
         """Group.deserialize: the inverse of serialize; rejects anything but
-        a sequence of canonical encodings of non-identity subgroup points."""
+        a sequence of canonical encodings of subgroup points."""
         if len(buffer) % self.Ne != 0:
             raise DeserializeError("buffer length not a multiple of Ne")
         return [self.deserialize_element(buffer[i:i + self.Ne])
@@ -154,6 +151,8 @@ class P256Group(PrimeOrderGroup):
             "036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296"))
 
     def serialize_element(self, P):
+        if P is None:
+            return bytes(self.Ne)
         x, y = P
         return bytes([0x02 | (y & 1)]) + I2OSP(x, 32)
 
@@ -161,8 +160,10 @@ class P256Group(PrimeOrderGroup):
         if len(buf) != self.Ne:
             raise DeserializeError("bad element length")
         prefix = buf[0]
+        if prefix == 0x00 and buf == bytes(self.Ne):
+            return None
         if prefix not in (0x02, 0x03):
-            raise DeserializeError("only compressed SEC1 encodings are valid")
+            raise DeserializeError("invalid compressed SEC1 encoding")
         x = OS2IP(buf[1:])
         if x >= self.p:
             raise DeserializeError("x coordinate out of range")
@@ -198,6 +199,8 @@ class BLSG1Group(PrimeOrderGroup):
         return y > (self.p - 1) // 2
 
     def serialize_element(self, P):
+        if P is None:
+            return bytes([0xC0]) + bytes(47)
         x, y = P
         flags = 0x80 | (0x20 if self._y_is_larger(y) else 0x00)
         body = bytearray(I2OSP(x, 48))
@@ -213,7 +216,9 @@ class BLSG1Group(PrimeOrderGroup):
         if not c_bit:
             raise DeserializeError("compression bit unset")
         if i_bit:
-            raise DeserializeError("point at infinity rejected")
+            if buf == bytes([0xC0]) + bytes(47):
+                return None
+            raise DeserializeError("invalid point at infinity")
         x = OS2IP(bytes([buf[0] & 0x1F]) + buf[1:])
         if x >= self.p:
             raise DeserializeError("non-canonical x coordinate")
@@ -236,6 +241,7 @@ if __name__ == "__main__":
         two_G = g.add(G, G)
         assert two_G == g.mul(2, G), g.name
         assert g.deserialize(g.serialize([G, two_G])) == [G, two_G], g.name
+        assert g.deserialize(g.serialize([g.identity()])) == [g.identity()], g.name
         assert len(g.serialize([G])) == g.Ne, g.name
         assert g.scalar_deserialize(g.scalar_serialize([0, g.order - 1])) \
             == [0, g.order - 1], g.name
