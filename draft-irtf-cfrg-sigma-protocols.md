@@ -585,10 +585,9 @@ For an instance to be valid, it **MUST** satisfy all below conditions:
 4. Every element index is less than `num_elements(instance)`. In other words, every index references a group element.
 5. Every element index other than `0` and `1` appears in the terms or image terms of at least one equation; the identity (index `0`) and generator (index `1`) are present in every instance whether or not an equation uses them ({{representation}}).
 Together with check 4, this ensures either `num_elements(instance) == 2` or `num_elements(instance)-1` is the largest referenced element index.
-9. No element of `image(instance)` is the identity element: an equation whose image evaluates to the identity is satisfied by the all-zero witness, so a proof of it attests nothing.
-10. No column of the matrix `M` is the identity. That is, for every scalar index, there is at least one equation for which the sum of `coeff * elements[element_index]` over the terms carrying that scalar index is not the identity.
-
 The prover **SHOULD** reject an invalid instance, and **MAY** additionally check that `image == map(instance, witness)` before proving; {{privacy-considerations}} and {{instance-security}} state when this check, or a stronger precaution, is required. The verifier **MUST** fail on an invalid instance ({{verifier}}, {{non-interactive}}), either when the instance is constructed or during verification itself.
+
+These checks admit identity images and columns, including `M * x = Y` with `M = 0` and `Y = 0`, or with `M != 0` and `Y = 0`.
 
 `ValidateInstance(instance)` denotes the function returning `true` if all above predicates are met. Instance validation won't flag all violations of {{representation}} (for instance, a registered element obtained as a precomputed linear combination from one obtained independently) because the instance generation can't know how a group element is obtained. A structurally valid instance may still yield an unsound argument.
 
@@ -998,7 +997,7 @@ For compact NARG strings, the verifier **MUST** recompute the challenge and comp
 
 The prover and verifier construct the instance from values they independently hold and trust, such as the group generator. Often, one party will supply elements or scalars to the other ({{relation-notation}}). These are untrusted input, and **MUST** be checked ({{verifier-input-validation}}). For the verifier, those checks are part of verification. The prover **MUST NOT** produce a proof over an instance without validating well-formedness of all group elements and scalars first.
 
-Some equations pin down no specific scalars. For example, the equation `X = x * G + 5 * y * G` collapses to `X = (x + 5 * y) * G`, and has `p` distinct witnesses `[x, y]`, each trivial to derive from any other. Similarly, the pair of terms `x * H - x * H` cancels for every value of `x`, and constrains nothing. It is the responsibility of the caller to provide non-trivial relations. Some effort in this direction is made in {{instance-validation}} (such as rejection of trivial images), however this will not cover all cases. Applications **MUST** handle degenerate equations before calling the prover and verifier.
+An instance may have many valid witnesses. For example, `X = x * G + 5 * y * G` collapses to `X = (x + 5 * y) * G`, and has `p` distinct witnesses `[x, y]` trivial from one another. Likewise, `x * H - x * H` is valid for any `x`. In general, the witnesses of an instance form a coset of the kernel of `M`, and a proof establishes knowledge of a witness only up to that kernel. It is the caller's responsibility to choose relations whose kernel is trivial, or for which finding a non-zero kernel element is computationally hard.
 
 The same holds for specific requirements on individual elements. For example, when `H` is the auxiliary generator of a Pedersen commitment, the caller must ensure that `H` is not the identity and that the committer knows no discrete-logarithm relation between `H` and `G`.
 
@@ -1622,7 +1621,6 @@ Deserialization fails on the SEC1 uncompressed prefix 0x04.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A1
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -1906,9 +1904,8 @@ NargString = ""
 Expected = accept
 ~~~
 
-Instance validation fails because scalar index 1 appears in no equation,
-so its column is the identity (check 10); the proof satisfies the
-verification equations, so rejection must come from instance validation.
+The instance and proof are accepted even though scalar index 1 appears
+in no equation.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/E1
@@ -1931,15 +1928,14 @@ NargString =
   1d53c677da45813656460981b5486f84b75cac23d94fd31d62b1b700f5c0ac94
   f5a9a8aff056ca55160b48736276aa8c5d6cdc502147814b99bad208d3e9cdfc
   ef
-Expected = reject
+Expected = accept
 ~~~
 
-Instance validation fails on the same instance, here with the
-unconstrained `response[1]` perturbed.
+Because scalar index 1 is unconstrained, changing `response[1]` in a valid
+proof produces another valid proof.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/E1b
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -1958,15 +1954,14 @@ NargString =
   1d53c677da45813656460981b5486f84b75cac23d94fd31d62b1b700f5c0ac94
   f6a9a8aff056ca55160b48736276aa8c5d6cdc502147814b99bad208d3e9cdfc
   ef
-Expected = reject
+Expected = accept
 ~~~
 
-Instance validation fails if the image terms X + (-X) sum to the
-identity (check 9).
+The instance and proof are accepted when the image terms X + (-X) sum to
+the identity.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/E2
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -1982,16 +1977,13 @@ NargString =
   022fb88456a6a7f8d974b129ec99f3745ffd9e3dcbae9771815571d4c4087a12
   088aa155e5f5e22708f62eec3e7425026489340ed065e835229f1a5010637696
   d9
-Expected = reject
+Expected = accept
 ~~~
 
-The padded identity at element index 2 decodes successfully. Instance
-validation fails because scalar index 1 has an identity effective base
-in every equation (check 10).
+An instance containing the identity element is accepted.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/E3
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -2009,7 +2001,7 @@ NargString =
   5fd2995d319c4066ae5a6e462b6df73d7a3fa96528f6df4f06427792f5fbf918
   173d803b926c49616e4505826af6862afd0746974c0cc0305f57a35580738a76
   8e
-Expected = reject
+Expected = accept
 ~~~
 
 Instance validation fails if a term references element index 3 while a
@@ -2865,7 +2857,6 @@ Deserialization fails if the compression bit is cleared.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3145,9 +3136,8 @@ NargString = ""
 Expected = accept
 ~~~
 
-Instance validation fails because scalar index 1 appears in no equation,
-so its column is the identity (check 10); the proof satisfies the
-verification equations, so rejection must come from instance validation.
+The instance and proof are accepted even though scalar index 1 appears
+in no equation.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E1
@@ -3171,15 +3161,14 @@ NargString =
   0f5a45255b5fef90d256e8db2a3bcbba66858f9cdea27fe6bc9cfbfe2e4eca09
   bb6d4d55df818226c6bdb9dab30f31522a273883c88ffb850eaaba4771dff310
   13c9967e133f399633cab20cc4e252cc
-Expected = reject
+Expected = accept
 ~~~
 
-Instance validation fails on the same instance, here with the
-unconstrained `response[1]` perturbed.
+Because scalar index 1 is unconstrained, changing `response[1]` in a valid
+proof produces another valid proof.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E1b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3199,15 +3188,14 @@ NargString =
   0f5a45255b5fef90d256e8db2a3bcbba66858f9cdea27fe6bc9cfbfe2e4eca09
   bb6d4d55df818226c6bdb9dab30f31532a273883c88ffb850eaaba4771dff310
   13c9967e133f399633cab20cc4e252cc
-Expected = reject
+Expected = accept
 ~~~
 
-Instance validation fails if the image terms X + (-X) sum to the
-identity (check 9).
+The instance and proof are accepted when the image terms X + (-X) sum to
+the identity.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E2
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3224,16 +3212,13 @@ NargString =
   8bf4a4e7cca2a2f88859d0b012289500a49db0b5e4e5df3d778248435ed8b51d
   0fb3ca489c9f45e8811bb4cc8d0096f96ad6f36b97912382f39758d4e9f591a8
   c1d24c1f3d42a2535161c7b7a9c556a3
-Expected = reject
+Expected = accept
 ~~~
 
-The identity at element index 2 decodes successfully. Instance
-validation fails because scalar index 1 has an identity effective base
-in every equation (check 10).
+An instance containing the identity element is accepted.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E3
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3251,7 +3236,7 @@ NargString =
   089d6d9b33116aebdab2972d0cb6db130e30cc66fcdf68ad4c1738b178949d26
   13d1da71694e047813cc6ae1fca5233927cda7474b204eb305b1a34bd03641e0
   2c6d7bfc0ebb26b1ad58c6721af9c04d
-Expected = reject
+Expected = accept
 ~~~
 
 Instance validation fails if a term references element index 3 while a
