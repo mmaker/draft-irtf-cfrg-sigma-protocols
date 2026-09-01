@@ -364,13 +364,15 @@ Group elements are upper-case (`G`, `X`, `M`) and scalars lower-case (`x`, `s`).
 
 `serialize(elements: list[Group])` and `deserialize(buffer)` convert `N` group elements into a fixed-length `Ne * N`-byte encoding, where `Ne` is fixed per ciphersuite ({{ciphersuites}}).
 
-Deserialization **MUST** fail on invalid or non-canonical encodings. The identity element has a fixed-length encoding as specified in {{fiat-shamir}}.
+`Group` values are assumed to be valid elements of the prime-order group. Deserialization **MUST** fail on invalid or non-canonical encodings.
 
 ### Scalars {#scalar}
 
 A `Scalar` is an element of the group's *scalar field*, the prime field of integers modulo the group order `p`. Addition and multiplication are written `+` and `*` via operator overloading.
 
 `serialize(scalars: list[Scalar])` and `deserialize(buffer)` batch convert between `N` scalars and their canonical, fixed-length `Ns * N`-byte encoding.
+
+`Scalar` values are assumed to be integers in `[0, p)`. A constructor from an integer **MUST** fail unless the integer is in this range, and deserialization **MUST** fail on non-canonical encodings. Arithmetic operations reduce their results modulo `p`.
 
 Sampling a random scalar takes two steps: obtaining high-quality entropy via a CSPRNG (e.g., `getrandom()`; see {{?RFC4086}} for randomness requirements), and reducing the resulting bytes to a scalar. It is **RECOMMENDED** that the latter be done via `DecodeField` as in {{fiat-shamir}}. Different sampling mechanisms, such as the wide reduction of `hash_to_field` ({{Section 5.2 of ?RFC9380}}) and the integer conversion of Appendix A.4.1 of {{FIPS186-5}} do not affect interoperability of proofs. The "discard method" of Appendix A.4.2 of {{FIPS186-5}} **SHOULD NOT** be used {{constant-time}}.
 
@@ -581,10 +583,11 @@ AND composition comes for free for this relation family. To do so, concatenate t
 
 For an instance to be valid, it **MUST** satisfy all below conditions:
 
-3. Every `scalar_index` and every `element_index` is a non-negative integer less than `2^32`; so are `num_equations(instance)`, and each equation's term count and image-term count.
-4. Every element index is less than `num_elements(instance)`. In other words, every index references a group element.
-5. Every element index other than `0` and `1` appears in the terms or image terms of at least one equation; the identity (index `0`) and generator (index `1`) are present in every instance whether or not an equation uses them ({{representation}}).
-Together with check 4, this ensures either `num_elements(instance) == 2` or `num_elements(instance)-1` is the largest referenced element index.
+1. Every `scalar_index` and every `element_index` is a non-negative integer less than `2^32`; so are `num_equations(instance)`, and each equation's term count and image-term count.
+2. Every element index is less than `num_elements(instance)`. In other words, every index references a group element.
+3. Every element index other than `0` and `1` appears in the terms or image terms of at least one equation; the identity (index `0`) and generator (index `1`) are present in every instance whether or not an equation uses them ({{representation}}).
+Together with check 2, this ensures either `num_elements(instance) == 2` or `num_elements(instance)-1` is the largest referenced element index.
+
 The prover **SHOULD** reject an invalid instance, and **MAY** additionally check that `image == map(instance, witness)` before proving; {{privacy-considerations}} and {{instance-security}} state when this check, or a stronger precaution, is required. The verifier **MUST** fail on an invalid instance ({{verifier}}, {{non-interactive}}), either when the instance is constructed or during verification itself.
 
 These checks admit identity images and columns, including `M * x = Y` with `M = 0` and `Y = 0`, or with `M != 0` and `Y = 0`.
@@ -1621,6 +1624,7 @@ Deserialization fails on the SEC1 uncompressed prefix 0x04.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A1
+BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -1909,7 +1913,6 @@ in no equation.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/E1
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -2857,6 +2860,7 @@ Deserialization fails if the compression bit is cleared.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A1
+BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3141,7 +3145,6 @@ in no equation.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable

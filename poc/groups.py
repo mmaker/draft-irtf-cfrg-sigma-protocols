@@ -95,6 +95,23 @@ class PrimeOrderGroup:
     def identity(self):
         return None
 
+    def scalar(self, integer):
+        """Construct a Scalar from its canonical integer representative."""
+        if not 0 <= integer < self.order:
+            raise ValueError("scalar not in canonical range [0, p)")
+        return integer
+
+    def element(self, P):
+        """Construct a Group element from affine coordinates or the identity."""
+        if P is None:
+            return P
+        x, y = P
+        if not (0 <= x < self.p and 0 <= y < self.p) or y * y % self.p != self.rhs(x):
+            raise ValueError("group element is not on the curve")
+        if self.cofactor != 1 and self.mul(self.order, P) is not None:
+            raise ValueError("group element is not in the prime-order subgroup")
+        return P
+
     # -- element codec ({{group-abstraction}}) ------------------------------
 
     def serialize(self, elements):
