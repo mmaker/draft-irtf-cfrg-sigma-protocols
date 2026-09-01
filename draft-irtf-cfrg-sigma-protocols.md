@@ -442,7 +442,7 @@ The instance **MUST** contain, as individually-indexed elements, every group ele
 
 For instance, the verifiable-decryption statement `M + E1 = x * E0` is encoded with the two image terms `(M, 1), (E1, 1)`, never as the single element `F = M + E1`. Otherwise, the same proof will verify for any `F = M' + E1'`, even when `M' != M`. As another example, a statement multiplying a scalar by a sum of elements, such as `Y = x * (E0 + E1)`, is expressed by repeating the scalar index across terms, as `terms = [(0, 1, 1), (0, 2, 1)]`, never as the single element `K = E0 + E1`. An element may appear multiple times in the same equation, even with the same coefficient and scalar.
 
-Every group element index **MUST** have an associated group element. Every element **MUST** appear in the terms or image terms of at least one equation, except for the generator (index 0), which is present in every instance whether or not an equation uses it. Every scalar index **MUST** appear in at least one term, else the corresponding response is accepted unchecked.
+Every group element index **MUST** have an associated group element. Every element **MUST** appear in the terms or image terms of at least one equation, except for the generator (index 0), which is present in every instance whether or not an equation uses it.
 
 For a valid instance, let:
 
@@ -453,6 +453,8 @@ num_scalars(instance)   = max((s + 1 for eq in instance.equations
                                for (s, _, _) in eq.terms),
                               default=0)
 ~~~
+
+Scalar indices need not be contiguous. Trailing unused scalar variables are not part of the instance.
 
 The number of group elements is independent of the number of equations. For instance, Chaum-Pedersen has `num_elements = 4`, `num_equations = 2`.
 
@@ -502,7 +504,7 @@ Relation ChaumPedersen(H, X, Y):
     Y = x * H
 ~~~
 
-The relation parameters are the public values of the statement. A parameter whose name begins with an upper-case letter is a group element, and one whose name begins with a lower-case letter is a public scalar (following {{group-abstraction}}); the names under `Witness:` are the secret scalars. `G` denotes the group generator at element index `0`, and **MUST NOT** appear among the relation parameters. Every other name used in `Equations:` is declared exactly once, as a parameter or under `Witness:`. A declaration **MUST** compile to a valid instance ({{instance-validation}}). All elements and witness scalars **MUST** be used ({{representation}}).
+The relation parameters are the public values of the statement. A parameter whose name begins with an upper-case letter is a group element, and one whose name begins with a lower-case letter is a public scalar (following {{group-abstraction}}); the names under `Witness:` are the secret scalars. `G` denotes the group generator at element index `0`, and **MUST NOT** appear among the relation parameters. Every other name used in `Equations:` is declared exactly once, as a parameter or under `Witness:`. A declaration **MUST** compile to a valid instance ({{instance-validation}}).
 
 Each equation is an equality between two linear combinations. Each term is the product of an optional *coefficient*, an optional witness scalar, and exactly one element name. Every equation **MUST** be linear in the witness. A coefficient is a public constant of the statement evaluated in the scalar field before compilation. An omitted coefficient is `1`, and a leading `-` on a term negates its coefficient. Expressions in parentheses distribute before the term rules apply: `2 * r * (X1 - X2)` denotes `2 * r * X1 - 2 * r * X2`.
 
@@ -578,7 +580,6 @@ For an instance to be valid, it **MUST** satisfy all below conditions:
 4. Every element index is less than `num_elements(instance)`. In other words, every index references a group element.
 5. Every element index other than `0` appears in the terms or image terms of at least one equation; the generator (index `0`) is present in every instance whether or not an equation uses it ({{representation}}).
 Together with check 4, this ensures `num_elements(instance)-1` is the largest referenced element index.
-6. Every scalar index appears in the terms of at least one equation.
 7. `num_elements(instance) > 0`, and `instance.elements[0]` is the group generator `Group.generator()` ({{representation}}).
 8. No element of `instance.elements` is the identity element.
 9. No element of `image(instance)` is the identity element: an equation whose image evaluates to the identity is satisfied by the all-zero witness, so a proof of it attests nothing.
@@ -950,7 +951,9 @@ The batching randomness elements **MAY** be replaced by the successive powers `1
 
 # Efficiency Considerations {#efficiency-considerations}
 
-Constant arithmetic operations **MAY** be preprocessed, provided the security requirements of {{representation}} hold: evaluation-time precomputation, such as fixed-base multiplication tables, is safe; registering a precomputed linear combination as a new instance element is not.
+Constant arithmetic operations **MAY** be preprocessed, provided the security requirements of {{representation}} hold. For example, implementations may use fixed-base multiplication tables or skip arithmetic for unused scalar variables and zero-coefficient terms (e.g., `0 * x * G`).
+
+Because `num_scalars(instance)` is determined by the largest scalar index, a sparse high index can make responses and NARG strings very large. Implementations **SHOULD** enforce application-specific limits before allocating resources.
 
 Multi-scalar multiplication (MSM) algorithms can help evaluate `map(instance, scalars)` ({{map-evaluation}}) and the verification equation. For example, the verifier of {{verifier}} is specified as the equality `map(instance, response) == commitment + challenge * image(instance)`, evaluated as two separate vectors for clarity. Implementations **MAY** instead verify each equation `i` by checking that `commitment[i] + challenge * image(instance)[i] - sum(response[j] * M[i][j] for j in 0, ..., num_scalars(instance) - 1)` is `identity()`, accumulating all terms in a single MSM per equation. Prioritizing field operations, by evaluating expressions over terms and scalar coefficients, will be faster than computing and summing each term individually.
 
@@ -1899,9 +1902,9 @@ NargString = ""
 Expected = accept
 ~~~
 
-Instance validation fails if scalar index 1 appears in no equation
-(check 6); the proof satisfies the verification equations, so rejection
-must come from instance validation.
+Instance validation fails because scalar index 1 appears in no equation,
+so its column is the identity (check 10); the proof satisfies the
+verification equations, so rejection must come from instance validation.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/E1
@@ -3138,9 +3141,9 @@ NargString = ""
 Expected = accept
 ~~~
 
-Instance validation fails if scalar index 1 appears in no equation
-(check 6); the proof satisfies the verification equations, so rejection
-must come from instance validation.
+Instance validation fails because scalar index 1 appears in no equation,
+so its column is the identity (check 10); the proof satisfies the
+verification equations, so rejection must come from instance validation.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E1
