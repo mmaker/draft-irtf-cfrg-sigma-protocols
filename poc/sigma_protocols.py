@@ -2,7 +2,7 @@
 
 The linear-relation representation ({{representation}}) with its
 coefficient-carrying sparse serialization ({{serialize-linear-relations}}),
-instance validation ({{instance-validation}}, checks 1-10), the interactive
+instance validation ({{instance-validation}}), the interactive
 Sigma Protocol ({{sigma-protocol-group}}), the Fiat-Shamir challenge of
 {{challenge-derivation}} (DeriveSessionID -> DS.Init -> absorb
 SerializeLinearRelation -> absorb commitment -> DecodeField(Squeeze(Ns +
@@ -115,7 +115,7 @@ def image(inst):
     return out
 
 
-# --- Instance validation ({{instance-validation}}), checks 1-10 ------------
+# --- Instance validation ({{instance-validation}}) -------------------------
 
 def validate_instance(inst):
     g = inst.group
@@ -144,20 +144,6 @@ def validate_instance(inst):
             referenced.add(ei)
     if any(i not in referenced for i in range(2, n_el)):        # 5
         return False
-    if any(P is None for P in image(inst)):                     # 9
-        return False
-    for si in range(num_scalars(inst)):                         # 10
-        for eq in eqs:
-            acc = g.identity()
-            hit = False
-            for (s, ei, coeff) in eq.terms:
-                if s == si:
-                    hit = True
-                    acc = g.add(acc, g.mul(coeff % g.order, element(inst, ei)))
-            if hit and acc is not None:
-                break
-        else:
-            return False
     return True
 
 
@@ -443,6 +429,10 @@ if __name__ == "__main__":
         assert validate_instance(identity)
         assert parse_statement(
             g, serialize_linear_relation(identity)).elements == identity.elements
+        assert validate_instance(LinearRelation(
+            g, [g.identity(), g.generator()], [Equation([], [(0, 1, 0)])]))
+        assert validate_instance(LinearRelation(
+            g, [g.identity(), g.generator()], [Equation([], [(0, 1, 1)])]))
 
         # Schnorr end to end, both flavors, plus one tamper each. One tag
         # per flavor, carrying the flavor marker and the ciphersuite
