@@ -112,8 +112,6 @@ def image(inst):
 def validate_instance(inst):
     g = inst.group
     eqs = inst.equations
-    if any(len(eq.terms) == 0 or len(eq.image) == 0 for eq in eqs):  # 2
-        return False
     bound = 2 ** 32                                              # 3
     if len(eqs) >= bound:
         return False
@@ -208,8 +206,6 @@ def parse_statement(group, buf):
     max_index = 0
     for _ in range(n_eq):
         n_img = read_u32()
-        if n_img == 0:
-            raise InstanceError("empty image")
         img = []
         for _ in range(n_img):
             ei = read_u32()
@@ -217,8 +213,6 @@ def parse_statement(group, buf):
             img.append((ei, c))
             max_index = max(max_index, ei)
         n_terms = read_u32()
-        if n_terms == 0:
-            raise InstanceError("empty terms")
         terms = []
         for _ in range(n_terms):
             si = read_u32()
@@ -441,6 +435,9 @@ if __name__ == "__main__":
         assert validate_instance(empty)
         assert parse_statement(g, serialize_linear_relation(empty)).equations == []
         assert not validate_instance(LinearRelation(g, [], []))
+        constant = LinearRelation(
+            g, [g.generator()], [Equation([(0, 1)], [])])
+        assert validate_instance(constant)
 
         # Schnorr end to end, both flavors, plus one tamper each. One tag
         # per flavor, carrying the flavor marker and the ciphersuite
