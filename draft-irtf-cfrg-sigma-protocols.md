@@ -421,7 +421,7 @@ A `LinearRelation` is the instance for the Sigma Protocol. It fixes the linear m
 class LinearRelation:
   elements: list[Group]
     # non-empty; elements[0] is fixed to Group.generator()
-  equations: list[Equation]    # non-empty
+  equations: list[Equation]
 
 class Equation:
   image: list[(int, Scalar)]
@@ -436,7 +436,7 @@ The `image` terms (the left-hand side) are pairs `(element_index, coeff)`. The i
 
 The `terms` (the right-hand side) are triplets `(scalar_index, element_index, coeff)`. Each `coeff` is a scalar ({{scalar}}) fixed by the instance.
 
-A `LinearRelation` **MUST** have at least one equation, and every equation's `image` and `terms` **MUST** be non-empty. A constant of the statement (an element carrying no witness scalar) is encoded as an image term ({{relation-notation}}). It **MUST NOT** be encoded as a right-hand side term whose witness scalar is "fixed" to `1`. A coefficient **MAY** be zero.
+Every equation's `image` and `terms` **MUST** be non-empty. A constant of the statement (an element carrying no witness scalar) is encoded as an image term ({{relation-notation}}). It **MUST NOT** be encoded as a right-hand side term whose witness scalar is "fixed" to `1`. A coefficient **MAY** be zero.
 
 The instance **MUST** contain, as individually-indexed elements, every group element on which the statement depends. In particular, all group elements processed by the verifier **MUST** appear in the statement, else the resulting argument is malleable across its preimages ({{sigma-ni-security}}).
 
@@ -449,8 +449,9 @@ For a valid instance, let:
 ~~~
 num_elements(instance)  = len(instance.elements)
 num_equations(instance) = len(instance.equations)
-num_scalars(instance)   = 1 + max(s for eq in instance.equations
-                                    for (s, _, _) in eq.terms)
+num_scalars(instance)   = max((s + 1 for eq in instance.equations
+                               for (s, _, _) in eq.terms),
+                              default=0)
 ~~~
 
 The number of group elements is independent of the number of equations. For instance, Chaum-Pedersen has `num_elements = 4`, `num_equations = 2`.
@@ -573,7 +574,6 @@ AND composition comes for free for this relation family. To do so, concatenate t
 
 For an instance to be valid, it **MUST** satisfy all below conditions:
 
-1. The instance has at least one equation: `num_equations(instance) > 0`.
 2. Every equation in `instance.equations` has a non-empty `terms` list and a non-empty `image` list.
 3. Every `scalar_index` and every `element_index` is a non-negative integer less than `2^32`; so are `num_equations(instance)`, and each equation's term count and image-term count.
 4. Every element index is less than `num_elements(instance)`. In other words, every index references a group element.
@@ -1887,6 +1887,19 @@ NargString =
 Expected = reject
 ~~~
 
+The empty relation, with no equations and no image, is valid.
+
+~~~
+Id = sigma-protocols/p256/empty_relation/batchable/E0
+Function = SigmaProof
+Ciphersuite = sigma-proofs_Shake128_P256
+Flavor = batchable
+Tag = empty_relation-DSFS-with-sigma-proofs_Shake128_P256
+Instance = 00000000
+NargString = ""
+Expected = accept
+~~~
+
 Instance validation fails if scalar index 1 appears in no equation
 (check 6); the proof satisfies the verification equations, so rejection
 must come from instance validation.
@@ -3111,6 +3124,19 @@ NargString =
   0000000000000000000000000000000000000000000000000000000000000000
   0000000000000000000000000000000000000000000000000000000000000000
 Expected = reject
+~~~
+
+The empty relation, with no equations and no image, is valid.
+
+~~~
+Id = sigma-protocols/bls12381/empty_relation/batchable/E0
+Function = SigmaProof
+Ciphersuite = sigma-proofs_Shake128_BLS12381
+Flavor = batchable
+Tag = empty_relation-DSFS-with-sigma-proofs_Shake128_BLS12381
+Instance = 00000000
+NargString = ""
+Expected = accept
 ~~~
 
 Instance validation fails if scalar index 1 appears in no equation
