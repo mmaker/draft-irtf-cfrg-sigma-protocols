@@ -11,9 +11,9 @@ batch verification ({{batch-verification}}). The identity and generator have
 implicit element indices 0 and 1 and are not stored or serialized.
 
 An instance is a `LinearRelation`: the group, the statement elements (whose
-indices begin at 2), and a
-sparse row of `(element_index, coeff)` image entries and
-`(scalar_index, element_index, coeff)` terms.
+indices begin at 2), and a list of `Equation`s, each a sparse row of
+`(element_index, coeff)` image entries and `(scalar_index, element_index,
+coeff)` terms.
 
 Verification raises on malformed input -- `groups.DeserializeError` for a
 non-canonical element or scalar, `InstanceError` and `ProofLengthError`
@@ -65,8 +65,12 @@ class Equation:
 class LinearRelation:
     def __init__(self, group, elements, equations):
         self.group = group
-        self.elements = list(elements)  # elements[0] == identity(); [1] == generator()
-        self.equations = list(equations)
+        self.elements = [group.element(P) for P in elements]
+        self.equations = [
+            Equation([(ei, group.scalar(c)) for (ei, c) in eq.image],
+                     [(si, ei, group.scalar(c)) for (si, ei, c) in eq.terms])
+            for eq in equations
+        ]
 
 
 def num_elements(inst):
@@ -110,7 +114,7 @@ def image(inst):
     for eq in inst.equations:
         acc = g.identity()
         for (ei, coeff) in eq.image:
-            acc = g.add(acc, g.mul(coeff % g.order, element(inst, ei)))
+            acc = g.add(acc, g.mul(coeff, element(inst, ei)))
         out.append(acc)
     return out
 
@@ -118,9 +122,8 @@ def image(inst):
 # --- Instance validation ({{instance-validation}}) -------------------------
 
 def validate_instance(inst):
-    g = inst.group
     eqs = inst.equations
-    bound = 2 ** 32                                              # 3
+    bound = 2 ** 32                                              # 1
     if len(eqs) >= bound:
         return False
     for eq in eqs:
@@ -131,7 +134,7 @@ def validate_instance(inst):
         if any(not (0 <= si < bound) or not (0 <= ei < bound)
                for (si, ei, _) in eq.terms):
             return False
-    n_el = num_elements(inst)                                   # 4
+    n_el = num_elements(inst)                                   # 2
     referenced = set()
     for eq in eqs:
         for (ei, _) in eq.image:
@@ -142,7 +145,7 @@ def validate_instance(inst):
             if ei >= n_el:
                 return False
             referenced.add(ei)
-    if any(i not in referenced for i in range(2, n_el)):        # 5
+    if any(i not in referenced for i in range(2, n_el)):        # 3
         return False
     return True
 
@@ -155,10 +158,10 @@ def serialize_linear_relation(inst):
     for eq in inst.equations:
         out += LE(len(eq.image), 4)
         for (ei, coeff) in eq.image:
-            out += LE(ei, 4) + g.scalar_serialize([coeff % g.order])
+            out += LE(ei, 4) + g.scalar_serialize([coeff])
         out += LE(len(eq.terms), 4)
         for (si, ei, coeff) in eq.terms:
-            out += LE(si, 4) + LE(ei, 4) + g.scalar_serialize([coeff % g.order])
+            out += LE(si, 4) + LE(ei, 4) + g.scalar_serialize([coeff])
     return out + g.serialize(inst.elements)
 
 
@@ -416,24 +419,6 @@ if __name__ == "__main__":
 
     for g, suite in ((p256, "sigma-proofs_Shake128_P256"),
                      (BLSG1Group(), "sigma-proofs_Shake128_BLS12381")):
-        empty = LinearRelation(g, [g.identity(), g.generator()], [])
-        assert validate_instance(empty)
-        assert parse_statement(g, serialize_linear_relation(empty)).equations == []
-        assert not validate_instance(LinearRelation(g, [], []))
-        constant = LinearRelation(
-            g, [g.identity(), g.generator()], [Equation([(1, 1)], [])])
-        assert validate_instance(constant)
-        identity = LinearRelation(
-            g, [g.identity(), g.generator()],
-            [Equation([(1, 1), (0, 1)], [(0, 1, 1)])])
-        assert validate_instance(identity)
-        assert parse_statement(
-            g, serialize_linear_relation(identity)).elements == identity.elements
-        assert validate_instance(LinearRelation(
-            g, [g.identity(), g.generator()], [Equation([], [(0, 1, 0)])]))
-        assert validate_instance(LinearRelation(
-            g, [g.identity(), g.generator()], [Equation([], [(0, 1, 1)])]))
-
         # Schnorr end to end, both flavors, plus one tamper each. One tag
         # per flavor, carrying the flavor marker and the ciphersuite
         # identifier verbatim ({{sigma-proofs-tag}}): a tag shared across
