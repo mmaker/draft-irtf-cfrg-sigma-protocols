@@ -774,9 +774,8 @@ Note that a prime field is the case `m = 1`, in which case `SerializeField` is e
 
 A group element is serialized using the group's element-serialization function.
 
-For many prime-order elliptic-curve groups, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of {{SEC1}}. All non-trivial group elements have exactly one `Ne`-byte representation. The value of `Ne` and the concrete conversion are fixed by the ciphersuite.
+For many prime-order elliptic-curve groups, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of {{SEC1}}. This document alters {{SEC1}} serialization: uncompressed and hybrid encodings are forbidden, so the only accepted initial octets are `0x00`, `0x02`, and `0x03`; the identity is encoded as `Ne` zero octets instead of {{SEC1}}'s single `0x00` octet. Restricting the accepted initial octets guarantees unique serialization; otherwise, an adversary could observe an honest proof and produce a different valid proof for the same statement without knowing the witness. Padding the identity element removes branching from the parsing of the NARG string.
 
-The {{SEC1}} serialization of the identity element (the single byte `0x00`) **SHOULD** be rejected to facilitate deserialization ({{deserialization}}).
 The ristretto255 and decaf448 {{?RFC9496}} identity encodings have a distinct, fixed-length `Ne`-byte encoding.
 
 ## Deserialization
@@ -877,9 +876,9 @@ The deserialization **MUST** match the pinned serialization ({{serialize-field}}
 
 ### Elliptic-curve group elements
 
-Read the next `Ne` bytes and convert them to a group element using the group's element-deserialization function. Deserialization **MUST** perform the ciphersuite's input-validation steps, **SHOULD** reject the identity element ({{serialize-ec-point}}), and fail unless the input is the canonical encoding of a valid group element.
+Read the next `Ne` bytes and convert them to a group element using the group's element-deserialization function. Deserialization **MUST** perform the ciphersuite's input-validation steps and fail unless the input is the canonical encoding of a valid group element.
 
-Note that for elliptic curves defined in {{SEC1}}, decoding is the Octet-String-to-Elliptic-Curve-Point conversion, which checks that the encoding is well-formed and that the point lies on the curve, and returns "invalid" otherwise. The single-byte `0x00` encoding of the identity is not a valid `Ne`-byte input and **SHOULD** be rejected.
+For elliptic curves defined in {{SEC1}}, deserialization mirrors {{serialize-ec-point}}: only initial octets `0x00`, `0x02`, and `0x03` are accepted, and `0x00` only when all `Ne` bytes are zero.
 
 # Efficiency considerations {#efficiency}
 
@@ -1758,4 +1757,3 @@ Narg =
   00
 Expected = reject
 ~~~
-
