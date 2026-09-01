@@ -136,9 +136,6 @@ def validate_instance(inst):
             referenced.add(ei)
     if any(i not in referenced for i in range(1, n_el)):        # 5
         return False
-    used_scalars = {si for eq in eqs for (si, _, _) in eq.terms}  # 6
-    if any(j not in used_scalars for j in range(num_scalars(inst))):
-        return False
     if n_el == 0 or inst.elements[0] != g.generator():          # 7
         return False
     if any(P is None for P in inst.elements):                   # 8
