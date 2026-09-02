@@ -486,9 +486,7 @@ Table of Contents
    1, and *MUST NOT* appear among the relation parameters.  Every other
    name used in Equations: is declared exactly once, as a parameter or
    under Witness:. A declaration *MUST* compile to a valid instance
-   (Section 3.5).  All element parameters *MUST* be used (Section 3.2),
-   and every declared witness scalar *MUST* appear in at least one
-   equation.
+   (Section 3.5).
 
    Each equation is an equality between two linear combinations.  Each
    term is the product of an optional _coefficient_, an optional witness
