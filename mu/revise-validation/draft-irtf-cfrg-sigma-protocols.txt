@@ -232,7 +232,7 @@ Table of Contents
 2.2.  Randomized algorithms
 
    The prover commitment algorithm requires fresh, single-use randomness
-   to ensure privacy of the witness.  This document denotes with rng a
+   for zero-knowledge.  This document denotes with rng a
    cryptographically secure random number generator (CSPRNG), and uses
    Group.random_scalar(rng) to denote sampling a uniformly random
    element of the scalar field, similarly to RandomScalar() of
@@ -298,15 +298,14 @@ Table of Contents
 
    A linear map is a matrix-vector product image = M * witness, where M
    is a matrix of group elements and witness is a vector of scalars.
-
-   M and image together form the statement (the _instance_), while
-   witness is the secret.  The _relation_ (the set of instance-witness
-   pairs of which knowledge is proven) is:
+   The _relation_ proven is:
 
    R := { ((M, image), witness) : image = M * witness }
 
-   image is the result of the multi-scalar multiplication of each matrix
-   row with the witness.  For i in 0, ..., num_equations - 1
+   M and image together form the _instance_, while witness is the
+   secret. image is the result of the multi-scalar multiplication of
+   each matrix row with the witness, that is, for i in 0, ...,
+   num_equations - 1
 
    image[i] = sum(witness[j] * M[i][j] for j in 0, ..., num_scalars - 1)
 
@@ -333,7 +332,7 @@ Table of Contents
    H are Okamoto-Schnorr proofs [Okamoto92].
 
    Affine equations with constant terms can be expressed directly
-   through image terms and coefficients (Section 3.2); more elaborate
+   through image terms and coefficients (Section 3.2).  More elaborate
    relations, such as quadratic equations, reduce to this same form by
    letting instance elements themselves serve as bases (Section 3.4).
 
@@ -425,11 +424,9 @@ Table of Contents
                                  default=0)
 
    Scalar indices need not be contiguous.  Trailing unused scalar
-   variables are not part of the instance.
-
-   The number of group elements is independent of the number of
-   equations.  For instance, Chaum-Pedersen has num_elements = 5,
-   num_equations = 2.
+   variables are not part of the instance.  The number of group elements
+   is independent of the number of equations.  For instance, Chaum-
+   Pedersen has num_elements = 5, num_equations = 2.
 
 3.3.  Map evaluation
 
@@ -447,10 +444,8 @@ Table of Contents
    6.   out.append(acc)
    7. return out
 
-   image(instance) denotes the evaluation of each equation's left-hand
-   side: the list of num_equations(instance) group elements whose i-th
-   entry is the sum of coeff * element(instance, element_index) over the
-   image terms of the i-th equation.
+   With image(instance) we denote the evaluation of each equation's
+   left-hand side.
 
 3.4.  Specifying the relation
 
@@ -634,13 +629,12 @@ Table of Contents
 3.6.  Serialization
 
    A LinearRelation is serialized as a sparse matrix encoded in row-
-   major order: each equation's image terms, then its right-hand side
-   terms, each list preceded by its count (Section 3.2), followed by
-   instance.elements.  The implicit identity and generator are not
-   serialized.  Counts and indices are encoded in 4 bytes via LE
-   (Section 2.1).  Coefficients are encoded with the scalar
-   serialization function (Ns bytes each, Section 8).  The encoding is
-   unambiguous and prefix-free.
+   major order.  Serialization involves serializing each equation's
+   image terms, then its right-hand side terms, each preceded by its
+   count (Section 3.2).  At the end, instance.elements are serialized
+   (identity and generator are implicit).  Counts and indices are
+   encoded in 4 bytes via LE (Section 2.1).  Coefficients are encoded
+   with the scalar serialization function (Ns bytes each, Section 8).
 
   SerializeLinearRelation(instance)
 
@@ -680,8 +674,6 @@ Table of Contents
             || Scalar.serialize([1])               # term: x * H
    Group.serialize([H, X, Y])                      # statement elements
 
-   SerializeLinearRelation operates on a LinearRelation as compiled from
-   its declaration, following its equation and term order (Section 3.4).
    The same relation expressed in two different ways (for example,
    swapping two rows of M) will yield different serializations.
 
@@ -817,11 +809,6 @@ Table of Contents
 
 4.4.  Simulator
 
-   Implementations that expose the zero-knowledge simulator
-   (Section 4.1) provide the two algorithms below; they are also what
-   the compact verifier (Section 5) relies on to recover the prover's
-   commitment from (challenge, response).
-
    SimulateResponse(instance, rng) returns as simulated response a
    vector of num_scalars(instance) uniformly random scalars, and as
    simulator state the instance itself.
@@ -839,17 +826,19 @@ Table of Contents
    honest one.  This is the honest-verifier zero-knowledge property
    (Section 7).
 
+   The simulator is also used by the compact verifier (Section 5).
+
 5.  Non-interactive Sigma Protocols
 
    The Fiat-Shamir transformation applied to Sigma Protocols yields a
    non-interactive zero-knowledge argument of knowledge.
 
    [fiat-shamir] describes how to instantiate the transformation, for
-   the group and field codecs given.  This section specifies the session
-   identifier binding a proof to its application (Section 5.1), the
-   challenge derivation shared by prover and verifier (Section 5.2), the
-   two non-interactive argument (NARG) string serializations
-   (Section 5.3), and batch verification (Section 5.6).
+   the group and field codecs given.  This section specifies how to
+   select the session identifier (Section 5.1), how to produce a
+   challenge (Section 5.2), two flavors of non-interactive argument
+   (NARG) string serialization (Section 5.3), and batch verification
+   (Section 5.6).
 
 5.1.  Tag and session identifier
 

@@ -1439,7 +1439,7 @@ svg {
         <h3 id="name-randomized-algorithms">
 <a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-randomized-algorithms" class="section-name selfRef">Randomized algorithms</a>
         </h3>
-<p id="section-2.2-1">The prover commitment algorithm requires fresh, single-use randomness to ensure privacy of the witness. This document denotes with <code>rng</code> a cryptographically secure random number generator (CSPRNG), and uses <code>Group.random_scalar(rng)</code> to denote sampling a uniformly random element of the scalar field, similarly to <code>RandomScalar()</code> of <span><a href="https://rfc-editor.org/rfc/rfc9497#section-2.1" class="relref">Section 2.1</a> of [<a href="#RFC9497" class="cite xref">RFC9497</a>]</span>.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
+<p id="section-2.2-1">The prover commitment algorithm requires fresh, single-use randomness for zero-knowledge. This document denotes with <code>rng</code> a cryptographically secure random number generator (CSPRNG), and uses <code>Group.random_scalar(rng)</code> to denote sampling a uniformly random element of the scalar field, similarly to <code>RandomScalar()</code> of <span><a href="https://rfc-editor.org/rfc/rfc9497#section-2.1" class="relref">Section 2.1</a> of [<a href="#RFC9497" class="cite xref">RFC9497</a>]</span>.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="group-abstraction">
@@ -1485,31 +1485,30 @@ svg {
         <h3 id="name-linear-map">
 <a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-linear-map" class="section-name selfRef">Linear map</a>
         </h3>
-<p id="section-3.1-1">A linear map is a matrix-vector product <code>image = M * witness</code>, where <code>M</code> is a matrix of group elements and <code>witness</code> is a vector of scalars.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
-<p id="section-3.1-2"><code>M</code> and <code>image</code> together form the statement (the <em>instance</em>), while <code>witness</code> is the secret. The <em>relation</em> (the set of instance-witness pairs of which knowledge is proven) is:<a href="#section-3.1-2" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-3.1-3">
+<p id="section-3.1-1">A linear map is a matrix-vector product <code>image = M * witness</code>, where <code>M</code> is a matrix of group elements and <code>witness</code> is a vector of scalars. The <em>relation</em> proven is:<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.1-2">
 <pre>
 R := { ((M, image), witness) : image = M * witness }
-</pre><a href="#section-3.1-3" class="pilcrow">¶</a>
+</pre><a href="#section-3.1-2" class="pilcrow">¶</a>
 </div>
-<p id="section-3.1-4"><code>image</code> is the result of the multi-scalar multiplication of each matrix row with the witness. For <code>i</code> in <code>0, ..., num_equations - 1</code><a href="#section-3.1-4" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-3.1-5">
+<p id="section-3.1-3"><code>M</code> and <code>image</code> together form the <em>instance</em>, while <code>witness</code> is the secret. <code>image</code> is the result of the multi-scalar multiplication of each matrix row with the witness, that is, for <code>i</code> in <code>0, ..., num_equations - 1</code><a href="#section-3.1-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.1-4">
 <pre>
 image[i] = sum(witness[j] * M[i][j] for j in 0, ..., num_scalars - 1)
-</pre><a href="#section-3.1-5" class="pilcrow">¶</a>
+</pre><a href="#section-3.1-4" class="pilcrow">¶</a>
 </div>
-<p id="section-3.1-6"><code>num_scalars</code> is the length of <code>witness</code> (the width of <code>M</code>), and <code>num_equations</code> is the number of group elements in <code>image</code> (the height of <code>M</code>).<a href="#section-3.1-6" class="pilcrow">¶</a></p>
-<p id="section-3.1-7">As an example, Schnorr's identification protocol has <code>num_scalars = num_equations = 1</code> and <code>M = [[G]]</code>, where <code>G</code> is the group generator, proving knowledge of the scalar <code>x</code> such that the group element <code>X</code> satisfies <code>X = x * G</code> <span>[<a href="#RFC8235" class="cite xref">RFC8235</a>]</span>.<a href="#section-3.1-7" class="pilcrow">¶</a></p>
-<p id="section-3.1-8">Another example is the Chaum-Pedersen relation <span>[<a href="#ChaumP92" class="cite xref">ChaumP92</a>]</span>: given the group generator <code>G</code> and group elements <code>H</code>, <code>X</code>, <code>Y</code>, the prover shows knowledge of a single scalar <code>x</code> such that <code>X = x * G</code> and <code>Y = x * H</code>. Here <code>num_scalars = 1</code>, <code>num_equations = 2</code>, and:<a href="#section-3.1-8" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-3.1-9">
+<p id="section-3.1-5"><code>num_scalars</code> is the length of <code>witness</code> (the width of <code>M</code>), and <code>num_equations</code> is the number of group elements in <code>image</code> (the height of <code>M</code>).<a href="#section-3.1-5" class="pilcrow">¶</a></p>
+<p id="section-3.1-6">As an example, Schnorr's identification protocol has <code>num_scalars = num_equations = 1</code> and <code>M = [[G]]</code>, where <code>G</code> is the group generator, proving knowledge of the scalar <code>x</code> such that the group element <code>X</code> satisfies <code>X = x * G</code> <span>[<a href="#RFC8235" class="cite xref">RFC8235</a>]</span>.<a href="#section-3.1-6" class="pilcrow">¶</a></p>
+<p id="section-3.1-7">Another example is the Chaum-Pedersen relation <span>[<a href="#ChaumP92" class="cite xref">ChaumP92</a>]</span>: given the group generator <code>G</code> and group elements <code>H</code>, <code>X</code>, <code>Y</code>, the prover shows knowledge of a single scalar <code>x</code> such that <code>X = x * G</code> and <code>Y = x * H</code>. Here <code>num_scalars = 1</code>, <code>num_equations = 2</code>, and:<a href="#section-3.1-7" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.1-8">
 <pre>
 M = [[G],
      [H]]
-</pre><a href="#section-3.1-9" class="pilcrow">¶</a>
+</pre><a href="#section-3.1-8" class="pilcrow">¶</a>
 </div>
-<p id="section-3.1-10">Variants of the Chaum-Pedersen relation are widely used for VRFs <span>[<a href="#RFC9381" class="cite xref">RFC9381</a>]</span> and anonymous tokens <span>[<a href="#RFC9497" class="cite xref">RFC9497</a>]</span>. Proofs of knowledge of the opening <code>(m, r)</code> of a Pedersen commitment <span>[<a href="#Pedersen91" class="cite xref">Pedersen91</a>]</span> <code>C = m * G + r * H</code> are Okamoto-Schnorr proofs <span>[<a href="#Okamoto92" class="cite xref">Okamoto92</a>]</span>.<a href="#section-3.1-10" class="pilcrow">¶</a></p>
-<p id="section-3.1-11">Affine equations with constant terms can be expressed directly through image terms and coefficients (<a href="#representation" class="auto internal xref">Section 3.2</a>); more elaborate relations, such as quadratic equations, reduce to this same form by letting instance elements themselves serve as bases (<a href="#relation-notation" class="auto internal xref">Section 3.4</a>).<a href="#section-3.1-11" class="pilcrow">¶</a></p>
-<p id="section-3.1-12">The group <code>Group</code>, and its generator, are provided by the ciphersuite <a href="#ciphersuites" class="auto internal xref">Section 8</a>. The statement author has the responsibility to select the appropriate <code>M</code>, and this requires care. Computationally-independent bases, sometimes also called <em>auxiliary generators</em>, or <em>nothing up my sleeve (NUMS) generators</em>, may be computed via hash to the curve (<span><a href="https://rfc-editor.org/rfc/rfc9380#section-3" class="relref">Section 3</a> of [<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>).<a href="#section-3.1-12" class="pilcrow">¶</a></p>
+<p id="section-3.1-9">Variants of the Chaum-Pedersen relation are widely used for VRFs <span>[<a href="#RFC9381" class="cite xref">RFC9381</a>]</span> and anonymous tokens <span>[<a href="#RFC9497" class="cite xref">RFC9497</a>]</span>. Proofs of knowledge of the opening <code>(m, r)</code> of a Pedersen commitment <span>[<a href="#Pedersen91" class="cite xref">Pedersen91</a>]</span> <code>C = m * G + r * H</code> are Okamoto-Schnorr proofs <span>[<a href="#Okamoto92" class="cite xref">Okamoto92</a>]</span>.<a href="#section-3.1-9" class="pilcrow">¶</a></p>
+<p id="section-3.1-10">Affine equations with constant terms can be expressed directly through image terms and coefficients (<a href="#representation" class="auto internal xref">Section 3.2</a>). More elaborate relations, such as quadratic equations, reduce to this same form by letting instance elements themselves serve as bases (<a href="#relation-notation" class="auto internal xref">Section 3.4</a>).<a href="#section-3.1-10" class="pilcrow">¶</a></p>
+<p id="section-3.1-11">The group <code>Group</code>, and its generator, are provided by the ciphersuite <a href="#ciphersuites" class="auto internal xref">Section 8</a>. The statement author has the responsibility to select the appropriate <code>M</code>, and this requires care. Computationally-independent bases, sometimes also called <em>auxiliary generators</em>, or <em>nothing up my sleeve (NUMS) generators</em>, may be computed via hash to the curve (<span><a href="https://rfc-editor.org/rfc/rfc9380#section-3" class="relref">Section 3</a> of [<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>).<a href="#section-3.1-11" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="representation">
@@ -1555,8 +1554,7 @@ num_scalars(instance)   = max((s + 1 for eq in instance.equations
                               default=0)
 </pre><a href="#section-3.2-12" class="pilcrow">¶</a>
 </div>
-<p id="section-3.2-13">Scalar indices need not be contiguous. Trailing unused scalar variables are not part of the instance.<a href="#section-3.2-13" class="pilcrow">¶</a></p>
-<p id="section-3.2-14">The number of group elements is independent of the number of equations. For instance, Chaum-Pedersen has <code>num_elements = 5</code>, <code>num_equations = 2</code>.<a href="#section-3.2-14" class="pilcrow">¶</a></p>
+<p id="section-3.2-13">Scalar indices need not be contiguous. Trailing unused scalar variables are not part of the instance. The number of group elements is independent of the number of equations. For instance, Chaum-Pedersen has <code>num_elements = 5</code>, <code>num_equations = 2</code>.<a href="#section-3.2-13" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="map-evaluation">
@@ -1579,7 +1577,7 @@ map(instance, scalars) -&gt; list[Group]
 7. return out
 </pre><a href="#section-3.3-2" class="pilcrow">¶</a>
 </div>
-<p id="section-3.3-3"><code>image(instance)</code> denotes the evaluation of each equation's left-hand side: the list of <code>num_equations(instance)</code> group elements whose <code>i</code>-th entry is the sum of <code>coeff * element(instance, element_index)</code> over the image terms of the <code>i</code>-th equation.<a href="#section-3.3-3" class="pilcrow">¶</a></p>
+<p id="section-3.3-3">With <code>image(instance)</code> we denote the evaluation of each equation's left-hand side.<a href="#section-3.3-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="relation-notation">
@@ -1699,7 +1697,7 @@ Together with check 2, this ensures either <code>num_elements(instance) == 2</co
         <h3 id="name-serialization">
 <a href="#section-3.6" class="section-number selfRef">3.6. </a><a href="#name-serialization" class="section-name selfRef">Serialization</a>
         </h3>
-<p id="section-3.6-1">A <code>LinearRelation</code> is serialized as a sparse matrix encoded in row-major order: each equation's image terms, then its right-hand side terms, each list preceded by its count (<a href="#representation" class="auto internal xref">Section 3.2</a>), followed by <code>instance.elements</code>. The implicit identity and generator are not serialized. Counts and indices are encoded in 4 bytes via <code>LE</code> (<a href="#bytes-and-integers" class="auto internal xref">Section 2.1</a>). Coefficients are encoded with the scalar serialization function (<code>Ns</code> bytes each, <a href="#ciphersuites" class="auto internal xref">Section 8</a>). The encoding is unambiguous and prefix-free.<a href="#section-3.6-1" class="pilcrow">¶</a></p>
+<p id="section-3.6-1">A <code>LinearRelation</code> is serialized as a sparse matrix encoded in row-major order. Serialization involves serializing each equation's image terms, then its right-hand side terms, each preceded by its count (<a href="#representation" class="auto internal xref">Section 3.2</a>). At the end, <code>instance.elements</code> are serialized (identity and generator are implicit). Counts and indices are encoded in 4 bytes via <code>LE</code> (<a href="#bytes-and-integers" class="auto internal xref">Section 2.1</a>). Coefficients are encoded with the scalar serialization function (<code>Ns</code> bytes each, <a href="#ciphersuites" class="auto internal xref">Section 8</a>).<a href="#section-3.6-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3.6-2">
 <pre>
 SerializeLinearRelation(instance)
@@ -1742,7 +1740,7 @@ LE(1, 4) || LE(0, 4) || LE(2, 4)
 Group.serialize([H, X, Y])                      # statement elements
 </pre><a href="#section-3.6-4" class="pilcrow">¶</a>
 </div>
-<p id="section-3.6-5"><code>SerializeLinearRelation</code> operates on a <code>LinearRelation</code> as compiled from its declaration, following its equation and term order (<a href="#relation-notation" class="auto internal xref">Section 3.4</a>). The same relation expressed in two different ways (for example, swapping two rows of <code>M</code>) will yield different serializations.<a href="#section-3.6-5" class="pilcrow">¶</a></p>
+<p id="section-3.6-5">The same relation expressed in two different ways (for example, swapping two rows of <code>M</code>) will yield different serializations.<a href="#section-3.6-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1889,16 +1887,16 @@ Procedure:
         <h3 id="name-simulator">
 <a href="#section-4.4" class="section-number selfRef">4.4. </a><a href="#name-simulator" class="section-name selfRef">Simulator</a>
         </h3>
-<p id="section-4.4-1">Implementations that expose the zero-knowledge simulator (<a href="#core-interface" class="auto internal xref">Section 4.1</a>) provide the two algorithms below; they are also what the compact verifier (<a href="#non-interactive" class="auto internal xref">Section 5</a>) relies on to recover the prover's commitment from <code>(challenge, response)</code>.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
-<p id="section-4.4-2"><code>SimulateResponse(instance, rng)</code> returns as simulated response a vector of <code>num_scalars(instance)</code> uniformly random scalars, and as simulator state the instance itself.<a href="#section-4.4-2" class="pilcrow">¶</a></p>
-<p id="section-4.4-3"><code>SimulateCommitment(state, response, challenge)</code> solves the verification equation (<a href="#verifier" class="auto internal xref">Section 4.3</a>) for the commitment, returning the vector of <code>num_equations(state)</code> group elements<a href="#section-4.4-3" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-4.4-4">
+<p id="section-4.4-1"><code>SimulateResponse(instance, rng)</code> returns as simulated response a vector of <code>num_scalars(instance)</code> uniformly random scalars, and as simulator state the instance itself.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
+<p id="section-4.4-2"><code>SimulateCommitment(state, response, challenge)</code> solves the verification equation (<a href="#verifier" class="auto internal xref">Section 4.3</a>) for the commitment, returning the vector of <code>num_equations(state)</code> group elements<a href="#section-4.4-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.4-3">
 <pre>
 simulated_commitment[i] = map(state, response)[i]
                               - challenge * image(state)[i]
-</pre><a href="#section-4.4-4" class="pilcrow">¶</a>
+</pre><a href="#section-4.4-3" class="pilcrow">¶</a>
 </div>
-<p id="section-4.4-5">Drawing <code>response</code> uniformly at random with <code>SimulateResponse</code> and then computing <code>commitment</code> with <code>SimulateCommitment</code> yields a transcript <code>(commitment, challenge, response)</code> with the same distribution as an honest one. This is the honest-verifier zero-knowledge property (<a href="#security-considerations" class="auto internal xref">Section 7</a>).<a href="#section-4.4-5" class="pilcrow">¶</a></p>
+<p id="section-4.4-4">Drawing <code>response</code> uniformly at random with <code>SimulateResponse</code> and then computing <code>commitment</code> with <code>SimulateCommitment</code> yields a transcript <code>(commitment, challenge, response)</code> with the same distribution as an honest one. This is the honest-verifier zero-knowledge property (<a href="#security-considerations" class="auto internal xref">Section 7</a>).<a href="#section-4.4-4" class="pilcrow">¶</a></p>
+<p id="section-4.4-5">The simulator is also used by the compact verifier (<a href="#non-interactive" class="auto internal xref">Section 5</a>).<a href="#section-4.4-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1909,7 +1907,7 @@ simulated_commitment[i] = map(state, response)[i]
 <a href="#section-5" class="section-number selfRef">5. </a><a href="#name-non-interactive-sigma-proto" class="section-name selfRef">Non-interactive Sigma Protocols</a>
       </h2>
 <p id="section-5-1">The Fiat-Shamir transformation applied to Sigma Protocols yields a non-interactive zero-knowledge argument of knowledge.<a href="#section-5-1" class="pilcrow">¶</a></p>
-<p id="section-5-2"><span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> describes how to instantiate the transformation, for the group and field codecs given. This section specifies the session identifier binding a proof to its application (<a href="#sigma-proofs-tag" class="auto internal xref">Section 5.1</a>), the challenge derivation shared by prover and verifier (<a href="#challenge-derivation" class="auto internal xref">Section 5.2</a>), the two non-interactive argument (NARG) string serializations (<a href="#sigma-narg" class="auto internal xref">Section 5.3</a>), and batch verification (<a href="#batch-verification" class="auto internal xref">Section 5.6</a>).<a href="#section-5-2" class="pilcrow">¶</a></p>
+<p id="section-5-2"><span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> describes how to instantiate the transformation, for the group and field codecs given. This section specifies how to select the session identifier (<a href="#sigma-proofs-tag" class="auto internal xref">Section 5.1</a>), how to produce a challenge (<a href="#challenge-derivation" class="auto internal xref">Section 5.2</a>), two flavors of non-interactive argument (NARG) string serialization (<a href="#sigma-narg" class="auto internal xref">Section 5.3</a>), and batch verification (<a href="#batch-verification" class="auto internal xref">Section 5.6</a>).<a href="#section-5-2" class="pilcrow">¶</a></p>
 <div id="sigma-proofs-tag">
 <section id="section-5.1">
         <h3 id="name-tag-and-session-identifier">
