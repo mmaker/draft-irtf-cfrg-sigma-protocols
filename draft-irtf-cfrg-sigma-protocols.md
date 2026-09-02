@@ -350,7 +350,7 @@ A byte is an 8-bit unsigned integer (an octet), and a *byte string* is a finite 
 
 ## Randomized algorithms {#rng-definition}
 
-The prover commitment algorithm requires fresh, single-use randomness to ensure privacy of the witness. This document denotes with `rng` a cryptographically secure random number generator (CSPRNG), and uses `Group.random_scalar(rng)` to denote sampling a uniformly random element of the scalar field, similarly to `RandomScalar()` of {{Section 2.1 of ?RFC9497}}.
+The prover commitment algorithm requires fresh, single-use randomness for zero-knowledge. This document denotes with `rng` a cryptographically secure random number generator (CSPRNG), and uses `Group.random_scalar(rng)` to denote sampling a uniformly random element of the scalar field, similarly to `RandomScalar()` of {{Section 2.1 of ?RFC9497}}.
 
 ## Group abstraction {#group-abstraction}
 
@@ -382,15 +382,13 @@ This section specifies the statement being proven: the preimage of a linear map 
 
 ## Linear map {#linear-map}
 
-A linear map is a matrix-vector product `image = M * witness`, where `M` is a matrix of group elements and `witness` is a vector of scalars.
-
-`M` and `image` together form the statement (the *instance*), while `witness` is the secret. The _relation_ (the set of instance-witness pairs of which knowledge is proven) is:
+A linear map is a matrix-vector product `image = M * witness`, where `M` is a matrix of group elements and `witness` is a vector of scalars. The _relation_ proven is:
 
 ~~~
 R := { ((M, image), witness) : image = M * witness }
 ~~~
 
-`image` is the result of the multi-scalar multiplication of each matrix row with the witness. For `i` in `0, ..., num_equations - 1`
+`M` and `image` together form the _instance_, while `witness` is the secret. `image` is the result of the multi-scalar multiplication of each matrix row with the witness, that is, for `i` in `0, ..., num_equations - 1`
 
 ~~~
 image[i] = sum(witness[j] * M[i][j] for j in 0, ..., num_scalars - 1)
@@ -409,7 +407,7 @@ M = [[G],
 
 Variants of the Chaum-Pedersen relation are widely used for VRFs {{?RFC9381}} and anonymous tokens {{?RFC9497}}. Proofs of knowledge of the opening `(m, r)` of a Pedersen commitment {{Pedersen91}} `C = m * G + r * H` are Okamoto-Schnorr proofs {{Okamoto92}}.
 
-Affine equations with constant terms can be expressed directly through image terms and coefficients ({{representation}}); more elaborate relations, such as quadratic equations, reduce to this same form by letting instance elements themselves serve as bases ({{relation-notation}}).
+Affine equations with constant terms can be expressed directly through image terms and coefficients ({{representation}}). More elaborate relations, such as quadratic equations, reduce to this same form by letting instance elements themselves serve as bases ({{relation-notation}}).
 
 The group `Group`, and its generator, are provided by the ciphersuite {{ciphersuites}}. The statement author has the responsibility to select the appropriate `M`, and this requires care. Computationally-independent bases, sometimes also called _auxiliary generators_, or _nothing up my sleeve (NUMS) generators_, may be computed via hash to the curve ({{Section 3 of !RFC9380}}).
 
@@ -461,9 +459,7 @@ num_scalars(instance)   = max((s + 1 for eq in instance.equations
                               default=0)
 ~~~
 
-Scalar indices need not be contiguous. Trailing unused scalar variables are not part of the instance.
-
-The number of group elements is independent of the number of equations. For instance, Chaum-Pedersen has `num_elements = 5`, `num_equations = 2`.
+Scalar indices need not be contiguous. Trailing unused scalar variables are not part of the instance. The number of group elements is independent of the number of equations. For instance, Chaum-Pedersen has `num_elements = 5`, `num_equations = 2`.
 
 ## Map evaluation {#map-evaluation}
 
@@ -482,7 +478,7 @@ map(instance, scalars) -> list[Group]
 7. return out
 ~~~
 
-`image(instance)` denotes the evaluation of each equation's left-hand side: the list of `num_equations(instance)` group elements whose `i`-th entry is the sum of `coeff * element(instance, element_index)` over the image terms of the `i`-th equation.
+With `image(instance)` we denote the evaluation of each equation's left-hand side.
 
 ## Specifying the relation {#relation-notation}
 
@@ -596,7 +592,7 @@ These checks admit identity images and columns, including `M * x = Y` with `M = 
 
 ## Serialization {#serialize-linear-relations}
 
-A `LinearRelation` is serialized as a sparse matrix encoded in row-major order: each equation's image terms, then its right-hand side terms, each list preceded by its count ({{representation}}), followed by `instance.elements`. The implicit identity and generator are not serialized. Counts and indices are encoded in 4 bytes via `LE` ({{bytes-and-integers}}). Coefficients are encoded with the scalar serialization function (`Ns` bytes each, {{ciphersuites}}). The encoding is unambiguous and prefix-free.
+A `LinearRelation` is serialized as a sparse matrix encoded in row-major order. Serialization involves serializing each equation's image terms, then its right-hand side terms, each preceded by its count ({{representation}}). At the end, `instance.elements` are serialized (identity and generator are implicit). Counts and indices are encoded in 4 bytes via `LE` ({{bytes-and-integers}}). Coefficients are encoded with the scalar serialization function (`Ns` bytes each, {{ciphersuites}}).
 
 ~~~
 SerializeLinearRelation(instance)
@@ -639,7 +635,7 @@ LE(1, 4) || LE(0, 4) || LE(2, 4)
 Group.serialize([H, X, Y])                      # statement elements
 ~~~
 
-`SerializeLinearRelation` operates on a `LinearRelation` as compiled from its declaration, following its equation and term order ({{relation-notation}}). The same relation expressed in two different ways (for example, swapping two rows of `M`) will yield different serializations.
+The same relation expressed in two different ways (for example, swapping two rows of `M`) will yield different serializations.
 
 # The Sigma Protocol {#sigma-protocol-group}
 
@@ -748,8 +744,6 @@ The verifier **MUST** enforce instance validity (Step 1, see {{instance-validati
 
 ## Simulator {#simulator}
 
-Implementations that expose the zero-knowledge simulator ({{core-interface}}) provide the two algorithms below; they are also what the compact verifier ({{non-interactive}}) relies on to recover the prover's commitment from `(challenge, response)`.
-
 `SimulateResponse(instance, rng)` returns as simulated response a vector of `num_scalars(instance)` uniformly random scalars, and as simulator state the instance itself.
 
 `SimulateCommitment(state, response, challenge)` solves the verification equation ({{verifier}}) for the commitment, returning the vector of `num_equations(state)` group elements
@@ -761,11 +755,13 @@ simulated_commitment[i] = map(state, response)[i]
 
 Drawing `response` uniformly at random with `SimulateResponse` and then computing `commitment` with `SimulateCommitment` yields a transcript `(commitment, challenge, response)` with the same distribution as an honest one. This is the honest-verifier zero-knowledge property ({{security-considerations}}).
 
+The simulator is also used by the compact verifier ({{non-interactive}}).
+
 # Non-interactive Sigma Protocols {#non-interactive}
 
 The Fiat-Shamir transformation applied to Sigma Protocols yields a non-interactive zero-knowledge argument of knowledge.
 
-{{fiat-shamir}} describes how to instantiate the transformation, for the group and field codecs given. This section specifies the session identifier binding a proof to its application ({{sigma-proofs-tag}}), the challenge derivation shared by prover and verifier ({{challenge-derivation}}), the two non-interactive argument (NARG) string serializations ({{sigma-narg}}), and batch verification ({{batch-verification}}).
+{{fiat-shamir}} describes how to instantiate the transformation, for the group and field codecs given. This section specifies how to select the session identifier ({{sigma-proofs-tag}}), how to produce a challenge ({{challenge-derivation}}), two flavors of non-interactive argument (NARG) string serialization ({{sigma-narg}}), and batch verification ({{batch-verification}}).
 
 ## Tag and session identifier {#sigma-proofs-tag}
 
