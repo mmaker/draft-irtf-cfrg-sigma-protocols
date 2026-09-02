@@ -1611,7 +1611,7 @@ Relation ChaumPedersen(H, X, Y):
     Y = x * H
 </pre><a href="#section-3.4-6" class="pilcrow">¶</a>
 </div>
-<p id="section-3.4-7">The relation parameters are the public values of the statement. A parameter whose name begins with an upper-case letter is a group element, and one whose name begins with a lower-case letter is a public scalar (following <a href="#group-abstraction" class="auto internal xref">Section 2.3</a>); the names under <code>Witness:</code> are the secret scalars. <code>G</code> denotes the group generator at element index <code>1</code>, and <strong>MUST NOT</strong> appear among the relation parameters. Every other name used in <code>Equations:</code> is declared exactly once, as a parameter or under <code>Witness:</code>. A declaration <strong>MUST</strong> compile to a valid instance (<a href="#instance-validation" class="auto internal xref">Section 3.5</a>). All elements and witness scalars <strong>MUST</strong> be used (<a href="#representation" class="auto internal xref">Section 3.2</a>).<a href="#section-3.4-7" class="pilcrow">¶</a></p>
+<p id="section-3.4-7">The relation parameters are the public values of the statement. A parameter whose name begins with an upper-case letter is a group element, and one whose name begins with a lower-case letter is a public scalar (following <a href="#group-abstraction" class="auto internal xref">Section 2.3</a>); the names under <code>Witness:</code> are the secret scalars. <code>G</code> denotes the group generator at element index <code>1</code>, and <strong>MUST NOT</strong> appear among the relation parameters. Every other name used in <code>Equations:</code> is declared exactly once, as a parameter or under <code>Witness:</code>. A declaration <strong>MUST</strong> compile to a valid instance (<a href="#instance-validation" class="auto internal xref">Section 3.5</a>). All element parameters <strong>MUST</strong> be used (<a href="#representation" class="auto internal xref">Section 3.2</a>), and every declared witness scalar <strong>MUST</strong> appear in at least one equation.<a href="#section-3.4-7" class="pilcrow">¶</a></p>
 <p id="section-3.4-8">Each equation is an equality between two linear combinations. Each term is the product of an optional <em>coefficient</em>, an optional witness scalar, and exactly one element name. Every equation <strong>MUST</strong> be linear in the witness. A coefficient is a public constant of the statement evaluated in the scalar field before compilation. An omitted coefficient is <code>1</code>, and a leading <code>-</code> on a term negates its coefficient. Expressions in parentheses distribute before the term rules apply: <code>2 * r * (X1 - X2)</code> denotes <code>2 * r * X1 - 2 * r * X2</code>.<a href="#section-3.4-8" class="pilcrow">¶</a></p>
 <p id="section-3.4-9">As an example with two witness scalars in a single equation, the Okamoto-Schnorr proof proves knowledge of the opening of a Pedersen commitment <span>[<a href="#Pedersen91" class="cite xref">Pedersen91</a>]</span>:<a href="#section-3.4-9" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3.4-10">
@@ -2134,8 +2134,8 @@ sum(
       <h2 id="name-efficiency-considerations">
 <a href="#section-6" class="section-number selfRef">6. </a><a href="#name-efficiency-considerations" class="section-name selfRef">Efficiency Considerations</a>
       </h2>
-<p id="section-6-1">Constant arithmetic operations <strong>MAY</strong> be preprocessed, provided the security requirements of <a href="#representation" class="auto internal xref">Section 3.2</a> hold: evaluation-time precomputation, such as fixed-base multiplication tables, is safe; registering a precomputed linear combination as a new instance element is not.<a href="#section-6-1" class="pilcrow">¶</a></p>
-<p id="section-6-2">Implementations <strong>MAY</strong> elide unused instance scalar variables and terms, for example <code>0 * x * G</code>.<a href="#section-6-2" class="pilcrow">¶</a></p>
+<p id="section-6-1">Constant arithmetic operations <strong>MAY</strong> be preprocessed, provided the security requirements of <a href="#representation" class="auto internal xref">Section 3.2</a> hold. For example, implementations may use fixed-base multiplication tables or skip arithmetic for unused scalar variables and zero-coefficient terms (e.g., <code>0 * x * G</code>).<a href="#section-6-1" class="pilcrow">¶</a></p>
+<p id="section-6-2">Because <code>num_scalars(instance)</code> is determined by the largest scalar index, a sparse high index can make responses and NARG strings very large. Implementations <strong>SHOULD</strong> enforce application-specific limits before allocating resources.<a href="#section-6-2" class="pilcrow">¶</a></p>
 <p id="section-6-3">Multi-scalar multiplication (MSM) algorithms can help evaluate <code>map(instance, scalars)</code> (<a href="#map-evaluation" class="auto internal xref">Section 3.3</a>) and the verification equation. For example, the verifier of <a href="#verifier" class="auto internal xref">Section 4.3</a> is specified as the equality <code>map(instance, response) == commitment + challenge * image(instance)</code>, evaluated as two separate vectors for clarity. Implementations <strong>MAY</strong> instead verify each equation <code>i</code> by checking that <code>commitment[i] + challenge * image(instance)[i] - sum(response[j] * M[i][j] for j in 0, ..., num_scalars(instance) - 1)</code> is <code>identity()</code>, accumulating all terms in a single MSM per equation. Prioritizing field operations, by evaluating expressions over terms and scalar coefficients, will be faster than computing and summing each term individually.<a href="#section-6-3" class="pilcrow">¶</a></p>
 <p id="section-6-4">The fastest MSM algorithms, such as Pippenger's bucket method or windowed non-adjacent forms, run in time that depends on the scalars. This is safe, for instance, in the verification equation above, for image computation <code>image(instance)</code>, and in <code>SimulateCommitment</code> (<a href="#simulator" class="auto internal xref">Section 4.4</a>): there, every scalar is public.<a href="#section-6-4" class="pilcrow">¶</a></p>
 <p id="section-6-5">The efficiency considerations of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> apply here too. Implementations that produce or verify many proofs for the same instance can precompute and reuse the duplex sponge state after the instance is absorbed (steps 1-3 of <code>DeriveChallenge</code>, <a href="#challenge-derivation" class="auto internal xref">Section 5.2</a>) across proofs. <code>ValidateInstance</code> (<a href="#instance-validation" class="auto internal xref">Section 3.5</a>) likewise depends only on the instance, and can be checked once per instance rather than once per proof.<a href="#section-6-5" class="pilcrow">¶</a></p>
@@ -2185,7 +2185,8 @@ sum(
 <a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-instance-security" class="section-name selfRef">Instance security</a>
         </h3>
 <p id="section-7.4-1">The prover and verifier construct the instance from values they independently hold and trust, such as the group generator. Often, one party will supply elements or scalars to the other (<a href="#relation-notation" class="auto internal xref">Section 3.4</a>). These are untrusted input, and <strong>MUST</strong> be checked (<a href="#verifier-input-validation" class="auto internal xref">Section 7.3</a>). For the verifier, those checks are part of verification. The prover <strong>MUST NOT</strong> produce a proof over an instance without validating well-formedness of all group elements and scalars first.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
-<p id="section-7.4-2">Some equations may have multiple valid witnesses. For example, the equation <code>X = x * G + 5 * y * G</code> collapses to <code>X = (x + 5 * y) * G</code>, and has <code>p</code> distinct witnesses <code>[x, y]</code> trivial from one another. Similarly, the pair of terms <code>x * H - x * H</code> is valid for any <code>x</code>. It is the responsibility of the caller to provide relations whose kernel of <code>M</code> is either a singleton or hard to find.<a href="#section-7.4-2" class="pilcrow">¶</a></p>
+<p id="section-7.4-2">An instance may have many valid witnesses. For example, <code>X = x * G + 5 * y * G</code> collapses to <code>X = (x + 5 * y) * G</code>, and has <code>p</code> distinct witnesses <code>[x, y]</code> trivial from one another. Likewise, <code>x * H - x * H</code> is valid for any <code>x</code>. In general, the witnesses of an instance form a coset of the kernel of <code>M</code>, and a proof establishes knowledge of a witness only up to that kernel. It is the caller's responsibility to choose relations whose kernel is trivial, or for which finding a non-zero kernel element is computationally hard.<a href="#section-7.4-2" class="pilcrow">¶</a></p>
+<p id="section-7.4-3">The same holds for specific requirements on individual elements. For example, when <code>H</code> is the auxiliary generator of a Pedersen commitment, the caller must ensure that <code>H</code> is not the identity and that the committer knows no discrete-logarithm relation between <code>H</code> and <code>G</code>.<a href="#section-7.4-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="privacy-considerations">
@@ -2305,7 +2306,7 @@ sum(
               <p id="section-8.1.1-1.3.1"><code>serialize([A])</code>: the group element serialization function <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> for <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span> (<code>Ne = 33</code>).<a href="#section-8.1.1-1.3.1" class="pilcrow">¶</a></p>
 </li>
             <li class="normal" id="section-8.1.1-1.4">
-              <p id="section-8.1.1-1.4.1"><code>deserialize(buf)</code>: the group element deserialization function of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> the conversion above; only the compressed form is a valid encoding (each <code>Ne</code>-byte slice begins with <code>0x00</code>, <code>0x02</code>, or <code>0x03</code>, as specified in <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>). Every non-identity point <strong>MUST</strong> perform all checks of Section 5.6.2.3.4 of <span>[<a href="#NIST-SP-800-56A" class="cite xref">NIST-SP-800-56A</a>]</span>. Deserialization <strong>MUST</strong> fail otherwise.<a href="#section-8.1.1-1.4.1" class="pilcrow">¶</a></p>
+              <p id="section-8.1.1-1.4.1"><code>deserialize(buf)</code>: the group element deserialization function of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>, which inverts the conversion above; only the compressed form is a valid encoding (each <code>Ne</code>-byte slice begins with <code>0x00</code>, <code>0x02</code>, or <code>0x03</code>, as specified in <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>). Every non-identity point <strong>MUST</strong> perform all checks of Section 5.6.2.3.4 of <span>[<a href="#NIST-SP-800-56A" class="cite xref">NIST-SP-800-56A</a>]</span>. Deserialization <strong>MUST</strong> fail otherwise.<a href="#section-8.1.1-1.4.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
 </section>
@@ -3448,8 +3449,8 @@ NargString =
 Expected = accept
 </pre><a href="#appendix-A.2.2-30" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.2-31">Since scalar index 1 is not available, it will be easy to produce valid
-proofs from an initial one.<a href="#appendix-A.2.2-31" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-31">Because scalar index 1 is unconstrained, changing <code>response[1]</code> in a valid
+proof produces another valid proof.<a href="#appendix-A.2.2-31" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-32">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/E1b
@@ -3532,7 +3533,7 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = instance_index_out_of_bounds-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
   0000000000000000000000010100000000000000030000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
@@ -4693,8 +4694,8 @@ NargString =
 Expected = accept
 </pre><a href="#appendix-A.3.2-28" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-29">Since scalar index 1 is not available, it will be easy to produce valid
-proofs from an initial one.<a href="#appendix-A.3.2-29" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-29">Because scalar index 1 is unconstrained, changing <code>response[1]</code> in a valid
+proof produces another valid proof.<a href="#appendix-A.3.2-29" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-30">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E1b
@@ -4744,8 +4745,7 @@ NargString =
 Expected = accept
 </pre><a href="#appendix-A.3.2-32" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.2-33">The instance and proof are accepted with an identity at element index 2
-and an identity effective base for scalar index 1.<a href="#appendix-A.3.2-33" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.2-33">An instance containing the identity element is accepted.<a href="#appendix-A.3.2-33" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-34">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E3
@@ -4781,7 +4781,7 @@ Flavor = batchable
 Tag =
   instance_index_out_of_bounds-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
   0000000000000000000000010100000000000000030000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf

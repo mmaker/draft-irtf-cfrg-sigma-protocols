@@ -486,8 +486,9 @@ Table of Contents
    1, and *MUST NOT* appear among the relation parameters.  Every other
    name used in Equations: is declared exactly once, as a parameter or
    under Witness:. A declaration *MUST* compile to a valid instance
-   (Section 3.5).  All elements and witness scalars *MUST* be used
-   (Section 3.2).
+   (Section 3.5).  All element parameters *MUST* be used (Section 3.2),
+   and every declared witness scalar *MUST* appear in at least one
+   equation.
 
    Each equation is an equality between two linear combinations.  Each
    term is the product of an optional _coefficient_, an optional witness
@@ -1129,13 +1130,15 @@ Procedure:
 6.  Efficiency Considerations
 
    Constant arithmetic operations *MAY* be preprocessed, provided the
-   security requirements of Section 3.2 hold: evaluation-time
-   precomputation, such as fixed-base multiplication tables, is safe;
-   registering a precomputed linear combination as a new instance
-   element is not.
+   security requirements of Section 3.2 hold.  For example,
+   implementations may use fixed-base multiplication tables or skip
+   arithmetic for unused scalar variables and zero-coefficient terms
+   (e.g., 0 * x * G).
 
-   Implementations *MAY* elide unused instance scalar variables and
-   terms, for example 0 * x * G.
+   Because num_scalars(instance) is determined by the largest scalar
+   index, a sparse high index can make responses and NARG strings very
+   large.  Implementations *SHOULD* enforce application-specific limits
+   before allocating resources.
 
    Multi-scalar multiplication (MSM) algorithms can help evaluate
    map(instance, scalars) (Section 3.3) and the verification equation.
@@ -1263,12 +1266,19 @@ Procedure:
    *MUST NOT* produce a proof over an instance without validating well-
    formedness of all group elements and scalars first.
 
-   Some equations may have multiple valid witnesses.  For example, the
-   equation X = x * G + 5 * y * G collapses to X = (x + 5 * y) * G, and
-   has p distinct witnesses [x, y] trivial from one another.  Similarly,
-   the pair of terms x * H - x * H is valid for any x.  It is the
-   responsibility of the caller to provide relations whose kernel of M
-   is either a singleton or hard to find.
+   An instance may have many valid witnesses.  For example, X = x * G +
+   5 * y * G collapses to X = (x + 5 * y) * G, and has p distinct
+   witnesses [x, y] trivial from one another.  Likewise, x * H - x * H
+   is valid for any x.  In general, the witnesses of an instance form a
+   coset of the kernel of M, and a proof establishes knowledge of a
+   witness only up to that kernel.  It is the caller's responsibility to
+   choose relations whose kernel is trivial, or for which finding a non-
+   zero kernel element is computationally hard.
+
+   The same holds for specific requirements on individual elements.  For
+   example, when H is the auxiliary generator of a Pedersen commitment,
+   the caller must ensure that H is not the identity and that the
+   committer knows no discrete-logarithm relation between H and G.
 
 7.5.  Privacy Considerations
 
@@ -1435,11 +1445,11 @@ Procedure:
       [fiat-shamir] for [SEC1] (Ne = 33).
 
    *  deserialize(buf): the group element deserialization function of
-      [fiat-shamir] the conversion above; only the compressed form is a
-      valid encoding (each Ne-byte slice begins with 0x00, 0x02, or
-      0x03, as specified in [fiat-shamir]).  Every non-identity point
-      *MUST* perform all checks of Section 5.6.2.3.4 of
-      [NIST-SP-800-56A].  Deserialization *MUST* fail otherwise.
+      [fiat-shamir], which inverts the conversion above; only the
+      compressed form is a valid encoding (each Ne-byte slice begins
+      with 0x00, 0x02, or 0x03, as specified in [fiat-shamir]).  Every
+      non-identity point *MUST* perform all checks of Section 5.6.2.3.4
+      of [NIST-SP-800-56A].  Deserialization *MUST* fail otherwise.
 
 8.1.2.  Scalar Field of P-256
 
@@ -2540,8 +2550,8 @@ NargString =
   ef
 Expected = accept
 
-   Since scalar index 1 is not available, it will be easy to produce
-   valid proofs from an initial one.
+   Because scalar index 1 is unconstrained, changing response[1] in a
+   valid proof produces another valid proof.
 
 Id = sigma-protocols/p256/discrete_logarithm/batchable/E1b
 Function = SigmaProof
@@ -2617,7 +2627,7 @@ Expected = accept
  Flavor = batchable
  Tag = instance_index_out_of_bounds-DSFS-with-sigma-proofs_Shake128_P256
  Instance =
-   0100000001000000010000000000000000000000000000000000000000000000
+   0100000001000000020000000000000000000000000000000000000000000000
    0000000000000000000000010100000000000000030000000000000000000000
    00000000000000000000000000000000000000000000000103f0f109368d010f
    5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
@@ -3678,8 +3688,8 @@ NargString =
   13c9967e133f399633cab20cc4e252cc
 Expected = accept
 
-   Since scalar index 1 is not available, it will be easy to produce
-   valid proofs from an initial one.
+   Because scalar index 1 is unconstrained, changing response[1] in a
+   valid proof produces another valid proof.
 
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E1b
 Function = SigmaProof
@@ -3725,8 +3735,7 @@ NargString =
   c1d24c1f3d42a2535161c7b7a9c556a3
 Expected = accept
 
-   The instance and proof are accepted with an identity at element index
-   2 and an identity effective base for scalar index 1.
+   An instance containing the identity element is accepted.
 
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E3
 Function = SigmaProof
@@ -3759,7 +3768,7 @@ Expected = accept
  Tag =
    instance_index_out_of_bounds-DSFS-with-sigma-proofs_Shake128_BLS12381
  Instance =
-   0100000001000000010000000000000000000000000000000000000000000000
+   0100000001000000020000000000000000000000000000000000000000000000
    0000000000000000000000010100000000000000030000000000000000000000
    000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
    3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
