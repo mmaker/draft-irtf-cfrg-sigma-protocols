@@ -143,12 +143,7 @@ Table of Contents
    [RFC9497], blind signatures [BBSBlind], and proofs of knowledge of
    the opening of a Pedersen commitment [Pedersen91].  This document
    specifies a single Sigma Protocol for proving knowledge of a preimage
-   of a linear map over a prime-order group.  The underlying technique
-   for proving linear relations among secret coordinates of a discrete-
-   logarithm representation originates in work from the early 1990s;
-   Section 3.3 of [Brands00] gives a consolidated treatment.  Subsequent
-   treatments formalized Sigma Protocols [Cramer97] and abstracted them
-   as proofs of knowledge of preimages of group homomorphisms
+   of a linear map over a prime-order group [Brands00], [Cramer97],
    [Maurer09].  A _linear relation_ is a system of equations among group
    elements that is linear in the secret scalars; affine relations with
    constant terms (e.g. verifiable encryption) and quadratic equations
