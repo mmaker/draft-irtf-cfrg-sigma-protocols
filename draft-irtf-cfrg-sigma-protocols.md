@@ -350,7 +350,7 @@ A byte is an 8-bit unsigned integer (an octet), and a *byte string* is a finite 
 
 ## Randomized algorithms {#rng-definition}
 
-The prover commitment algorithm requires fresh, single-use randomness to ensure privacy of the witness. This document denotes with `rng` a cryptographically secure random number generator (CSPRNG), and uses `Group.random_scalar(rng)` to denote sampling a uniformly random element of the scalar field, similarly to `RandomScalar()` of {{Section 2.1 of ?RFC9497}}.
+The prover commitment algorithm requires fresh, single-use randomness for zero-knowledge. This document denotes with `rng` a cryptographically secure random number generator (CSPRNG), and uses `Group.random_scalar(rng)` to denote sampling a uniformly random element of the scalar field, similarly to `RandomScalar()` of {{Section 2.1 of ?RFC9497}}.
 
 ## Group abstraction {#group-abstraction}
 
@@ -362,15 +362,17 @@ Group elements are upper-case (`G`, `X`, `M`) and scalars lower-case (`x`, `s`).
 
 `identity()` is the neutral element, `generator()` returns the canonical generator of the prime-order subgroup ({{ciphersuites}}), and `order()` returns its order `p`. Addition, negation, equality, and scalar multiplication by a `Scalar` are written `+`, `-`, `==`, and `*`.
 
-`serialize(elements: list[Group])` and `deserialize(buffer)` convert `N` non-neutral group elements into a fixed-length `Ne * N`-byte encoding, where `Ne` is fixed per ciphersuite ({{ciphersuites}}).
+`serialize(elements: list[Group])` and `deserialize(buffer)` convert `N` group elements into a fixed-length `Ne * N`-byte encoding, where `Ne` is fixed per ciphersuite ({{ciphersuites}}).
 
-Both `serialize` and `deserialize` are defined only on non-neutral elements. Serialization **MUST** fail on the identity element, and deserialization **MUST** fail for invalid encodings, including on the encoding of the identity. An honest prover statistically hits this event only with negligible probability. See {{Section 10.1 of RFC9380}}, Appendix C of {{PAIRING}}, {{Section 2.1 of ?RFC9497}}, {{ARC}}.
+`Group` values are assumed to be valid elements of the prime-order group. Deserialization **MUST** fail on invalid or non-canonical encodings.
 
 ### Scalars {#scalar}
 
 A `Scalar` is an element of the group's *scalar field*, the prime field of integers modulo the group order `p`. Addition and multiplication are written `+` and `*` via operator overloading.
 
 `serialize(scalars: list[Scalar])` and `deserialize(buffer)` batch convert between `N` scalars and their canonical, fixed-length `Ns * N`-byte encoding.
+
+`Scalar` values are assumed to be integers in `[0, p)`. A constructor from an integer **MUST** fail unless the integer is in this range, and deserialization **MUST** fail on non-canonical encodings. Arithmetic operations reduce their results modulo `p`.
 
 Sampling a random scalar takes two steps: obtaining high-quality entropy via a CSPRNG (e.g., `getrandom()`; see {{?RFC4086}} for randomness requirements), and reducing the resulting bytes to a scalar. It is **RECOMMENDED** that the latter be done via `DecodeField` as in {{fiat-shamir}}. Different sampling mechanisms, such as the wide reduction of `hash_to_field` ({{Section 5.2 of ?RFC9380}}) and the integer conversion of Appendix A.4.1 of {{FIPS186-5}} do not affect interoperability of proofs. The "discard method" of Appendix A.4.2 of {{FIPS186-5}} **SHOULD NOT** be used {{constant-time}}.
 
@@ -380,15 +382,13 @@ This section specifies the statement being proven: the preimage of a linear map 
 
 ## Linear map {#linear-map}
 
-A linear map is a matrix-vector product `image = M * witness`, where `M` is a matrix of group elements and `witness` is a vector of scalars.
-
-`M` and `image` together form the statement (the *instance*), while `witness` is the secret. The _relation_ (the set of instance-witness pairs of which knowledge is proven) is:
+A linear map is a matrix-vector product `image = M * witness`, where `M` is a matrix of group elements and `witness` is a vector of scalars. The _relation_ proven is:
 
 ~~~
 R := { ((M, image), witness) : image = M * witness }
 ~~~
 
-`image` is the result of the multi-scalar multiplication of each matrix row with the witness. For `i` in `0, ..., num_equations - 1`
+`M` and `image` together form the _instance_, while `witness` is the secret. `image` is the result of the multi-scalar multiplication of each matrix row with the witness, that is, for `i` in `0, ..., num_equations - 1`
 
 ~~~
 image[i] = sum(witness[j] * M[i][j] for j in 0, ..., num_scalars - 1)
@@ -407,7 +407,7 @@ M = [[G],
 
 Variants of the Chaum-Pedersen relation are widely used for VRFs {{?RFC9381}} and anonymous tokens {{?RFC9497}}. Proofs of knowledge of the opening `(m, r)` of a Pedersen commitment {{Pedersen91}} `C = m * G + r * H` are Okamoto-Schnorr proofs {{Okamoto92}}.
 
-Affine equations with constant terms can be expressed directly through image terms and coefficients ({{representation}}); more elaborate relations, such as quadratic equations, reduce to this same form by letting instance elements themselves serve as bases ({{relation-notation}}).
+Affine equations with constant terms can be expressed directly through image terms and coefficients ({{representation}}). More elaborate relations, such as quadratic equations, reduce to this same form by letting instance elements themselves serve as bases ({{relation-notation}}).
 
 The group `Group`, and its generator, are provided by the ciphersuite {{ciphersuites}}. The statement author has the responsibility to select the appropriate `M`, and this requires care. Computationally-independent bases, sometimes also called _auxiliary generators_, or _nothing up my sleeve (NUMS) generators_, may be computed via hash to the curve ({{Section 3 of !RFC9380}}).
 
@@ -420,40 +420,46 @@ A `LinearRelation` is the instance for the Sigma Protocol. It fixes the linear m
 ~~~
 class LinearRelation:
   elements: list[Group]
-    # non-empty; elements[0] is fixed to Group.generator()
-  equations: list[Equation]    # non-empty
+    # elements[i] has element index i + 2
+  equations: list[Equation]
 
 class Equation:
   image: list[(int, Scalar)]
-    # non-empty, (element_index, coeff)
+    # (element_index, coeff)
   terms: list[(int, int, Scalar)]
-    # non-empty, (scalar_index, element_index, coeff)
+    # (scalar_index, element_index, coeff)
+
+element(instance, element_index):
+  if element_index == 0: return Group.identity()
+  if element_index == 1: return Group.generator()
+  return instance.elements[element_index - 2]
 ~~~
 
-A `LinearRelation` holds a set of group elements (each corresponding to an `element_index`) and a list of equations. Each row of `M` is called an `Equation`, and consists of two lists of terms.
+A `LinearRelation` holds a list of group elements and a list of equations. The identity and generator have implicit element indices `0` and `1`, respectively; `elements[i]` has element index `i + 2`. Each row of `M` is called an `Equation`, and consists of two lists of terms.
 
-The `image` terms (the left-hand side) are pairs `(element_index, coeff)`. The image is the sum of `coeff * elements[element_index]`.
+The `image` terms (the left-hand side) are pairs `(element_index, coeff)`. The image is the sum of `coeff * element(instance, element_index)`.
 
 The `terms` (the right-hand side) are triplets `(scalar_index, element_index, coeff)`. Each `coeff` is a scalar ({{scalar}}) fixed by the instance.
 
-A `LinearRelation` **MUST** have at least one equation, and every equation's `image` and `terms` **MUST** be non-empty. A constant of the statement (an element carrying no witness scalar) is encoded as an image term ({{relation-notation}}). It **MUST NOT** be encoded as a right-hand side term whose witness scalar is "fixed" to `1`. A coefficient **MAY** be zero.
+An empty `image` or `terms` list represents the identity element. A constant of the statement (an element carrying no witness scalar) is encoded as an image term ({{relation-notation}}). It **MUST NOT** be encoded as a right-hand side term whose witness scalar is "fixed" to `1`. A coefficient **MAY** be zero.
 
 The instance **MUST** contain, as individually-indexed elements, every group element on which the statement depends. In particular, all group elements processed by the verifier **MUST** appear in the statement, else the resulting argument is malleable across its preimages ({{sigma-ni-security}}).
 
-For instance, the verifiable-decryption statement `M + E1 = x * E0` is encoded with the two image terms `(M, 1), (E1, 1)`, never as the single element `F = M + E1`. Otherwise, the same proof will verify for any `F = M' + E1'`, even when `M' != M`. As another example, a statement multiplying a scalar by a sum of elements, such as `Y = x * (E0 + E1)`, is expressed by repeating the scalar index across terms, as `terms = [(0, 1, 1), (0, 2, 1)]`, never as the single element `K = E0 + E1`. An element may appear multiple times in the same equation, even with the same coefficient and scalar.
+For instance, the verifiable-decryption statement `M + E1 = x * E0` is encoded with the two image terms `(M, 1), (E1, 1)`, never as the single element `F = M + E1`. Otherwise, the same proof will verify for any `F = M' + E1'`, even when `M' != M`. As another example, a statement multiplying a scalar by a sum of elements, such as `Y = x * (E0 + E1)`, is expressed by repeating the scalar index across terms, as `terms = [(0, 2, 1), (0, 3, 1)]`, never as the single element `K = E0 + E1`. An element may appear multiple times in the same equation, even with the same coefficient and scalar.
 
-Every group element index **MUST** have an associated group element. Every element **MUST** appear in the terms or image terms of at least one equation, except for the generator (index 0), which is present in every instance whether or not an equation uses it. Every scalar index **MUST** appear in at least one term, else the corresponding response is accepted unchecked.
+Every group element index **MUST** have an associated group element. Every element in `instance.elements` **MUST** appear in the terms or image terms of at least one equation. The identity (index `0`) and generator (index `1`) are available in every instance whether or not an equation uses them.
 
 For a valid instance, let:
 
 ~~~
-num_elements(instance)  = len(instance.elements)
+num_elements(instance)  = 2 + len(instance.elements)
 num_equations(instance) = len(instance.equations)
-num_scalars(instance)   = 1 + max(s for eq in instance.equations
-                                    for (s, _, _) in eq.terms)
+num_scalars(instance)   = max((s + 1 for eq in instance.equations
+                               for (s, _, _) in eq.terms),
+                              default=0)
 ~~~
 
-The number of group elements is independent of the number of equations. For instance, Chaum-Pedersen has `num_elements = 4`, `num_equations = 2`.
+Scalar indices need not be contiguous. Trailing unused scalar variables are not part of the instance. The number of group elements is independent of the number of equations. For instance, Chaum-Pedersen has `num_elements = 5`, `num_equations = 2`.
 
 ## Map evaluation {#map-evaluation}
 
@@ -467,12 +473,12 @@ map(instance, scalars) -> list[Group]
 3.   acc = Group.identity()
 4.   for (scalar_index, element_index, coeff) in equation.terms:
 5.     acc = acc + (coeff * scalars[scalar_index]) \
-                   * instance.elements[element_index]
+                   * element(instance, element_index)
 6.   out.append(acc)
 7. return out
 ~~~
 
-`image(instance)` denotes the evaluation of each equation's left-hand side: the list of `num_equations(instance)` group elements whose `i`-th entry is the sum of `coeff * instance.elements[element_index]` over the image terms of the `i`-th equation.
+With `image(instance)` we denote the evaluation of each equation's left-hand side.
 
 ## Specifying the relation {#relation-notation}
 
@@ -501,7 +507,7 @@ Relation ChaumPedersen(H, X, Y):
     Y = x * H
 ~~~
 
-The relation parameters are the public values of the statement. A parameter whose name begins with an upper-case letter is a group element, and one whose name begins with a lower-case letter is a public scalar (following {{group-abstraction}}); the names under `Witness:` are the secret scalars. `G` denotes the group generator at element index `0`, and **MUST NOT** appear among the relation parameters. Every other name used in `Equations:` is declared exactly once, as a parameter or under `Witness:`. A declaration **MUST** compile to a valid instance ({{instance-validation}}). All elements and witness scalars **MUST** be used ({{representation}}).
+The relation parameters are the public values of the statement. A parameter whose name begins with an upper-case letter is a group element, and one whose name begins with a lower-case letter is a public scalar (following {{group-abstraction}}); the names under `Witness:` are the secret scalars. `G` denotes the group generator at element index `1`, and **MUST NOT** appear among the relation parameters. Every other name used in `Equations:` is declared exactly once, as a parameter or under `Witness:`. A declaration **MUST** compile to a valid instance ({{instance-validation}}).
 
 Each equation is an equality between two linear combinations. Each term is the product of an optional *coefficient*, an optional witness scalar, and exactly one element name. Every equation **MUST** be linear in the witness. A coefficient is a public constant of the statement evaluated in the scalar field before compilation. An omitted coefficient is `1`, and a leading `-` on a term negates its coefficient. Expressions in parentheses distribute before the term rules apply: `2 * r * (X1 - X2)` denotes `2 * r * X1 - 2 * r * X2`.
 
@@ -514,7 +520,7 @@ Relation PedersenOpening(H, C):
     C = m * G + r * H
 ~~~
 
-`ChaumPedersen` compiles to `elements = [G, H, X, Y]` and `equations = [Equation(image=[(2, 1)], terms=[(0, 0, 1)]), Equation(image=[(3, 1)], terms=[(0, 1, 1)])]`, while `PedersenOpening` is compiled to a `LinearRelation` with `elements = [G, H, C]` and `equations = [Equation(image=[(2, 1)], terms=[(0, 0, 1), (1, 1, 1)])]`.
+`ChaumPedersen` compiles to `elements = [H, X, Y]` and `equations = [Equation(image=[(3, 1)], terms=[(0, 1, 1)]), Equation(image=[(4, 1)], terms=[(0, 2, 1)])]`, while `PedersenOpening` is compiled to a `LinearRelation` with `elements = [H, C]` and `equations = [Equation(image=[(3, 1)], terms=[(0, 1, 1), (1, 2, 1)])]`.
 
 The compiled `LinearRelation` assigns indices in declaration order. Vectors of names (for example, `C_0, ..., C_{n-1}`) and families of equations stated over an index range unroll, in index order, to names and equations of the ordinary form.
 
@@ -529,7 +535,7 @@ Relation OpensTo(m, H, C):
     C = m * G + r * H
 ~~~
 
-`m` is now a scalar parameter, so `m * G` is a constant term. The relation compiles to `elements = [G, H, C]` and `equations = [Equation(image=[(2, 1), (0, -m)], terms=[(0, 1, 1)])]`.
+`m` is now a scalar parameter, so `m * G` is a constant term. The relation compiles to `elements = [H, C]` and `equations = [Equation(image=[(3, 1), (1, -m)], terms=[(0, 2, 1)])]`.
 
 As an example with a constant term crossing sides, correct ElGamal decryption states that the ciphertext `(E0, E1)`, with `E1 = r * X - M`, decrypts to `M` under the decryption key `x` of `X`:
 
@@ -541,7 +547,7 @@ Relation ElGamalDecryption(X, E0, E1, M):
     M = x * E0 - E1
 ~~~
 
-The constant term `- E1` crosses to the image with its coefficient negated: the second equation compiles to `Equation(image=[(4, 1), (3, 1)], terms=[(0, 2, 1)])`, identically to the spelling `M + E1 = x * E0`, and both `M` and `E1` are bound individually by the serialization of {{serialize-linear-relations}}.
+The constant term `- E1` crosses to the image with its coefficient negated: the second equation compiles to `Equation(image=[(5, 1), (4, 1)], terms=[(0, 3, 1)])`, identically to the spelling `M + E1 = x * E0`, and both `M` and `E1` are bound individually by the serialization of {{serialize-linear-relations}}.
 
 As yet another example with a distributed scalar, the following proves correct encryption of a public message `M` under the aggregate key `X1 + X2`, as arises in threshold decryption: the ciphertext is `(E0, E1)`, with `E0 = r * G` and `E1 = r * (X1 + X2) - M`:
 
@@ -553,7 +559,7 @@ Relation AggregateEncryption(X1, X2, M, E0, E1):
     M + E1 = r * (X1 + X2)
 ~~~
 
-The scalar `r` distributes over the parenthesized sum, so the second equation compiles to `Equation(image=[(3, 1), (5, 1)], terms=[(0, 1, 1), (0, 2, 1)])`.
+The scalar `r` distributes over the parenthesized sum, so the second equation compiles to `Equation(image=[(4, 1), (6, 1)], terms=[(0, 2, 1), (0, 3, 1)])`.
 
 As a last example, the following proves that the value committed by `C` is a bit, the building block of range proofs:
 
@@ -565,7 +571,7 @@ Relation Bit(H, C):
     C = b * C + s * H
 ~~~
 
-`Bit` compiles to `elements = [G, H, C]` and `equations = [Equation(image=[(2, 1)], terms=[(0, 0, 1), (1, 1, 1)]), Equation(image=[(2, 1)], terms=[(0, 2, 1), (2, 1, 1)])]`: the element index `2` (the commitment `C`) appears both in each equation's image and among the bases of the second equation.
+`Bit` compiles to `elements = [H, C]` and `equations = [Equation(image=[(3, 1)], terms=[(0, 1, 1), (1, 2, 1)]), Equation(image=[(3, 1)], terms=[(0, 3, 1), (2, 2, 1)])]`: the element index `3` (the commitment `C`) appears both in each equation's image and among the bases of the second equation.
 
 AND composition comes for free for this relation family. To do so, concatenate the parameter lists, `Witness:`, and `Equations:` of each sub-relation. Under concatenation, a name kept in common should denote the same scalar or element in every sub-relation, and is declared exactly once in the combined declaration. Names not intended to be shared **MUST** be renamed apart before concatenating.
 
@@ -573,25 +579,20 @@ AND composition comes for free for this relation family. To do so, concatenate t
 
 For an instance to be valid, it **MUST** satisfy all below conditions:
 
-1. The instance has at least one equation: `num_equations(instance) > 0`.
-2. Every equation in `instance.equations` has a non-empty `terms` list and a non-empty `image` list.
-3. Every `scalar_index` and every `element_index` is a non-negative integer less than `2^32`; so are `num_equations(instance)`, and each equation's term count and image-term count.
-4. Every element index is less than `num_elements(instance)`. In other words, every index references a group element.
-5. Every element index other than `0` appears in the terms or image terms of at least one equation; the generator (index `0`) is present in every instance whether or not an equation uses it ({{representation}}).
-Together with check 4, this ensures `num_elements(instance)-1` is the largest referenced element index.
-6. Every scalar index appears in the terms of at least one equation.
-7. `num_elements(instance) > 0`, and `instance.elements[0]` is the group generator `Group.generator()` ({{representation}}).
-8. No element of `instance.elements` is the identity element.
-9. No element of `image(instance)` is the identity element: an equation whose image evaluates to the identity is satisfied by the all-zero witness, so a proof of it attests nothing.
-10. No column of the matrix `M` is the identity. That is, for every scalar index, there is at least one equation for which the sum of `coeff * elements[element_index]` over the terms carrying that scalar index is not the identity.
+1. Every `scalar_index` and every `element_index` is a non-negative integer less than `2^32`; so are `num_equations(instance)`, and each equation's term count and image-term count.
+2. Every element index is less than `num_elements(instance)`. In other words, every index references a group element.
+3. Every element index other than `0` and `1` appears in the terms or image terms of at least one equation; the identity (index `0`) and generator (index `1`) are present in every instance whether or not an equation uses them ({{representation}}).
+Together with check 2, this ensures either `num_elements(instance) == 2` or `num_elements(instance)-1` is the largest referenced element index.
 
 The prover **SHOULD** reject an invalid instance, and **MAY** additionally check that `image == map(instance, witness)` before proving; {{privacy-considerations}} and {{instance-security}} state when this check, or a stronger precaution, is required. The verifier **MUST** fail on an invalid instance ({{verifier}}, {{non-interactive}}), either when the instance is constructed or during verification itself.
+
+These checks admit identity images and columns, including `M * x = Y` with `M = 0` and `Y = 0`, or with `M != 0` and `Y = 0`.
 
 `ValidateInstance(instance)` denotes the function returning `true` if all above predicates are met. Instance validation won't flag all violations of {{representation}} (for instance, a registered element obtained as a precomputed linear combination from one obtained independently) because the instance generation can't know how a group element is obtained. A structurally valid instance may still yield an unsound argument.
 
 ## Serialization {#serialize-linear-relations}
 
-A `LinearRelation` is serialized as a sparse matrix encoded in row-major order: each equation's image terms, then its right-hand side terms, each list preceded by its count ({{representation}}), followed by the group elements at indices `1` onwards. Counts and indices are encoded in 4 bytes via `LE` ({{bytes-and-integers}}). Coefficients are encoded with the scalar serialization function (`Ns` bytes each, {{ciphersuites}}). The encoding is unambiguous and prefix-free.
+A `LinearRelation` is serialized as a sparse matrix encoded in row-major order. Serialization involves serializing each equation's image terms, then its right-hand side terms, each preceded by its count ({{representation}}). At the end, `instance.elements` are serialized (identity and generator are implicit). Counts and indices are encoded in 4 bytes via `LE` ({{bytes-and-integers}}). Coefficients are encoded with the scalar serialization function (`Ns` bytes each, {{ciphersuites}}).
 
 ~~~
 SerializeLinearRelation(instance)
@@ -618,24 +619,23 @@ Procedure:
 10.   for (scalar_index, element_index, coeff) in terms:
 11.     out = out || LE(scalar_index, 4)
 12.     out = out || LE(element_index, 4) || Scalar.serialize([coeff])
-13. return out || Group.serialize(
-      instance.elements[1 : num_elements(instance)])
+13. return out || Group.serialize(instance.elements)
 ~~~
 
 For example, the compiled `ChaumPedersen` relation of {{relation-notation}} serializes to
 
 ~~~
 LE(2, 4)                                        # 2 equations
-LE(1, 4) || LE(2, 4) || Scalar.serialize([1])   # image: X
-LE(1, 4) || LE(0, 4) || LE(0, 4)
-         || Scalar.serialize([1])               # term: x * G
-LE(1, 4) || LE(3, 4) || Scalar.serialize([1])   # image: Y
+LE(1, 4) || LE(3, 4) || Scalar.serialize([1])   # image: X
 LE(1, 4) || LE(0, 4) || LE(1, 4)
+         || Scalar.serialize([1])               # term: x * G
+LE(1, 4) || LE(4, 4) || Scalar.serialize([1])   # image: Y
+LE(1, 4) || LE(0, 4) || LE(2, 4)
          || Scalar.serialize([1])               # term: x * H
 Group.serialize([H, X, Y])                      # statement elements
 ~~~
 
-`SerializeLinearRelation` operates on a `LinearRelation` as compiled from its declaration, following its equation and term order ({{relation-notation}}). The same relation expressed in two different ways (for example, swapping two rows of `M`) will yield different serializations.
+The same relation expressed in two different ways (for example, swapping two rows of `M`) will yield different serializations.
 
 # The Sigma Protocol {#sigma-protocol-group}
 
@@ -744,8 +744,6 @@ The verifier **MUST** enforce instance validity (Step 1, see {{instance-validati
 
 ## Simulator {#simulator}
 
-Implementations that expose the zero-knowledge simulator ({{core-interface}}) provide the two algorithms below; they are also what the compact verifier ({{non-interactive}}) relies on to recover the prover's commitment from `(challenge, response)`.
-
 `SimulateResponse(instance, rng)` returns as simulated response a vector of `num_scalars(instance)` uniformly random scalars, and as simulator state the instance itself.
 
 `SimulateCommitment(state, response, challenge)` solves the verification equation ({{verifier}}) for the commitment, returning the vector of `num_equations(state)` group elements
@@ -757,11 +755,13 @@ simulated_commitment[i] = map(state, response)[i]
 
 Drawing `response` uniformly at random with `SimulateResponse` and then computing `commitment` with `SimulateCommitment` yields a transcript `(commitment, challenge, response)` with the same distribution as an honest one. This is the honest-verifier zero-knowledge property ({{security-considerations}}).
 
+The simulator is also used by the compact verifier ({{non-interactive}}).
+
 # Non-interactive Sigma Protocols {#non-interactive}
 
 The Fiat-Shamir transformation applied to Sigma Protocols yields a non-interactive zero-knowledge argument of knowledge.
 
-{{fiat-shamir}} describes how to instantiate the transformation, for the group and field codecs given. This section specifies the session identifier binding a proof to its application ({{sigma-proofs-tag}}), the challenge derivation shared by prover and verifier ({{challenge-derivation}}), the two non-interactive argument (NARG) string serializations ({{sigma-narg}}), and batch verification ({{batch-verification}}).
+{{fiat-shamir}} describes how to instantiate the transformation, for the group and field codecs given. This section specifies how to select the session identifier ({{sigma-proofs-tag}}), how to produce a challenge ({{challenge-derivation}}), two flavors of non-interactive argument (NARG) string serialization ({{sigma-narg}}), and batch verification ({{batch-verification}}).
 
 ## Tag and session identifier {#sigma-proofs-tag}
 
@@ -880,13 +880,12 @@ Procedure:
 4. challenge = Scalar.deserialize(narg_string[0 : Ns])[0]
 5. response = Scalar.deserialize(narg_string[Ns : Ns + Nr])
 6. commitment = SimulateCommitment(instance, response, challenge)
-7. fail if any element of commitment is the identity element
-8. expected_challenge = DeriveChallenge(tag, instance,
+7. expected_challenge = DeriveChallenge(tag, instance,
      Group.serialize(commitment))
-9. return challenge == expected_challenge
+8. return challenge == expected_challenge
 ~~~
 
-Step 7 maintains consistency with `Group.deserialize`, which rejects the identity element. Since the simulator always outputs accepting transcripts, there is no need to run `Verifier` in this case.
+Since the simulator always outputs accepting transcripts, there is no need to run `Verifier` in this case.
 
 ## Batch verification {#batch-verification}
 
@@ -951,7 +950,9 @@ The batching randomness elements **MAY** be replaced by the successive powers `1
 
 # Efficiency Considerations {#efficiency-considerations}
 
-Constant arithmetic operations **MAY** be preprocessed, provided the security requirements of {{representation}} hold: evaluation-time precomputation, such as fixed-base multiplication tables, is safe; registering a precomputed linear combination as a new instance element is not.
+Constant arithmetic operations **MAY** be preprocessed, provided the security requirements of {{representation}} hold. For example, implementations may use fixed-base multiplication tables or skip arithmetic for unused scalar variables and zero-coefficient terms (e.g., `0 * x * G`).
+
+Because `num_scalars(instance)` is determined by the largest scalar index, a sparse high index can make responses and NARG strings very large. Implementations **SHOULD** enforce application-specific limits before allocating resources.
 
 Multi-scalar multiplication (MSM) algorithms can help evaluate `map(instance, scalars)` ({{map-evaluation}}) and the verification equation. For example, the verifier of {{verifier}} is specified as the equality `map(instance, response) == commitment + challenge * image(instance)`, evaluated as two separate vectors for clarity. Implementations **MAY** instead verify each equation `i` by checking that `commitment[i] + challenge * image(instance)[i] - sum(response[j] * M[i][j] for j in 0, ..., num_scalars(instance) - 1)` is `identity()`, accumulating all terms in a single MSM per equation. Prioritizing field operations, by evaluating expressions over terms and scalar coefficients, will be faster than computing and summing each term individually.
 
@@ -985,7 +986,7 @@ Knowledge extraction in the random oracle model requires rewinding the adversary
 
 The security considerations of {{fiat-shamir}} apply here too.
 
-In particular, for group elements, deserialization **MUST** verify that each point is valid, lies on the curve, and in the prime-order (sub-)group suited for cryptographic use. Uncompressed or hybrid forms of {{SEC1}} **MUST** be rejected {{ChalkiasGN20}}. Skipping the on-curve or subgroup check enables invalid-curve attacks {{JagerSS15}}. Accepting non-canonical field elements will compromise soundness {{CVE-2022-23806}}. The identity element **MUST** be rejected in any deserialized prover messages and instance elements ({{group-abstraction}}).
+In particular, for group elements, deserialization **MUST** verify that each point is valid, lies on the curve, and in the prime-order (sub-)group suited for cryptographic use. Uncompressed or hybrid forms of {{SEC1}} **MUST** be rejected {{ChalkiasGN20}}. Skipping the on-curve or subgroup check enables invalid-curve attacks {{JagerSS15}}. Accepting non-canonical field elements will compromise soundness {{CVE-2022-23806}}.
 
 For scalars, deserialization **MUST** reject any value that is not the canonical representative in `[0, p)` {{CVE-2023-33252}} {{CVE-2025-57801}}.
 
@@ -995,7 +996,9 @@ For compact NARG strings, the verifier **MUST** recompute the challenge and comp
 
 The prover and verifier construct the instance from values they independently hold and trust, such as the group generator. Often, one party will supply elements or scalars to the other ({{relation-notation}}). These are untrusted input, and **MUST** be checked ({{verifier-input-validation}}). For the verifier, those checks are part of verification. The prover **MUST NOT** produce a proof over an instance without validating well-formedness of all group elements and scalars first.
 
-Some equations pin down no specific scalars. For example, the equation `X = x * G + 5 * y * G` collapses to `X = (x + 5 * y) * G`, and has `p` distinct witnesses `[x, y]`, each trivial to derive from any other. Similarly, the pair of terms `x * H - x * H` cancels for every value of `x`, and constrains nothing. It is the responsibility of the caller to provide non-trivial relations. Some effort in this direction is made in {{instance-validation}} (such as rejection of trivial images), however this will not cover all cases. Applications **MUST** handle degenerate equations before calling the prover and verifier.
+An instance may have many valid witnesses. For example, `X = x * G + 5 * y * G` collapses to `X = (x + 5 * y) * G`, and has `p` distinct witnesses `[x, y]` trivial from one another. Likewise, `x * H - x * H` is valid for any `x`. In general, the witnesses of an instance form a coset of the kernel of `M`, and a proof establishes knowledge of a witness only up to that kernel. It is the caller's responsibility to choose relations whose kernel is trivial, or for which finding a non-zero kernel element is computationally hard.
+
+The same holds for specific requirements on individual elements. For example, when `H` is the auxiliary generator of a Pedersen commitment, the caller must ensure that `H` is not the identity and that the committer knows no discrete-logarithm relation between `H` and `G`.
 
 ## Privacy Considerations {#privacy-considerations}
 
@@ -1059,9 +1062,9 @@ This ciphersuite uses P-256 {{NIST-SP-800-186}} for the Group.
 ### Elliptic curve group of P-256 (secp256r1) {{NIST-SP-800-186}}
 
 - `order()`: `115792089210356248762697446949407573529996955224135760342422259061068512044369`.
-- `generator()`: the base point `G` specified in {{NIST-SP-800-186}}; its compressed serialization is `036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296`. It is the group element at index `0` of every instance ({{representation}}).
-- `serialize([A])`: the compressed Elliptic-Curve-Point-to-Octet-String conversion of {{SEC1}} (`Ne = 33`).
-- `deserialize(buf)`: inverts the conversion above; only the compressed form is a valid encoding (each `Ne`-byte slice begins with `0x02` or `0x03`). It **MUST** perform partial public-key validation as defined in Section 5.6.2.3.4 of {{!NIST-SP-800-56A=DOI.10.6028/NIST.SP.800-56Ar3}} and **MUST** fail otherwise.
+- `generator()`: the base point `G` specified in {{NIST-SP-800-186}}; its compressed serialization is `036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296`.
+- `serialize([A])`: the group element serialization function {{fiat-shamir}} for {{SEC1}} (`Ne = 33`).
+- `deserialize(buf)`: the group element deserialization function of {{fiat-shamir}}, which inverts the conversion above; only the compressed form is a valid encoding (each `Ne`-byte slice begins with `0x00`, `0x02`, or `0x03`, as specified in {{fiat-shamir}}). Every non-identity point **MUST** perform all checks of Section 5.6.2.3.4 of {{!NIST-SP-800-56A=DOI.10.6028/NIST.SP.800-56Ar3}}. Deserialization **MUST** fail otherwise.
 
 ### Scalar Field of P-256
 
@@ -1075,9 +1078,9 @@ This ciphersuite uses the prime-order subgroup G1 of the BLS12-381 elliptic curv
 ### Elliptic curve group of BLS12-381 (G1) {{!RFC9380}}
 
 - `order()`: `52435875175126190479447740508185965837690552500527637822603658699938581184513`.
-- `generator()`: the generator of G1 specified in Section 4.2.1 of {{!PAIRING=I-D.irtf-cfrg-pairing-friendly-curves}}; its compressed serialization is `97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb`. It is the group element at index `0` of every instance ({{representation}}).
-- `serialize([A])`: the compressed G1 serialization of Appendix C of {{PAIRING}} (`Ne = 48`). The point-at-infinity encoding of that format (`I_bit` set) is neither produced ({{group-abstraction}}) nor accepted.
-- `deserialize(buf)`: inverts the serialization above. It **MUST** perform full point validation and **MUST** reject the point at infinity.
+- `generator()`: the generator of G1 specified in Section 4.2.1 of {{!PAIRING=I-D.irtf-cfrg-pairing-friendly-curves}}; its compressed serialization is `97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb`.
+- `serialize([A])`: the compressed G1 serialization of Appendix C of {{PAIRING}} (`Ne = 48`), including its point-at-infinity encoding.
+- `deserialize(buf)`: inverts the serialization above and **MUST** perform full point validation.
 
 ### Scalar Field of BLS12-381
 
@@ -1158,16 +1161,16 @@ Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 SessionId =
   72eeaaf4b2af14a6020b59d9b0501f7263bdbb16a403d93d7af1635546dcc503
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 Witness =
   9b7b9af133b35ea96e662c4662956909fe465084fe929506980e025022d750be
 NargString =
   037e00143a98c515388e00397c050c46729f010e30752f00172c2e9444cd323e
-  199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
-  3b
+  19a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
+  0c
 Expected = accept
 ~~~
 
@@ -1184,15 +1187,15 @@ Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
 SessionId =
   2934314b80877ce535bf39bb9074bc541c98e171b563b74dff82a63a921c6858
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 Witness =
   9b7b9af133b35ea96e662c4662956909fe465084fe929506980e025022d750be
 NargString =
-  3f29987a13e3ea094f2f7ee8f1ccc37ef3239bd303535a9959ca3aacca1f216c
-  cfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044ab1c28
+  b8cec3a2142ed5c54a25d45364ba64224da03989a3ed7a52b86a1301b936d245
+  10f48a666ddbd87883648ad4cde196d8c158cb288b280c7532e3602f6a0c5d15
 Expected = accept
 ~~~
 
@@ -1209,11 +1212,11 @@ Tag = dleq-DSFS-with-sigma-proofs_Shake128_P256
 SessionId =
   322adf7cff2aca1c08e9c7053b1d1d75016d22f1903f1b109f0267034645478c
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000003000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000004000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000020000000000000000000000000000000000000000000000
+  0100000000000000030000000000000000000000000000000000000000000000
   00000000000000000000000103a0d262ccb556df026581adf2ea6ea52cf69ca3
   9f0644b89e43471cb40d921b0503dc308f6d1c515121d2334015b95254336a60
   8a78031809b31099aadadcb566350241d6b25cf581b93fb4f769f1d88aa571df
@@ -1223,8 +1226,8 @@ Witness =
 NargString =
   0203ed31e0d73b821eba236b903f83ddd6e60e59a77249462be32fc43ab4d5dd
   7e038ad4a96b49f6e29ea0afcb6a329632b5e3cdea70137e965515219da19be4
-  497655ca705567b987c6f9c5dd5bd866d069dfdcbc415b2036dab9ec63a821d4
-  c045
+  49763209aa1f8c3a6b82ae4ddeed64c2d28003b242c54090ef09c4322ef66a98
+  2b43
 Expected = accept
 ~~~
 
@@ -1241,11 +1244,11 @@ Tag = dleq-CMPT-with-sigma-proofs_Shake128_P256
 SessionId =
   6f3abd4c1daaa824fce769441e9f5c724021ee723174190745be999dbfeca92f
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000003000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000004000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000020000000000000000000000000000000000000000000000
+  0100000000000000030000000000000000000000000000000000000000000000
   00000000000000000000000103a0d262ccb556df026581adf2ea6ea52cf69ca3
   9f0644b89e43471cb40d921b0503dc308f6d1c515121d2334015b95254336a60
   8a78031809b31099aadadcb566350241d6b25cf581b93fb4f769f1d88aa571df
@@ -1253,8 +1256,8 @@ Instance =
 Witness =
   b4fbb257ea2f224915a82a630ff348069e2b25bafdcf6255322c9fa0dfb6340a
 NargString =
-  5351e8969b72d4bdc0f2688ff68c69bb36154dc9074e534d954c8899b6c813b5
-  284cb4905860f4b1db7edc4473f5ee2b4ab178c5c2a8cbe57056ac330fc71d37
+  5439ce3609b91a4dd9b27b10e62b469a6e7ddba5b8a6aac7239d53f16e6837c0
+  3c0e0bdd00091a39a38c4b3d184b518b1e796eca262dc570eafaf449117a3c42
 Expected = accept
 ~~~
 
@@ -1271,9 +1274,9 @@ Tag = pedersen_commitment-DSFS-with-sigma-proofs_Shake128_P256
 SessionId =
   6d12e90fc2e3d74d9496ff609cd49f1013c6319da01b7aba5383f6b46789985e
 Instance =
-  0100000001000000020000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000001000000
+  0100000001000000030000000000000000000000000000000000000000000000
+  0000000000000000000000010200000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000002000000
   0000000000000000000000000000000000000000000000000000000000000001
   0206c16fcf4c4017adb8908fb2ec0aba8ea9edd683ae38eac52d59f040956be8
   f803e8372937cb2d0d9d0d48263ecd0a1d4b96207bceb3806739757fcad774f9
@@ -1283,9 +1286,9 @@ Witness =
   afc354c8985ee3cb61b83af2f7a5bb2abeb7d510db5168b6ede21b4910594a2b
 NargString =
   03491976f248dcde9ecf9c4536754cb2e81b61be73999efd8e82d061cabf3a49
-  439eaa3fd376be7bb7a599b5bd03397d967174f61b27c514e4541a05cfaea37b
-  2d05c8c392bcc53462ce9b997cec950c02f6d023537137b3586e2ec277a3c328
-  80
+  4366bacc0e4766532738c1877a528d3f6711d61f36d2653200d1ddeacb1787af
+  b90b3b192754bf116d386edcc7a93a8204a9a09ac8b4ca93b248dd5e8381ea4b
+  3f
 Expected = accept
 ~~~
 
@@ -1302,9 +1305,9 @@ Tag = pedersen_commitment-CMPT-with-sigma-proofs_Shake128_P256
 SessionId =
   4d241bd0f43a3a162d0671aa263a8285f51d22d848d08b0f9e2e747f20b19d89
 Instance =
-  0100000001000000020000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000001000000
+  0100000001000000030000000000000000000000000000000000000000000000
+  0000000000000000000000010200000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000002000000
   0000000000000000000000000000000000000000000000000000000000000001
   0206c16fcf4c4017adb8908fb2ec0aba8ea9edd683ae38eac52d59f040956be8
   f803e8372937cb2d0d9d0d48263ecd0a1d4b96207bceb3806739757fcad774f9
@@ -1313,9 +1316,9 @@ Witness =
   25c9fd63403d0da31081857537ade64b637c80ed2338639148a9938b3562ea06
   afc354c8985ee3cb61b83af2f7a5bb2abeb7d510db5168b6ede21b4910594a2b
 NargString =
-  9e11b127fa8984da359687ba95ce5b1bb4e82ea252e0df9562d62e8c60acc013
-  ecfcd356f2476e287e3f043f7cf11d1fb3a3dce9a190ce605819d1a05bbd23c5
-  5630f834648c294b6f39d23e9f0f507119ecdf8691ee3ac5dcfd4b669bbdf3f7
+  c865818d664aed2b586a5c7a70ee09d435e351651b8b82993f53f3bc1751c29b
+  655e3006c14693c0ac8e29a37108b52b795cbb4d9afc657669195508253e531f
+  8b71106f53cb395aafc38d209214a1edb2f3312da0992a48809561beca62b03e
 Expected = accept
 ~~~
 
@@ -1332,13 +1335,13 @@ Tag = pedersen_commitment_dleq-DSFS-with-sigma-proofs_Shake128_P256
 SessionId =
   688476139ac68ba996cc86d0331830b18fe2b5c8ab87038d4cf622d7c897c1cf
 Instance =
-  0200000001000000030000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000010000000000000000000000
-  0000000000000000000000000000000000000000000000010100000002000000
+  0200000001000000040000000000000000000000000000000000000000000000
+  0000000000000000000000010200000000000000020000000000000000000000
+  0000000000000000000000000000000000000000000000010100000003000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000006000000000000000000000000000000000000000000000000000000
-  0000000000000001020000000000000004000000000000000000000000000000
-  0000000000000000000000000000000000000001010000000500000000000000
+  0100000007000000000000000000000000000000000000000000000000000000
+  0000000000000001020000000000000005000000000000000000000000000000
+  0000000000000000000000000000000000000001010000000600000000000000
   0000000000000000000000000000000000000000000000000000000102120b29
   125003d5d494503fd47fa4057e761c1cb1632e8965233b8f8dfadd9d2503dc92
   fe87397abd7e0beded9099032d680f46280672afeb1682e46b45e046d5b302a2
@@ -1353,9 +1356,9 @@ Witness =
 NargString =
   03e2aa1a7e5b705690b8fc4859dc9353a8ca262c6f11016306a9a84664e55f48
   fc0268b6aeff56dbd1517e0721f62a59fe09fa2f523972ad06f3a6ccd75d82f8
-  6e95febeaa429522ab5e7bc356178a08cf50442e991f4a70db479f650903104a
-  92fa26e56545c5957e6e0ec86adbe6ca1675d8a713f39abeef120c72edeae7bf
-  a9ad
+  6e95feccdea380011cfaf162a975e3929461986246665e4860d2be13aa728e89
+  c3d12751b3994e7cf5466e4f75ef681dc1e001e3dce43eac5126ad42bae707ef
+  d9ab
 Expected = accept
 ~~~
 
@@ -1372,13 +1375,13 @@ Tag = pedersen_commitment_dleq-CMPT-with-sigma-proofs_Shake128_P256
 SessionId =
   ef423a52be5ad7d7d8e499aa870634f5ac3fc424b89fdc96aa72d8c5361e79d1
 Instance =
-  0200000001000000030000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000010000000000000000000000
-  0000000000000000000000000000000000000000000000010100000002000000
+  0200000001000000040000000000000000000000000000000000000000000000
+  0000000000000000000000010200000000000000020000000000000000000000
+  0000000000000000000000000000000000000000000000010100000003000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000006000000000000000000000000000000000000000000000000000000
-  0000000000000001020000000000000004000000000000000000000000000000
-  0000000000000000000000000000000000000001010000000500000000000000
+  0100000007000000000000000000000000000000000000000000000000000000
+  0000000000000001020000000000000005000000000000000000000000000000
+  0000000000000000000000000000000000000001010000000600000000000000
   0000000000000000000000000000000000000000000000000000000102120b29
   125003d5d494503fd47fa4057e761c1cb1632e8965233b8f8dfadd9d2503dc92
   fe87397abd7e0beded9099032d680f46280672afeb1682e46b45e046d5b302a2
@@ -1391,9 +1394,9 @@ Witness =
   1242ef15dea6fafe29b8d3e9ba859d0489744d46cc8b52563c445dcd0ee62854
   b80c18e412222e458decdfbecd398b8036df12500008fac1a8f16eecb517bf54
 NargString =
-  6cb7a0e88a0aa524c402339e9891851ed483bbe2f2ac4c2cea87999d33bef283
-  3c4bfd5c2a8de1abcd9a7134fd13391680dc7c9321b7e517b7bacf3755a6b177
-  48c11272f913bb15744d25f97e1f21885a948c952567463f289d6e382866314b
+  889b772b3a090bb4849222bf7a05abe7667bb0412096e01963e210131c863f63
+  55ef1a932490ec8366d551e3b99c0d34035f15226508f20add6ac87c8b67e223
+  7bff9c0768b0e1bbad32a578661ca76331845dec445660b21ac394cb7555e413
 Expected = accept
 ~~~
 
@@ -1411,12 +1414,12 @@ Tag =
 SessionId =
   72af721d175eb7b0c975ab01d37b8770077ce6bf9e81779188f59cb51a31bcbc
 Instance =
-  0100000001000000050000000000000000000000000000000000000000000000
-  0000000000000000000000010400000000000000010000000000000000000000
-  0000000000000000000000000000000000000000000000010100000002000000
+  0100000001000000060000000000000000000000000000000000000000000000
+  0000000000000000000000010400000000000000020000000000000000000000
+  0000000000000000000000000000000000000000000000010100000003000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0200000003000000000000000000000000000000000000000000000000000000
-  0000000000000001030000000400000000000000000000000000000000000000
+  0200000004000000000000000000000000000000000000000000000000000000
+  0000000000000001030000000500000000000000000000000000000000000000
   000000000000000000000000000000010202eaa274def05ab048396033e7f2d7
   638851a60131af9759a016e3eff592941c02b4f47e54f51d447c160ecf71c456
   a8e0d513d593c07bfaac23a373a4b51ca868034f75a59df8f7f10f97fcd9bdaf
@@ -1430,11 +1433,11 @@ Witness =
   0a3c8706d1a6d4623d89b5b9213c59e1163975d6ef7abc8311682ddfe6d7390b
 NargString =
   03206f70cc509ce8660cca8caa1f3b403f143c006705fe72daf4cb083be82495
-  8499b37f26362a50c596ec4885b97e8deeae5b3da96329e3e715ceee04b9f32b
-  026945804d8d0f3594587be911a9809a61bb200b23b30cc94f246f8250be4882
-  df8128a391c9deefda6d96daa4c5977f902d137a0b4130e7e2fe3f14f3e0106c
-  3052e00a1c9b9607a5d7a502ac0d419fc87b0636289fdabd05824091e07140e0
-  1d
+  849b21cc13b4e40300b3b63a03fa86eac1f0871dd619d227e90bfd3c34ff0ddf
+  68d7ffcf46bd1df8fa709d07ebdb91298850f2c699b56e40288fa3bd0d4a1fcc
+  bf3e7ad849735256a9769fc193d6db1a2ac3d5408cb33d880fbbcf5afabab790
+  fffe64c2ccb2ec789305b9d03cc01fbc47ee06dd924f173e241529c6ae9c8289
+  c8
 Expected = accept
 ~~~
 
@@ -1452,12 +1455,12 @@ Tag =
 SessionId =
   079c5d8e65618f746d72d2881bbb630155565d95375eb27619581b1e937a697d
 Instance =
-  0100000001000000050000000000000000000000000000000000000000000000
-  0000000000000000000000010400000000000000010000000000000000000000
-  0000000000000000000000000000000000000000000000010100000002000000
+  0100000001000000060000000000000000000000000000000000000000000000
+  0000000000000000000000010400000000000000020000000000000000000000
+  0000000000000000000000000000000000000000000000010100000003000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0200000003000000000000000000000000000000000000000000000000000000
-  0000000000000001030000000400000000000000000000000000000000000000
+  0200000004000000000000000000000000000000000000000000000000000000
+  0000000000000001030000000500000000000000000000000000000000000000
   000000000000000000000000000000010202eaa274def05ab048396033e7f2d7
   638851a60131af9759a016e3eff592941c02b4f47e54f51d447c160ecf71c456
   a8e0d513d593c07bfaac23a373a4b51ca868034f75a59df8f7f10f97fcd9bdaf
@@ -1470,11 +1473,11 @@ Witness =
   334d189229fa64202a6182e85d80497f21f250fa467ded4cf8152154af76c241
   0a3c8706d1a6d4623d89b5b9213c59e1163975d6ef7abc8311682ddfe6d7390b
 NargString =
-  431c50915e63bb13e4c89556d736cea30703c6235711c62aa3a3fde58e250526
-  93c3b5716f935f1052bb9fb97dd5635a7f14b3254ccdeeffc8fad01f2f4fed36
-  db0324e47ffdf5218646411ca9ccbcdde13001686a63997ea358f88c956524db
-  a190b324f47d021fc6b4373414e99aa68e673eb517e04fb169923418dec5d44b
-  fb208ece8117954283043ab111babce94b9d5716ef75f696f8c4492e2def66e7
+  7f3c332fa51b54e86031e45088c3b206ad16e2c4f0ae3bb552d8019acf9dd79c
+  712d4b7c77f44ea5a14983dfdcba7e5aaef846fc071afdd709ea2aef9213ff31
+  84352110ec1f5899e3318c8af86ca78ecec22ac31d8b0899ca729393bf64cebe
+  2f9316401b7ab6ce1026d5ff9b7e163cbd8b787ccada0ab82e251da8e3f965c6
+  c18b76d9839f72867d0251abec4f3461501b0208c808386cbcc935c0480f5153
 Expected = accept
 ~~~
 
@@ -1491,12 +1494,12 @@ Tag = elgamal_decryption-DSFS-with-sigma-proofs_Shake128_P256
 SessionId =
   b9125fe73ce90119db10799a9669a1ee47f6bc7b1dc7e0e8ab00296df6159657
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010200000004000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010200000005000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0300000000000000000000000000000000000000000000000000000000000000
-  0000000101000000000000000200000000000000000000000000000000000000
+  0400000000000000000000000000000000000000000000000000000000000000
+  0000000101000000000000000300000000000000000000000000000000000000
   000000000000000000000000000000010372462b86837aaadb6ec2348fc4a602
   9f7ae77e9aea238017bebbbe469dd299be039f3ab1733887055e7f18884bc8d6
   66d2461925888f366009aeefcaaffd94900e02597c2dd8b7bd7c2c9864efa356
@@ -1507,8 +1510,8 @@ Witness =
 NargString =
   02f2de68f98653dc53ef1832f363b62fd68837f7b5d17080e068e4450ef35bc5
   2f036ae8948f8836f4c38bf16298de1179a4641f6a11e2222457160ff4f8963b
-  72868c2b3964e4fc66374f635bb8a497d34592420c5b2ebd653ed30f80fe56bb
-  3776
+  728673acec1e1c9afabd9a0ebee222254f1743c01d201b1d6606021707206e15
+  dba1
 Expected = accept
 ~~~
 
@@ -1525,12 +1528,12 @@ Tag = elgamal_decryption-CMPT-with-sigma-proofs_Shake128_P256
 SessionId =
   cf4b3a76432ab31da160eb35049dde5afea29635eaadc9a79c59a04771b0908f
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010200000004000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010200000005000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0300000000000000000000000000000000000000000000000000000000000000
-  0000000101000000000000000200000000000000000000000000000000000000
+  0400000000000000000000000000000000000000000000000000000000000000
+  0000000101000000000000000300000000000000000000000000000000000000
   000000000000000000000000000000010372462b86837aaadb6ec2348fc4a602
   9f7ae77e9aea238017bebbbe469dd299be039f3ab1733887055e7f18884bc8d6
   66d2461925888f366009aeefcaaffd94900e02597c2dd8b7bd7c2c9864efa356
@@ -1539,8 +1542,8 @@ Instance =
 Witness =
   14375a0f9d92dd6fd4b67cb11de6f81b54c101f6e846cd8817dce6db7b30fb4c
 NargString =
-  827f88105d6a14c364c070fcdc5a53f0208b42ec6d8a6e397eea1d24382676bb
-  7af67b61c733281b12822892a29da92326df8fd6921802462909ace20d42e632
+  1a0c7624f3e260f60248904f040be8030d35f3ffa2aa753edb89d0d39e45b093
+  80dfe181f95f6f29fb356f862551f7e5acb26f7f320fd5026095b1109cd2cea4
 Expected = accept
 ~~~
 
@@ -1559,11 +1562,11 @@ Tag = dleq_derived_element-DSFS-with-sigma-proofs_Shake128_P256
 SessionId =
   c14c1f05e26976121b0842e9a64270893d4d7ca1b24e09c7d6b4147e74e9af0d
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000003000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000004000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000020000000000000000000000000000000000000000000000
+  0100000000000000030000000000000000000000000000000000000000000000
   00000000000000000000000103f56baee56b8f80b4bae59bb48c615a7b34ab47
   c8f0de3fe6bc23706511a90a0d037100a881faf4f73982c7e3113810c6e56a69
   c42c98562a121c15ad1951c8eafa031def6155fd67b1be8e4fd49c7227e576c1
@@ -1573,8 +1576,8 @@ Witness =
 NargString =
   029e903a7f21e67b403658a8b55c2097d0b5ec918a10b4ac965dbbddca20d216
   d50374b96946905242651598a20721cce60aaa1a1d84f4f4644ad1abb2ea61eb
-  435f785e12da6947bdcaa0b49176170df8a65f54f828e03412df5b31744433be
-  5e7c
+  435fc1db75038db1a9038b3c5945bbaa57bd059fca461e88fcdc4741e7ff8aa3
+  ea8d
 Expected = accept
 ~~~
 
@@ -1593,11 +1596,11 @@ Tag = dleq_derived_element-CMPT-with-sigma-proofs_Shake128_P256
 SessionId =
   5ed1c6effe868eaf259136b7702a342c2bd7aee2028e29dcee0364f8cbe88e2d
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000003000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000004000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000020000000000000000000000000000000000000000000000
+  0100000000000000030000000000000000000000000000000000000000000000
   00000000000000000000000103f56baee56b8f80b4bae59bb48c615a7b34ab47
   c8f0de3fe6bc23706511a90a0d037100a881faf4f73982c7e3113810c6e56a69
   c42c98562a121c15ad1951c8eafa031def6155fd67b1be8e4fd49c7227e576c1
@@ -1605,8 +1608,8 @@ Instance =
 Witness =
   45d78f1fff7555932001aa84fb525f9caa8a0949bb8406aaacdd9ce9f06dfdea
 NargString =
-  e8c65a06a08e5573f7b29c56246dc4efe5bd9d834ed12aa32e62a427875b852c
-  ffb5e51026648606a6f78a935c334c86c1a930c515e852db06e010f7418e8871
+  90e1393e4c16ab77543b188b8d9f6277891b0ebc3b01eeeacdfd5d38b827bd7b
+  a10708aa11af6334ceeabed21f2e2e0216a69b16e1bea40976189d215933173c
 Expected = accept
 ~~~
 
@@ -1623,14 +1626,14 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   047e00143a98c515388e00397c050c46729f010e30752f00172c2e9444cd323e
-  199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
-  3b
+  19a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
+  0c
 Expected = reject
 ~~~
 
@@ -1644,14 +1647,14 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   067e00143a98c515388e00397c050c46729f010e30752f00172c2e9444cd323e
-  199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
-  3b
+  19a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
+  0c
 Expected = reject
 ~~~
 
@@ -1665,14 +1668,14 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   077e00143a98c515388e00397c050c46729f010e30752f00172c2e9444cd323e
-  199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
-  3b
+  19a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
+  0c
 Expected = reject
 ~~~
 
@@ -1688,18 +1691,19 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   02ffffffff000000010000000000000000000000010000000000000000000000
-  049dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
-  3b
+  04a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
+  0c
 Expected = reject
 ~~~
 
-Deserialization fails on 0x00 padded to Ne bytes.
+The padded identity commitment decodes successfully, but the
+verification equation fails.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A4
@@ -1709,14 +1713,14 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   0000000000000000000000000000000000000000000000000000000000000000
-  009dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
-  3b
+  00a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
+  0c
 Expected = reject
 ~~~
 
@@ -1730,14 +1734,14 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   0200000000000000000000000000000000000000000000000000000000000000
-  019dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
-  3b
+  01a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
+  0c
 Expected = reject
 ~~~
 
@@ -1751,8 +1755,8 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
@@ -1772,13 +1776,13 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632552
-  cfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044ab1c28
+  10f48a666ddbd87883648ad4cde196d8c158cb288b280c7532e3602f6a0c5d15
 Expected = reject
 ~~~
 
@@ -1793,14 +1797,14 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   037e00143a98c515388e00397c050c46729f010e30752f00172c2e9444cd323e
-  199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
-  3b00
+  19a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
+  0c00
 Expected = reject
 ~~~
 
@@ -1814,13 +1818,13 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   037e00143a98c515388e00397c050c46729f010e30752f00172c2e9444cd323e
-  199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
+  19a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
 Expected = reject
 ~~~
 
@@ -1835,13 +1839,13 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
-  3f29987a13e3ea094f2f7ee8f1ccc37ef3239bd303535a9959ca3aacca1f216c
-  cfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044ab1c28
+  b8cec3a2142ed5c54a25d45364ba64224da03989a3ed7a52b86a1301b936d245
+  10f48a666ddbd87883648ad4cde196d8c158cb288b280c7532e3602f6a0c5d15
   00
 Expected = reject
 ~~~
@@ -1856,13 +1860,13 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
-  3f29987a13e3ea094f2f7ee8f1ccc37ef3239bd303535a9959ca3aacca1f216c
-  cfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044ab1c
+  b8cec3a2142ed5c54a25d45364ba64224da03989a3ed7a52b86a1301b936d245
+  10f48a666ddbd87883648ad4cde196d8c158cb288b280c7532e3602f6a0c5d
 Expected = reject
 ~~~
 
@@ -1877,8 +1881,8 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
@@ -1887,75 +1891,84 @@ NargString =
 Expected = reject
 ~~~
 
-Instance validation fails if scalar index 1 appears in no equation
-(check 6); the proof satisfies the verification equations, so rejection
-must come from instance validation.
+The empty relation, with no equations and no image, is valid.
+
+~~~
+Id = sigma-protocols/p256/empty_relation/batchable/E0
+Function = SigmaProof
+Ciphersuite = sigma-proofs_Shake128_P256
+Flavor = batchable
+Tag = empty_relation-DSFS-with-sigma-proofs_Shake128_P256
+Instance = 00000000
+NargString = ""
+Expected = accept
+~~~
+
+The instance and proof are accepted even though scalar index 1 appears
+in no equation.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/E1
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = instance_unconstrained_scalar-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000020000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010200000001000000
+  0100000001000000030000000000000000000000000000000000000000000000
+  0000000000000000000000010200000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010200000002000000
   0000000000000000000000000000000000000000000000000000000000000001
   031ac02e1fd7d885b1e5eb1811abd9c4d03eee8eada37d9c1a860ca3c649b8e2
   a302ccab62b6a53592a5bc088188532faa9eee974c21150d6276da6c6d924b6e
   2dc1
 NargString =
   033d85fedbddfd463f0392eeea57107720404fbce572e420fe54fba77bad18b4
-  b94358208ea29237036630d19ee48191bf7626c37730249a3951083345b19ed4
-  e6c2e07d1d92976e9398c5cc356ce644df48ecb1362ccf31d97166a3e40048c7
-  76e4555c95e4b42275076c8523f4ee48be8835478f8b0262fce9279e2bcb8c7a
-  94
-Expected = reject
+  b9834260ba32314f5942fada9807725a84612213e0d9cd077a408152cc8888ce
+  1d53c677da45813656460981b5486f84b75cac23d94fd31d62b1b700f5c0ac94
+  f5a9a8aff056ca55160b48736276aa8c5d6cdc502147814b99bad208d3e9cdfc
+  ef
+Expected = accept
 ~~~
 
-Instance validation fails on the same instance, here with the
-unconstrained `response[1]` perturbed.
+Because scalar index 1 is unconstrained, changing `response[1]` in a valid
+proof produces another valid proof.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/E1b
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = instance_unconstrained_scalar-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000020000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010200000001000000
+  0100000001000000030000000000000000000000000000000000000000000000
+  0000000000000000000000010200000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010200000002000000
   0000000000000000000000000000000000000000000000000000000000000001
   031ac02e1fd7d885b1e5eb1811abd9c4d03eee8eada37d9c1a860ca3c649b8e2
   a302ccab62b6a53592a5bc088188532faa9eee974c21150d6276da6c6d924b6e
   2dc1
 NargString =
   033d85fedbddfd463f0392eeea57107720404fbce572e420fe54fba77bad18b4
-  b94358208ea29237036630d19ee48191bf7626c37730249a3951083345b19ed4
-  e6c2e07d1d92976e9398c5cc356ce644df48ecb1362ccf31d97166a3e40048c7
-  77e4555c95e4b42275076c8523f4ee48be8835478f8b0262fce9279e2bcb8c7a
-  94
-Expected = reject
+  b9834260ba32314f5942fada9807725a84612213e0d9cd077a408152cc8888ce
+  1d53c677da45813656460981b5486f84b75cac23d94fd31d62b1b700f5c0ac94
+  f6a9a8aff056ca55160b48736276aa8c5d6cdc502147814b99bad208d3e9cdfc
+  ef
+Expected = accept
 ~~~
 
-Instance validation fails if the image terms X + (-X) sum to the
-identity (check 9).
+The instance and proof are accepted when the image terms X + (-X) sum to
+the identity.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/E2
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = instance_trivial_equation-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000002000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000000000000000000000000000
-  0000000000000000000000000000000101000000000000000000000000000000
+  0100000002000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010300000000000000000000000000000000000000
+  0000000000000000000000000000000101000000000000000100000000000000
   00000000000000000000000000000000000000000000000000000001031db20b
   c00c5012329627c85174b00ade13788636ce3ce3842e0fc1dde4179ca5021db2
   0bc00c5012329627c85174b00ade13788636ce3ce3842e0fc1dde4179ca5
@@ -1963,37 +1976,34 @@ NargString =
   022fb88456a6a7f8d974b129ec99f3745ffd9e3dcbae9771815571d4c4087a12
   088aa155e5f5e22708f62eec3e7425026489340ed065e835229f1a5010637696
   d9
-Expected = reject
+Expected = accept
 ~~~
 
-Instance validation fails if a statement element is the identity (check
-8), here at index 1, encoded as stand-in bytes (P-256 has no identity
-encoding); parsers may instead reject at group deserialization.
+An instance containing the identity element is accepted.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/E3
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = instance_identity_element-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000020000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000001000000
+  0100000001000000030000000000000000000000000000000000000000000000
+  0000000000000000000000010200000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000002000000
   0000000000000000000000000000000000000000000000000000000000000001
   0000000000000000000000000000000000000000000000000000000000000000
   0003871d14718441e23004e5c432427775bde2e9244f75550e839d210556bde1
   cad0
 NargString =
   02b9d1353c5f3bf39418f2ea4bb8f8ba63cef1e8cc7eb14f51242c31ec17765a
-  5fa919d7f15f2e14c494b5e199eaf0b70735118e7ae2b7a278edee4b27a0135f
-  fb2cb0ed2a76d9c583db0758976f24bc3eb65764691a2a51779f84acca97e161
-  bc
-Expected = reject
+  5fd2995d319c4066ae5a6e462b6df73d7a3fa96528f6df4f06427792f5fbf918
+  173d803b926c49616e4505826af6862afd0746974c0cc0305f57a35580738a76
+  8e
+Expected = accept
 ~~~
 
-Instance validation fails if a term references element index 2 while a
+Instance validation fails if a term references element index 3 while a
 single element follows; parsers may instead reject on length.
 
 ~~~
@@ -2004,14 +2014,14 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = instance_index_out_of_bounds-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000020000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000030000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   037e00143a98c515388e00397c050c46729f010e30752f00172c2e9444cd323e
-  199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
-  3b
+  19a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
+  0c
 Expected = reject
 ~~~
 
@@ -2024,14 +2034,14 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   037e00143a98c515388e00397c050c46729f010e30752f00172c2e9444cd323e
-  199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
-  3b
+  19a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
+  0c
 Expected = accept
 ~~~
 
@@ -2046,14 +2056,14 @@ Flavor = batchable
 Tag =
   discrete_logarithm/wrong-session-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   037e00143a98c515388e00397c050c46729f010e30752f00172c2e9444cd323e
-  199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
-  3b
+  19a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
+  0c
 Expected = reject
 ~~~
 
@@ -2066,13 +2076,13 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
-  3f29987a13e3ea094f2f7ee8f1ccc37ef3239bd303535a9959ca3aacca1f216c
-  cfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044ab1c28
+  b8cec3a2142ed5c54a25d45364ba64224da03989a3ed7a52b86a1301b936d245
+  10f48a666ddbd87883648ad4cde196d8c158cb288b280c7532e3602f6a0c5d15
 Expected = accept
 ~~~
 
@@ -2087,13 +2097,13 @@ Flavor = compact
 Tag =
   discrete_logarithm/wrong-session-CMPT-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
-  3f29987a13e3ea094f2f7ee8f1ccc37ef3239bd303535a9959ca3aacca1f216c
-  cfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044ab1c28
+  b8cec3a2142ed5c54a25d45364ba64224da03989a3ed7a52b86a1301b936d245
+  10f48a666ddbd87883648ad4cde196d8c158cb288b280c7532e3602f6a0c5d15
 Expected = reject
 ~~~
 
@@ -2106,11 +2116,11 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = dleq-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000003000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000004000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000020000000000000000000000000000000000000000000000
+  0100000000000000030000000000000000000000000000000000000000000000
   00000000000000000000000103a0d262ccb556df026581adf2ea6ea52cf69ca3
   9f0644b89e43471cb40d921b0503dc308f6d1c515121d2334015b95254336a60
   8a78031809b31099aadadcb566350241d6b25cf581b93fb4f769f1d88aa571df
@@ -2118,8 +2128,8 @@ Instance =
 NargString =
   0203ed31e0d73b821eba236b903f83ddd6e60e59a77249462be32fc43ab4d5dd
   7e038ad4a96b49f6e29ea0afcb6a329632b5e3cdea70137e965515219da19be4
-  497655ca705567b987c6f9c5dd5bd866d069dfdcbc415b2036dab9ec63a821d4
-  c045
+  49763209aa1f8c3a6b82ae4ddeed64c2d28003b242c54090ef09c4322ef66a98
+  2b43
 Expected = accept
 ~~~
 
@@ -2133,11 +2143,11 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = dleq-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0200000001000000030000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000020000000000000000000000
-  0000000000000000000000000000000000000000000000010100000001000000
+  0200000001000000040000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000030000000000000000000000
+  0000000000000000000000000000000000000000000000010100000002000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000000000000000000000000000000000000000000000000000
+  0100000000000000010000000000000000000000000000000000000000000000
   00000000000000000000000103a0d262ccb556df026581adf2ea6ea52cf69ca3
   9f0644b89e43471cb40d921b0503dc308f6d1c515121d2334015b95254336a60
   8a78031809b31099aadadcb566350241d6b25cf581b93fb4f769f1d88aa571df
@@ -2145,8 +2155,8 @@ Instance =
 NargString =
   0203ed31e0d73b821eba236b903f83ddd6e60e59a77249462be32fc43ab4d5dd
   7e038ad4a96b49f6e29ea0afcb6a329632b5e3cdea70137e965515219da19be4
-  497655ca705567b987c6f9c5dd5bd866d069dfdcbc415b2036dab9ec63a821d4
-  c045
+  49763209aa1f8c3a6b82ae4ddeed64c2d28003b242c54090ef09c4322ef66a98
+  2b43
 Expected = reject
 ~~~
 
@@ -2159,18 +2169,18 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
 Tag = dleq-CMPT-with-sigma-proofs_Shake128_P256
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000003000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000004000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000020000000000000000000000000000000000000000000000
+  0100000000000000030000000000000000000000000000000000000000000000
   00000000000000000000000103a0d262ccb556df026581adf2ea6ea52cf69ca3
   9f0644b89e43471cb40d921b0503dc308f6d1c515121d2334015b95254336a60
   8a78031809b31099aadadcb566350241d6b25cf581b93fb4f769f1d88aa571df
   e9d3f2e451b2f779e8da710ae0015b
 NargString =
-  5351e8969b72d4bdc0f2688ff68c69bb36154dc9074e534d954c8899b6c813b5
-  284cb4905860f4b1db7edc4473f5ee2b4ab178c5c2a8cbe57056ac330fc71d37
+  5439ce3609b91a4dd9b27b10e62b469a6e7ddba5b8a6aac7239d53f16e6837c0
+  3c0e0bdd00091a39a38c4b3d184b518b1e796eca262dc570eafaf449117a3c42
 Expected = accept
 ~~~
 
@@ -2184,18 +2194,18 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
 Tag = dleq-CMPT-with-sigma-proofs_Shake128_P256
 Instance =
-  0200000001000000030000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000020000000000000000000000
-  0000000000000000000000000000000000000000000000010100000001000000
+  0200000001000000040000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000030000000000000000000000
+  0000000000000000000000000000000000000000000000010100000002000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000000000000000000000000000000000000000000000000000
+  0100000000000000010000000000000000000000000000000000000000000000
   00000000000000000000000103a0d262ccb556df026581adf2ea6ea52cf69ca3
   9f0644b89e43471cb40d921b0503dc308f6d1c515121d2334015b95254336a60
   8a78031809b31099aadadcb566350241d6b25cf581b93fb4f769f1d88aa571df
   e9d3f2e451b2f779e8da710ae0015b
 NargString =
-  5351e8969b72d4bdc0f2688ff68c69bb36154dc9074e534d954c8899b6c813b5
-  284cb4905860f4b1db7edc4473f5ee2b4ab178c5c2a8cbe57056ac330fc71d37
+  5439ce3609b91a4dd9b27b10e62b469a6e7ddba5b8a6aac7239d53f16e6837c0
+  3c0e0bdd00091a39a38c4b3d184b518b1e796eca262dc570eafaf449117a3c42
 Expected = reject
 ~~~
 
@@ -2209,14 +2219,14 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001039db6eb62700691
   c3580fbda8fc7ee33f6cfdd5b43203507c1b0533b15d0d1b7e
 NargString =
   037e00143a98c515388e00397c050c46729f010e30752f00172c2e9444cd323e
-  199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
-  3b
+  19a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
+  0c
 Expected = reject
 ~~~
 
@@ -2230,13 +2240,13 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001039db6eb62700691
   c3580fbda8fc7ee33f6cfdd5b43203507c1b0533b15d0d1b7e
 NargString =
-  3f29987a13e3ea094f2f7ee8f1ccc37ef3239bd303535a9959ca3aacca1f216c
-  cfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044ab1c28
+  b8cec3a2142ed5c54a25d45364ba64224da03989a3ed7a52b86a1301b936d245
+  10f48a666ddbd87883648ad4cde196d8c158cb288b280c7532e3602f6a0c5d15
 Expected = reject
 ~~~
 
@@ -2251,13 +2261,13 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
-  e44d6cb80e7b099d06525dbb3567fc05ebfc9b7d3da0624e5cf643163d7a51e3
-  9dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e1713b
+  93bac806a40bf7649bd000f052d04ddbc3e5c407e7d895f2818d01076c070d13
+  a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a687360c
 Expected = reject
 ~~~
 
@@ -2273,14 +2283,14 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   0221f8d84da0727022bf043b23de7c67590535109a3a6c24f4fba9c8732190c6
-  eacfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044ab1c
-  28
+  ea10f48a666ddbd87883648ad4cde196d8c158cb288b280c7532e3602f6a0c5d
+  15
 Expected = reject
 ~~~
 
@@ -2294,14 +2304,14 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   037e00143a98c515388e00397c050c46729f010e30752f00172c2e9444cd323e
-  199dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
-  3c
+  19a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
+  0d
 Expected = reject
 ~~~
 
@@ -2316,14 +2326,14 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
   036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2
-  969dda433231690cefaaaceb1bf372b37ca060a6a3a87b40dafea0a8d2f5e171
-  3b
+  96a3e0ebd45a2bcf4ccdbaf720aaf57161612abc4ce2ad1d97ff004483a68736
+  0c
 Expected = reject
 ~~~
 
@@ -2337,13 +2347,13 @@ Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_P256
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   00000000000000000000000000000000000000000000000103f0f109368d010f
   5adf85ad7ce620a87291f3d4cabcf72fd8d2b91bc50f541fa8
 NargString =
-  3f29987a13e3ea094f2f7ee8f1ccc37ef3239bd303535a9959ca3aacca1f216d
-  cfa4f6e2f3a7a88a485fc90cc1eba4019f4d66756cd8b3df83a6a43044ab1c28
+  b8cec3a2142ed5c54a25d45364ba64224da03989a3ed7a52b86a1301b936d246
+  10f48a666ddbd87883648ad4cde196d8c158cb288b280c7532e3602f6a0c5d15
 Expected = reject
 ~~~
 
@@ -2367,8 +2377,8 @@ Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
 SessionId =
   b9a184f47a2038072177099bdfe75e6663e86f0cb6790b7b618102b3f3b2d787
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
@@ -2376,8 +2386,8 @@ Witness =
   641c3cdcc72c9b3a84b85df5808de5f37cf4489ca15f1cffdfd105b780ec0682
 NargString =
   a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1acddda5ece
-  0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f454e8e
-  b6105238a2b3fe8250042aec5bd1b641
+  0abe8338bef0293d96d924dafd80ddcb3115f5dd64d080b1cee8d9f92cbc8358
+  87a3cee2397635479bbaad745d5041d8
 Expected = accept
 ~~~
 
@@ -2394,16 +2404,16 @@ Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
 SessionId =
   8651b5e07aef46852f93102b9e9432370b671d4bd84fbfcfd1e224a06e7ae182
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 Witness =
   641c3cdcc72c9b3a84b85df5808de5f37cf4489ca15f1cffdfd105b780ec0682
 NargString =
-  2b2af194b74fff452d74060e514e36a43f4b7405bff46781a78f42bc7696c7ee
-  5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f7ad94
+  2b549a418dc8ac359b946ca91d869653f06058aeab9647f57e1f56251cd3e7a3
+  49a94d7454a6bbaab6124a4573fb684983886d1d876989f5d218700c99de8195
 Expected = accept
 ~~~
 
@@ -2420,11 +2430,11 @@ Tag = dleq-DSFS-with-sigma-proofs_Shake128_BLS12381
 SessionId =
   8a5c790e1a988d7ad14e5eecdfbd2fc1ce87e01e788c38e3c2487f8d8898c9cc
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000003000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000004000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000020000000000000000000000000000000000000000000000
+  0100000000000000030000000000000000000000000000000000000000000000
   000000000000000000000001b8a52d4f929a5fc9a27b16941d102b632bac0b06
   61265ed04ec9e59d35480f93d4ebefc5af6a06090964444a5ed9abfdac2a3348
   158e801ab8f31490543b66ddf04a103dd0bc7f41194f72b575b62d08900aaf6e
@@ -2436,7 +2446,7 @@ NargString =
   b13432cd2a44f3287e1ee64986f77cfd30bc6e27cb5bb245e5e0d5cd74d7ea59
   d64b17f3e612b0a5790bad93d77ea46291f38f62b25f78dae74200765604f560
   b5b0459b45404eb953e498497a94757841739571c4fa83ba5b27fb2cd9c01c20
-  53843da83608b616cb57c042f0d21160317095e5ab1706e02299dfd47f67b453
+  1a4ac38aaf591abd139d65113c0b2a3cb3a7ee334333c3aeb276be865bc882ff
 Expected = accept
 ~~~
 
@@ -2453,11 +2463,11 @@ Tag = dleq-CMPT-with-sigma-proofs_Shake128_BLS12381
 SessionId =
   244120cf7e64e64f0230270461e2011b7e7a37a4ddd1f10613c5a9ea3d69afb5
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000003000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000004000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000020000000000000000000000000000000000000000000000
+  0100000000000000030000000000000000000000000000000000000000000000
   000000000000000000000001b8a52d4f929a5fc9a27b16941d102b632bac0b06
   61265ed04ec9e59d35480f93d4ebefc5af6a06090964444a5ed9abfdac2a3348
   158e801ab8f31490543b66ddf04a103dd0bc7f41194f72b575b62d08900aaf6e
@@ -2466,8 +2476,8 @@ Instance =
 Witness =
   4a27c7be9fb7612efe553eb66c7120b978433c35625c00c9c530da6e7214db08
 NargString =
-  6756a6afe70dc8b509ece61173992cd9970d6219332d289fecf58e240f1497ca
-  1712fb2963a360c4bc783fa9764bb115b7162e014c5f6c8859fbcd71fbc58844
+  54486ea1d23b4ed1d4f95ac91f40fa886d21e7a1e713995985317a4ca4527948
+  0fc8441bb086ca503e23c9f822b929cd95300380f3c8317f1055307be6f9317f
 Expected = accept
 ~~~
 
@@ -2484,9 +2494,9 @@ Tag = pedersen_commitment-DSFS-with-sigma-proofs_Shake128_BLS12381
 SessionId =
   e029c091ebd8fea4edbd7025de04170104768f284ab9693ede56a0a6ffb299fc
 Instance =
-  0100000001000000020000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000001000000
+  0100000001000000030000000000000000000000000000000000000000000000
+  0000000000000000000000010200000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000002000000
   0000000000000000000000000000000000000000000000000000000000000001
   98a75ce3f191eebaed9f6a49b445f423ac6ba6dd2caad41ff2d5a05db9531f35
   0d9125914ddacd670af9e851d44c05239482122220076c1aa251a964e649aec8
@@ -2496,9 +2506,9 @@ Witness =
   27b79d17769ee1f8c1d774380a3acdb8d70c96f4869fa17fdcaf7a5729804a12
 NargString =
   a35cdeff7ecb8c09e2527e98c6da38d23d8f9ac25affe1be3fec9976428f0b83
-  7b8b9c62b8726f4ee3522e59a64e6b402e26ba8823477689798c38ba703692f5
-  156f5d39febaa33eacf1a0ecbc2973a813e0e02d5c72770b6397cfab9315e5cf
-  3c2402516220b2ac1ec139c9bfdc020f
+  7b8b9c62b8726f4ee3522e59a64e6b405597ff3de7cb4ae1a417c1f08d0639a6
+  8ebe8e5bc51ed8a6970015ef1cc351bb24eabe50b56878852d1bde4bfcd6bf0f
+  a486f3e222eea874127a330fc28ce05a
 Expected = accept
 ~~~
 
@@ -2515,9 +2525,9 @@ Tag = pedersen_commitment-CMPT-with-sigma-proofs_Shake128_BLS12381
 SessionId =
   0d54417e1f7bbbb652a9230e7e47701d1654bee35c8ae86235864576c86521a4
 Instance =
-  0100000001000000020000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000001000000
+  0100000001000000030000000000000000000000000000000000000000000000
+  0000000000000000000000010200000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000002000000
   0000000000000000000000000000000000000000000000000000000000000001
   98a75ce3f191eebaed9f6a49b445f423ac6ba6dd2caad41ff2d5a05db9531f35
   0d9125914ddacd670af9e851d44c05239482122220076c1aa251a964e649aec8
@@ -2526,9 +2536,9 @@ Witness =
   513794634e24e09f9eb668c0c1f4dfd6857e303b6b8bc5d08bae5a19e3961ed3
   27b79d17769ee1f8c1d774380a3acdb8d70c96f4869fa17fdcaf7a5729804a12
 NargString =
-  0af9ef56a2968b32d07654a7de630732e9cad9625c51f7b7975cd3056ef71021
-  1be5f52ee640769f3fd276008102aa8ee5041f859aa509d2bf8bc35224eb2841
-  36a8475ab594387b75de3af7e2ff51464c6b518172604308ede2dac3fc97f9bc
+  574f37a678d3ba2a0262943f0fb804b79396dc20ed5cd55b06dedd720264dd86
+  6135f5eb6141b6fccee7b89180d4ca7e02c8fb0d49547d5005078f10cf0105df
+  3308d2f5c16f3f3d6efe0b78f5c385524956a1be8c05d71625e3a3e5ea01aa54
 Expected = accept
 ~~~
 
@@ -2545,13 +2555,13 @@ Tag = pedersen_commitment_dleq-DSFS-with-sigma-proofs_Shake128_BLS12381
 SessionId =
   ce017f3f5b3462089c1b374cdd47271a0d0d3bae7381eb3435830eeaf9c48879
 Instance =
-  0200000001000000030000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000010000000000000000000000
-  0000000000000000000000000000000000000000000000010100000002000000
+  0200000001000000040000000000000000000000000000000000000000000000
+  0000000000000000000000010200000000000000020000000000000000000000
+  0000000000000000000000000000000000000000000000010100000003000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000006000000000000000000000000000000000000000000000000000000
-  0000000000000001020000000000000004000000000000000000000000000000
-  0000000000000000000000000000000000000001010000000500000000000000
+  0100000007000000000000000000000000000000000000000000000000000000
+  0000000000000001020000000000000005000000000000000000000000000000
+  0000000000000000000000000000000000000001010000000600000000000000
   0000000000000000000000000000000000000000000000000000000192e906e9
   85c25121c422faf4c618bd1a1b9a31a563997e0300fc79a90752ec3423b0b607
   7a8f1efbf89c4feee7e6f55b85fe8aa4926c2c83d53466c50d7e61f51b071708
@@ -2569,8 +2579,8 @@ NargString =
   93a9baa8ac481ad40ffb0c046c03cc8d05f698c9cce9f24aa004f86d8f2b1756
   304a4c9e213c36b95628c1e606d2f448b5f0c6903de76e160f034500b499cb05
   ea59240e4e616206e444b2f3842a30a78a50ee8551dda8fb532d07b3f9411895
-  1e6c7803723853a5a5b655ec96bf793dbac487d93804573544d9b16a43cf9fa1
-  4bc77e8961c638fa11f7eb0a9623f1e665272e2b9140a989b3638b896217e015
+  2267c889108a952e1f9a30660ba533b1c0891ed3d046507a6fbbf7fdc3bca35c
+  5035d9683c31fd56c5e98146674b07558e1f2994b9b314aff3ba4000ebf627e0
 Expected = accept
 ~~~
 
@@ -2587,13 +2597,13 @@ Tag = pedersen_commitment_dleq-CMPT-with-sigma-proofs_Shake128_BLS12381
 SessionId =
   9be697e93cbf8dc535caadba2629113c6c63bb12b6f46a86668e28fb2c9e09ef
 Instance =
-  0200000001000000030000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000010000000000000000000000
-  0000000000000000000000000000000000000000000000010100000002000000
+  0200000001000000040000000000000000000000000000000000000000000000
+  0000000000000000000000010200000000000000020000000000000000000000
+  0000000000000000000000000000000000000000000000010100000003000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000006000000000000000000000000000000000000000000000000000000
-  0000000000000001020000000000000004000000000000000000000000000000
-  0000000000000000000000000000000000000001010000000500000000000000
+  0100000007000000000000000000000000000000000000000000000000000000
+  0000000000000001020000000000000005000000000000000000000000000000
+  0000000000000000000000000000000000000001010000000600000000000000
   0000000000000000000000000000000000000000000000000000000192e906e9
   85c25121c422faf4c618bd1a1b9a31a563997e0300fc79a90752ec3423b0b607
   7a8f1efbf89c4feee7e6f55b85fe8aa4926c2c83d53466c50d7e61f51b071708
@@ -2608,9 +2618,9 @@ Witness =
   6633fad945a9da933660070571afb1deb184bb2d24f542bdee864493dcb30027
   05f1a4f40164cbbe8b8a33038ad8458afb6b262c0691f7442b1fb2ad253b60c3
 NargString =
-  543dd59971ee254384ae6fef1d36c0dcdbfc1b3ce47ad97d33599e4b6d27f17e
-  607cf3588579214c206fbd389eab0e45fd6b72ae79100468e12ed5e7a866c177
-  01c611bb833a1518f0588deb29d04dbc3e43f2adfdaa378fda3c0489fbb1c4cf
+  3c12ee5aa74164a9699993afa265de4f734701e2bf7e52871fe0c46d85ea5332
+  016e79f8c0a0e2057d4716afc9ccad6b3662b6142e9446493449c36d6707e4c8
+  0e38bc5378a73d3c495a268b95d9db8da1943b2ce498fbc81cfc2045b652563d
 Expected = accept
 ~~~
 
@@ -2629,12 +2639,12 @@ Tag =
 SessionId =
   2a5805ac1b5454c5ee85c1d1dd9edcd417a992a718de963f24b188c962457877
 Instance =
-  0100000001000000050000000000000000000000000000000000000000000000
-  0000000000000000000000010400000000000000010000000000000000000000
-  0000000000000000000000000000000000000000000000010100000002000000
+  0100000001000000060000000000000000000000000000000000000000000000
+  0000000000000000000000010400000000000000020000000000000000000000
+  0000000000000000000000000000000000000000000000010100000003000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0200000003000000000000000000000000000000000000000000000000000000
-  0000000000000001030000000400000000000000000000000000000000000000
+  0200000004000000000000000000000000000000000000000000000000000000
+  0000000000000001030000000500000000000000000000000000000000000000
   00000000000000000000000000000001a1d2f5b67fab08902ded92336405309c
   6b37f32b3e435ed7b0213555f58fa1f55394ddf070c7b2c1ffeb9a4e72043ce3
   a6c3922e0802086d57687391066cf25827154b05982bc17b585272d98ba7a3be
@@ -2650,11 +2660,11 @@ Witness =
   1e6ea7c86713a9e429396b2be43a403ed1d435367f157b9c8370e9f223ba479a
 NargString =
   977956f7bad0c7473dfffc0fc9c83e6a875dc84944c8d7e6d43e37111f26b4ce
-  1e34dc254886cf4560b5ca988c8b4a1116fae4c649c9c45aa1d18b91befafa3e
-  c3c5d33d696b08668651de18abcb0f2f146d2ddade6629b540783e11e180b8e4
-  9bacef2d6ff14d1ec1c10153b0c277321d2df04da792deb0e7be13e9c754a418
-  0b8706446d986ee791f8523a1f5125c8027de941da6d6f6f20de5ef10271cb01
-  57408dad73376457ed50efa9fb07f996
+  1e34dc254886cf4560b5ca988c8b4a11449c6fd5d9601c5fbd14a018e5940351
+  647c89107a21ba6fc220b134ec48b7be382f9d655c9822ac1aa4807eb71c24b2
+  98e4a1971c047631d60e397b7e982c2164c5d5c94a91cf7913df0902155e3f72
+  396afb0422e4dac53bdce18e7f5f9c1762325f28231f631507f2e863bd4561c5
+  8bc82f735c039cafb912fe8bd2da47e1
 Expected = accept
 ~~~
 
@@ -2673,12 +2683,12 @@ Tag =
 SessionId =
   d44869a3b7c697750425649f4ff70570a192a6afc76d86f233d1d11c6f88e996
 Instance =
-  0100000001000000050000000000000000000000000000000000000000000000
-  0000000000000000000000010400000000000000010000000000000000000000
-  0000000000000000000000000000000000000000000000010100000002000000
+  0100000001000000060000000000000000000000000000000000000000000000
+  0000000000000000000000010400000000000000020000000000000000000000
+  0000000000000000000000000000000000000000000000010100000003000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0200000003000000000000000000000000000000000000000000000000000000
-  0000000000000001030000000400000000000000000000000000000000000000
+  0200000004000000000000000000000000000000000000000000000000000000
+  0000000000000001030000000500000000000000000000000000000000000000
   00000000000000000000000000000001a1d2f5b67fab08902ded92336405309c
   6b37f32b3e435ed7b0213555f58fa1f55394ddf070c7b2c1ffeb9a4e72043ce3
   a6c3922e0802086d57687391066cf25827154b05982bc17b585272d98ba7a3be
@@ -2693,11 +2703,11 @@ Witness =
   393c117132d5a600b63968dfd4b03480b89cf5aff74ec52749a6086b50878c62
   1e6ea7c86713a9e429396b2be43a403ed1d435367f157b9c8370e9f223ba479a
 NargString =
-  3b32ef1ba00ed483b5494e33305df9a260dac8ae87e95eed9de83617de093b71
-  4955e5e99e066b6bc828c6ab6f282d38e3f11f5edbdf8857d6ddad0c8788bfb5
-  68f2d25c344c5f27226941d199e5a25f129544cccfa5c0e751c9622752d19ac9
-  3314321c51a7c2853483e7239b3e567f6785f863ef4a8bf558fbf228e2c0bd4d
-  4056b35bfa8f6868d298d50d76c640c67a59fa67c35793b4123c49fa03a88198
+  4d9aa10203635029f4b5660d7581ca586b680bb8e4e0dea51a320c9987eb92c1
+  247cafafc3a38956eda46d44d5f2c152bd6dd32d4b3949b2ea7e1d478a2c3139
+  223cb902c61527fb3b5dbf24c3119f233d1185cfeac53e76ee1d91b469329026
+  51206b7d52ec720c8550d99690d12396ccb57c71c9e8aeb8bb08cfe18f4bd177
+  1150a1f75523d9be368cd560b653e94d643c7cbfa9cf3f21ebddb16e92ed6842
 Expected = accept
 ~~~
 
@@ -2714,12 +2724,12 @@ Tag = elgamal_decryption-DSFS-with-sigma-proofs_Shake128_BLS12381
 SessionId =
   f3606306ba6a9e7497185a0dd337bee9364dd4b4cd889704fc40ce74412dffeb
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010200000004000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010200000005000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0300000000000000000000000000000000000000000000000000000000000000
-  0000000101000000000000000200000000000000000000000000000000000000
+  0400000000000000000000000000000000000000000000000000000000000000
+  0000000101000000000000000300000000000000000000000000000000000000
   00000000000000000000000000000001a73aa2551fd1f24865adb5b9a84f63ef
   b8d2cab44fcf21dfa9e587dcabff2a0ffa36a93a82df2027ec32288160f0ebd3
   835f420c8a573cde22b41e8b427fda9427e9ab5d6bca17cdc4d045c8dd37091a
@@ -2733,7 +2743,7 @@ NargString =
   abc0eca21b6faea727caf039722661724aa0ffa84df6cff0540292c4b339b2cb
   d8a06d8b64846bd48d9f194be457a14785c969bc6583aea3aa84fb9a1be42b90
   3a9de7be864d9f50f3ab7cf4c1fa4465ac65ee456fb7c652048ba4a0658d3ef8
-  03c8f8cba745239dc02dac475278009f48a4c3b4e8c77b698d7403396b684f5d
+  3932baa472c5fe3123b685602a178184dbc7fb6b370e3d99e96f0538505a0e3f
 Expected = accept
 ~~~
 
@@ -2750,12 +2760,12 @@ Tag = elgamal_decryption-CMPT-with-sigma-proofs_Shake128_BLS12381
 SessionId =
   7e4a5e42b1686205633d27701ae29f682fb2c748e21c0a8a87d021486652c899
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010200000004000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010200000005000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0300000000000000000000000000000000000000000000000000000000000000
-  0000000101000000000000000200000000000000000000000000000000000000
+  0400000000000000000000000000000000000000000000000000000000000000
+  0000000101000000000000000300000000000000000000000000000000000000
   00000000000000000000000000000001a73aa2551fd1f24865adb5b9a84f63ef
   b8d2cab44fcf21dfa9e587dcabff2a0ffa36a93a82df2027ec32288160f0ebd3
   835f420c8a573cde22b41e8b427fda9427e9ab5d6bca17cdc4d045c8dd37091a
@@ -2766,8 +2776,8 @@ Instance =
 Witness =
   6f92d7965b9cb245c7656316af218d42c5625f5234bbbd3eba630c9d6f058a76
 NargString =
-  69a11eea4a1ee7d995219a7b0f5df7bf18ee156b4b4e66b95147b090c07cb8cb
-  26816cc9aac1a2b14e5adbebbf973a42e2826591392787fddca9e13b8443b904
+  07fe88a2053c95ee4a31eaa345759823de788fda4e421afa501f99f1eeee8d45
+  2580e6e5f90db9bcfdacd138569f0d34d65e55612e9ffada52f8c8192da67fcf
 Expected = accept
 ~~~
 
@@ -2786,11 +2796,11 @@ Tag = dleq_derived_element-DSFS-with-sigma-proofs_Shake128_BLS12381
 SessionId =
   54bbba96ccae65df6e806d77e8869cd48afdbc785038d6f90fa905a14f7d53bf
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000003000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000004000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000020000000000000000000000000000000000000000000000
+  0100000000000000030000000000000000000000000000000000000000000000
   00000000000000000000000199dab5463df27b0f83b0608d830294a57f53d279
   fd3c5b719bd25ca5bb9a25a57787f6c92bb933ccaa421588ee4554ff8673f08e
   10bee9fe8e7eb4f6a1ef0b60571e84c26710a2d4b0bacf0a49033dc814b2c0c9
@@ -2802,7 +2812,7 @@ NargString =
   abc30c203650564c3318f34ca0a4140728631799358f1004bff7708e2e0e1c80
   e5d3550cf546bd78734f35c50a0ef599b3f2f83ece52e1d93bdaff1f9344b03f
   c5b0f324f0a397f4ba8d10d7bb954e9ae884eaa07dd11d942f925f14ebdd3e29
-  1b5757ca9c1cf7f34a3fe51c5803c9996f9ae0092d24059aecaf12352268d1d6
+  11a3025eb36866da1582915d58453ac0a7417975461551c8e00feea8300a75a1
 Expected = accept
 ~~~
 
@@ -2821,11 +2831,11 @@ Tag = dleq_derived_element-CMPT-with-sigma-proofs_Shake128_BLS12381
 SessionId =
   f284a4d31c70b703930a48a8f420606f8997f3b52ce41458ed8c827257f01a08
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000003000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000004000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000020000000000000000000000000000000000000000000000
+  0100000000000000030000000000000000000000000000000000000000000000
   00000000000000000000000199dab5463df27b0f83b0608d830294a57f53d279
   fd3c5b719bd25ca5bb9a25a57787f6c92bb933ccaa421588ee4554ff8673f08e
   10bee9fe8e7eb4f6a1ef0b60571e84c26710a2d4b0bacf0a49033dc814b2c0c9
@@ -2834,8 +2844,8 @@ Instance =
 Witness =
   48775faa1051b0df070268dee5c4163b9635ebecb049f9016f3538423a7d227c
 NargString =
-  57a809847f916a14f39d848a26d1f17fb0158b2b88aaa3263d44750e10a27583
-  5f9a4abeedd6c411defe5803910725b117fd1eee92ea9b38ae576fb83177f457
+  480ec4269c8eb04a690a0d7403cfe3691abc6b90d402711b6e648b3e6b7e13c5
+  70ca654bad6cf0d4aff13430fbc73c733232c1f54b48220e049364bd97925ed3
 Expected = accept
 ~~~
 
@@ -2852,15 +2862,15 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
   221df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1acddda5ece
-  0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f454e8e
-  b6105238a2b3fe8250042aec5bd1b641
+  0abe8338bef0293d96d924dafd80ddcb3115f5dd64d080b1cee8d9f92cbc8358
+  87a3cee2397635479bbaad745d5041d8
 Expected = reject
 ~~~
 
@@ -2875,20 +2885,20 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
   9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f624
-  1eabfffeb153ffffb9feffffffffaaaf56b5ef663f786ca2120ac6e03f454e8e
-  b6105238a2b3fe8250042aec5bd1b641
+  1eabfffeb153ffffb9feffffffffaaaf3115f5dd64d080b1cee8d9f92cbc8358
+  87a3cee2397635479bbaad745d5041d8
 Expected = reject
 ~~~
 
-Deserialization fails on the canonical compressed encoding of the point
-at infinity: the identity is invalid in prover messages.
+The identity commitment decodes successfully, but the verification
+equation fails.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A4
@@ -2898,15 +2908,15 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
   c000000000000000000000000000000000000000000000000000000000000000
-  0000000000000000000000000000000056b5ef663f786ca2120ac6e03f454e8e
-  b6105238a2b3fe8250042aec5bd1b641
+  000000000000000000000000000000003115f5dd64d080b1cee8d9f92cbc8358
+  87a3cee2397635479bbaad745d5041d8
 Expected = reject
 ~~~
 
@@ -2921,15 +2931,15 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
   8000000000000000000000000000000000000000000000000000000000000000
-  0000000000000000000000000000000056b5ef663f786ca2120ac6e03f454e8e
-  b6105238a2b3fe8250042aec5bd1b641
+  000000000000000000000000000000003115f5dd64d080b1cee8d9f92cbc8358
+  87a3cee2397635479bbaad745d5041d8
 Expected = reject
 ~~~
 
@@ -2944,15 +2954,15 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
   8000000000000000000000000000000000000000000000000000000000000000
-  0000000000000000000000000000000156b5ef663f786ca2120ac6e03f454e8e
-  b6105238a2b3fe8250042aec5bd1b641
+  000000000000000000000000000000013115f5dd64d080b1cee8d9f92cbc8358
+  87a3cee2397635479bbaad745d5041d8
 Expected = reject
 ~~~
 
@@ -2968,15 +2978,15 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
   a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1acddda5ece
-  0abe8338bef0293d96d924dafd80ddcbcaa396b96915e9ea45449ee848e72694
-  09cdf63ba2b25a8150042aeb5bd1b642
+  0abe8338bef0293d96d924dafd80ddcba5039d308e6dfdfa0222b201365e5b5d
+  db6172e5397491469bbaad735d5041d9
 Expected = reject
 ~~~
 
@@ -2991,14 +3001,14 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
-  9f1898e7e0ed7c8d60adde165af00ea993091808bff2c380a78f42bb7696c7ef
-  5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f7ad94
+  9f424194b766297dcece44b127286e59441dfcb1ab94a3f47e1f56241cd3e7a4
+  49a94d7454a6bbaab6124a4573fb684983886d1d876989f5d218700c99de8195
 Expected = reject
 ~~~
 
@@ -3013,15 +3023,15 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
   a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1acddda5ece
-  0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f454e8e
-  b6105238a2b3fe8250042aec5bd1b64100
+  0abe8338bef0293d96d924dafd80ddcb3115f5dd64d080b1cee8d9f92cbc8358
+  87a3cee2397635479bbaad745d5041d800
 Expected = reject
 ~~~
 
@@ -3035,15 +3045,15 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
   a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1acddda5ece
-  0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f454e8e
-  b6105238a2b3fe8250042aec5bd1b6
+  0abe8338bef0293d96d924dafd80ddcb3115f5dd64d080b1cee8d9f92cbc8358
+  87a3cee2397635479bbaad745d5041
 Expected = reject
 ~~~
 
@@ -3058,14 +3068,14 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
-  2b2af194b74fff452d74060e514e36a43f4b7405bff46781a78f42bc7696c7ee
-  5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f7ad94
+  2b549a418dc8ac359b946ca91d869653f06058aeab9647f57e1f56251cd3e7a3
+  49a94d7454a6bbaab6124a4573fb684983886d1d876989f5d218700c99de8195
   00
 Expected = reject
 ~~~
@@ -3080,14 +3090,14 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
-  2b2af194b74fff452d74060e514e36a43f4b7405bff46781a78f42bc7696c7ee
-  5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f7ad
+  2b549a418dc8ac359b946ca91d869653f06058aeab9647f57e1f56251cd3e7a3
+  49a94d7454a6bbaab6124a4573fb684983886d1d876989f5d218700c99de81
 Expected = reject
 ~~~
 
@@ -3102,8 +3112,8 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
@@ -3113,77 +3123,86 @@ NargString =
 Expected = reject
 ~~~
 
-Instance validation fails if scalar index 1 appears in no equation
-(check 6); the proof satisfies the verification equations, so rejection
-must come from instance validation.
+The empty relation, with no equations and no image, is valid.
+
+~~~
+Id = sigma-protocols/bls12381/empty_relation/batchable/E0
+Function = SigmaProof
+Ciphersuite = sigma-proofs_Shake128_BLS12381
+Flavor = batchable
+Tag = empty_relation-DSFS-with-sigma-proofs_Shake128_BLS12381
+Instance = 00000000
+NargString = ""
+Expected = accept
+~~~
+
+The instance and proof are accepted even though scalar index 1 appears
+in no equation.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag =
   instance_unconstrained_scalar-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000020000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010200000001000000
+  0100000001000000030000000000000000000000000000000000000000000000
+  0000000000000000000000010200000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010200000002000000
   0000000000000000000000000000000000000000000000000000000000000001
   a52f63244810b5e28b235f33df487fce15bc509eac539e19275e1a0c1ae36de1
   79fa412292007a1d6df975de5b8ca0a6a62b428f90a014557c5744b69c6303d0
   db7a9c876dd15743738b432a9dd1cfad79790d101eedee3bb441bccd262db1c0
 NargString =
   8a31aa9ace6268707d6a0213fdf4bd9a4231fc4fec35338998a38b5334723d84
-  f3c46d55c6ff9104aba7bde3e38b46cd3b5d6d79ba363cb1f75f304c0af27b3c
-  717d6c2048126fb60147c58ce188a5bc0c18c708366e5b159dc527ef76ac46f5
-  fb5f58bd1acdc8a9e425c7f99d7f4b4a45a360ed659e5b5db089c8f07cf725b1
-  4d7aaf71cb6a55bc1e41ac4fb4ab03b2
-Expected = reject
+  f3c46d55c6ff9104aba7bde3e38b46cd35415233a45b898ad465829ec6e3c86d
+  0f5a45255b5fef90d256e8db2a3bcbba66858f9cdea27fe6bc9cfbfe2e4eca09
+  bb6d4d55df818226c6bdb9dab30f31522a273883c88ffb850eaaba4771dff310
+  13c9967e133f399633cab20cc4e252cc
+Expected = accept
 ~~~
 
-Instance validation fails on the same instance, here with the
-unconstrained `response[1]` perturbed.
+Because scalar index 1 is unconstrained, changing `response[1]` in a valid
+proof produces another valid proof.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E1b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag =
   instance_unconstrained_scalar-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000020000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010200000001000000
+  0100000001000000030000000000000000000000000000000000000000000000
+  0000000000000000000000010200000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010200000002000000
   0000000000000000000000000000000000000000000000000000000000000001
   a52f63244810b5e28b235f33df487fce15bc509eac539e19275e1a0c1ae36de1
   79fa412292007a1d6df975de5b8ca0a6a62b428f90a014557c5744b69c6303d0
   db7a9c876dd15743738b432a9dd1cfad79790d101eedee3bb441bccd262db1c0
 NargString =
   8a31aa9ace6268707d6a0213fdf4bd9a4231fc4fec35338998a38b5334723d84
-  f3c46d55c6ff9104aba7bde3e38b46cd3b5d6d79ba363cb1f75f304c0af27b3c
-  717d6c2048126fb60147c58ce188a5bc0c18c708366e5b159dc527ef76ac46f5
-  fb5f58bd1acdc8a9e425c7f99d7f4b4b45a360ed659e5b5db089c8f07cf725b1
-  4d7aaf71cb6a55bc1e41ac4fb4ab03b2
-Expected = reject
+  f3c46d55c6ff9104aba7bde3e38b46cd35415233a45b898ad465829ec6e3c86d
+  0f5a45255b5fef90d256e8db2a3bcbba66858f9cdea27fe6bc9cfbfe2e4eca09
+  bb6d4d55df818226c6bdb9dab30f31532a273883c88ffb850eaaba4771dff310
+  13c9967e133f399633cab20cc4e252cc
+Expected = accept
 ~~~
 
-Instance validation fails if the image terms X + (-X) sum to the
-identity (check 9).
+The instance and proof are accepted when the image terms X + (-X) sum to
+the identity.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E2
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = instance_trivial_equation-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000002000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000000000000000000000000000
-  0000000000000000000000000000000101000000000000000000000000000000
+  0100000002000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010300000000000000000000000000000000000000
+  0000000000000000000000000000000101000000000000000100000000000000
   00000000000000000000000000000000000000000000000000000001b8d20484
   960f1741eabb4d0dd0c43e72931d646c09440bf1880a1720daaa3308e7634661
   77aa88c313f8a9ad1e406c0e98d20484960f1741eabb4d0dd0c43e72931d646c
@@ -3192,37 +3211,34 @@ NargString =
   8bf4a4e7cca2a2f88859d0b012289500a49db0b5e4e5df3d778248435ed8b51d
   0fb3ca489c9f45e8811bb4cc8d0096f96ad6f36b97912382f39758d4e9f591a8
   c1d24c1f3d42a2535161c7b7a9c556a3
-Expected = reject
+Expected = accept
 ~~~
 
-Instance validation fails if a statement element is the identity (check
-8), here at index 1, encoded as the canonical compressed encoding of
-infinity; parsers may instead reject at group deserialization.
+An instance containing the identity element is accepted.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E3
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = instance_identity_element-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000020000000000000000000000000000000000000000000000
-  0000000000000000000000010200000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000001000000
+  0100000001000000030000000000000000000000000000000000000000000000
+  0000000000000000000000010200000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000002000000
   0000000000000000000000000000000000000000000000000000000000000001
   c000000000000000000000000000000000000000000000000000000000000000
   00000000000000000000000000000000b8722b4b2a3cc66976d848739df2bfb6
   6ae371da496a1e239add4646c35c8b8758409ad4b6312b74d4a98bb83284cb87
 NargString =
   adc1c8943d8bfa5ab165ff1ed2c0f45f71567a404849da3e0b9fbd37266681c1
-  089d6d9b33116aebdab2972d0cb6db1343a4376149f6584e69ef48dac314f448
-  ec00ac5b96fa50ce5a369327bb6649775a460213642cf7055af8c4bb0bcbc6b6
-  122f563a9163c3d3f74876f8b25b0298
-Expected = reject
+  089d6d9b33116aebdab2972d0cb6db130e30cc66fcdf68ad4c1738b178949d26
+  13d1da71694e047813cc6ae1fca5233927cda7474b204eb305b1a34bd03641e0
+  2c6d7bfc0ebb26b1ad58c6721af9c04d
+Expected = accept
 ~~~
 
-Instance validation fails if a term references element index 2 while a
+Instance validation fails if a term references element index 3 while a
 single element follows; parsers may instead reject on length.
 
 ~~~
@@ -3234,15 +3250,15 @@ Flavor = batchable
 Tag =
   instance_index_out_of_bounds-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000020000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000030000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
   a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1acddda5ece
-  0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f454e8e
-  b6105238a2b3fe8250042aec5bd1b641
+  0abe8338bef0293d96d924dafd80ddcb3115f5dd64d080b1cee8d9f92cbc8358
+  87a3cee2397635479bbaad745d5041d8
 Expected = reject
 ~~~
 
@@ -3255,15 +3271,15 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
   a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1acddda5ece
-  0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f454e8e
-  b6105238a2b3fe8250042aec5bd1b641
+  0abe8338bef0293d96d924dafd80ddcb3115f5dd64d080b1cee8d9f92cbc8358
+  87a3cee2397635479bbaad745d5041d8
 Expected = accept
 ~~~
 
@@ -3279,15 +3295,15 @@ Tag =
   discrete_logarithm/wrong-session-DSFS-with-sigma-proofs_Shake128_BLS12
   381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
   a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1acddda5ece
-  0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f454e8e
-  b6105238a2b3fe8250042aec5bd1b641
+  0abe8338bef0293d96d924dafd80ddcb3115f5dd64d080b1cee8d9f92cbc8358
+  87a3cee2397635479bbaad745d5041d8
 Expected = reject
 ~~~
 
@@ -3300,14 +3316,14 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
-  2b2af194b74fff452d74060e514e36a43f4b7405bff46781a78f42bc7696c7ee
-  5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f7ad94
+  2b549a418dc8ac359b946ca91d869653f06058aeab9647f57e1f56251cd3e7a3
+  49a94d7454a6bbaab6124a4573fb684983886d1d876989f5d218700c99de8195
 Expected = accept
 ~~~
 
@@ -3323,14 +3339,14 @@ Tag =
   discrete_logarithm/wrong-session-CMPT-with-sigma-proofs_Shake128_BLS12
   381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
-  2b2af194b74fff452d74060e514e36a43f4b7405bff46781a78f42bc7696c7ee
-  5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f7ad94
+  2b549a418dc8ac359b946ca91d869653f06058aeab9647f57e1f56251cd3e7a3
+  49a94d7454a6bbaab6124a4573fb684983886d1d876989f5d218700c99de8195
 Expected = reject
 ~~~
 
@@ -3343,11 +3359,11 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = dleq-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000003000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000004000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000020000000000000000000000000000000000000000000000
+  0100000000000000030000000000000000000000000000000000000000000000
   000000000000000000000001b8a52d4f929a5fc9a27b16941d102b632bac0b06
   61265ed04ec9e59d35480f93d4ebefc5af6a06090964444a5ed9abfdac2a3348
   158e801ab8f31490543b66ddf04a103dd0bc7f41194f72b575b62d08900aaf6e
@@ -3357,7 +3373,7 @@ NargString =
   b13432cd2a44f3287e1ee64986f77cfd30bc6e27cb5bb245e5e0d5cd74d7ea59
   d64b17f3e612b0a5790bad93d77ea46291f38f62b25f78dae74200765604f560
   b5b0459b45404eb953e498497a94757841739571c4fa83ba5b27fb2cd9c01c20
-  53843da83608b616cb57c042f0d21160317095e5ab1706e02299dfd47f67b453
+  1a4ac38aaf591abd139d65113c0b2a3cb3a7ee334333c3aeb276be865bc882ff
 Expected = accept
 ~~~
 
@@ -3371,11 +3387,11 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = dleq-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0200000001000000030000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000020000000000000000000000
-  0000000000000000000000000000000000000000000000010100000001000000
+  0200000001000000040000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000030000000000000000000000
+  0000000000000000000000000000000000000000000000010100000002000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000000000000000000000000000000000000000000000000000
+  0100000000000000010000000000000000000000000000000000000000000000
   000000000000000000000001b8a52d4f929a5fc9a27b16941d102b632bac0b06
   61265ed04ec9e59d35480f93d4ebefc5af6a06090964444a5ed9abfdac2a3348
   158e801ab8f31490543b66ddf04a103dd0bc7f41194f72b575b62d08900aaf6e
@@ -3385,7 +3401,7 @@ NargString =
   b13432cd2a44f3287e1ee64986f77cfd30bc6e27cb5bb245e5e0d5cd74d7ea59
   d64b17f3e612b0a5790bad93d77ea46291f38f62b25f78dae74200765604f560
   b5b0459b45404eb953e498497a94757841739571c4fa83ba5b27fb2cd9c01c20
-  53843da83608b616cb57c042f0d21160317095e5ab1706e02299dfd47f67b453
+  1a4ac38aaf591abd139d65113c0b2a3cb3a7ee334333c3aeb276be865bc882ff
 Expected = reject
 ~~~
 
@@ -3398,19 +3414,19 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
 Tag = dleq-CMPT-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0200000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
-  0000000000000000000000000000000000000000000000010100000003000000
+  0200000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
+  0000000000000000000000000000000000000000000000010100000004000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000020000000000000000000000000000000000000000000000
+  0100000000000000030000000000000000000000000000000000000000000000
   000000000000000000000001b8a52d4f929a5fc9a27b16941d102b632bac0b06
   61265ed04ec9e59d35480f93d4ebefc5af6a06090964444a5ed9abfdac2a3348
   158e801ab8f31490543b66ddf04a103dd0bc7f41194f72b575b62d08900aaf6e
   7ba8f3672c1b7064b19ecf968f3af22d60210b724fc400f8b8e8547a3f82ba01
   7d24199087b0bd1941c21f4c6afa8e1d636914790ee4b80e44908926
 NargString =
-  6756a6afe70dc8b509ece61173992cd9970d6219332d289fecf58e240f1497ca
-  1712fb2963a360c4bc783fa9764bb115b7162e014c5f6c8859fbcd71fbc58844
+  54486ea1d23b4ed1d4f95ac91f40fa886d21e7a1e713995985317a4ca4527948
+  0fc8441bb086ca503e23c9f822b929cd95300380f3c8317f1055307be6f9317f
 Expected = accept
 ~~~
 
@@ -3424,19 +3440,19 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
 Tag = dleq-CMPT-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0200000001000000030000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000020000000000000000000000
-  0000000000000000000000000000000000000000000000010100000001000000
+  0200000001000000040000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000030000000000000000000000
+  0000000000000000000000000000000000000000000000010100000002000000
   0000000000000000000000000000000000000000000000000000000000000001
-  0100000000000000000000000000000000000000000000000000000000000000
+  0100000000000000010000000000000000000000000000000000000000000000
   000000000000000000000001b8a52d4f929a5fc9a27b16941d102b632bac0b06
   61265ed04ec9e59d35480f93d4ebefc5af6a06090964444a5ed9abfdac2a3348
   158e801ab8f31490543b66ddf04a103dd0bc7f41194f72b575b62d08900aaf6e
   7ba8f3672c1b7064b19ecf968f3af22d60210b724fc400f8b8e8547a3f82ba01
   7d24199087b0bd1941c21f4c6afa8e1d636914790ee4b80e44908926
 NargString =
-  6756a6afe70dc8b509ece61173992cd9970d6219332d289fecf58e240f1497ca
-  1712fb2963a360c4bc783fa9764bb115b7162e014c5f6c8859fbcd71fbc58844
+  54486ea1d23b4ed1d4f95ac91f40fa886d21e7a1e713995985317a4ca4527948
+  0fc8441bb086ca503e23c9f822b929cd95300380f3c8317f1055307be6f9317f
 Expected = reject
 ~~~
 
@@ -3450,15 +3466,15 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001b94ba65546846b43
   9edbfc9da84c1c2d2af3d0ede8c88ec50fce2e1c3f782e932205982683f0802a
   4dce313610bbb2db
 NargString =
   a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1acddda5ece
-  0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f454e8e
-  b6105238a2b3fe8250042aec5bd1b641
+  0abe8338bef0293d96d924dafd80ddcb3115f5dd64d080b1cee8d9f92cbc8358
+  87a3cee2397635479bbaad745d5041d8
 Expected = reject
 ~~~
 
@@ -3472,14 +3488,14 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001b94ba65546846b43
   9edbfc9da84c1c2d2af3d0ede8c88ec50fce2e1c3f782e932205982683f0802a
   4dce313610bbb2db
 NargString =
-  2b2af194b74fff452d74060e514e36a43f4b7405bff46781a78f42bc7696c7ee
-  5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f7ad94
+  2b549a418dc8ac359b946ca91d869653f06058aeab9647f57e1f56251cd3e7a3
+  49a94d7454a6bbaab6124a4573fb684983886d1d876989f5d218700c99de8195
 Expected = reject
 ~~~
 
@@ -3494,14 +3510,14 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
-  0bfd67330803e2f88ba4d8f54723e95c53a032c2aa976b0f7e54099ec42d461c
-  56b5ef663f786ca2120ac6e03f454e8eb6105238a2b3fe8250042aec5bd1b641
+  4db5f29ea248a1ad0a3c952da4f772d6c79feaa1fb574a09cd526ecdf4feacef
+  3115f5dd64d080b1cee8d9f92cbc835887a3cee2397635479bbaad745d5041d8
 Expected = reject
 ~~~
 
@@ -3517,15 +3533,15 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
   b87d072b8238866651b08da8276e9ea30125617a5ac1b7fcb6934f43bdfed513
-  4624ffe8040caccc46560bd101c648885bc2ffa13e32b693d76be6e548a3d6c3
-  9929b9d21f10e5ba1df2b44071f7ad94
+  4624ffe8040caccc46560bd101c6488849a94d7454a6bbaab6124a4573fb6849
+  83886d1d876989f5d218700c99de8195
 Expected = reject
 ~~~
 
@@ -3539,15 +3555,15 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
   a21df433ede15a7e0bb0d8501e24c6c41ba6c36f387bd9961bcbc1acddda5ece
-  0abe8338bef0293d96d924dafd80ddcb56b5ef663f786ca2120ac6e03f454e8e
-  b6105238a2b3fe8250042aec5bd1b642
+  0abe8338bef0293d96d924dafd80ddcb3115f5dd64d080b1cee8d9f92cbc8358
+  87a3cee2397635479bbaad745d5041d9
 Expected = reject
 ~~~
 
@@ -3562,15 +3578,15 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
 Tag = discrete_logarithm-DSFS-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
   97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac58
-  6c55e83ff97a1aeffb3af00adb22c6bb56b5ef663f786ca2120ac6e03f454e8e
-  b6105238a2b3fe8250042aec5bd1b641
+  6c55e83ff97a1aeffb3af00adb22c6bb3115f5dd64d080b1cee8d9f92cbc8358
+  87a3cee2397635479bbaad745d5041d8
 Expected = reject
 ~~~
 
@@ -3584,13 +3600,13 @@ Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
 Tag = discrete_logarithm-CMPT-with-sigma-proofs_Shake128_BLS12381
 Instance =
-  0100000001000000010000000000000000000000000000000000000000000000
-  0000000000000000000000010100000000000000000000000000000000000000
+  0100000001000000020000000000000000000000000000000000000000000000
+  0000000000000000000000010100000000000000010000000000000000000000
   000000000000000000000000000000000000000000000001ac2de2d5ca1310a4
   3b8c5adee4632e69c117edbc6c0e9a259efbefd6e5aedc86a4185f06e74a63bf
   a648c1c4e8b4b444
 NargString =
-  2b2af194b74fff452d74060e514e36a43f4b7405bff46781a78f42bc7696c7ef
-  5bc2ffa13e32b693d76be6e548a3d6c39929b9d21f10e5ba1df2b44071f7ad94
+  2b549a418dc8ac359b946ca91d869653f06058aeab9647f57e1f56251cd3e7a4
+  49a94d7454a6bbaab6124a4573fb684983886d1d876989f5d218700c99de8195
 Expected = reject
 ~~~
