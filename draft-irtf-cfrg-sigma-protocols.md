@@ -163,6 +163,12 @@ informative:
     date: 1997
     author:
       - fullname: "Ronald Cramer"
+  Brands00:
+    title: "Rethinking Public Key Infrastructures and Digital Certificates: Building in Privacy"
+    target: https://www.credentica.com/mit/Chapter3.pdf
+    date: 2000
+    author:
+      - fullname: "Stefan Brands"
   Maurer09:
     title: "Unifying Zero-Knowledge Proofs of Knowledge"
     target: https://doi.org/10.1007/978-3-642-02384-2_17
@@ -304,7 +310,7 @@ Examples include zero-knowledge proofs for discrete logarithm relations, ElGamal
 
 Zero-knowledge proofs of knowledge allow a prover to convince a verifier that a statement is true, without revealing anything other than what is already revealed by the statement itself.
 
-Sigma Protocols are an essential component of a number of cryptographic constructions, such as anonymous credentials {{ARC}} {{BBS}}, verifiable random functions {{?RFC9381}}, anonymous tokens {{?RFC9497}}, blind signatures {{BBSBlind}}, and proofs of knowledge of the opening of a Pedersen commitment {{Pedersen91}}. This document specifies a single Sigma Protocol for proving knowledge of a preimage of a linear map over a prime-order group {{Cramer97}} {{Maurer09}}. A *linear relation* is a system of equations among group elements that is linear in the secret scalars; affine relations with constant terms (e.g. verifiable encryption) and quadratic equations (e.g. range proofs) can also be expressed as the preimage of a linear map ({{linear-map}}).
+Sigma Protocols are an essential component of a number of cryptographic constructions, such as anonymous credentials {{ARC}} {{BBS}}, verifiable random functions {{?RFC9381}}, anonymous tokens {{?RFC9497}}, blind signatures {{BBSBlind}}, and proofs of knowledge of the opening of a Pedersen commitment {{Pedersen91}}. This document specifies a single Sigma Protocol for proving knowledge of a preimage of a linear map over a prime-order group {{Brands00}}, {{Cramer97}}, {{Maurer09}}. A *linear relation* is a system of equations among group elements that is linear in the secret scalars; affine relations with constant terms (e.g. verifiable encryption) and quadratic equations (e.g. range proofs) can also be expressed as the preimage of a linear map ({{linear-map}}).
 
 A Sigma Protocol is an interactive proof with the following three-message flow:
 
