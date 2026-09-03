@@ -16,18 +16,18 @@
 <meta content="draft-irtf-cfrg-fiat-shamir-latest" name="ietf.draft">
 <!-- Generator version information:
   xml2rfc 3.34.0
-    Python 3.14.5
+    Python 3.14.7
     ConfigArgParse 1.7.5
     google-i18n-address 3.1.1
     intervaltree 3.2.1
     Jinja2 3.1.6
     lxml 6.1.1
     natsort 8.4.0
-    platformdirs 4.11.0
+    platformdirs 4.11.7
     pycountry 24.6.1
     PyYAML 6.0.3
     requests 2.33.1
-    wcwidth 0.8.2
+    wcwidth 0.8.3
 -->
 <link href="draft-irtf-cfrg-fiat-shamir.xml" rel="alternate" type="application/rfc+xml">
 <link href="#copyright" rel="license">
@@ -1043,11 +1043,11 @@ svg {
 <thead><tr>
 <td class="left">Internet-Draft</td>
 <td class="center">Fiat-Shamir Transformation</td>
-<td class="right">August 2026</td>
+<td class="right">September 2026</td>
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù</td>
-<td class="center">Expires 5 February 2027</td>
+<td class="center">Expires 7 March 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1060,12 +1060,12 @@ svg {
 <dd class="internet-draft">draft-irtf-cfrg-fiat-shamir-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-08-04" class="published">4 August 2026</time>
+<time datetime="2026-09-03" class="published">3 September 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-02-05">5 February 2027</time></dd>
+<dd class="expires"><time datetime="2027-03-07">7 March 2027</time></dd>
 <dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
@@ -1116,7 +1116,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 5 February 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 7 March 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1859,7 +1859,8 @@ svg {
 <a href="#section-2" class="section-number selfRef">2. </a><a href="#name-terminology-and-conventions" class="section-name selfRef">Terminology and conventions in this document</a>
       </h2>
 <p id="section-2-1">The key words "<strong>MUST</strong>", "<strong>MUST NOT</strong>", "<strong>REQUIRED</strong>", "<strong>SHALL</strong>", "<strong>SHALL NOT</strong>", "<strong>SHOULD</strong>", "<strong>SHOULD NOT</strong>", "<strong>RECOMMENDED</strong>", "<strong>NOT RECOMMENDED</strong>", "<strong>MAY</strong>", and "<strong>OPTIONAL</strong>" in this document are to be interpreted as described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they appear in all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶</a></p>
-<p id="section-2-2">The following notation is used throughout this document.<a href="#section-2-2" class="pilcrow">¶</a></p>
+<p id="section-2-2">The algorithms and procedures in this document are specified using Python-like pseudocode. Each function accepts defined inputs and parameters and returns one or more output values. Once a protocol variant and ciphersuite are selected, all associated parameters are treated as constants.<a href="#section-2-2" class="pilcrow">¶</a></p>
+<p id="section-2-3">The following notation is used throughout this document.<a href="#section-2-3" class="pilcrow">¶</a></p>
 <div id="bytes-and-integers">
 <section id="section-2.1">
         <h3 id="name-bytes-and-integers">
@@ -2464,9 +2465,8 @@ Output: out, an (m * Ns)-byte string
 <a href="#section-6.1.5" class="section-number selfRef">6.1.5. </a><a href="#name-elliptic-curve-group-elemen" class="section-name selfRef">Elliptic curve group elements</a>
           </h4>
 <p id="section-6.1.5-1">A group element is serialized using the group's element-serialization function.<a href="#section-6.1.5-1" class="pilcrow">¶</a></p>
-<p id="section-6.1.5-2">For many prime-order elliptic-curve groups, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>. All non-trivial group elements have exactly one <code>Ne</code>-byte representation. The value of <code>Ne</code> and the concrete conversion are fixed by the ciphersuite.<a href="#section-6.1.5-2" class="pilcrow">¶</a></p>
-<p id="section-6.1.5-3">The <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span> serialization of the identity element (the single byte <code>0x00</code>) <strong>SHOULD</strong> be rejected to facilitate deserialization (<a href="#deserialization" class="auto internal xref">Section 6.2</a>).
-The ristretto255 and decaf448 <span>[<a href="#RFC9496" class="cite xref">RFC9496</a>]</span> identity encodings have a distinct, fixed-length <code>Ne</code>-byte encoding.<a href="#section-6.1.5-3" class="pilcrow">¶</a></p>
+<p id="section-6.1.5-2">For many prime-order elliptic-curve groups, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>. This document alters <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span> serialization: uncompressed and hybrid encodings are forbidden, so the only accepted initial octets are <code>0x00</code>, <code>0x02</code>, and <code>0x03</code>; the identity is encoded as <code>Ne</code> zero octets instead of <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>'s single <code>0x00</code> octet. Restricting the accepted initial octets guarantees unique serialization; otherwise, an adversary could observe an honest proof and produce a different valid proof for the same statement without knowing the witness. Padding the identity element removes branching from the parsing of the NARG string.<a href="#section-6.1.5-2" class="pilcrow">¶</a></p>
+<p id="section-6.1.5-3">The ristretto255 and decaf448 <span>[<a href="#RFC9496" class="cite xref">RFC9496</a>]</span> identity encodings have a distinct, fixed-length <code>Ne</code>-byte encoding.<a href="#section-6.1.5-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2587,8 +2587,8 @@ Output: a, an element of the field of order p^m, given by its
           <h4 id="name-elliptic-curve-group-element">
 <a href="#section-6.2.5" class="section-number selfRef">6.2.5. </a><a href="#name-elliptic-curve-group-element" class="section-name selfRef">Elliptic-curve group elements</a>
           </h4>
-<p id="section-6.2.5-1">Read the next <code>Ne</code> bytes and convert them to a group element using the group's element-deserialization function. Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation steps, <strong>SHOULD</strong> reject the identity element (<a href="#serialize-ec-point" class="auto internal xref">Section 6.1.5</a>), and fail unless the input is the canonical encoding of a valid group element.<a href="#section-6.2.5-1" class="pilcrow">¶</a></p>
-<p id="section-6.2.5-2">Note that for elliptic curves defined in <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>, decoding is the Octet-String-to-Elliptic-Curve-Point conversion, which checks that the encoding is well-formed and that the point lies on the curve, and returns "invalid" otherwise. The single-byte <code>0x00</code> encoding of the identity is not a valid <code>Ne</code>-byte input and <strong>SHOULD</strong> be rejected.<a href="#section-6.2.5-2" class="pilcrow">¶</a></p>
+<p id="section-6.2.5-1">Read the next <code>Ne</code> bytes and convert them to a group element using the group's element-deserialization function. Deserialization <strong>MUST</strong> perform the ciphersuite's input-validation steps and fail unless the input is the canonical encoding of a valid group element.<a href="#section-6.2.5-1" class="pilcrow">¶</a></p>
+<p id="section-6.2.5-2">For elliptic curves defined in <span>[<a href="#SEC1" class="cite xref">SEC1</a>]</span>, deserialization mirrors <a href="#serialize-ec-point" class="auto internal xref">Section 6.1.5</a>: only initial octets <code>0x00</code>, <code>0x02</code>, and <code>0x03</code> are accepted, and <code>0x00</code> only when all <code>Ne</code> bytes are zero.<a href="#section-6.2.5-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
