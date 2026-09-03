@@ -1064,7 +1064,9 @@ This ciphersuite uses P-256 {{NIST-SP-800-186}} for the Group.
 - `order()`: `115792089210356248762697446949407573529996955224135760342422259061068512044369`.
 - `generator()`: the base point `G` specified in {{NIST-SP-800-186}}; its compressed serialization is `036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296`.
 - `serialize([A])`: the group element serialization function {{fiat-shamir}} for {{SEC1}} (`Ne = 33`).
-- `deserialize(buf)`: the group element deserialization function of {{fiat-shamir}}, which inverts the conversion above; only the compressed form is a valid encoding (each `Ne`-byte slice begins with `0x00`, `0x02`, or `0x03`, as specified in {{fiat-shamir}}). Every non-identity point **MUST** perform all checks of Section 5.6.2.3.4 of {{!NIST-SP-800-56A=DOI.10.6028/NIST.SP.800-56Ar3}}. Deserialization **MUST** fail otherwise.
+- `deserialize(buf)`: the group element deserialization function of {{fiat-shamir}} for {{SEC1}}.
+
+Only the compressed form is a valid encoding. In particular, each `Ne`-byte slice begins with `0x00`, `0x02`, or `0x03`, and the identity is the `Ne`-zero byte string. Every non-identity point **MUST** perform all checks of Section 5.6.2.3.4 of {{!NIST-SP-800-56A=DOI.10.6028/NIST.SP.800-56Ar3}} and deserialization **MUST** fail otherwise.
 
 ### Scalar Field of P-256
 
@@ -1073,14 +1075,16 @@ This ciphersuite uses P-256 {{NIST-SP-800-186}} for the Group.
 
 ## BLS12-381 (G1)
 
-This ciphersuite uses the prime-order subgroup G1 of the BLS12-381 elliptic curve {{!RFC9380}} for the Group.
+This ciphersuite uses the prime-order subgroup G1 of the BLS12-381 elliptic curve {{!RFC9380}} {{!PAIRING=I-D.irtf-cfrg-pairing-friendly-curves}}.
 
 ### Elliptic curve group of BLS12-381 (G1) {{!RFC9380}}
 
 - `order()`: `52435875175126190479447740508185965837690552500527637822603658699938581184513`.
-- `generator()`: the generator of G1 specified in Section 4.2.1 of {{!PAIRING=I-D.irtf-cfrg-pairing-friendly-curves}}; its compressed serialization is `97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb`.
-- `serialize([A])`: the compressed G1 serialization of Appendix C of {{PAIRING}} (`Ne = 48`), including its point-at-infinity encoding.
-- `deserialize(buf)`: inverts the serialization above and **MUST** perform full point validation.
+- `generator()`: the base point `BP` of G1 specified in {{Section 4.2.1 of PAIRING}}:  `97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb`.
+- `serialize([A])`: `point_to_octets_G1` of {{Section 5.3 of PAIRING}} with point compression (`C_bit = 1`); `Ne = 48`.
+- `deserialize(buf)`: `octets_to_point_G1` of {{Section 5.4 of PAIRING}}.
+
+Only the compressed form is accepted ({{Section 5.6.1 of PAIRING}}): every `Ne`-byte slice has `C_bit = 1`, and the fixed slice length excludes the uncompressed form. This document follows the *allow identity* behavior of {{Section 5.6.2 of PAIRING}}: the identity element is a valid output of `deserialize`. The zero scalar is likewise accepted ({{Section 5.6.3 of PAIRING}}).
 
 ### Scalar Field of BLS12-381
 
