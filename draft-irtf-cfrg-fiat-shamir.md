@@ -39,6 +39,22 @@ normative:
       -
         ins: Standards for Efficient Cryptography Group (SECG)
 
+  SHS:
+    title: "Secure Hash Standard"
+    target: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf
+    date: 2015
+    seriesinfo:
+      "FIPS": "180-4"
+    author:
+      - org: "National Institute of Standards and Technology (NIST)"
+  AES:
+    title: "Advanced Encryption Standard (AES)"
+    target: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf
+    date: 2023
+    seriesinfo:
+      "FIPS": "197"
+    author:
+      - org: "National Institute of Standards and Technology (NIST)"
 informative:
   FIPS204:
     title: "Module-Lattice-Based Digital Signature Standard"
@@ -472,6 +488,71 @@ Output: a uniformly-distributed random n-byte string
 3. return state.reader.Read(n)
 ~~~
 
+## Hash-and-Expand Instantiation {#suite-hash-and-expand}
+
+Alternatively, the duplex sponge interface CAN be instantiated using a Hash-and-Expand construction to accommodate protocols relying on standard hashes like SHA-256. In this instantiation, `absorb` is implemented by appending the uniquely serialized data to an internal buffer, and `squeeze` is implemented by applying a collision-resistant hash to the entire buffer to derive a seed (or key), and expanding that seed using a Pseudorandom Function (PRF) to produce the requested bytes.
+
+~~~
+class HashAndExpand:
+    Hash = None
+    PRF = None
+~~~
+
+### Initialization {#hash-and-expand-init}
+
+~~~
+new(self, iv)
+
+Inputs:
+- iv, a byte array
+
+Procedure:
+1. self.transcript = iv
+2. self.key = None
+3. self.counter = 0
+~~~
+
+### Absorb {#hash-and-expand-absorb}
+
+~~~
+absorb(self, x)
+
+Inputs:
+- self, the duplex sponge state
+- x, a byte array
+
+Procedure:
+1. self.transcript = self.transcript + x
+2. self.key = None  # Invalidate any previously cached key
+~~~
+
+### Squeeze {#hash-and-expand-squeeze}
+
+~~~
+squeeze(self, length)
+
+Inputs:
+- self, the duplex sponge state
+- length, the number of bytes to squeeze
+
+Outputs:
+- output, a byte array of size `length`
+
+Procedure:
+1. If self.key is None:
+2.     self.key = self.Hash(self.transcript)
+3.     self.counter = 0
+4.
+5. output = b''
+6. while len(output) < length:
+7.     block = self.PRF(self.key, self.counter)
+8.     output = output + block
+9.     self.counter = self.counter + 1
+10. return output[:length]
+~~~
+
+The hash function `Hash` **MUST** be a cryptographically secure, collision-resistant hash function outputting a seed of appropriate length. The PRF `PRF(key, counter)` denotes a pseudorandom function mapping a key and a counter value to a block of pseudorandom bytes.
+
 # Codecs
 
 A codec is a set of functions that map prover messages to, and verifier messages from, the hash function's alphabet.
@@ -483,6 +564,47 @@ A codec is a set of functions that map prover messages to, and verifier messages
 
 The encoding of the instance and of each prover message is its serialization, as described in {{serialization}}.
 
+
+### Universal ZK TLV Codec {#encoding-tlv}
+
+The Universal ZK TLV (Type-Length-Value) Codec provides a structured, prefix-free method for encoding statements and prover messages before they are absorbed by the duplex sponge. This codec ensures that transcripts from interactive oracle proofs (IOPs) are parsed unambiguously.
+
+To comply with the `Codec` interface:
+
+- **`prover_message(self, state, elements)`**: Serializes each prover element in `elements` (e.g., field elements, byte arrays, or arrays of elements) using the TLV encoding rules below, and absorbs the resulting serialized byte stream into the duplex sponge state.
+- **`verifier_challenge(self, state)`**: Squeezes pseudo-random bytes from the duplex sponge state to sample a challenge in the target challenge domain (e.g., using the scalar field decoding in {{decoding-field}} or the sampling procedures described in {{decoding-bounded-uint}} and {{decoding-sample-distinct}}).
+
+#### Encoding Rules
+
+Every element encoded by the Universal ZK TLV Codec is formatted as a tuple `(Tag, Length, Value)`:
+
+- **Tag**: A 1-byte field identifying the type of the element.
+- **Length**: An 8-byte little-endian integer specifying the length of the `Value` field in bytes (for variable-length elements).
+- **Value**: The raw serialized data of the element.
+
+The following tags and formats are defined:
+
+- **Field Element (Tag `0x01`)**: Represents a single scalar or field element. The length of a field element is fixed by the field definition, so the `Length` field is omitted. The encoding is:
+
+~~~
+0x01 || serialized_bytes
+~~~
+
+- **Byte Array (Tag `0x02`)**: Represents an arbitrary array of bytes. The encoding is:
+
+~~~
+0x02 || I2OSP(len(bytes), 8) || bytes
+~~~
+
+where `I2OSP(..., 8)` is formatted in little-endian order.
+
+- **Field Element Array (Tag `0x03`)**: Represents an array of field elements. The encoding is:
+
+~~~
+0x03 || I2OSP(len(serialized_elements), 8) || serialized_elements
+~~~
+
+where `serialized_elements` is the concatenation of the serialized field elements in the array.
 
 ## Decoding from byte strings {#decoding}
 
@@ -569,6 +691,82 @@ Output: out, an element of the field of order p^m, given by its
 For `m = 1`, `DecodeField` is `DecodeUint`, and the same efficiency remarks apply. Applications **MAY** substitute a more efficient alternative, subject to the same security requirements described in {{decoding-uint}}.
 
 For `m > 1`, decoding relies on `16 * m` additional randomness bytes. Applications with big-integer arithmetic available **MAY** use a more randomness-efficient decoding algorithm, by instead sampling `Nm + 16` bytes, where `Nm` is the smallest integer with `256^Nm >= p^m`, interpreting them as an integer via `LE2IP`, reducing modulo `p^m`, and recovering the coordinates `(a[0], ..., a[m-1])` as the base-`p` digits of the result (least-significant digit first). This consumes `Nm + 16` bytes, with the same `2^-128` bias bound.
+
+### Sampling from Binary Extension Fields {#decoding-binary-field}
+
+For interactive oracle proofs (IOPs) over binary extension fields of the form `GF(2^d) ≅ GF(2)[X]/(P(X))` where `P(X)` is an irreducible polynomial of degree `d`, challenges are sampled as field elements.
+
+To sample a field element:
+
+1. Let `L = ceil(d / 8)` be the number of bytes required to represent `d` bits.
+2. Squeeze `L` bytes from the duplex sponge.
+3. Interpret the squeezed bytes as a polynomial `A(X) = sum_{i=0}^{d-1} a_i X^i` where:
+   - `a_i` is the `(i mod 8)`-th bit of the `floor(i / 8)`-th byte (with the 0-th bit being the least significant bit).
+4. If `8L > d`, any bits at positions `i >= d` are ignored (effectively masking the last byte with a bitmask of `(1 << (d mod 8)) - 1` if `d mod 8 != 0`).
+
+For example, in the binary extension field `GF(2^128)` defined by the irreducible polynomial `P(X) = X^128 + X^7 + X^2 + X + 1`:
+
+- We squeeze exactly `16` bytes (`128` bits).
+- The first byte's least significant bit corresponds to the coefficient of `X^0`.
+- The last byte's most significant bit corresponds to the coefficient of `X^127`.
+
+### Bounded Natural Numbers {#decoding-bounded-uint}
+
+The minimal bitmask rejection-sampling algorithm `generate_nat` samples an integer uniformly in the range `[0, bound - 1]`.
+
+~~~
+generate_nat(state, bound)
+
+Inputs:
+- state, the duplex sponge state
+- bound, a positive integer
+
+Outputs:
+- a natural number in the range [0, bound - 1]
+
+Procedure:
+1. If bound <= 1:
+2.     return 0
+3. k = bit_length(bound - 1)
+4. byte_len = ceil(k / 8)
+5. mask = (1 << k) - 1
+6. while True:
+7.     random_bytes = state.squeeze(byte_len)
+8.     value = OS2IP(random_bytes) & mask
+9.     if value < bound:
+10.        return value
+~~~
+
+Where `bit_length(x)` is the minimum number of bits needed to represent the integer `x`, and `OS2IP` converts the bytes to an integer (interpreted in big-endian order).
+
+### Combinations without Replacement {#decoding-sample-distinct}
+
+The algorithm `generate_nats_wo_replacement` selects `n` distinct elements from a set of size `m` (where `n <= m`) using a virtual Fisher-Yates shuffle.
+
+~~~
+generate_nats_wo_replacement(state, n, m)
+
+Inputs:
+- state, the duplex sponge state
+- n, the number of elements to sample (n <= m)
+- m, the size of the set
+
+Outputs:
+- a list of n distinct integers in the range [0, m - 1]
+
+Procedure:
+1. If n > m:
+2.     error("Cannot sample more elements than the set size")
+3. array = {}
+4. result = []
+5. for i in range(n):
+6.     r = generate_nat(state, m - i)
+7.     val_r = array.get(r, r)
+8.     val_last = array.get(m - 1 - i, m - 1 - i)
+9.     result.append(val_r)
+10.    array[r] = val_last
+11. return result
+~~~
 
 # Initialization
 
@@ -681,6 +879,14 @@ enc(G) || enc(H) || enc(C) || enc(D)
 where `enc` is the group element-serialization function described in {{serialize-ec-point}}.
 
 Omitting public statement data from the transformation, such as `N` in the first example or the group generators `G`, `H` in the second, can compromise soundness of the proof system. See {{instance-encoding}}.
+
+## Initialization for Interactive Oracle Proofs (IOPs) {#iop-initialization}
+
+For more general interactive oracle proofs or circuit-based ZK arguments (where statements are defined by ZK relations or circuits), the duplex sponge state is initialized by sequentially absorbing:
+
+- A `session_id`: the session identifier, for user-provided contextual information about the context where the proof is made (e.g. a URL, or a timestamp).
+- An `instance_label`: the instance identifier for the statement being proven, which should include a circuit identifier (e.g., a hash or unique name representing the ZK relation/circuit being evaluated) and the statement's input/output (I/O) variables.
+- Any optional padding immediately following the statement encoding, if correlation intractability is a concern.
 
 # Non-interactive argument string {#narg-string}
 
@@ -947,6 +1153,16 @@ The transformation does not itself validate the instance. The verifier **MUST** 
 
 Completeness and zero-knowledge are guaranteed only for valid instances: if the prover is invoked on an instance-witness pair outside the relation, no guarantee is provided on its output.
 
+## Correlation-Intractability and Computational Depth {#correlation-intractability}
+
+The security of the Fiat-Shamir transformation relies on the hash function satisfying a property known as *correlation intractability*. Intuitively, this property ensures that a malicious prover cannot find a prefix of a proof transcript (such as initial commitments) that maps to a verifier challenge allowing the prover to produce a convincing, yet invalid, suffix (such as the final response).
+
+Attacks on the Fiat-Shamir transformation typically exploit relations where this correlation intractability can be violated. In particular, if the verification logic of the relation being proven evaluates or simulates the transcript generator internally (such as in recursive proofs or proofs of computation), a malicious prover might construct relation-dependent inputs where the computational steps of the relation check and the transcript generation interact self-referentially.
+
+To heuristically mitigate such self-referential attacks, implementations **SHOULD** ensure that the computational depth (or sequential complexity) of the transcript generation is strictly greater than the computational depth of evaluating the relation itself.
+
+Specifically, implementations can achieve this by appending a padding string of zero-bytes proportional to the relation's representation size or complexity (e.g., zero-bytes equal in length to the number of constraints, gates, or steps in the verification logic) to the transcript immediately after the statement encoding. This ensures that the transcript's computational depth exceeds that of the relation's verification logic, rendering self-referential evaluations infeasible within the bounds of the relation's check.
+
 ## Implementation guidance {#implementation-guidance}
 
 The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities.
@@ -965,6 +1181,7 @@ The suites defined by this document, and the identifiers used by the test vector
 |---|---|---|
 | `SHAKE128` | SHAKE128 {{SHA3}} | bytes |
 | `TurboSHAKE128` | TurboSHAKE128 {{!RFC9861}} | bytes |
+| `SHA256-AES256CTR` | SHA-256 {{SHS}} and AES-256 {{AES}} | bytes |
 {: #tab-suites title="Duplex sponge suites"}
 
 The suite identifier is a natural component of the `tag` ({{session-id}}), since it fixes the hash instantiation.
@@ -978,6 +1195,16 @@ In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over t
 TurboSHAKE128 {{!RFC9861}} is an eXtendable-Output Function (XOF) built on Keccak-p\[1600, 12\], the Keccak-f\[1600\] permutation reduced to its last 12 rounds. Its state is a 200-byte (1600-bit) string, split into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an n-bit output string, respectively. This instantiation targets 128-bit security.
 
 In this instantiation, every verifier message is the TurboSHAKE128 XOF evaluation TurboSHAKE128(M, D, L), where M is the concatenation of the session identifier, the encoded instance, and the encoded prover messages up to and including the current round, D (the domain-separation byte in the range 0x01 to 0x7F) is fixed to D = 0x1F, the default value, and L is the desired output length in bytes {{!RFC9861}}.
+
+## SHA-256 with AES-256-CTR {#suite-sha256-aes256ctr}
+
+We describe noninteractive duplex sponge instances based on `HashAndExpand` parameterized by specific hash and PRF functions:
+
+~~~
+class HashAndExpandSha256AesCtr(HashAndExpand):
+    Hash = SHA256
+    PRF = AES256_CTR
+~~~
 
 # IANA Considerations
 
