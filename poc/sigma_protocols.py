@@ -2,18 +2,18 @@
 
 The linear-relation representation ({{representation}}) with its
 coefficient-carrying sparse serialization ({{serialize-linear-relations}}),
-instance validation ({{instance-validation}}, checks 1-10), the interactive
+instance validation ({{instance-validation}}), the interactive
 Sigma Protocol ({{sigma-protocol-group}}), the Fiat-Shamir challenge of
 {{challenge-derivation}} (DeriveSessionID -> DS.Init -> absorb
 SerializeLinearRelation -> absorb commitment -> DecodeField(Squeeze(Ns +
 16))), the batchable and compact NARG strings ({{non-interactive}}), and
-batch verification ({{batch-verification}}). The generator is the implicit
-`elements[0]` and is never serialized.
+batch verification ({{batch-verification}}). The identity and generator have
+implicit element indices 0 and 1 and are not stored or serialized.
 
-An instance is a `LinearRelation`: the group, the statement elements
-(`elements[0]` is the group generator), and a list of `Equation`s, each a
-sparse row of `(element_index, coeff)` image entries and
-`(scalar_index, element_index, coeff)` terms.
+An instance is a `LinearRelation`: the group, the statement elements (whose
+indices begin at 2), and a list of `Equation`s, each a sparse row of
+`(element_index, coeff)` image entries and `(scalar_index, element_index,
+coeff)` terms.
 
 Verification raises on malformed input -- `groups.DeserializeError` for a
 non-canonical element or scalar, `InstanceError` and `ProofLengthError`
@@ -65,12 +65,16 @@ class Equation:
 class LinearRelation:
     def __init__(self, group, elements, equations):
         self.group = group
-        self.elements = list(elements)           # elements[0] == generator()
-        self.equations = list(equations)
+        self.elements = [group.element(P) for P in elements]
+        self.equations = [
+            Equation([(ei, group.scalar(c)) for (ei, c) in eq.image],
+                     [(si, ei, group.scalar(c)) for (si, ei, c) in eq.terms])
+            for eq in equations
+        ]
 
 
 def num_elements(inst):
-    return len(inst.elements)
+    return 2 + len(inst.elements)
 
 
 def num_equations(inst):
@@ -78,7 +82,16 @@ def num_equations(inst):
 
 
 def num_scalars(inst):
-    return 1 + max(s for eq in inst.equations for (s, _, _) in eq.terms)
+    return max((s + 1 for eq in inst.equations
+                for (s, _, _) in eq.terms), default=0)
+
+
+def element(inst, element_index):
+    if element_index == 0:
+        return inst.group.identity()
+    if element_index == 1:
+        return inst.group.generator()
+    return inst.elements[element_index - 2]
 
 
 def linear_map(inst, scalars):
@@ -89,7 +102,7 @@ def linear_map(inst, scalars):
         acc = g.identity()
         for (si, ei, coeff) in eq.terms:
             acc = g.add(acc, g.mul((coeff * scalars[si]) % g.order,
-                                   inst.elements[ei]))
+                                   element(inst, ei)))
         out.append(acc)
     return out
 
@@ -101,21 +114,16 @@ def image(inst):
     for eq in inst.equations:
         acc = g.identity()
         for (ei, coeff) in eq.image:
-            acc = g.add(acc, g.mul(coeff % g.order, inst.elements[ei]))
+            acc = g.add(acc, g.mul(coeff, element(inst, ei)))
         out.append(acc)
     return out
 
 
-# --- Instance validation ({{instance-validation}}), checks 1-10 ------------
+# --- Instance validation ({{instance-validation}}) -------------------------
 
 def validate_instance(inst):
-    g = inst.group
     eqs = inst.equations
-    if len(eqs) == 0:                                            # 1
-        return False
-    if any(len(eq.terms) == 0 or len(eq.image) == 0 for eq in eqs):  # 2
-        return False
-    bound = 2 ** 32                                              # 3
+    bound = 2 ** 32                                              # 1
     if len(eqs) >= bound:
         return False
     for eq in eqs:
@@ -126,7 +134,7 @@ def validate_instance(inst):
         if any(not (0 <= si < bound) or not (0 <= ei < bound)
                for (si, ei, _) in eq.terms):
             return False
-    n_el = num_elements(inst)                                   # 4
+    n_el = num_elements(inst)                                   # 2
     referenced = set()
     for eq in eqs:
         for (ei, _) in eq.image:
@@ -137,29 +145,8 @@ def validate_instance(inst):
             if ei >= n_el:
                 return False
             referenced.add(ei)
-    if any(i not in referenced for i in range(1, n_el)):        # 5
+    if any(i not in referenced for i in range(2, n_el)):        # 3
         return False
-    used_scalars = {si for eq in eqs for (si, _, _) in eq.terms}  # 6
-    if any(j not in used_scalars for j in range(num_scalars(inst))):
-        return False
-    if inst.elements[0] != g.generator():                       # 7
-        return False
-    if any(P is None for P in inst.elements):                   # 8
-        return False
-    if any(P is None for P in image(inst)):                     # 9
-        return False
-    for si in range(num_scalars(inst)):                         # 10
-        for eq in eqs:
-            acc = g.identity()
-            hit = False
-            for (s, ei, coeff) in eq.terms:
-                if s == si:
-                    hit = True
-                    acc = g.add(acc, g.mul(coeff % g.order, inst.elements[ei]))
-            if hit and acc is not None:
-                break
-        else:
-            return False
     return True
 
 
@@ -171,11 +158,11 @@ def serialize_linear_relation(inst):
     for eq in inst.equations:
         out += LE(len(eq.image), 4)
         for (ei, coeff) in eq.image:
-            out += LE(ei, 4) + g.scalar_serialize([coeff % g.order])
+            out += LE(ei, 4) + g.scalar_serialize([coeff])
         out += LE(len(eq.terms), 4)
         for (si, ei, coeff) in eq.terms:
-            out += LE(si, 4) + LE(ei, 4) + g.scalar_serialize([coeff % g.order])
-    return out + g.serialize(inst.elements[1:num_elements(inst)])
+            out += LE(si, 4) + LE(ei, 4) + g.scalar_serialize([coeff])
+    return out + g.serialize(inst.elements)
 
 
 def parse_statement(group, buf):
@@ -205,14 +192,10 @@ def parse_statement(group, buf):
         return v
 
     n_eq = read_u32()
-    if n_eq == 0:
-        raise InstanceError("no equations")
     equations = []
-    max_index = 0
+    max_index = 1
     for _ in range(n_eq):
         n_img = read_u32()
-        if n_img == 0:
-            raise InstanceError("empty image")
         img = []
         for _ in range(n_img):
             ei = read_u32()
@@ -220,8 +203,6 @@ def parse_statement(group, buf):
             img.append((ei, c))
             max_index = max(max_index, ei)
         n_terms = read_u32()
-        if n_terms == 0:
-            raise InstanceError("empty terms")
         terms = []
         for _ in range(n_terms):
             si = read_u32()
@@ -231,9 +212,9 @@ def parse_statement(group, buf):
             max_index = max(max_index, ei)
         equations.append(Equation(img, terms))
     n_el = 1 + max_index
-    if len(buf) - pos != (n_el - 1) * group.Ne:
+    if len(buf) - pos != (n_el - 2) * group.Ne:
         raise InstanceError("statement length does not match header")
-    elements = [group.generator()] + group.deserialize(buf[pos:])
+    elements = group.deserialize(buf[pos:])
     return LinearRelation(group, elements, equations)
 
 
@@ -345,8 +326,6 @@ def verify_compact(tag, inst, proof):
     challenge = g.scalar_deserialize(proof[0:g.Ns])[0]
     response = g.scalar_deserialize(proof[g.Ns:g.Ns + nr])
     commitment = simulate_commitment(inst, response, challenge)
-    if any(P is None for P in commitment):
-        raise VerifyError("simulated commitment contains the identity")
     expected = derive_challenge(g, derive_session_id(tag),
                                 serialize_linear_relation(inst),
                                 g.serialize(commitment))
@@ -425,17 +404,17 @@ if __name__ == "__main__":
     p256 = P256Group()
 
     # The ChaumPedersen serialization example of {{serialize-linear-relations}}
-    # (elements [G, H, X, Y], all coefficients 1), checked against its header
+    # (elements [H, X, Y], all coefficients 1), checked against its header
     # bytes written out by hand.
-    cp = LinearRelation(p256, [p256.gen] * 4,
-                        [Equation([(2, 1)], [(0, 0, 1)]),
-                         Equation([(3, 1)], [(0, 1, 1)])])
+    cp = LinearRelation(p256, [p256.gen] * 3,
+                        [Equation([(3, 1)], [(0, 1, 1)]),
+                         Equation([(4, 1)], [(0, 2, 1)])])
     one = I2OSP(1, 32)
     header = (LE(2, 4)
-              + LE(1, 4) + LE(2, 4) + one
-              + LE(1, 4) + LE(0, 4) + LE(0, 4) + one
               + LE(1, 4) + LE(3, 4) + one
-              + LE(1, 4) + LE(0, 4) + LE(1, 4) + one)
+              + LE(1, 4) + LE(0, 4) + LE(1, 4) + one
+              + LE(1, 4) + LE(4, 4) + one
+              + LE(1, 4) + LE(0, 4) + LE(2, 4) + one)
     assert serialize_linear_relation(cp).startswith(header)
 
     for g, suite in ((p256, "sigma-proofs_Shake128_P256"),
@@ -447,8 +426,8 @@ if __name__ == "__main__":
         # compact proof (the F4 adversarial vectors of the appendix).
         x = 7
         X = g.mul(x, g.generator())
-        inst = LinearRelation(g, [g.generator(), X],
-                              [Equation([(1, 1)], [(0, 0, 1)])])
+        inst = LinearRelation(g, [X],
+                              [Equation([(2, 1)], [(0, 1, 1)])])
         assert validate_instance(inst)
         assert linear_map(inst, [x]) == image(inst)
         assert parse_statement(
