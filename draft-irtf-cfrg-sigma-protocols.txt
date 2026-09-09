@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 18 February 2027                                    Apple, Inc.
-                                                          17 August 2026
+Expires: 13 March 2027                                       Apple, Inc.
+                                                        9 September 2026
 
 
                    Sigma Proofs for Linear Relations
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 18 February 2027.
+   This Internet-Draft will expire on 13 March 2027.
 
 Copyright Notice
 
@@ -143,12 +143,12 @@ Table of Contents
    [RFC9497], blind signatures [BBSBlind], and proofs of knowledge of
    the opening of a Pedersen commitment [Pedersen91].  This document
    specifies a single Sigma Protocol for proving knowledge of a preimage
-   of a linear map over a prime-order group [Cramer97] [Maurer09].  A
-   _linear relation_ is a system of equations among group elements that
-   is linear in the secret scalars; affine relations with constant terms
-   (e.g. verifiable encryption) and quadratic equations (e.g. range
-   proofs) can also be expressed as the preimage of a linear map
-   (Section 3.1).
+   of a linear map over a prime-order group [Brands00], [Cramer97],
+   [Maurer09].  A _linear relation_ is a system of equations among group
+   elements that is linear in the secret scalars; affine relations with
+   constant terms (e.g. verifiable encryption) and quadratic equations
+   (e.g. range proofs) can also be expressed as the preimage of a linear
+   map (Section 3.1).
 
    A Sigma Protocol is an interactive proof with the following three-
    message flow:
@@ -1515,9 +1515,9 @@ Normative References
 
    [fiat-shamir]
               Orrù, M., "Fiat-Shamir Transformation", Work in Progress,
-              Internet-Draft, draft-irtf-cfrg-fiat-shamir-02, 2 March
+              Internet-Draft, draft-irtf-cfrg-fiat-shamir-03, 16 August
               2026, <https://datatracker.ietf.org/doc/html/draft-irtf-
-              cfrg-fiat-shamir-02>.
+              cfrg-fiat-shamir-03>.
 
    [NIST-SP-800-56A]
               Barker, E., Chen, L., Roginsky, A., Vassilev, A., and R.
@@ -1537,9 +1537,9 @@ Normative References
 
    [PAIRING]  Sakemi, Y., Kanno, S., and R. S. Wahby, "Pairing-Friendly
               Curves", Work in Progress, Internet-Draft, draft-irtf-
-              cfrg-pairing-friendly-curves-13, 6 July 2026,
+              cfrg-pairing-friendly-curves-14, 7 September 2026,
               <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
-              pairing-friendly-curves-13>.
+              pairing-friendly-curves-14>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -1604,6 +1604,10 @@ Informative References
 
    [BonehS23] Boneh, D. and V. Shoup, "A Graduate Course in Applied
               Cryptography", 2023, <https://toc.cryptobook.us/>.
+
+   [Brands00] Brands, S., "Rethinking Public Key Infrastructures and
+              Digital Certificates: Building in Privacy", 2000,
+              <https://www.credentica.com/mit/Chapter3.pdf>.
 
    [CamenischS97]
               Camenisch, J. and M. Stadler, "Efficient Group Signature
