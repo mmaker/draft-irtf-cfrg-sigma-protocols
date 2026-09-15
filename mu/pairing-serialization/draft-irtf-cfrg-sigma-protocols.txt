@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 7 March 2027                                        Apple, Inc.
-                                                        3 September 2026
+Expires: 19 March 2027                                       Apple, Inc.
+                                                       15 September 2026
 
 
                    Sigma Proofs for Linear Relations
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 7 March 2027.
+   This Internet-Draft will expire on 19 March 2027.
 
 Copyright Notice
 
@@ -143,12 +143,12 @@ Table of Contents
    [RFC9497], blind signatures [BBSBlind], and proofs of knowledge of
    the opening of a Pedersen commitment [Pedersen91].  This document
    specifies a single Sigma Protocol for proving knowledge of a preimage
-   of a linear map over a prime-order group [Cramer97] [Maurer09].  A
-   _linear relation_ is a system of equations among group elements that
-   is linear in the secret scalars; affine relations with constant terms
-   (e.g. verifiable encryption) and quadratic equations (e.g. range
-   proofs) can also be expressed as the preimage of a linear map
-   (Section 3.1).
+   of a linear map over a prime-order group [Brands00], [Cramer97],
+   [Maurer09].  A _linear relation_ is a system of equations among group
+   elements that is linear in the secret scalars; affine relations with
+   constant terms (e.g. verifiable encryption) and quadratic equations
+   (e.g. range proofs) can also be expressed as the preimage of a linear
+   map (Section 3.1).
 
    A Sigma Protocol is an interactive proof with the following three-
    message flow:
@@ -1432,13 +1432,11 @@ Procedure:
       [fiat-shamir] for [SEC1] (Ne = 33).
 
    *  deserialize(buf): the group element deserialization function of
-      [fiat-shamir] for [SEC1].
-
-   Only the compressed form is a valid encoding.  In particular, each
-   Ne-byte slice begins with 0x00, 0x02, or 0x03, and the identity is
-   the Ne-zero byte string.  Every non-identity point *MUST* perform all
-   checks of Section 5.6.2.3.4 of [NIST-SP-800-56A] and deserialization
-   *MUST* fail otherwise.
+      [fiat-shamir], which inverts the conversion above.  Every non-
+      identity point *MUST* perform all checks of Section 5.6.2.3.4 of
+      [NIST-SP-800-56A].  Deserialization *MUST* accept only compressed
+      form, an Ne-byte that begins with 0x00, 0x02, or 0x03, as
+      specified in [fiat-shamir]).
 
 8.1.2.  Scalar Field of P-256
 
@@ -1458,21 +1456,15 @@ Procedure:
    *  order():
       52435875175126190479447740508185965837690552500527637822603658699938581184513.
 
-   *  generator(): the base point BP of G1 specified in Section 4.2.1 of
+   *  generator(): the generator of G1 specified in Section 4.2.1 of
       [PAIRING]:
       97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb.
 
-   *  serialize([A]): point_to_octets_G1 of Section 5.3 of [PAIRING]
-      with point compression (C_bit = 1); Ne = 48.
+   *  serialize([A]): the compressed G1 serialization of Appendix C of
+      [PAIRING] (`Ne = 48).
 
-   *  deserialize(buf): octets_to_point_G1 of Section 5.4 of [PAIRING].
-
-   Only the compressed form is accepted (Section 5.6.1 of [PAIRING]):
-   every Ne-byte slice has C_bit = 1, and the fixed slice length
-   excludes the uncompressed form.  This document follows the _allow
-   identity_ behavior of Section 5.6.2 of [PAIRING]: the identity
-   element is a valid output of deserialize.  The zero scalar is
-   likewise accepted (Section 5.6.3 of [PAIRING]).
+   *  deserialize(buf): inverts the serialization above and *MUST*
+      perform full point validation.
 
 8.2.2.  Scalar Field of BLS12-381
 
@@ -1525,9 +1517,9 @@ Normative References
 
    [PAIRING]  Sakemi, Y., Kanno, S., and R. S. Wahby, "Pairing-Friendly
               Curves", Work in Progress, Internet-Draft, draft-irtf-
-              cfrg-pairing-friendly-curves-13, 6 July 2026,
+              cfrg-pairing-friendly-curves-14, 7 September 2026,
               <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
-              pairing-friendly-curves-13>.
+              pairing-friendly-curves-14>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -1592,6 +1584,10 @@ Informative References
 
    [BonehS23] Boneh, D. and V. Shoup, "A Graduate Course in Applied
               Cryptography", 2023, <https://toc.cryptobook.us/>.
+
+   [Brands00] Brands, S., "Rethinking Public Key Infrastructures and
+              Digital Certificates: Building in Privacy", 2000,
+              <https://www.credentica.com/mit/Chapter3.pdf>.
 
    [CamenischS97]
               Camenisch, J. and M. Stadler, "Efficient Group Signature

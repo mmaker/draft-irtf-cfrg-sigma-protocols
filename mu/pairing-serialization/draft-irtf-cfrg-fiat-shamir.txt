@@ -4,8 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                          3 September 2026
-Expires: 7 March 2027
+Intended status: Informational                         15 September 2026
+Expires: 19 March 2027
 
 
                        Fiat-Shamir Transformation
@@ -55,7 +55,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 7 March 2027.
+   This Internet-Draft will expire on 19 March 2027.
 
 Copyright Notice
 
@@ -1557,9 +1557,9 @@ Informative References
    [I-D.irtf-cfrg-pairing-friendly-curves]
               Sakemi, Y., Kanno, S., and R. S. Wahby, "Pairing-Friendly
               Curves", Work in Progress, Internet-Draft, draft-irtf-
-              cfrg-pairing-friendly-curves-13, 6 July 2026,
+              cfrg-pairing-friendly-curves-14, 7 September 2026,
               <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
-              pairing-friendly-curves-13>.
+              pairing-friendly-curves-14>.
 
    [POSEIDON2]
               Grassi, L., Khovratovich, D., and M. Schofnegger,
