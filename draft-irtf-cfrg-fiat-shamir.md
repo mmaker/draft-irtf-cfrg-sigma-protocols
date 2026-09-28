@@ -154,11 +154,9 @@ It specifies how the hash function is employed, how prover messages are encoded 
 
 # Introduction
 
-The Fiat-Shamir transformation removes interaction from a *public-coin* interactive argument by relying on a cryptographic hash function. The non-interactive prover derives each verifier message on its own via a hash function, and serializes the protocol transcript into a *non-interactive argument* (NARG) string. The verifier recomputes the same verifier messages from the NARG string and checks the interactive verifier's decision. The resulting argument is secure in the random oracle model, where the hash function is treated as an ideal random function (see {{sec-transformation}}).
+The Fiat-Shamir transformation turns a *public-coin* interactive argument into a non-interactive argument by replacing the verifier's random messages with the output of a cryptographic hash function. The protocol transcript is serialized into a *non-interactive argument* (NARG) string that can be verified without interacting with the prover. The resulting argument is secure in the random oracle model, where the hash function is treated as an ideal random function (see {{sec-transformation}}).
 
-Many non-interactive arguments apply the Fiat-Shamir transformation to a public-coin interactive proof, yet each protocol re-specifies it from scratch, duplicating the security analysis and reopening the same bugs. It is notoriously easy to get the Fiat-Shamir transformation wrong, introducing critical security bugs {{BPW16}}, {{DMWG23}}, {{FROZENHEART}}, {{SOLANA-ZK}}.
-
-This document specifies the duplex sponge Fiat-Shamir transformation, and in particular:
+It is notoriously easy to get the Fiat-Shamir transformation wrong, introducing critical security bugs {{BPW16}}, {{DMWG23}}, {{FROZENHEART}}, {{SOLANA-ZK}}. This specification provides guidelines and security requirements for each component of the Fiat-Shamir transformation, avoiding duplicate security analysis across multiple proof systems. It provides:
 
 - a non-interactive argument prover (NARG prover), and
 - a non-interactive argument verifier (NARG verifier)
@@ -279,11 +277,10 @@ Other types of non-interactive transformations (with and without random oracles)
 |                                                                   |
 | 3. Run the interactive verifier                                   |
 |                                                                   |
-| +--------------------------------------+                          |
-| | Interactive Verifier                 |                          |
-| |  (instance, prover_msg[..],          |                          |
-| |   verifier_msg[..])                  |                          |
-| +--------------------------------------+                          |
+| +------------------------------------------------+                |
+| | Interactive Verifier                           |                |
+| |  (instance, prover_msg[..], verifier_msg[..])  |                |
+| +------------------------------------------------+                |
 +-------------------------------------------------------------------+
 ~~~
 {: #fig-fiat-shamir-verifier title="Non-interactive verifier for the Fiat-Shamir transformation"}
@@ -294,7 +291,7 @@ Note that the prover does not need to compute the last verifier message `verifie
 
 The key words "**MUST**", "**MUST NOT**", "**REQUIRED**", "**SHALL**", "**SHALL NOT**", "**SHOULD**", "**SHOULD NOT**", "**RECOMMENDED**", "**NOT RECOMMENDED**", "**MAY**", and "**OPTIONAL**" in this document are to be interpreted as described in BCP 14 {{!RFC2119}} {{!RFC8174}} when, and only when, they appear in all capitals, as shown here.
 
-The algorithms and procedures in this document are specified using Python-like pseudocode. Each function accepts defined inputs and parameters and returns one or more output values. Once a protocol variant and ciphersuite are selected, all associated parameters are treated as constants.
+The algorithms and procedures in this document are specified using Python-like pseudocode. Functions may depend on external, ciphersuite-dependent parameters; once a protocol variant and ciphersuite are selected, all associated parameters are treated as constants.
 
 The following notation is used throughout this document.
 
@@ -349,9 +346,9 @@ The interface generalizes the **sponge** {{SPONGE}}, which maps a variable-lengt
 
 ## Proof systems terminology
 
-The **session identifier** is a 32-byte string that identifies the application context and the specific non-interactive argument in use; it is held by both the prover and the verifier (see {{session-id}}).
+The **session identifier** is a 32-byte string identifying the non-interactive argument system and the application context. It is held by both the prover and the verifier (see {{session-id}}).
 
-A **prover message** is a message sent by the interactive prover, and a **verifier message** is a message sent by the interactive verifier (a uniformly random value, sometimes called _challenge_). A message can be a value of any type for which a codec ({{codecs}}) is defined, such as a byte string, an unsigned integer, or a group element. The **transcript** is the ordered sequence of prover and verifier messages. In particular, the transcript does _not_ include the instance and session identifier.
+A **prover message** is a message sent by the interactive prover, and a **verifier message** is a message sent by the interactive verifier (a uniformly random value, sometimes called _challenge_). The **transcript** is the ordered sequence of prover and verifier messages. In particular, the transcript does _not_ include the instance and session identifier.
 
 The **instance** specifies the statement being proven and is held by both the prover and the verifier. The (encoded) instance **MUST** be non-empty.
 
@@ -395,11 +392,11 @@ In the duplex sponge interface, messages can be absorbed incrementally, and inse
 
 Each `state.Squeeze(n)` is uniformly distributed, and consecutive `state.Squeeze` calls continue one output stream.
 
-Guidance on how to produce a 32-byte `session_id`, and its security requirements, is given in {{session-id}}; its role in composability and reuse is discussed in {{sec-session-identifiers}}.
+The security requirements for the 32-byte string `session_id` are given in {{session-id}}; its role in composability and reuse is discussed in {{sec-session-identifiers}}.
 
 ## XOF duplex sponge {#xof-duplex-sponge}
 
-This section implements the duplex sponge interface using an eXtendable-Output Function (XOF). An XOF is a hash function mapping a byte string to an output string of any desired length. It has the following operations:
+This section implements the duplex sponge from an eXtendable-Output Function (XOF). `XOF(M, L)` maps a byte string `M` to an `L`-byte string. The suite ({{suites}}) fixes the XOF, its rate `R` (the block size in bytes at which the XOF absorbs input, with `R >= 32`), and its security properties ({{sec-transformation}}).
 
 - `XOF.New() -> xof_state`, a fresh XOF state;
 - `xof_state.Update(x)`, absorbing the byte string `x` into the state;
@@ -471,6 +468,8 @@ Output: a uniformly-distributed random n-byte string
 2.    state.reader = state.ctx.Copy().Finalize()
 3. return state.reader.Read(n)
 ~~~
+
+Implementations **SHOULD** keep an incremental XOF context for `M` instead of re-evaluating `XOF(M, offset + n)` on every Squeeze, which costs time quadratic in the number of rounds ({{efficiency}}).
 
 # Codecs
 
@@ -572,13 +571,11 @@ For `m > 1`, decoding relies on `16 * m` additional randomness bytes. Applicatio
 
 # Initialization
 
-Before any prover message is processed, both parties start the duplex sponge with the session identifier ({{session-id}}), and then the instance ({{instance}}).
-
-Neither the session identifier nor the instance is part of the NARG string: the verifier holds both as its own inputs.
+Before any prover message is processed, both parties start the duplex sponge with the session identifier ({{session-id}}), and then the instance ({{instance}}). Session identifier and instance are not part of the NARG string.
 
 ## Session identifiers {#session-id}
 
-The session identifier is a 32-byte string that identifies the context in which the non-interactive argument is used. The procedure `DeriveSessionID` below is the **RECOMMENDED** way to obtain a session identifier from a human-meaningful variable-length `tag`. An application **MAY** use any 32-byte string it derives by its own means.
+The session identifier is a 32-byte string. The procedure `DeriveSessionID` below is the **RECOMMENDED** way to obtain a session identifier from a human-meaningful variable-length `tag`. An application **MAY** use any 32-byte string it derives by its own means.
 
 For a duplex sponge operating over bytes, the session identifier is derived from a `tag` via the procedure `DeriveSessionID`. The `tag` is a byte string whose encoding as a sequence of bytes **MUST** be specified unambiguously, so that every implementation reproduces identical bytes. It is **RECOMMENDED** the `tag` be a US-ASCII string, without byte-order mark at the beginning, nor `0x00` byte termination.
 
@@ -634,12 +631,9 @@ where `xx` is the two-digit version number, `hashID` is the hash identifier, and
 
 ## Instance
 
-The instance is input to the non-interactive prover and the non-interactive verifier; it fixes the specific statement being proven.
+The instance is input to the non-interactive prover and the non-interactive verifier; it fixes the specific statement being proven. It is the first value absorbed after `Init(session_id)` and before any prover message. The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map. The encoded instance **MUST** be non-empty. While the session identifier of the previous section {{session-id}} fixes the language, the instance selects one of its members.
 
-The instance is the first value absorbed after `Init(session_id)` and before any prover message. The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map.
-The encoded instance **MUST** be non-empty. While the session identifier of the previous section {{session-id}} fixes the language, the instance selects one of its members.
-
-As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to satisfy the verification equations on a statement it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the serialization functions of {{serialization}}.
+As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to produce valid proofs on statements it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the serialization functions of {{serialization}}.
 
 As an example, consider the sumcheck relation for multilinear polynomials in `N` variables over the field of size `p^m`. For a polynomial committed using the polynomial commitment scheme `COM`, the relation consists of:
 
