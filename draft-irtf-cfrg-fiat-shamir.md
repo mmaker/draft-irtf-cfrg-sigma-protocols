@@ -305,37 +305,6 @@ A byte string `x` is a **prefix** of a byte string `y` if `y == x || z` for some
 
 `LE(n, w)` and `LE2IP(x)` are the integer/byte-string conversion primitives used throughout this document, in little-endian byte order. `LE(n, w)` converts a non-negative integer `n` less than `256^w` into a `w`-byte, little-endian byte string, and fails if `n >= 256^w`. `LE2IP(x)` converts a byte string `x` into a non-negative integer using the little-endian byte order.
 
-~~~
-LE(n, w)
-
-Inputs:
-
-- n, a non-negative integer with 0 <= n < 256^w
-- w, the output length in bytes
-
-Output: out, a w-byte string
-
-1. fail if n < 0 or n >= 256^w
-2. out = zeros(w)
-3. for i in 0, ..., w-1:
-4.    out[i] := n mod 256
-5.    n := floor(n / 256)
-6. return out
-~~~
-
-~~~
-LE2IP(x)
-
-Input: x, a byte string of length w
-
-Output: n, a non-negative integer with 0 <= n < 256^w
-
-1. n = 0
-2. for i in 0, ..., len(x)-1:
-3.    n = n + x[i] * 256^i
-4. return n
-~~~
-
 The set of integers between `0` and `N-1` is denoted `[0, N)`.
 
 ## Duplex sponge interface
