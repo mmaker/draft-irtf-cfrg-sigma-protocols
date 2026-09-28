@@ -678,6 +678,14 @@ Omitting public statement data from the transformation, such as `N` in the first
 
 # Non-interactive argument string {#narg-string}
 
+Serialization and deserialization **MUST** satisfy the following security requirements:
+
+1. Deserialization inverts serialization and fails on any byte string that is not the serialization of a valid value.
+2. Each value has a unique serialization. Accepting more than one serialization of a value makes proofs malleable.
+3. Deserialization enforces every validity condition of the value's type: for example, an elliptic-curve point lies in the prime-order subgroup, and an integer or field element is in its canonical range.
+4. Deserialization fails gracefully on inputs. Lengths and counts read from the NARG string are untrusted and checked before being used for indexing, allocation, or arithmetic.
+5. If any trailing bytes remain in the input after deserializing the last prover message, verification fails.
+
 ## Serialization {#serialization}
 
 The NARG string is the concatenation of the serialization of each prover message, as defined below. The same bytes are absorbed into the duplex sponge to derive the verifier messages ({{encoding-bytes}}).
