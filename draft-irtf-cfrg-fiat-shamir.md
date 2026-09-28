@@ -131,6 +131,12 @@ informative:
     date: 2024
     author:
       - org: "Consensys"
+  GNARK-KZG:
+    title: "Plonk verifier KZG multi point verification"
+    target: https://github.com/Consensys-Incorporated/gnark/security/advisories/GHSA-7p92-x423-vwj6
+    date: 2023
+    author:
+      - org: "Consensys"
   CVE-2022-29566:
     title: "CVE-2022-29566: Fiat-Shamir hashing omits public values from the statement and the proof in Bulletproofs (Frozen Heart)"
     target: https://nvd.nist.gov/vuln/detail/CVE-2022-29566
@@ -950,7 +956,7 @@ Completeness and zero-knowledge are guaranteed only for valid instances: if the 
 
 The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities.
 
-Some incorrect implementations involve out-of-order (or missing) prover messages {{CVE-2024-45039}} {{CVE-2026-46654}}. Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered. A byte-level interface, as described in this document, is advisable in place of proof data structures whose fields are randomly addressable. A sequential interface, by contrast, enforces in-order processing. An end-of-input check is necessary to prevent malleability.
+Some incorrect implementations involve out-of-order (or missing) prover messages {{GNARK-KZG}} {{CVE-2024-45039}} {{CVE-2026-46654}}. Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered. A byte-level interface, as described in this document, is advisable in place of proof data structures whose fields are randomly addressable. A sequential interface, by contrast, enforces in-order processing. An end-of-input check is necessary to prevent malleability.
 
 Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes, and by replacing each prover message in turn with a different value.
 
