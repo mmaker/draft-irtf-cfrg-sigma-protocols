@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 19 March 2027                                       Apple, Inc.
-                                                       15 September 2026
+Expires: 1 April 2027                                        Apple, Inc.
+                                                       28 September 2026
 
 
                    Sigma Proofs for Linear Relations
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 19 March 2027.
+   This Internet-Draft will expire on 1 April 2027.
 
 Copyright Notice
 
@@ -1557,11 +1557,12 @@ Informative References
               Protocol Theory for Lattices",
               <https://doi.org/10.1007/978-3-030-84245-1_19>.
 
-   [BBS]      Looker, T., Kalos, V., Whitehead, A., and M. Lodder, "The
-              BBS Signature Scheme", Work in Progress, Internet-Draft,
-              draft-irtf-cfrg-bbs-signatures-10, 8 January 2026,
+   [BBS]      Looker, T., Kalos, V., Whitehead, A., Lodder, M., and G.
+              M. Bernstein, "The BBS Signature Scheme", Work in
+              Progress, Internet-Draft, draft-irtf-cfrg-bbs-signatures-
+              12, 28 September 2026,
               <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
-              bbs-signatures-10>.
+              bbs-signatures-12>.
 
    [BBSBlind] Kalos, V. and G. M. Bernstein, "Blind BBS Signatures",
               Work in Progress, Internet-Draft, draft-irtf-cfrg-bbs-
