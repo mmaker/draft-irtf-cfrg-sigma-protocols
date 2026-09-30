@@ -633,7 +633,7 @@ where `xx` is the two-digit version number, `hashID` is the hash identifier, and
 
 The instance is input to the non-interactive prover and the non-interactive verifier; it fixes the specific statement being proven. It is the first value absorbed after `Init(session_id)` and before any prover message. The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map. The encoded instance **MUST** be non-empty. While the session identifier of the previous section {{session-id}} fixes the language, the instance selects one of its members.
 
-As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to produce valid proofs on statements it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the serialization functions of {{serialization}}.
+As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to produce valid NARG strings on statements it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the serialization functions of {{serialization}}.
 
 As an example, consider the sumcheck relation for multilinear polynomials in `N` variables over the field of size `p^m`. For a polynomial committed using the polynomial commitment scheme `COM`, the relation consists of:
 
