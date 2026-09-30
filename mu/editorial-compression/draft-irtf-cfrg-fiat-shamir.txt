@@ -4,8 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                         28 September 2026
-Expires: 1 April 2027
+Intended status: Informational                         30 September 2026
+Expires: 3 April 2027
 
 
                        Fiat-Shamir Transformation
@@ -55,7 +55,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 1 April 2027.
+   This Internet-Draft will expire on 3 April 2027.
 
 Copyright Notice
 
@@ -899,9 +899,9 @@ Table of Contents
    selects one of its members.
 
    As for every encoding map, encode[0] *MUST* be prefix-free, else a
-   malicious prover may be able to produce valid proofs on statements it
-   cannot prove (see Section 8.5).  The encoding map encode[0] *SHOULD*
-   reuse the serialization functions of Section 6.1.
+   malicious prover may be able to produce valid NARG strings on
+   statements it cannot prove (see Section 8.5).  The encoding map
+   encode[0] *SHOULD* reuse the serialization functions of Section 6.1.
 
    As an example, consider the sumcheck relation for multilinear
    polynomials in N variables over the field of size p^m.  For a
