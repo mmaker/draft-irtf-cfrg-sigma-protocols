@@ -1869,40 +1869,7 @@ svg {
 <p id="section-2.1-2">Byte strings are indexed from zero. For integers <code>0 &lt;= i &lt;= j &lt;= len(x)</code>, <code>x[i : j]</code> denotes the <code>(j - i)</code>-byte substring of <code>x</code> consisting of the bytes at positions <code>i, i+1, ..., j-1</code>. In particular, <code>x[0 : N]</code> is the first <code>N</code> bytes of <code>x</code>, <code>x[i : i]</code> is the empty byte string <code>""</code>, and <code>x[0 : len(x)]</code> is <code>x</code> itself.<a href="#section-2.1-2" class="pilcrow">¶</a></p>
 <p id="section-2.1-3">A byte string <code>x</code> is a <strong>prefix</strong> of a byte string <code>y</code> if <code>y == x || z</code> for some byte string <code>z</code> (even empty). An encoding is <strong>prefix-free</strong> if, for any two distinct values, the encoding of one is never a prefix of the encoding of the other. A simple prefix-free encoding of a byte string <code>b</code> is <code>LE(len(b), 4) || b</code> as described in <a href="#serialize-byte-strings" class="auto internal xref">Section 6.1.1</a>.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
 <p id="section-2.1-4"><code>LE(n, w)</code> and <code>LE2IP(x)</code> are the integer/byte-string conversion primitives used throughout this document, in little-endian byte order. <code>LE(n, w)</code> converts a non-negative integer <code>n</code> less than <code>256^w</code> into a <code>w</code>-byte, little-endian byte string, and fails if <code>n &gt;= 256^w</code>. <code>LE2IP(x)</code> converts a byte string <code>x</code> into a non-negative integer using the little-endian byte order.<a href="#section-2.1-4" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-2.1-5">
-<pre>
-LE(n, w)
-
-Inputs:
-
-- n, a non-negative integer with 0 &lt;= n &lt; 256^w
-- w, the output length in bytes
-
-Output: out, a w-byte string
-
-1. fail if n &lt; 0 or n &gt;= 256^w
-2. out = zeros(w)
-3. for i in 0, ..., w-1:
-4.    out[i] := n mod 256
-5.    n := floor(n / 256)
-6. return out
-</pre><a href="#section-2.1-5" class="pilcrow">¶</a>
-</div>
-<div class="alignLeft art-text artwork" id="section-2.1-6">
-<pre>
-LE2IP(x)
-
-Input: x, a byte string of length w
-
-Output: n, a non-negative integer with 0 &lt;= n &lt; 256^w
-
-1. n = 0
-2. for i in 0, ..., len(x)-1:
-3.    n = n + x[i] * 256^i
-4. return n
-</pre><a href="#section-2.1-6" class="pilcrow">¶</a>
-</div>
-<p id="section-2.1-7">The set of integers between <code>0</code> and <code>N-1</code> is denoted <code>[0, N)</code>.<a href="#section-2.1-7" class="pilcrow">¶</a></p>
+<p id="section-2.1-5">The set of integers between <code>0</code> and <code>N-1</code> is denoted <code>[0, N)</code>.<a href="#section-2.1-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="duplex-sponge-interface">
