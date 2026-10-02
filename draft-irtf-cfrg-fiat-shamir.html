@@ -2355,6 +2355,24 @@ enc(G) || enc(H) || enc(C) || enc(D)
       <h2 id="name-non-interactive-argument-st">
 <a href="#section-6" class="section-number selfRef">6. </a><a href="#name-non-interactive-argument-st" class="section-name selfRef">Non-interactive argument string</a>
       </h2>
+<p id="section-6-1">Serialization and deserialization <strong>MUST</strong> satisfy the following security requirements:<a href="#section-6-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-6-2">
+<li id="section-6-2.1">
+          <p id="section-6-2.1.1">Deserialization inverts serialization and fails on any byte string that is not the serialization of a valid value.<a href="#section-6-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li id="section-6-2.2">
+          <p id="section-6-2.2.1">Each value has a unique serialization. Accepting more than one serialization of a value makes proofs malleable.<a href="#section-6-2.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li id="section-6-2.3">
+          <p id="section-6-2.3.1">Deserialization enforces every validity condition of the value's type: for example, an elliptic-curve point lies in the prime-order subgroup, and an integer or field element is in its canonical range.<a href="#section-6-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li id="section-6-2.4">
+          <p id="section-6-2.4.1">Deserialization fails gracefully on inputs. Lengths and counts read from the NARG string are untrusted and checked before being used for indexing, allocation, or arithmetic.<a href="#section-6-2.4.1" class="pilcrow">¶</a></p>
+</li>
+        <li id="section-6-2.5">
+          <p id="section-6-2.5.1">If any trailing bytes remain in the input after deserializing the last prover message, verification fails.<a href="#section-6-2.5.1" class="pilcrow">¶</a></p>
+</li>
+      </ol>
 <div id="serialization">
 <section id="section-6.1">
         <h3 id="name-serialization">
