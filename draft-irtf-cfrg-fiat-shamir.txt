@@ -1378,15 +1378,15 @@ Table of Contents
    critical security vulnerabilities.
 
    Some incorrect implementations involve out-of-order (or missing)
-   prover messages [CVE-2024-45039] [CVE-2026-46654].  Absorbing a
-   prover message and serializing it to (or reading it from) the NARG
-   string should be performed within the same function call, to ensure
-   that prover messages are both hashed and serialized, and to prevent
-   them from being skipped or reordered.  A byte-level interface, as
-   described in this document, is advisable in place of proof data
-   structures whose fields are randomly addressable.  A sequential
-   interface, by contrast, enforces in-order processing.  An end-of-
-   input check is necessary to prevent malleability.
+   prover messages [GNARK-KZG] [CVE-2024-45039] [CVE-2026-46654].
+   Absorbing a prover message and serializing it to (or reading it from)
+   the NARG string should be performed within the same function call, to
+   ensure that prover messages are both hashed and serialized, and to
+   prevent them from being skipped or reordered.  A byte-level
+   interface, as described in this document, is advisable in place of
+   proof data structures whose fields are randomly addressable.  A
+   sequential interface, by contrast, enforces in-order processing.  An
+   end-of-input check is necessary to prevent malleability.
 
    Test vectors can help confirm that honestly-generated proofs verify,
    but such tests exercise only completeness.  Negative testing will
@@ -1535,6 +1535,12 @@ Informative References
               Trail of Bits, "The Frozen Heart vulnerability in PlonK",
               2022, <https://blog.trailofbits.com/2022/04/18/the-frozen-
               heart-vulnerability-in-plonk/>.
+
+   [GNARK-KZG]
+              Consensys, "Plonk verifier KZG multi point verification",
+              2023, <https://github.com/Consensys-
+              Incorporated/gnark/security/advisories/GHSA-
+              7p92-x423-vwj6>.
 
    [GNARK-OOM]
               Consensys, "Out-of-memory during deserialization with
