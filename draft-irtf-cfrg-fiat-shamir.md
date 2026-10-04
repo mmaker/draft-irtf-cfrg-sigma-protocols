@@ -297,7 +297,7 @@ Note that the prover does not need to compute the last verifier message `verifie
 
 The key words "**MUST**", "**MUST NOT**", "**REQUIRED**", "**SHALL**", "**SHALL NOT**", "**SHOULD**", "**SHOULD NOT**", "**RECOMMENDED**", "**NOT RECOMMENDED**", "**MAY**", and "**OPTIONAL**" in this document are to be interpreted as described in BCP 14 {{!RFC2119}} {{!RFC8174}} when, and only when, they appear in all capitals, as shown here.
 
-The algorithms and procedures in this document are specified using Python-like pseudocode. Functions may depend on external, ciphersuite-dependent parameters; once a protocol variant and ciphersuite are selected, all associated parameters are treated as constants.
+The algorithms and procedures in this document are specified using Python-like pseudocode. Functions may depend on external parameters, such as the suite ({{suites}}); once selected, these parameters are treated as constants.
 
 The following notation is used throughout this document.
 
@@ -359,7 +359,7 @@ Prover and verifier messages are handled via three operations:
 
 - `Init(session_id) -> state`: create a new duplex sponge state, seeded by the 32-byte string `session_id`.
 - `state.Absorb(x)`: absorb `x` into the state.
-- `state.Squeeze(n) -> buf`: produce `n` elements from the state.
+- `state.Squeeze(n) -> buf`: produce `n` elements (bytes, in this document) from the state.
 
 In the duplex sponge interface, messages can be absorbed incrementally, and `Absorb` inserts no separators: `state.Absorb(x)` followed by `state.Absorb(y)` (with no `state.Squeeze` in between) is equivalent to `state.Absorb(x || y)`.
 
@@ -400,7 +400,7 @@ Seed the state by absorbing the session identifier, padded with zeros to fill th
 ~~~
 Init(session_id)
 
-Input: session_id, a byte array
+Input: session_id, a 32-byte string
 
 Output: a duplex sponge state
 
@@ -440,7 +440,7 @@ Output: a uniformly-distributed random n-byte string
 3. return state.reader.Read(n)
 ~~~
 
-Implementations **SHOULD** keep an incremental XOF context for `M` instead of re-evaluating `XOF(M, offset + n)` on every Squeeze, which costs time quadratic in the number of rounds.
+Implementations **SHOULD** keep an incremental XOF context for `M` instead of re-evaluating `XOF(M, offset + n)` on every Squeeze, where `offset` is the number of bytes already read, which costs time quadratic in the number of rounds.
 
 # Codecs {#codecs}
 
@@ -457,9 +457,9 @@ Each verifier message type fixes the number of bytes to squeeze.
 
 Decoding is not deserialization, and need not invert encoding nor even be injective; its only requirement is to be _distribution-preserving_: if its input is a uniformly random byte string, then its output is (statistically close to) uniformly distributed over the verifier message type.
 
-### Byte arrays
+### Byte strings
 
-The decoding function for fixed-length byte arrays is the identity.
+The decoding function for fixed-length byte strings is the identity.
 
 ~~~
 DecodeBytes(buf, N)
@@ -508,7 +508,7 @@ In such cases, applications **MAY** use an alternative decoding function, provid
 - The function **MUST** have bias at most the soundness error of the interactive argument. The bias adds to the soundness error of the resulting non-interactive argument, and this requirement asks that the resulting non-interactive soundness error stays within a small multiple of the interactive soundness error.
 - The function **SHOULD** be amenable to straight-line implementations. In particular, rejection sampling **SHOULD NOT** be used (see {{constant-time}}).
 
-A similar observation in the context of hashing to the elliptic curve field is available in {{Section 5 of ?RFC9380}}.
+A similar observation in the context of hashing to a finite field is available in {{Section 5 of ?RFC9380}}.
 
 ### Field elements {#decoding-field}
 
@@ -700,7 +700,7 @@ SerializeUint(x, M)
 Inputs:
 
 - x, an integer modulo M
-- M, the order of the integer ring
+- M, the modulus
 
 Output: out, an Ns-byte string
 
@@ -710,11 +710,11 @@ Output: out, an Ns-byte string
 
 ### Field elements {#serialize-field}
 
-This section specifies the _default_ serialization of a finite field of order `q = p^m`, where `p` is the prime characteristic and `m >= 1` is the extension degree.
+This section specifies the _default_ serialization of a finite field of order `p^m`, where `p` is the prime characteristic and `m >= 1` is the extension degree.
 
 The choice of field serialization **MUST** be reflected in the session tag (see {{session-id}}). The field serialization function **MUST** be prefix-free. The default is the serialization specified below, which encodes each prime-field coordinate as a fixed-width little-endian integer via `SerializeUint` ({{serialize-uint}}); if the standard the application builds on already fixes a canonical serialization for the field, that serialization **SHOULD** be pinned in place of the default.
 
-For example, Curve25519 {{?RFC7748}}, Ed25519 {{?RFC8032}}, ristretto255 {{Section 4.4 of ?RFC9496}} serialize field elements as a fixed-width little-endian integer, matching the default. Similarly, in Section 7.1 of {{FIPS204}}, the integer coordinates of lattice vectors are serialized least-significant-byte first. Other standards instead fix a big-endian serialization, such as P-256 {{SEC1}} and BLS12-381 {{?I-D.irtf-cfrg-pairing-friendly-curves}} via `I2OSP`.
+For example, Curve25519 {{?RFC7748}}, Ed25519 {{?RFC8032}}, ristretto255 {{Section 4.4 of ?RFC9496}} serialize field elements as a fixed-width little-endian integer, matching the default. Similarly, in Section 7.1 of {{FIPS204}}, the integer coordinates of lattice vectors are serialized least-significant-byte first. Other standards instead fix a big-endian serialization, such as P-256 {{SEC1}} and BLS12-381 {{?I-D.irtf-cfrg-pairing-friendly-curves}} via `I2OSP` ({{Section 4.1 of ?RFC8017}}).
 
 With respect to a fixed basis, a field element is represented by its `m` coordinates in the prime field, each an integer in `[0, p)`, and serializes to `m * Ns` bytes, with `Ns` taken for the modulus `p`.
 
@@ -740,7 +740,7 @@ Note that a prime field is the case `m = 1`, in which case `SerializeField` is e
 
 ### Elliptic curve group elements {#serialize-ec-point}
 
-A group element is serialized using the group's element-serialization function.
+A group element is serialized using the group's element-serialization function, into an `Ne`-byte string, where `Ne` is fixed by the group.
 
 For many prime-order elliptic-curve groups, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of {{SEC1}}. This document alters {{SEC1}} serialization: uncompressed and hybrid encodings are forbidden, so the only accepted initial octets are `0x00`, `0x02`, and `0x03`; the identity is encoded as `Ne` zero octets instead of {{SEC1}}'s single `0x00` octet. Restricting the accepted initial octets guarantees unique serialization. Padding the identity element removes branching from the parsing of the NARG string.
 
@@ -840,7 +840,7 @@ Output: a, an element of the field of order p^m, given by its
 
 This consumes `m * Ns` bytes of the NARG string, and fails if fewer bytes remain or if any coordinate is non-canonical.
 
-The deserialization **MUST** match the pinned serialization ({{serialize-field}}): where the profile pins a standard's own serialization, that standard's deserialization governs.
+The deserialization **MUST** match the pinned serialization ({{serialize-field}}): where the application pins a standard's own serialization, that standard's deserialization governs.
 
 ### Elliptic-curve group elements
 
