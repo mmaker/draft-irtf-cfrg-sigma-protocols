@@ -442,7 +442,7 @@ Output: a uniformly-distributed random n-byte string
 
 Implementations **SHOULD** keep an incremental XOF context for `M` instead of re-evaluating `XOF(M, offset + n)` on every Squeeze, which costs time quadratic in the number of rounds.
 
-# Codecs
+# Codecs {#codecs}
 
 The only security requirement on encoding maps is that they be prefix-free. Decoding maps are infallible, and **MUST** be distribution-preserving ({{decoding}}).
 
@@ -589,7 +589,7 @@ BAR-COM{cc}
 
 where `{cc}` is the commit hash of the associated version of the cryptographic specification of the protocol.
 
-Yet another reasonable choice for the session identifier is to append a description of the interactive argument system together with the length of each prover and verifier message, after the version string. For instance:
+Yet another reasonable choice for the tag is to append a description of the interactive argument system together with the length of each prover and verifier message, after the version string. For instance:
 
 ~~~
 BAZ-SV{xx}-DSFS-{hashID}-sumcheck-{ff}-A2round-messageS1challenge
@@ -601,7 +601,7 @@ where `xx` is the two-digit version number, `hashID` is the hash identifier, and
 
 The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map. The encoded instance **MUST** be non-empty. While the session identifier of the previous section {{session-id}} fixes the language, the instance selects one of its members.
 
-As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to produce valid NARG strings on statements it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the serialization functions of {{serialization}}.
+As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to produce valid NARG strings on statements it cannot prove (see {{codecs}}). The encoding map `encode[0]` **SHOULD** reuse the serialization functions of {{serialization}}.
 
 As an example, consider the sumcheck relation for multilinear polynomials in `N` variables over the field of size `p^m`. For a polynomial committed using the polynomial commitment scheme `COM`, the relation consists of:
 
@@ -672,7 +672,7 @@ Output: out, an N-byte string
 1. return s
 ~~~
 
-`SerializeBytes` carries no length information of its own. It **MUST NOT** be used unless `N` is fixed by the message's type and the instance, so that prover and verifier agree on `N` before the NARG string is parsed (see {{deserialize-byte-strings}}). On such a fixed-length domain the identity is prefix-free, as required of encodings by {{encoding-bytes}}.
+`SerializeBytes` carries no length information of its own. It **MUST NOT** be used unless `N` is fixed by the message's type and the instance, so that prover and verifier agree on `N` before the NARG string is parsed (see {{deserialize-byte-strings}}). On such a fixed-length domain the identity is prefix-free, as required of encodings by {{codecs}}.
 
 Otherwise, when the length is below 2^32 bytes, a prefix-free serialization is given by
 
@@ -850,11 +850,11 @@ Read the next `Ne` bytes and convert them to a group element using the group's e
 
 For both codecs and serialization, batch algorithms should be preferred when available, because they amortize per-element cost over a whole sequence. For example, the dominant cost in point compression is a modular inversion, and serializing a batch of compressed elliptic-curve points requires only one modular inversion for the entire batch (via Montgomery's trick) rather than one per point. (Note that deserialization does not batch in the same way, since point decompression requires a per-element square root.)
 
-`Init(session_id)` (see {{session-id}}) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of the duplex sponge state, instead of initializing it every time. In the XOF duplex sponge ({{xof-duplex-sponge}}), the padded session identifier fills exactly one rate block ({{xof-init}}), saving one invocation of the permutation function per execution. Similarly, `DeriveSessionID` can be precomputed when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing `encode[0](instance)`.
+`Init(session_id)` (see {{interface}}) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of the duplex sponge state, instead of initializing it every time. In the XOF duplex sponge ({{xof-duplex-sponge}}), the padded session identifier fills exactly one rate block ({{xof-init}}), saving one invocation of the permutation function per execution. Similarly, `DeriveSessionID` can be precomputed when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing `encode[0](instance)`.
 
 # Security considerations
 
-## Codecs
+## Codecs {#sec-codecs}
 
 Encoding maps are inverted only in the security analysis, never by the prover or verifier: the knowledge-soundness extractor relies on an efficiently computable left inverse to recover prover messages from the absorbed bytes {{CO25}}.
 
@@ -888,7 +888,7 @@ If the interactive proof is honest-verifier zero-knowledge, then so is the non-i
 
 The additive zero-knowledge loss introduced by the transformation is linear in the number of queries the adversary makes to the random oracle {{CO25}}.
 
-Zero-knowledge holds only when the prover's random number generator is indistinguishable from fresh uniform randomness to any party that does not know the witness, as noted in {{introduction}}. Reusing the same randomness (or correlated randomness) across two distinct proofs will compromise zero-knowledge: for example, two Schnorr proofs sharing the same commitment nonce reveal the witness. This can be obtained by relying on a cryptographically secure random number generator meeting the requirements of {{?RFC4086}} (for example, the operating system's `getrandom(2)` interface), or by deriving it with a pseudorandom function.
+Zero-knowledge holds only when the prover's random number generator is indistinguishable from fresh uniform randomness to any party that does not know the witness. Reusing the same randomness (or correlated randomness) across two distinct proofs will compromise zero-knowledge: for example, two Schnorr proofs sharing the same commitment nonce reveal the witness. This can be obtained by relying on a cryptographically secure random number generator meeting the requirements of {{?RFC4086}} (for example, the operating system's `getrandom(2)` interface), or by deriving it with a pseudorandom function.
 
 ### Quantum adversaries
 
