@@ -309,9 +309,9 @@ Byte strings are indexed from zero. For integers `0 <= i <= j <= len(x)`, `x[i :
 
 A byte string `x` is a **prefix** of a byte string `y` if `y == x || z` for some byte string `z` (even empty). An encoding is **prefix-free** if, for any two distinct values, the encoding of one is never a prefix of the encoding of the other. A simple prefix-free encoding of a byte string `b` is `LE(len(b), 4) || b` as described in {{serialize-byte-strings}}.
 
-`LE(n, w)` and `LE2IP(x)` are the integer/byte-string conversion primitives used throughout this document, in little-endian byte order. `LE(n, w)` converts a non-negative integer `n` less than `256^w` into a `w`-byte, little-endian byte string, and fails if `n >= 256^w`. `LE2IP(x)` converts a byte string `x` into a non-negative integer using the little-endian byte order.
+`LE(n, w)` and `LE2IP(x)` are the integer/byte-string conversion primitives used throughout this document. `LE(n, w)` converts a non-negative integer `n` into a `w`-byte, little-endian byte string, and fails if `n >= 256^w`. `LE2IP(x)` converts a byte string `x` into a non-negative integer using the little-endian byte order.
 
-The set of integers between `0` and `N-1` is denoted `[0, N)`.
+The set of integers between `0` and `N-1` is denoted `[0, N)`. For a modulus `M`, `Ns` denotes the smallest integer such that `256^Ns >= M`.
 
 ## Duplex sponge interface
 
@@ -325,7 +325,7 @@ The **session identifier** is a 32-byte string identifying the non-interactive a
 
 A **prover message** is a message sent by the interactive prover, and a **verifier message** is a message sent by the interactive verifier (a uniformly random value, sometimes called _challenge_). The **transcript** is the ordered sequence of prover and verifier messages. In particular, the transcript does _not_ include the instance and session identifier.
 
-The **instance** specifies the statement being proven and is held by both the prover and the verifier. The (encoded) instance **MUST** be non-empty.
+The **instance** specifies the statement being proven and is held by both the prover and the verifier.
 
 The **witness** is the prover's private input. It is known only to the prover and is never revealed. It appears neither in the transcript nor in the NARG string.
 
@@ -353,8 +353,6 @@ For a prover message, the encoded bytes coincide with the serialized bytes: the 
 
 # Duplex sponge {#hash-instantiations}
 
-This section defines the duplex sponge instantiations used in this document.
-
 ## Interface
 
 Prover and verifier messages are handled via three operations:
@@ -371,7 +369,7 @@ The security requirements for the 32-byte string `session_id` are given in {{ses
 
 ## XOF duplex sponge {#xof-duplex-sponge}
 
-This section implements the duplex sponge from an eXtendable-Output Function (XOF). `XOF(M, L)` maps a byte string `M` to an `L`-byte string. The suite ({{suites}}) fixes the XOF, its rate `R` (the block size in bytes at which the XOF absorbs input, with `R >= 32`), and its security properties ({{sec-transformation}}).
+This section implements the duplex sponge from an eXtendable-Output Function (XOF). `XOF(M, L)` maps a byte string `M` to an `L`-byte string. The suite ({{suites}}) fixes the XOF, its rate `R` (the block size in bytes at which the XOF absorbs input, which **MUST** satisfy `R >= 32`), and its security properties ({{sec-transformation}}).
 
 The XOF is accessed through the following operations:
 
@@ -380,8 +378,6 @@ The XOF is accessed through the following operations:
 - `xof_state.Copy() -> xof_state`, a copy of the XOF state;
 - `xof_state.Finalize() -> reader`, finalizing the XOF state and returning a reader over the output stream;
 - `reader.Read(n) -> buf`, the next `n` bytes of the output stream.
-
-`R` (the rate) is the block size at which the XOF processes absorbed input. It **MUST** be `R >= 32`. `XOF(M, len)` denotes the XOF evaluation of the byte string `M`, producing `len` bytes of output. The concrete XOF is fixed by the suite ({{suites}}). Consecutive `Read` calls continue the output stream.
 
 Every verifier message is the XOF evaluation over the session identifier, the encoded instance, and the encoded prover messages up to and including the current round. That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
 
@@ -396,8 +392,6 @@ verifier_msg[i] := decode[i](XOF(
 ~~~
 
 The session identifier is padded with `R - 32` zero bytes so that the instance and prover messages begin on a fresh rate-block boundary (see {{xof-init}}), for efficiency ({{efficiency}}).
-
-The security properties required of the XOF, and the security level attained, are fixed by the suite ({{suites}}); the corresponding requirements on the construction are discussed in {{sec-transformation}}.
 
 ### Init {#xof-init}
 
@@ -446,14 +440,11 @@ Output: a uniformly-distributed random n-byte string
 3. return state.reader.Read(n)
 ~~~
 
-Implementations **SHOULD** keep an incremental XOF context for `M` instead of re-evaluating `XOF(M, offset + n)` on every Squeeze, which costs time quadratic in the number of rounds ({{efficiency}}).
+Implementations **SHOULD** keep an incremental XOF context for `M` instead of re-evaluating `XOF(M, offset + n)` on every Squeeze, which costs time quadratic in the number of rounds.
 
 # Codecs
 
-A codec is a set of functions that map prover messages to, and verifier messages from, the hash function's alphabet.
-
-- Encoding maps convert the instance and the prover messages into the bytes absorbed by the duplex sponge. The only security requirement on encoding functions is that they be prefix-free.
-- Decoding maps turn squeezed elements into verifier messages. Decoding **MUST** preserve the uniform distribution in the verifier message space (up to a small codec error). Decoding is infallible.
+The only security requirement on encoding maps is that they be prefix-free. Decoding maps are infallible, and **MUST** be distribution-preserving ({{decoding}}).
 
 ## Encoding into byte strings {#encoding-bytes}
 
@@ -462,7 +453,7 @@ The encoding of the instance and of each prover message is its serialization, as
 
 ## Decoding from byte strings {#decoding}
 
-Decoding converts a uniformly-distributed `Squeeze` output into a verifier message. Each verifier message type fixes the number of bytes to squeeze.
+Each verifier message type fixes the number of bytes to squeeze.
 
 Decoding is not deserialization, and need not invert encoding nor even be injective; its only requirement is to be _distribution-preserving_: if its input is a uniformly random byte string, then its output is (statistically close to) uniformly distributed over the verifier message type.
 
@@ -486,7 +477,7 @@ Output: out, a byte string of length N
 
 ### Unsigned integers {#decoding-uint}
 
-To sample a uniformly random element modulo `M`, let `Ns` be the smallest integer with `256^Ns >= M`: squeeze `Ns + 16` bytes, interpret them as a little-endian non-negative integer via `LE2IP`, and reduce modulo `M`.
+To sample a uniformly random element modulo `M`, squeeze `Ns + 16` bytes, interpret them as a little-endian non-negative integer via `LE2IP`, and reduce modulo `M`.
 
 ~~~
 DecodeUint(buf, M)
@@ -521,7 +512,7 @@ A similar observation in the context of hashing to the elliptic curve field is a
 
 ### Field elements {#decoding-field}
 
-A field element of a field of order `p^m` is decoded coordinate by coordinate, via `DecodeUint` ({{decoding-uint}}), starting from the least-significant. With `Ns` as in {{serialize-field}}, this consumes `m * (Ns + 16)` bytes. A prime field is the case `m = 1`.
+A field element of a field of order `p^m` is decoded coordinate by coordinate, via `DecodeUint` ({{decoding-uint}}), starting from the least-significant. This consumes `m * (Ns + 16)` bytes. A prime field is the case `m = 1`.
 
 ~~~
 DecodeField(buf, p, m)
@@ -542,9 +533,9 @@ Output: out, an element of the field of order p^m, given by its
 5. return (a[0], ..., a[m-1])
 ~~~
 
-For `m = 1`, `DecodeField` is `DecodeUint`, and the same efficiency remarks apply. Applications **MAY** substitute a more efficient alternative, subject to the same security requirements described in {{decoding-uint}}.
+For `m = 1`, `DecodeField` is `DecodeUint`, and {{decoding-uint}} applies, including its alternatives.
 
-For `m > 1`, decoding relies on `16 * m` additional randomness bytes. Applications with big-integer arithmetic available **MAY** use a more randomness-efficient decoding algorithm, by instead sampling `Nm + 16` bytes, where `Nm` is the smallest integer with `256^Nm >= p^m`, interpreting them as an integer via `LE2IP`, reducing modulo `p^m`, and recovering the coordinates `(a[0], ..., a[m-1])` as the base-`p` digits of the result (least-significant digit first). This consumes `Nm + 16` bytes, with the same `2^-128` bias bound.
+For `m > 1`, decoding relies on `16 * m` additional randomness bytes. Applications with big-integer arithmetic available **MAY** use a more randomness-efficient decoding algorithm, by instead sampling `Nm + 16` bytes, where `Nm` is the smallest integer with `256^Nm >= p^m`, interpreting them as an integer via `LE2IP`, reducing modulo `p^m`, and recovering the coordinates `(a[0], ..., a[m-1])` as the base-`p` digits of the result (least-significant digit first), with the same `2^-128` bias bound.
 
 # Initialization
 
@@ -552,9 +543,9 @@ Before any prover message is processed, both parties start the duplex sponge wit
 
 ## Session identifiers {#session-id}
 
-The session identifier is a 32-byte string. The procedure `DeriveSessionID` below is the **RECOMMENDED** way to obtain a session identifier from a human-meaningful variable-length `tag`. An application **MAY** use any 32-byte string it derives by its own means.
+The procedure `DeriveSessionID` below is the **RECOMMENDED** way to obtain a session identifier from a human-meaningful variable-length `tag`.
 
-For a duplex sponge operating over bytes, the session identifier is derived from a `tag` via the procedure `DeriveSessionID`. The `tag` is a byte string whose encoding as a sequence of bytes **MUST** be specified unambiguously, so that every implementation reproduces identical bytes. It is **RECOMMENDED** that the `tag` be a US-ASCII string, without byte-order mark at the beginning, nor `0x00` byte termination.
+The `tag` is a byte string whose encoding as a sequence of bytes **MUST** be specified unambiguously, so that every implementation reproduces identical bytes. It is **RECOMMENDED** that the `tag` be a US-ASCII string, without byte-order mark at the beginning, nor `0x00` byte termination.
 
 When the `tag` is composed of several fields, those fields **MUST** be combined unambiguously, so that no two distinct tuples of field values yield the same byte string. For example, concatenating `("SV1", "22")` and `("SV12", "2")` both yield `SV122` and so would share the same session identifier. Using fixed-width fields or an unambiguous delimiter is sufficient.
 
@@ -566,7 +557,7 @@ The tag has the following security requirements:
 4. the tag **SHOULD** begin with a fixed identification string that is unique to the application.
 5. the tag **SHOULD** include a version number.
 
-An application that bypasses `DeriveSessionID`, and sets the 32-byte `session_id` directly **MUST** ensure it satisfies the same requirements.
+An application **MAY** set the 32-byte `session_id` by its own means; it **MUST** then satisfy the same requirements.
 
 ~~~
 DeriveSessionID(tag)
@@ -608,7 +599,7 @@ where `xx` is the two-digit version number, `hashID` is the hash identifier, and
 
 ## Instance
 
-The instance is input to the non-interactive prover and the non-interactive verifier; it fixes the specific statement being proven. It is the first value absorbed after `Init(session_id)` and before any prover message. The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map. The encoded instance **MUST** be non-empty. While the session identifier of the previous section {{session-id}} fixes the language, the instance selects one of its members.
+The prover and verifier **MUST** absorb `encode[0](instance)`, where `encode[0]` is the first encoding map. The encoded instance **MUST** be non-empty. While the session identifier of the previous section {{session-id}} fixes the language, the instance selects one of its members.
 
 As for every encoding map, `encode[0]` **MUST** be prefix-free, else a malicious prover may be able to produce valid NARG strings on statements it cannot prove (see {{instance-encoding}}). The encoding map `encode[0]` **SHOULD** reuse the serialization functions of {{serialization}}.
 
@@ -661,11 +652,11 @@ Serialization and deserialization **MUST** satisfy the following security requir
 2. Each value has a unique serialization. Accepting more than one serialization of a value makes proofs malleable.
 3. Deserialization enforces every validity condition of the value's type: for example, an elliptic-curve point lies in the prime-order subgroup, and an integer or field element is in its canonical range.
 4. Deserialization fails gracefully on inputs. Lengths and counts read from the NARG string are untrusted and checked before being used for indexing, allocation, or arithmetic.
-5. If any trailing bytes remain in the input after deserializing the last prover message, verification fails.
+5. If any trailing bytes remain in the input after deserializing the last prover message, verification fails; otherwise, proofs are malleable.
 
 ## Serialization {#serialization}
 
-The NARG string is the concatenation of the serialization of each prover message, as defined below. The same bytes are absorbed into the duplex sponge to derive the verifier messages ({{encoding-bytes}}).
+The NARG string is the concatenation of the serialization of each prover message, as defined below.
 
 ### Byte strings {#serialize-byte-strings}
 
@@ -681,9 +672,9 @@ Output: out, an N-byte string
 1. return s
 ~~~
 
-`SerializeBytes` carries no length information of its own: it is the identity. It can therefore be used only when `N` is fixed and known by the message's type and the instance, that is: prover and verifier both agree on `N` before the NARG string is parsed (see {{deserialize-byte-strings}}). On such a fixed-length domain the identity is prefix-free, as required of encodings by {{encoding-bytes}}.
+`SerializeBytes` carries no length information of its own. It **MUST NOT** be used unless `N` is fixed by the message's type and the instance, so that prover and verifier agree on `N` before the NARG string is parsed (see {{deserialize-byte-strings}}). On such a fixed-length domain the identity is prefix-free, as required of encodings by {{encoding-bytes}}.
 
-When the length is not fixed in advance, `SerializeBytes` **MUST NOT** be used. Instead, when the length is below 2^32 bytes, a prefix-free serialization is given by
+Otherwise, when the length is below 2^32 bytes, a prefix-free serialization is given by
 
 ~~~
 SerializeVarLenString(s)
@@ -717,17 +708,15 @@ Output: out, an Ns-byte string
 2. return LE(x, Ns)
 ~~~
 
-where `Ns` is the smallest integer with `256^Ns >= M`.
-
 ### Field elements {#serialize-field}
 
 This section specifies the _default_ serialization of a finite field of order `q = p^m`, where `p` is the prime characteristic and `m >= 1` is the extension degree.
 
-The choice of field serialization **MUST** be reflected in the session tag (see {{session-id}}). The field serialization function **MUST** be prefix-free, and the matching deserialization **MUST** reject invalid encodings (for instance, reject elements larger than or equal to `p`). The default is the serialization specified below, which encodes each prime-field coordinate as a fixed-width little-endian integer via `SerializeUint` ({{serialize-uint}}); if the standard the application builds on already fixes a canonical serialization for the field, that serialization **SHOULD** be pinned in place of the default.
+The choice of field serialization **MUST** be reflected in the session tag (see {{session-id}}). The field serialization function **MUST** be prefix-free. The default is the serialization specified below, which encodes each prime-field coordinate as a fixed-width little-endian integer via `SerializeUint` ({{serialize-uint}}); if the standard the application builds on already fixes a canonical serialization for the field, that serialization **SHOULD** be pinned in place of the default.
 
 For example, Curve25519 {{?RFC7748}}, Ed25519 {{?RFC8032}}, ristretto255 {{Section 4.4 of ?RFC9496}} serialize field elements as a fixed-width little-endian integer, matching the default. Similarly, in Section 7.1 of {{FIPS204}}, the integer coordinates of lattice vectors are serialized least-significant-byte first. Other standards instead fix a big-endian serialization, such as P-256 {{SEC1}} and BLS12-381 {{?I-D.irtf-cfrg-pairing-friendly-curves}} via `I2OSP`.
 
-With respect to a fixed basis, a field element is represented by its `m` coordinates in the prime field, each an integer in `[0, p)`. It is serialized as the concatenation of the per-coordinate serializations produced by `SerializeUint` ({{serialize-uint}}) with modulus `p`. Let `Ns` be the smallest integer with `256^Ns >= p`; a field element serializes to `m * Ns` bytes.
+With respect to a fixed basis, a field element is represented by its `m` coordinates in the prime field, each an integer in `[0, p)`, and serializes to `m * Ns` bytes, with `Ns` taken for the modulus `p`.
 
 ~~~
 SerializeField(a, p, m)
@@ -753,7 +742,7 @@ Note that a prime field is the case `m = 1`, in which case `SerializeField` is e
 
 A group element is serialized using the group's element-serialization function.
 
-For many prime-order elliptic-curve groups, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of {{SEC1}}. This document alters {{SEC1}} serialization: uncompressed and hybrid encodings are forbidden, so the only accepted initial octets are `0x00`, `0x02`, and `0x03`; the identity is encoded as `Ne` zero octets instead of {{SEC1}}'s single `0x00` octet. Restricting the accepted initial octets guarantees unique serialization; otherwise, an adversary could observe an honest proof and produce a different valid proof for the same statement without knowing the witness. Padding the identity element removes branching from the parsing of the NARG string.
+For many prime-order elliptic-curve groups, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of {{SEC1}}. This document alters {{SEC1}} serialization: uncompressed and hybrid encodings are forbidden, so the only accepted initial octets are `0x00`, `0x02`, and `0x03`; the identity is encoded as `Ne` zero octets instead of {{SEC1}}'s single `0x00` octet. Restricting the accepted initial octets guarantees unique serialization. Padding the identity element removes branching from the parsing of the NARG string.
 
 The ristretto255 and decaf448 {{?RFC9496}} encodings of the identity are already fixed-length `Ne`-byte strings.
 
@@ -761,7 +750,7 @@ The ristretto255 and decaf448 {{?RFC9496}} encodings of the identity are already
 
 Deserialization of the NARG string consists of reading the prover messages: each message is read by consuming, from the front of the input, a byte string whose length is determined by its type and the instance. Each deserialization function below returns the decoded value together with the unread remainder of its input; the remainder is the input to the next read.
 
-Verification **MUST** fail if any of the prover messages cannot be deserialized successfully. After the last expected prover message has been read, the verifier **MUST** verify that no bytes remain. Bytes that are never read will cause the proof to be malleable: an adversary will be able to maul a valid proof to obtain a second, distinct accepting proof for the same statement.
+Verification **MUST** fail if any of the prover messages cannot be deserialized successfully.
 
 ### Byte strings {#deserialize-byte-strings}
 
@@ -806,7 +795,7 @@ Deserialize each element in order. Fail if any element fails to deserialize. The
 
 ### Unsigned integers
 
-Read the next `Ns` bytes, with `Ns` as in {{serialize-uint}}, and interpret them as a little-endian integer `x = LE2IP(.)`. If `x >= M`, fail: non-canonical integer encodings **MUST** be rejected. The value returned is `x`. This is the inverse of `SerializeUint` ({{serialize-uint}}).
+Read the next `Ns` bytes and interpret them as a little-endian integer `x = LE2IP(.)`. If `x >= M`, fail: non-canonical integer encodings **MUST** be rejected. The value returned is `x`. This is the inverse of `SerializeUint` ({{serialize-uint}}).
 
 ~~~
 DeserializeUint(input, M)
@@ -829,7 +818,7 @@ This consumes `Ns` bytes of the NARG string. It fails if fewer bytes remain, or 
 
 ### Field elements
 
-A field element of a field of order `p^m` is deserialized coordinate by coordinate: read `m * Ns` bytes, with `Ns` as in {{serialize-field}}, and deserialize each `Ns`-byte coordinate as an integer modulo `p` using the unsigned-integer deserialization above. A prime field is the case `m = 1`. This is the inverse of `SerializeField` ({{serialize-field}}).
+A field element of a field of order `p^m` is deserialized coordinate by coordinate: read `m * Ns` bytes and deserialize each `Ns`-byte coordinate as an integer modulo `p` using the unsigned-integer deserialization above. A prime field is the case `m = 1`. This is the inverse of `SerializeField` ({{serialize-field}}).
 
 ~~~
 DeserializeField(input, p, m)
@@ -855,9 +844,7 @@ The deserialization **MUST** match the pinned serialization ({{serialize-field}}
 
 ### Elliptic-curve group elements
 
-Read the next `Ne` bytes and convert them to a group element using the group's element-deserialization function. Deserialization **MUST** perform the ciphersuite's input-validation steps and fail unless the input is the canonical encoding of a valid group element.
-
-For elliptic curves defined in {{SEC1}}, deserialization mirrors {{serialize-ec-point}}: only initial octets `0x00`, `0x02`, and `0x03` are accepted, and `0x00` only when all `Ne` bytes are zero.
+Read the next `Ne` bytes and convert them to a group element using the group's element-deserialization function.
 
 # Efficiency considerations {#efficiency}
 
@@ -865,15 +852,11 @@ For both codecs and serialization, batch algorithms should be preferred when ava
 
 `Init(session_id)` (see {{session-id}}) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of the duplex sponge state, instead of initializing it every time. In the XOF duplex sponge ({{xof-duplex-sponge}}), the padded session identifier fills exactly one rate block ({{xof-init}}), saving one invocation of the permutation function per execution. Similarly, `DeriveSessionID` can be precomputed when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing `encode[0](instance)`.
 
-XOF evaluations ({{xof-duplex-sponge}}) without copying the XOF state (see the notation `ctx.Copy()` in the pseudocode) will yield identical bytes, but incur a cost quadratic in the number of rounds. Implementations **SHOULD** instead maintain the incremental duplex sponge state of {{interface}}.
-
 # Security considerations
-
-This section contains additional security considerations about the Fiat-Shamir transformation.
 
 ## Codecs
 
-Encoding maps are inverted only in the security analysis (by the knowledge extractor), never by the prover or verifier. The proof relies on a left inverse existing and being efficiently computable, which the knowledge-soundness extractor uses to recover prover messages from the absorbed bytes {{CO25}}.
+Encoding maps are inverted only in the security analysis, never by the prover or verifier: the knowledge-soundness extractor relies on an efficiently computable left inverse to recover prover messages from the absorbed bytes {{CO25}}.
 
 Decoding preserves the uniform distribution only when its input is uniform. Verifier messages **SHOULD** therefore be derived from `Squeeze` output and never from prover-controlled, or non-uniform bytes: decoding a non-uniform input yields a verifier message that is distinguishable from uniform, which would break the public-coin property the transformation depends on.
 
@@ -887,7 +870,7 @@ For example, in the case of keyed-verification anonymous credentials, the non-in
 
 The purpose of session identifiers is to ensure composability and mitigate protocol confusion.
 
-A session identifier uniquely identifies one session of a protocol, so that messages and state belonging to concurrent applications or proof systems are not confused. It **MAY** be reused, and reuse is expected whenever several proofs share the same application context: the identifier names that context, and identical contexts are meant to share one. Applications requiring proofs to be unique, non-replayable, or fresh can achieve this by adding, for example, a counter or timestamp to the session identifier.
+A session identifier **MAY** be reused, and reuse is expected whenever several proofs share the same application context: the identifier names that context, and identical contexts are meant to share one.
 
 ## Security of the transformation {#sec-transformation}
 
@@ -897,9 +880,7 @@ Completeness of the non-interactive argument is preserved: if the statement bein
 
 ### Knowledge soundness
 
-If the interactive proof is state-restoration knowledge sound, then so is the non-interactive proof. In particular, valid proofs cannot be generated without the corresponding statement being true (in the random oracle model).
-
-Knowledge soundness carries over to the non-interactive argument, with a loss error quadratic in the number of queries the adversary makes to the random oracle {{CO25}}.
+If the interactive proof is state-restoration knowledge sound, then so is the non-interactive proof, with a loss quadratic in the number of queries the adversary makes to the random oracle {{CO25}}. In particular, valid proofs cannot be generated without the corresponding statement being true (in the random oracle model).
 
 ### Zero-Knowledge
 
@@ -927,13 +908,11 @@ Completeness and zero-knowledge are guaranteed only for valid instances: if the 
 
 ## Implementation guidance {#implementation-guidance}
 
-The Fiat-Shamir transformation has historically led to a number of critical security vulnerabilities.
-
-Some incorrect implementations involve out-of-order (or missing) prover messages {{GNARK-KZG}} {{CVE-2024-45039}} {{CVE-2026-46654}}. Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered. A byte-level interface, as described in this document, is advisable in place of proof data structures whose fields are randomly addressable. A sequential interface, by contrast, enforces in-order processing. An end-of-input check is necessary to prevent malleability.
+Some incorrect implementations involve out-of-order (or missing) prover messages {{GNARK-KZG}} {{CVE-2024-45039}} {{CVE-2026-46654}}. Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered. A byte-level interface, as described in this document, is advisable in place of proof data structures whose fields are randomly addressable.
 
 Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes, and by replacing each prover message in turn with a different value.
 
-The NARG string must be treated as untrusted input. Therefore, non-interactive verifiers **MUST** check that length indicators are correct, that integers fall within their expected range, and that the proof length is correct. For example, in {{deserialize-byte-strings}} the 4-byte length prefix read by `LE2IP` in `DeserializeVarLenString` is attacker-controlled, and can be as large as `2^32 - 1`, so computing `4 + N` can overflow 32-bit integers. As another example, a crafted length indicator can make verification checks trivial, or exhaust memory on deserialization before any cryptographic check runs {{GNARK-OOM}}.
+The NARG string is untrusted input ({{narg-string}}). For example, in {{deserialize-byte-strings}} the 4-byte length prefix read by `LE2IP` in `DeserializeVarLenString` is attacker-controlled, and can be as large as `2^32 - 1`, so computing `4 + N` can overflow 32-bit integers. As another example, a crafted length indicator can make verification checks trivial, or exhaust memory on deserialization before any cryptographic check runs {{GNARK-OOM}}.
 
 # Suites {#suites}
 
@@ -949,13 +928,13 @@ The suite identifier is a natural component of the `tag` ({{session-id}}), since
 
 ## SHAKE128 {#suite-shake128}
 
-In the SHA-3 family, two extendable-output functions (SHAKEs) are defined over the Keccak-f permutation: SHAKE128 and SHAKE256. A SHAKE is an eXtendable-Output Function (XOF) defined as SHAKE(M, n) where the output is an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of {{SHA3}}). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits).
+In the SHA-3 family, two XOFs, SHAKE128 and SHAKE256, are defined over the Keccak-f permutation; SHAKE(M, n) outputs an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of {{SHA3}}). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits).
 
 ## TurboSHAKE128 {#suite-turboshake128}
 
-TurboSHAKE128 {{!RFC9861}} is an eXtendable-Output Function (XOF) built on Keccak-p\[1600, 12\], the Keccak-f\[1600\] permutation reduced to its last 12 rounds. Its state is a 200-byte (1600-bit) string, split into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an n-bit output string, respectively. This instantiation targets 128-bit security.
+TurboSHAKE128 {{!RFC9861}} is an XOF built on Keccak-p\[1600, 12\], the Keccak-f\[1600\] permutation reduced to its last 12 rounds. Its state is a 200-byte (1600-bit) string, split into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an n-bit output string, respectively. This instantiation targets 128-bit security.
 
-In this instantiation, every verifier message is the TurboSHAKE128 XOF evaluation TurboSHAKE128(M, D, L), where M is the concatenation of the session identifier, the encoded instance, and the encoded prover messages up to and including the current round, D (the domain-separation byte in the range 0x01 to 0x7F) is fixed to D = 0x1F, the default value, and L is the desired output length in bytes {{!RFC9861}}.
+In this instantiation, `XOF(M, L) := TurboSHAKE128(M, 0x1F, L)`: the domain-separation byte `D` is fixed to its default value `0x1F` {{!RFC9861}}.
 
 # IANA Considerations
 
