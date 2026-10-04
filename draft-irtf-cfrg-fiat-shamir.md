@@ -172,7 +172,7 @@ The prover is a randomized procedure and generally relies on a cryptographically
 Both the non-interactive prover and verifier rely on:
 
 - a duplex sponge, prescribing how to interact with the cryptographic hash function ({{hash-instantiations}});
-- a set of codecs, describing how each prover and verifier message talk to the duplex sponge ({{codecs}});
+- a set of codecs, describing how each prover and verifier message talks to the duplex sponge ({{codecs}});
 - a serialization and deserialization procedure for the NARG string produced by the prover ({{narg-string}}).
 
 This transformation is also well-suited for recursive proving, since the in-circuit cost of recomputing the Fiat-Shamir challenges is low. It is compatible with arithmetization-friendly hash functions (e.g. Poseidon2 {{POSEIDON2}}) that operate natively on field elements. See {{CO25}} for the general construction.
@@ -363,7 +363,7 @@ Prover and verifier messages are handled via three operations:
 - `state.Absorb(x)`: absorb `x` into the state.
 - `state.Squeeze(n) -> buf`: produce `n` elements from the state.
 
-In the duplex sponge interface, messages can be absorbed incrementally, and insert no separators: `state.Absorb(x)` followed by `state.Absorb(y)` (with no `state.Squeeze` in between) is equivalent to `state.Absorb(x || y)`.
+In the duplex sponge interface, messages can be absorbed incrementally, and `Absorb` inserts no separators: `state.Absorb(x)` followed by `state.Absorb(y)` (with no `state.Squeeze` in between) is equivalent to `state.Absorb(x || y)`.
 
 Each `state.Squeeze(n)` is uniformly distributed, and consecutive `state.Squeeze` calls continue one output stream.
 
@@ -372,6 +372,8 @@ The security requirements for the 32-byte string `session_id` are given in {{ses
 ## XOF duplex sponge {#xof-duplex-sponge}
 
 This section implements the duplex sponge from an eXtendable-Output Function (XOF). `XOF(M, L)` maps a byte string `M` to an `L`-byte string. The suite ({{suites}}) fixes the XOF, its rate `R` (the block size in bytes at which the XOF absorbs input, with `R >= 32`), and its security properties ({{sec-transformation}}).
+
+The XOF is accessed through the following operations:
 
 - `XOF.New() -> xof_state`, a fresh XOF state;
 - `xof_state.Update(x)`, absorbing the byte string `x` into the state;
@@ -552,7 +554,7 @@ Before any prover message is processed, both parties start the duplex sponge wit
 
 The session identifier is a 32-byte string. The procedure `DeriveSessionID` below is the **RECOMMENDED** way to obtain a session identifier from a human-meaningful variable-length `tag`. An application **MAY** use any 32-byte string it derives by its own means.
 
-For a duplex sponge operating over bytes, the session identifier is derived from a `tag` via the procedure `DeriveSessionID`. The `tag` is a byte string whose encoding as a sequence of bytes **MUST** be specified unambiguously, so that every implementation reproduces identical bytes. It is **RECOMMENDED** the `tag` be a US-ASCII string, without byte-order mark at the beginning, nor `0x00` byte termination.
+For a duplex sponge operating over bytes, the session identifier is derived from a `tag` via the procedure `DeriveSessionID`. The `tag` is a byte string whose encoding as a sequence of bytes **MUST** be specified unambiguously, so that every implementation reproduces identical bytes. It is **RECOMMENDED** that the `tag` be a US-ASCII string, without byte-order mark at the beginning, nor `0x00` byte termination.
 
 When the `tag` is composed of several fields, those fields **MUST** be combined unambiguously, so that no two distinct tuples of field values yield the same byte string. For example, concatenating `("SV1", "22")` and `("SV12", "2")` both yield `SV122` and so would share the same session identifier. Using fixed-width fields or an unambiguous delimiter is sufficient.
 
@@ -588,7 +590,7 @@ FOO-SV{xx}-{tttt}-DSFS-{hashID}-SIGMA-PROOFS-{yy}
 
 where `xx` is the two-digit number indicating the version, `yy` is the two-digit number indicating the elliptic-curve ciphersuite, `hashID` is the hash identifier, and `tttt` is the epoch number written in decimal US-ASCII digits.
 
-As another example, consider a fictional application named Bar that implements an ad-hoc zero-knowledge virtual machine for correct execution of circuits. A reasonable choice of tag is
+As another example, consider a fictional application named Bar that implements an ad-hoc zero-knowledge virtual machine for correct execution of circuits. A reasonable choice of tag is:
 
 ~~~
 BAR-COM{cc}
@@ -753,7 +755,7 @@ A group element is serialized using the group's element-serialization function.
 
 For many prime-order elliptic-curve groups, this is the compressed Elliptic-Curve-Point-to-Octet-String conversion of {{SEC1}}. This document alters {{SEC1}} serialization: uncompressed and hybrid encodings are forbidden, so the only accepted initial octets are `0x00`, `0x02`, and `0x03`; the identity is encoded as `Ne` zero octets instead of {{SEC1}}'s single `0x00` octet. Restricting the accepted initial octets guarantees unique serialization; otherwise, an adversary could observe an honest proof and produce a different valid proof for the same statement without knowing the witness. Padding the identity element removes branching from the parsing of the NARG string.
 
-The ristretto255 and decaf448 {{?RFC9496}} identity encodings have a distinct, fixed-length `Ne`-byte encoding.
+The ristretto255 and decaf448 {{?RFC9496}} encodings of the identity are already fixed-length `Ne`-byte strings.
 
 ## Deserialization
 
@@ -905,7 +907,7 @@ If the interactive proof is honest-verifier zero-knowledge, then so is the non-i
 
 The additive zero-knowledge loss introduced by the transformation is linear in the number of queries the adversary makes to the random oracle {{CO25}}.
 
-Zero-knowledge holds only when the prover's random number generator is indistinguishable from fresh uniform randomness to any party that does not know the witness, as noted in {{introduction}}. Reusing the same randomness (or correlated randomness) across two distinct proofs will compromise zero-knowledge: for example, two Schnorr proofs sharing the same commitment nonce reveal the witness. This can be obtained by relying on a cryptographically secure random number generator meeting the requirements of {{?RFC4086}} (for example, the operating system's `getrandom(2)` interface), or by deriving them with a pseudorandom function.
+Zero-knowledge holds only when the prover's random number generator is indistinguishable from fresh uniform randomness to any party that does not know the witness, as noted in {{introduction}}. Reusing the same randomness (or correlated randomness) across two distinct proofs will compromise zero-knowledge: for example, two Schnorr proofs sharing the same commitment nonce reveal the witness. This can be obtained by relying on a cryptographically secure random number generator meeting the requirements of {{?RFC4086}} (for example, the operating system's `getrandom(2)` interface), or by deriving it with a pseudorandom function.
 
 ### Quantum adversaries
 
@@ -917,7 +919,7 @@ The loss introduced by a quantum adversary is polynomial (larger than quadratic)
 
 Incorrect encoding of the instance has historically led to a number of critical security vulnerabilities, often grouped under the term *weak Fiat-Shamir transformation*. In each of them, the cryptographic hash function was not provided the full statement being proven. A malicious prover can then compute the verifier message first, and choose the omitted part of the instance afterwards so that the verification equation is satisfied on a statement whose witness it does not hold.
 
-As an example {{BPW16}}, Chaum-Pedersen proof of equality for an instance `(G, H, X, Y)` proves knowledge of a witness `x` such that `X = x * G` and `Y = x * H`. The prover sends commitments `(A, B)`, obtains a challenge `c`, and replies with a scalar `f`. The verifier accepts if the verification equations hold: `f * G == A + c * X` and `f * H == B + c * Y`. Suppose the challenge `c` is derived only by absorbing `(A, B)` and omitting the instance `(G, H, X, Y)`. A malicious prover can pick `A`, `B`, `H`, and `f` at random, derive `c`, and then set `X` and `Y` to satisfy the verification equations. Verification passes, yet no single `x` satisfies both `X = x * G` and `Y = x * H`. A false statement has been proven. Other examples are available in {{DMWG23}} {{CVE-2022-29566}}.
+As an example {{BPW16}}, a Chaum-Pedersen proof of equality for an instance `(G, H, X, Y)` proves knowledge of a witness `x` such that `X = x * G` and `Y = x * H`. The prover sends commitments `(A, B)`, obtains a challenge `c`, and replies with a scalar `f`. The verifier accepts if the verification equations hold: `f * G == A + c * X` and `f * H == B + c * Y`. Suppose the challenge `c` is derived only by absorbing `(A, B)` and omitting the instance `(G, H, X, Y)`. A malicious prover can pick `A`, `B`, `H`, and `f` at random, derive `c`, and then set `X` and `Y` to satisfy the verification equations. Verification passes, yet no single `x` satisfies both `X = x * G` and `Y = x * H`. A false statement has been proven. Other examples are available in {{DMWG23}} {{CVE-2022-29566}}.
 
 The transformation does not itself validate the instance. The verifier **MUST** therefore validate the syntax of the instance before use, exactly as it validates prover messages during deserialization ({{deserialization}}): for example, checking that each claimed group element lies in the prime-order group, and that integers are in canonical range.
 
