@@ -402,7 +402,7 @@ image[i] = sum(witness[j] * M[i][j] for j in 0, ..., num_scalars - 1)
 
 `num_scalars` is the length of `witness` (the width of `M`), and `num_equations` is the number of group elements in `image` (the height of `M`).
 
-As an example, Schnorr's identification protocol has `num_scalars = num_equations = 1` and `M = [[G]]`, where `G` is the group generator, proving knowledge of the scalar `x` such that the group element `X` satisfies `X = x * G` {{?RFC8235}}.
+As an example, Schnorr's identification protocol {{Schnorr91}} has `num_scalars = num_equations = 1` and `M = [[G]]`, where `G` is the group generator, proving knowledge of the scalar `x` such that the group element `X` satisfies `X = x * G` {{?RFC8235}}.
 
 Another example is the Chaum-Pedersen relation {{ChaumP92}}: given the group generator `G` and group elements `H`, `X`, `Y`, the prover shows knowledge of a single scalar `x` such that `X = x * G` and `Y = x * H`. Here `num_scalars = 1`, `num_equations = 2`, and:
 
@@ -590,7 +590,7 @@ For an instance to be valid, it **MUST** satisfy all below conditions:
 3. Every element index other than `0` and `1` appears in the terms or image terms of at least one equation; the identity (index `0`) and generator (index `1`) are present in every instance whether or not an equation uses them ({{representation}}).
 Together with check 2, this ensures either `num_elements(instance) == 2` or `num_elements(instance)-1` is the largest referenced element index.
 
-The prover **SHOULD** reject an invalid instance, and **MAY** additionally check that `image == map(instance, witness)` before proving; {{privacy-considerations}} and {{instance-security}} state when this check, or a stronger precaution, is required. The verifier **MUST** fail on an invalid instance ({{verifier}}, {{non-interactive}}), either when the instance is constructed or during verification itself.
+The prover **SHOULD** reject an invalid instance, and **MAY** additionally check that `image == map(instance, witness)` before proving. When parts of the instance come from another party, see {{instance-security}} and {{privacy-considerations}}. The verifier **MUST** fail on an invalid instance ({{verifier}}, {{non-interactive}}), either when the instance is constructed or during verification itself.
 
 These checks admit identity images and columns, including `M * x = Y` with `M = 0` and `Y = 0`, or with `M != 0` and `Y = 0`.
 
@@ -996,13 +996,13 @@ The same holds for specific requirements on individual elements. For example, wh
 
 The NARG string discloses nothing beyond the truth of the statement the instance encodes. However, if the instance is chosen by the adversary the privacy guarantee might be vacuous. Untrusted inputs to the instance need to be validated by the caller. Instance validation ({{instance-validation}}) checks only the structure of the result; a well-formed instance may encode an attacker-chosen linear map.
 
-The entropy source of `ProverCommitment` **MUST** provide different scalars for every different input. A re-used nonce reveals the witness {{PS3}}. (This is the extractor: given different challenges `c1 != c2`, the witness is `(s1 - s2) / (c1 - c2)`, where `s1`, `s2` are the corresponding responses).
+`ProverCommitment` **MUST** draw fresh nonces on every invocation, even for the same instance and witness. A re-used nonce reveals the witness {{PS3}}. (This is the extractor: given different challenges `c1 != c2`, the witness is `(s1 - s2) / (c1 - c2)`, where `s1`, `s2` are the corresponding responses).
 
-The `Verifier` procedure **SHOULD NOT** be used interactively with an untrusted verifier: interactive Sigma Protocols only guarantee zero-knowledge against honest verifiers ({{security-considerations}}).
+`ProverCommitment` and `ProverResponse` **SHOULD NOT** be used interactively with an untrusted verifier: interactive Sigma Protocols only guarantee zero-knowledge against honest verifiers ({{security-considerations}}).
 
 For verification, `VerifyBatchable` and `VerifyCompact` **SHOULD** be used. The non-interactive Fiat-Shamir transformation yields statistically zero-knowledge arguments of knowledge.
 
-Implementations **SHOULD** securely delete prover state as soon as it is no longer needed (witness and instance), and put in place safeguards to prevent re-use of the prover state. Private witness information should not be part of crash dumps and diagnostic logging.
+Implementations **SHOULD** securely delete prover state as soon as it is no longer needed (witness and nonces), and put in place safeguards to prevent re-use of the prover state. Private witness information should not be part of crash dumps and diagnostic logging.
 
 ## Constant-Time Requirements {#constant-time}
 
