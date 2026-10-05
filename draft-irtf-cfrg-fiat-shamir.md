@@ -333,7 +333,7 @@ For an NP language, the instance is a word, the witness is a proof of its member
 
 The **NARG string** (non-interactive argument string) is the serialized output of the non-interactive prover.
 
-The notation in this document is for an interactive argument with `k` rounds in which the prover moves first (that is, sends the first message) and the verifier moves last. Other types of interactions can be expressed in the same notation by setting the unused messages to the empty string: a protocol whose verifier moves first (such as a batch argument) sets its first prover message to `""`, and one whose prover moves last (such as a sigma protocol) sets its final verifier message to `""`. Prover and verifier round messages `2`, ..., `k-1` **MUST** be non-empty.
+The notation in this document is for an interactive argument with `k` rounds in which the prover moves first (that is, sends the first message) and the verifier moves last. Other types of interactions can be expressed in the same notation: set the first prover message or final verifier message to `""` when the protocol omits that message. All messages in rounds `2`, ..., `k-1` **MUST** be non-empty.
 
 ## Codec and serialization
 
@@ -848,9 +848,9 @@ Read the next `Ne` bytes and convert them to a group element using the group's e
 
 # Efficiency considerations {#efficiency}
 
-For both codecs and serialization, batch algorithms should be preferred when available, because they amortize per-element cost over a whole sequence. For example, the dominant cost in point compression is a modular inversion, and serializing a batch of compressed elliptic-curve points requires only one modular inversion for the entire batch (via Montgomery's trick) rather than one per point. (Note that deserialization does not batch in the same way, since point decompression requires a per-element square root.)
-
 `Init(session_id)` (see {{interface}}) can be precomputed. Implementations can therefore start each prover and verifier execution from a copy of the duplex sponge state, instead of initializing it every time. In the XOF duplex sponge ({{xof-duplex-sponge}}), the padded session identifier fills exactly one rate block ({{xof-init}}), saving one invocation of the permutation function per execution. Similarly, `DeriveSessionID` can be precomputed when the session identifier is derived from a tag. The same observation extends to longer shared prefixes: proofs for the same instance can additionally start from a stored copy of the state obtained after absorbing `encode[0](instance)`.
+
+Prefer batch algorithms for codecs and serialization when available. For example, Montgomery’s trick lets point compression share one modular inversion across a batch.
 
 # Security considerations
 
@@ -862,9 +862,7 @@ Decoding preserves the uniform distribution only when its input is uniform. Veri
 
 ## Constant-time requirements {#constant-time}
 
-While the protocol operates on "public coins", the instance can contain private information, such as verification keys not meant to be shared, or messages meant to be private between prover and verifier. Therefore, constant-time implementation of all the functions in this document is **RECOMMENDED**, to avoid leaking information via side channels.
-
-For example, in the case of keyed-verification anonymous credentials, the non-interactive argument verifier will compute an instance that depends on the issuer's secret key and therefore the instance is not meant to be public.
+Constant-time implementation of all functions in this document is **RECOMMENDED** to prevent side-channel leakage. Public-coin protocols can still process private instances, including private verification keys or messages shared only between prover and verifier. For example, in keyed-verification anonymous credentials, the verifier computes an instance that depends on the issuer's secret key.
 
 ## Session identifiers {#sec-session-identifiers}
 
@@ -908,7 +906,7 @@ Completeness and zero-knowledge are guaranteed only for valid instances: if the 
 
 ## Implementation guidance {#implementation-guidance}
 
-Some incorrect implementations involve out-of-order (or missing) prover messages {{GNARK-KZG}} {{CVE-2024-45039}} {{CVE-2026-46654}}. Absorbing a prover message and serializing it to (or reading it from) the NARG string should be performed within the same function call, to ensure that prover messages are both hashed and serialized, and to prevent them from being skipped or reordered. A byte-level interface, as described in this document, is advisable in place of proof data structures whose fields are randomly addressable.
+Absorb each prover message in the same function call that writes it to, or reads it from, the NARG string. This keeps hashing and serialization synchronized and helps prevent omitted or reordered messages, which have caused implementation vulnerabilities {{GNARK-KZG}} {{CVE-2024-45039}} {{CVE-2026-46654}}. Prefer the byte-level interface described in this document over proof data structures whose fields are randomly addressable.
 
 Test vectors can help confirm that honestly-generated proofs verify, but such tests exercise only completeness. Negative testing will help exercise the rejection paths too. Some such examples are: tampering with a valid NARG string to cause verification to fail, by flipping, appending, or prepending bytes, and by replacing each prover message in turn with a different value.
 
