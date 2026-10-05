@@ -371,13 +371,7 @@ The security requirements for the 32-byte string `session_id` are given in {{ses
 
 This section implements the duplex sponge from an eXtendable-Output Function (XOF). `XOF(M, L)` maps a byte string `M` to an `L`-byte string. The suite ({{suites}}) fixes the XOF, its rate `R` (the block size in bytes at which the XOF absorbs input, which **MUST** satisfy `R >= 32`), and its security properties ({{sec-transformation}}).
 
-The XOF is accessed through the following operations:
-
-- `XOF.New() -> xof_state`, a fresh XOF state;
-- `xof_state.Update(x)`, absorbing the byte string `x` into the state;
-- `xof_state.Copy() -> xof_state`, a copy of the XOF state;
-- `xof_state.Finalize() -> reader`, finalizing the XOF state and returning a reader over the output stream;
-- `reader.Read(n) -> buf`, the next `n` bytes of the output stream.
+The state is a pair `(M, offset)`: `M` is the byte string absorbed so far, and `offset` is the number of output bytes already squeezed since `M` last changed.
 
 Every verifier message is the XOF evaluation over the session identifier, the encoded instance, and the encoded prover messages up to and including the current round. That is, the `i`-th verifier message (for `1 <= i <= k`) of byte length `len_i` is computed as:
 
@@ -405,9 +399,7 @@ Input: session_id, a 32-byte string
 Output: a duplex sponge state
 
 1. assert len(session_id) == 32
-2. ctx = XOF.New()
-3. ctx.Update(session_id || zeros(R - 32))
-4. return state := (ctx, reader = None)
+2. return state := (M = session_id || zeros(R - 32), offset = 0)
 ~~~
 
 ### Absorb {#xof-absorb}
@@ -419,14 +411,14 @@ state.Absorb(x)
 
 Input: x, a byte string
 
-1. state.ctx.Update(x)
-2. if len(x) != 0:
-3.    state.reader = None
+1. if x != "":
+2.    state.M = state.M || x
+3.    state.offset = 0
 ~~~
 
 ### Squeeze {#xof-squeeze}
 
-Returns the next `n` bytes of the XOF output stream computed over the absorbed input. If the duplex sponge is in the absorbing phase, it finalizes a copy of the absorbing context as an XOF reader. Consecutive `Squeeze` calls **continue** the same output stream.
+Returns the next `n` bytes of the XOF output stream computed over the absorbed input. Consecutive `Squeeze` calls **continue** the same output stream.
 
 ~~~
 state.Squeeze(n)
@@ -435,12 +427,12 @@ Input: n, the number of bytes to be squeezed
 
 Output: a uniformly-distributed random n-byte string
 
-1. if state.reader == None:
-2.    state.reader = state.ctx.Copy().Finalize()
-3. return state.reader.Read(n)
+1. out = XOF(state.M, state.offset + n)[state.offset : state.offset + n]
+2. state.offset = state.offset + n
+3. return out
 ~~~
 
-Implementations **SHOULD** keep an incremental XOF context for `M` instead of re-evaluating `XOF(M, offset + n)` on every Squeeze, where `offset` is the number of bytes already read, which costs time quadratic in the number of rounds.
+Evaluated literally, `Squeeze` re-hashes `M` on every call, at a cost quadratic in the number of rounds. Implementations **SHOULD** instead keep an incremental XOF context that absorbs `M` as it grows, and squeeze from a reader over a copy of that context, continuing from `offset`; this yields identical bytes.
 
 # Codecs {#codecs}
 
@@ -918,23 +910,21 @@ The NARG string is untrusted input ({{narg-string}}). For example, in {{deserial
 
 The suites defined by this document, and the identifiers used by the test vectors, are:
 
-| Identifier | Primitive | Alphabet
-|---|---|---|
-| `SHAKE128` | SHAKE128 {{SHA3}} | bytes |
-| `TurboSHAKE128` | TurboSHAKE128 {{!RFC9861}} | bytes |
+| Identifier | XOF(M, L) | R | Alphabet |
+|---|---|---|---|
+| `SHAKE128` | SHAKE128(M, 8 * L) {{SHA3}} | 168 | bytes |
+| `TurboSHAKE128` | TurboSHAKE128(M, 0x1F, L) {{!RFC9861}} | 168 | bytes |
 {: #tab-suites title="Duplex sponge suites"}
 
 The suite identifier is a natural component of the `tag` ({{session-id}}), since it fixes the hash instantiation.
 
 ## SHAKE128 {#suite-shake128}
 
-In the SHA-3 family, two XOFs, SHAKE128 and SHAKE256, are defined over the Keccak-f permutation; SHAKE(M, n) outputs an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of {{SHA3}}). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, split into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits).
+In the SHA-3 family, two XOFs, SHAKE128 and SHAKE256, are defined over the Keccak-f permutation; SHAKE(M, n) outputs an n-bit string. The corresponding collision and second-preimage-resistance for SHAKE128 are min(n/2,128) and min(n,128) bits, respectively (see Appendix A.1 of {{SHA3}}). This instantiation targets 128-bit security. The SHAKE128 state is a 200-byte (1600-bit) string, with a capacity of 32 bytes (256 bits).
 
 ## TurboSHAKE128 {#suite-turboshake128}
 
-TurboSHAKE128 {{!RFC9861}} is an XOF built on Keccak-p\[1600, 12\], the Keccak-f\[1600\] permutation reduced to its last 12 rounds. Its state is a 200-byte (1600-bit) string, split into a rate of R = 168 bytes and a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an n-bit output string, respectively. This instantiation targets 128-bit security.
-
-In this instantiation, `XOF(M, L) := TurboSHAKE128(M, 0x1F, L)`: the domain-separation byte `D` is fixed to its default value `0x1F` {{!RFC9861}}.
+TurboSHAKE128 {{!RFC9861}} is an XOF built on Keccak-p\[1600, 12\], the Keccak-f\[1600\] permutation reduced to its last 12 rounds. Its state is a 200-byte (1600-bit) string, with a capacity of 32 bytes (256 bits). The corresponding collision and second-preimage-resistance are min(n/2,128) and min(n,128) bits for an n-bit output string, respectively. This instantiation targets 128-bit security. The domain-separation byte is fixed to its default value `D = 0x1F`.
 
 # IANA Considerations
 
