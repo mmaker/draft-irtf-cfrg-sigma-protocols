@@ -16,7 +16,7 @@ production use.
 | `sumcheck.py` | The sumcheck protocol of the Fiat-Shamir draft's example appendix, over Mersenne31. |
 | `sigma_protocols.py` | Linear relations, instance validation, statement serialization, the Sigma Protocol, batchable and compact NARG strings, and batch verification. |
 | `test_vectors.py` | Verifies every record in `vectors/*.json`; also holds the seeded test PRNG of the sigma draft's appendix. |
-| `vectors/` | The machine-readable test vectors, one JSON file per suite; the same vectors are rendered in the drafts' Test Vectors appendices. |
+| `vectors/` | The machine-readable test vectors: one JSON file per section of the Fiat-Shamir appendix (duplex sponge, session identifier derivation, codecs, serialization and deserialization, NARG strings) and per ciphersuite of the sigma appendix; the same vectors are rendered in the drafts' Test Vectors appendices. |
 
 ## Running
 
@@ -31,4 +31,5 @@ Verification is regeneration wherever the vectors pin the randomness:
 valid proofs are re-proven byte-for-byte from the instance, witness, and
 the seeded PRNG of the appendix, so the vectors are reproducible from the
 drafts alone; `Expected = reject` records must be refused, and each
-rejection is paired with the accepted baseline vector it mutates.
+rejected NARG string is paired with the accepted baseline vector it
+mutates.

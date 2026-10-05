@@ -1,0 +1,346 @@
+[
+  {
+    "Id": "fiat-shamir/duplex-sponge/shake128/init_squeeze",
+    "Function": "DuplexSponge",
+    "Suite": "SHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "squeeze",
+        "length": 32
+      }
+    ],
+    "Output": "63e1b3543377fab6fb8cf0f7698a9980ca0211d5bc4aba213dd7a6ef7dd63cfa",
+    "Comment": "Squeeze 32 bytes right after initialization."
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/shake128/absorb_squeeze",
+    "Function": "DuplexSponge",
+    "Suite": "SHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "68656c6c6f20776f726c64"
+      },
+      {
+        "type": "squeeze",
+        "length": 64
+      }
+    ],
+    "Output": "f627ff348dfee50d2aa5918a2621a0c1daf74c7ef930d49b5ea6eae73455e8c756d433cbde0ade711bdd55d7ed5de38bb9adea8b2eec4402a0df090c16371413",
+    "Comment": "Absorb the byte string `hello world`, then squeeze 64 bytes."
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/shake128/absorb_split",
+    "Function": "DuplexSponge",
+    "Suite": "SHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "6162"
+      },
+      {
+        "type": "absorb",
+        "data": "63"
+      },
+      {
+        "type": "squeeze",
+        "length": 32
+      }
+    ],
+    "Output": "a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1dd9e41",
+    "Comment": "Absorb `ab`, then `c`, then squeeze 32 bytes. Absorbs insert no separator, so the output is that of absorbing `abc` in one call."
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/shake128/empty_absorb",
+    "Function": "DuplexSponge",
+    "Suite": "SHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "616263"
+      },
+      {
+        "type": "squeeze",
+        "length": 32
+      },
+      {
+        "type": "absorb",
+        "data": ""
+      },
+      {
+        "type": "squeeze",
+        "length": 32
+      }
+    ],
+    "Output": "a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1dd9e41d88e36c20e053248b90967a90051ba319688a10783c2ce174602eccc02e8d1a6",
+    "Comment": "Absorb `abc`, squeeze 32 bytes, absorb the empty string, and squeeze 32 more bytes. Absorbing the empty string leaves the state unchanged, so the second squeeze continues the output stream of the first. The 64-byte output begins with the 32-byte output of the previous vector."
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/shake128/interleave",
+    "Function": "DuplexSponge",
+    "Suite": "SHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "00010203040506070809"
+      },
+      {
+        "type": "squeeze",
+        "length": 16
+      },
+      {
+        "type": "absorb",
+        "data": "6d6f72652064617461"
+      },
+      {
+        "type": "squeeze",
+        "length": 16
+      }
+    ],
+    "Output": "2da3c7e3a65c6e92901e8b668c43917eb9f02e9988e66d5ce2fbd833a0ecb93e",
+    "Comment": "Interleave non-empty absorbs and squeezes. A non-empty absorb after a squeeze restarts the output stream over all the input absorbed so far."
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/shake128/multiblock",
+    "Function": "DuplexSponge",
+    "Suite": "SHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
+      },
+      {
+        "type": "squeeze",
+        "length": 600
+      }
+    ],
+    "Output": "d0dc63443a117b76b09845af3347a6dbc29d0ff381ad093e3cfea3a326abbd0da81bfc7dd6220f785900a6d04d508439cc65107c8eb75909f277a6f2740ae55fc684b851b66662c22252b6bb8028b5f7402b0beafb391835613a6c3d8116323dbdcb4494a198ae886821fca3d2af345227ea06c5c2cdb131c90d3fe58eedf090a55bb5a8edc614ab99da6c4ed8fe95a6c289c18dc61918a9abaa4f3ed23587117ced29b33bfb87351d4ffc562add96d384fffbcb7cfb4d4d2125bf809cb85b33a3f9b7541c5d3d3f435f7d0a837f92f6878276ca3c833ecc1691f923602e9b8c8adb9528d8857d7189384eabbab50f0706b82b53db1c92857c2aa84a3527ce4bfcfbdbe02ad953b8517c4b91d36b45f81df67e10e4e9a7c7c064aa9e7f59371010eab4fd71c7aebcf00a793e469a78c658dd9f2c1d5ed2e3110939c11e916c1f51c47553b1bbceeea92649c9bcc7e5538dab18ca95c298b540b6798c065cd2b413fe3915534a5dc6e7100e012b8c53fccc1018cc24570ca09c8e1c8f6e4e523ddb7b6dcf313b6e98bb4abc94b8063eac8fdbbce945c35dd021a91e8227aeb16502a5a6e9e1d85fbd13b6e1e523e8a24040bbb9ddab5e29315780a57d9ef0d758b66e0076704f456dec1fc11577fe3644e53ff70a99a912758c289f225ad64e246af9d895d91e6972b18421ccaa2aed6f843870b9dda07d1e975e51c04d58e7bad60c0b8934fec80d4468816793879bc34d831e2689b77525439837fd15f797ed3b78ccdfdec6a5574111de3e243464c77c1d7fa76fb170e3722315e70fbf855a33281e8b6c15029202d0bb34749b962cc314515c748b74f4",
+    "Comment": "Absorb a 600-byte string, longer than the rate `R = 168`, then squeeze 600 bytes:"
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/shake128/rate_block",
+    "Function": "DuplexSponge",
+    "Suite": "SHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7"
+      },
+      {
+        "type": "squeeze",
+        "length": 167
+      },
+      {
+        "type": "squeeze",
+        "length": 2
+      }
+    ],
+    "Output": "edae25852c909e4acea18d96ddd407e475eeaa7070ff591b49450c7a3ed21b7d0bd0ee62ab0c242e636c435b37c38ae6804a179ff434bed773c8d596cd66b928b0429247b19cbfc246bb1abd3b741841b21ad0234ba7738abe64ab93914bf5ad58a362d86f64d72b8f8603a888421a29769bb77579185409013a271ac258cd71a71aedf2801ba6eb4784636e9bfacca229a78aa8dc72af770380a1a981120b3716595564c520292578",
+    "Comment": "Test across the rate boundary: absorb exactly one rate block (`R = 168` bytes), then squeeze 167 bytes and 2 bytes."
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/shake128/squeeze_zero",
+    "Function": "DuplexSponge",
+    "Suite": "SHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "616263"
+      },
+      {
+        "type": "squeeze",
+        "length": 0
+      },
+      {
+        "type": "absorb",
+        "data": "646566"
+      },
+      {
+        "type": "squeeze",
+        "length": 32
+      }
+    ],
+    "Output": "fc876a5ffbdc960106af16ca50e3b17b14a172f985f3a6f5df09c9a649ebf588",
+    "Comment": "A zero-length squeeze is a no-op. Absorb `abc`, squeeze 0 bytes, absorb `def`, and squeeze 32 bytes. The output is that of absorbing `abcdef` and squeezing 32 bytes."
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/turboshake128/init_squeeze",
+    "Function": "DuplexSponge",
+    "Suite": "TurboSHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "squeeze",
+        "length": 32
+      }
+    ],
+    "Output": "7ad8a3af35a3083c055e4a953ff001cdd9eeb1198f4be7a3a9ec5a209434619b",
+    "Comment": "Squeeze 32 bytes right after initialization."
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/turboshake128/absorb_squeeze",
+    "Function": "DuplexSponge",
+    "Suite": "TurboSHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "68656c6c6f20776f726c64"
+      },
+      {
+        "type": "squeeze",
+        "length": 64
+      }
+    ],
+    "Output": "8b804d7a8c524c242a94e86f7ddfec329d90e29c1f584a98812e63029a0bdb075b12c545bf9e2aa17c88673b6d9df4b08e728dc47f7d7094cee59a0d7d989634",
+    "Comment": "Absorb the byte string `hello world`, then squeeze 64 bytes."
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/turboshake128/absorb_split",
+    "Function": "DuplexSponge",
+    "Suite": "TurboSHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "6162"
+      },
+      {
+        "type": "absorb",
+        "data": "63"
+      },
+      {
+        "type": "squeeze",
+        "length": 32
+      }
+    ],
+    "Output": "51acee1ee6f0c6a0c5a33b625ac9eaea54bc6b9b1cb85f9b2ef843e73631792e",
+    "Comment": "Absorb `ab`, then `c`, then squeeze 32 bytes. Absorbs insert no separator, so the output is that of absorbing `abc` in one call."
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/turboshake128/empty_absorb",
+    "Function": "DuplexSponge",
+    "Suite": "TurboSHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "616263"
+      },
+      {
+        "type": "squeeze",
+        "length": 32
+      },
+      {
+        "type": "absorb",
+        "data": ""
+      },
+      {
+        "type": "squeeze",
+        "length": 32
+      }
+    ],
+    "Output": "51acee1ee6f0c6a0c5a33b625ac9eaea54bc6b9b1cb85f9b2ef843e73631792e599e1dfb1bf60638046f82f5bfa28bcfcabf1404b200647d184ead03e51fbf01",
+    "Comment": "Absorb `abc`, squeeze 32 bytes, absorb the empty string, and squeeze 32 more bytes. Absorbing the empty string leaves the state unchanged, so the second squeeze continues the output stream of the first. The 64-byte output begins with the 32-byte output of the previous vector."
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/turboshake128/interleave",
+    "Function": "DuplexSponge",
+    "Suite": "TurboSHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "00010203040506070809"
+      },
+      {
+        "type": "squeeze",
+        "length": 16
+      },
+      {
+        "type": "absorb",
+        "data": "6d6f72652064617461"
+      },
+      {
+        "type": "squeeze",
+        "length": 16
+      }
+    ],
+    "Output": "f2745534347564bed146c95655122f14636bcc58f768296be8494208db29b6be",
+    "Comment": "Interleave non-empty absorbs and squeezes. A non-empty absorb after a squeeze restarts the output stream over all the input absorbed so far."
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/turboshake128/multiblock",
+    "Function": "DuplexSponge",
+    "Suite": "TurboSHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
+      },
+      {
+        "type": "squeeze",
+        "length": 600
+      }
+    ],
+    "Output": "0ef6787d725638e19364c25a2ba879af55a4e1c97bff52919e64cd37a218db44a475f9d7ef0e88d87b443fe6590f12fc90c41c546c92cbeb3480e679d6e1ea37fc1e10e3e41b15e80aea4745ad9ad31c22857ae360fb66848daab7df8f6135efcc940c4cc6431617cca6c05aa9b8bdf041538206ef912c0861dc07e21987550924c848cb788532637cf6e7fb1a3ea233fc335077e4910e8d7da15fe89250f28458ec17ecf448e05cf660ca4ffd1fdcb4379570d3a871aa759bb4d763d60d3e1b36ab8efcd8cd6fcca8fa67a5071ab21a1d31e4610f7ca8825b5e81f22433c495862b642c009823c312fd60fcdcd888af9c6c554da3a370946fa7bfa66ac54480b9a36d73fa6ee73ccb78b425de22814667742864608a06fa7534b053a68905ff532089b6fc0d597671ae4da685b96b1ac5d2513c0fc944d11155ed43461559a12b984fb0cb45b105d9f2391a137d104f7da6c82fcfe375143bf512824685913f2bf61613b1a2a8f55f86d1282aa36c02384381335927259361c9e5875dbe1314af82aa65264ff009f525d4f0aedcf80cb908e308132113311d0e9a6783f27a1393ae28c10914018e263020dc97f219ebdae4118a79c318bef2d3766452075e3579f4b1cddbb80a5bca83a2f1fbec44e9d487925ba23cbfce111ba865e0fdb164589c66cbb757865d1bfb4540c01dece5b4180eef4262efc24c4ae3f76c4497a53fb7f38a0de18a7053ab59b59b180ad53e3d2318661783682298d54b9f9ee6e33b2be660295ccdd7d6cc976e21827c66880a0fbcc202743cd1ea0b7351755ee4b8a0b140bbc4f6a45eb6b05798721094cebe00e08f4f7bde",
+    "Comment": "Absorb a 600-byte string, longer than the rate `R = 168`, then squeeze 600 bytes:"
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/turboshake128/rate_block",
+    "Function": "DuplexSponge",
+    "Suite": "TurboSHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7"
+      },
+      {
+        "type": "squeeze",
+        "length": 167
+      },
+      {
+        "type": "squeeze",
+        "length": 2
+      }
+    ],
+    "Output": "dc4b6f89697ec7e56ad210e6244a3ff25dab91ebd60981761db8f83db3a3a781ab43ffd7f325c98b912746b65d233fb5b99fd923cbff5e327b75436afd035c42ac9953ca4d686e30e5729aa460b813adf96c16917471679a4de36b19c452aef447f93f4574ddcf09bdf6410774b426ffe415ff8eb2be44c8301ae071b534895b0ab66aa0136ffe9656c607bb6e1acaea4069454e297ec0ad4eab437c25455c88aeb77d6f33f7b578e9",
+    "Comment": "Test across the rate boundary: absorb exactly one rate block (`R = 168` bytes), then squeeze 167 bytes and 2 bytes."
+  },
+  {
+    "Id": "fiat-shamir/duplex-sponge/turboshake128/squeeze_zero",
+    "Function": "DuplexSponge",
+    "Suite": "TurboSHAKE128",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "616263"
+      },
+      {
+        "type": "squeeze",
+        "length": 0
+      },
+      {
+        "type": "absorb",
+        "data": "646566"
+      },
+      {
+        "type": "squeeze",
+        "length": 32
+      }
+    ],
+    "Output": "61d3fecc576c3faafb92db1cb22b60794075a024df9626436394c7b852ade899",
+    "Comment": "A zero-length squeeze is a no-op. Absorb `abc`, squeeze 0 bytes, absorb `def`, and squeeze 32 bytes. The output is that of absorbing `abcdef` and squeezing 32 bytes."
+  }
+]

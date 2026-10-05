@@ -1001,7 +1001,7 @@ f(r[1], ..., r[v])
 13. return (narg_string, w[0])
 ~~~
 
-After `v` rounds the single remaining entry `w[0]` is `f(r[1], ..., r[v])`, where `r[i]` is the challenge of round `i`. The NARG string is the concatenation of the round messages.
+After `v` rounds the single remaining entry `w[0]` is `f(r[1], ..., r[v])`, where `r[i]` is the verifier message of round `i`. The NARG string is the concatenation of the round messages.
 
 ~~~
 SumcheckVerify(session_id, v, S, narg_string, y)
@@ -1028,189 +1028,31 @@ Output: accept or reject
 11. return accept
 ~~~
 
-The test vectors instantiate `p = 2^31 - 1`, `v = 4`, and the witness `w = (1, 2, 4, ..., 2^15)`, giving `S = 65535`. The vectors report the NARG string as `Narg` and `f(r[1], ..., r[v])` as `FinalEvaluation`.
+The test vectors ({{tv-narg}}) instantiate `p = 2^31 - 1`, `v = 4`, and the witness `w = (1, 2, 4, ..., 2^15)`, giving `S = 65535`. They report the NARG string as `NargString` and `f(r[1], ..., r[v])` as `FinalEvaluation`.
 
 # Test Vectors {#test-vectors}
 
-Each test vector is a block of lines of the form `Key = Value`, and no key repeats within a vector. A value is either an integer, written in decimal or in hexadecimal with the prefix `0x`, or a byte string, written in lowercase hexadecimal. The empty byte string is written `""`.
+Each test vector in this section is a block of lines of the form `Key = Value`, with no repeated keys. A value is written inline or on indented lines below its key; wrapped lines are concatenated without a separator. A sequence has one item per line, introduced by `- `, and an item's continuation lines carry a further two spaces of indentation. Every vector carries `Id`, a stable name of the form `fiat-shamir/<section>/<vector>` by which this document and a test harness refer to it, and `Function`, the operation the remaining keys describe. The suite ({{suites}}) is identified with the key `Suite`. A vector without `Suite` has the same outcome under every suite. The key `ByteOrder` marks the vectors exercising a non-default serialization ({{serialize-field}}). A vector carrying `Expected` is a verifier decision, `accept` or `reject`. The prose accompanying each rejected vector states which check fails. Each key has a value of one of the following kinds:
 
-Two rules govern how a value is laid out, and they are the whole grammar:
+- an integer, written in decimal or in hexadecimal with the prefix `0x`;
+- a byte string, written in lowercase hexadecimal. The empty byte string is denoted `""`;
+- a name (for `Id`, `Function`, `Suite`, or `Expected`);
+- a sequence of values (one item per line, each introduced by `- `), including the duplex sponge operations described in {{tv-duplex-sponge}}.
 
-1. A value is written inline after `Key = ` when it fits the document width. Otherwise it is written on the lines that follow, indented by two spaces, and the value is the concatenation of those lines with no separator. Byte strings wrap at a whole 32 bytes per line, so that a 32-byte value occupies exactly one line and a 64-byte value exactly two.
-2. A sequence-valued field always uses the indented form, one item per line, each item introduced by `- `. An item too long for a line is itself wrapped, and its continuation lines carry a further two spaces of indentation.
+A copy of the test vectors below is provided in JSON format as part of this specification's repo.
 
-So an indented line beginning `- ` starts a new item, and any other indented line continues the value above it.
+## Duplex sponge {#tv-duplex-sponge}
 
-Every vector carries `Id`, a stable name of the form `fiat-shamir/<suite>/<vector>` by which this document and a test harness refer to it, and `Function`, the operation the remaining keys describe. The hash suite is identified with key `Hash` ({{suites}}). A vector carrying `Expected = reject` indicates a negative test; a vector with no `Expected` is a functional test, whose expectation is the output value it carries. The key `ByteOrder` marks the vectors exercising a non-default serialization ({{serialize-field}}).
+Each `Operations` item is either `absorb` followed by a byte string, or `squeeze` followed by a number of bytes. Each vector runs the operations in order after initializing the state with `SessionId`. `Output` is the concatenation of all squeezed bytes, written as two hexadecimal characters per byte.
 
-A machine-readable (JSON) copy of every vector below is part of this specification's repo. The two carry the same records: because no key repeats and sequences are explicit, each `~~~` block corresponds to one JSON object, key for key.
+### SHAKE128 {#tv-duplex-shake128}
 
-## Codec test vectors {#tv-codec}
+Squeeze 32 bytes right after initialization.
 
-This section contains vectors for the encoding, decoding, serialization, and deserialization functions.
-
-### Byte-string serialization: `SerializeVarLenString`
 ~~~
-Id = fiat-shamir/codec/serialize_varlen
-Function = SerializeVarLenString
-Input = 70726f6f66
-Output = 0500000070726f6f66
-~~~
-
-### `SerializeUint`: unsigned-integer serialization.
-~~~
-Id = fiat-shamir/codec/serialize_uint
-Function = SerializeUint
-Modulus =
-  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-  43
-Value = 0xdeadbeef
-Output =
-  efbeadde00000000000000000000000000000000000000000000000000000000
-~~~
-
-### `DeserializeField`, used to deserialize a degree-2 element of the field of characteristic `2^256 - 189` (the default, little-endian serialization).
-~~~
-Id = fiat-shamir/codec/deserialize_field
-Function = DeserializeField
-Modulus =
-  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-  43
-ExtensionDegree = 2
-Input =
-  efbeadde00000000000000000000000000000000000000000000000000000000
-  42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-Coordinates =
-  - 0xdeadbeef
-  - 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff42
-~~~
-
-### The empty byte string may be encoded as a variable-length string.
-~~~
-Id = fiat-shamir/codec/varlen_empty
-Function = SerializeVarLenString
-Input = ""
-Output = 00000000
-~~~
-
-### Decoding is infallible and distribution-preserving
-~~~
-Id = fiat-shamir/codec/decode_uint_wraparound
-Function = DecodeUint
-Modulus =
-  0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
-  51
-Input =
-  512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
-  00000000000000000000000000000000
-Challenge = 0x00
-~~~
-
-### Field serialization of the P-256 scalar field happens via `I2OSP`.
-~~~
-Id = fiat-shamir/codec/serialize_field_be
-Function = SerializeField
-ByteOrder = big-endian
-Modulus =
-  0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
-  51
-Value = 0xdeadbeef
-Output =
-  00000000000000000000000000000000000000000000000000000000deadbeef
-~~~
-
-### The modulus itself is not accepted as a valid serialization.
-~~~
-Id = fiat-shamir/codec/deserialize_uint_reject_modulus
-Function = DeserializeUint
-Modulus =
-  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-  43
-Input =
-  43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-Expected = reject
-~~~
-
-### Deserialization fails for inputs shorter than `Ns` bytes
-~~~
-Id = fiat-shamir/codec/deserialize_uint_reject_short
-Function = DeserializeUint
-Modulus =
-  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-  43
-Input =
-  efbeadde000000000000000000000000000000000000000000000000000000
-Expected = reject
-~~~
-
-### When deserializing field extension elements, all coordinates must be validated
-~~~
-Id = fiat-shamir/codec/deserialize_field_reject_second_coordinate
-Function = DeserializeField
-Modulus =
-  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-  43
-ExtensionDegree = 2
-Input =
-  42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-  ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-Expected = reject
-~~~
-
-### A payload one byte shorter than its length prefix is rejected.
-~~~
-Id = fiat-shamir/codec/deserialize_varlen_reject_truncated
-Function = DeserializeVarLenString
-Input = 0500000070726f6f
-Expected = reject
-~~~
-
-### The maximal length prefix 2^32 - 1 is rejected.
-~~~
-Id = fiat-shamir/codec/deserialize_varlen_reject_overflow
-Function = DeserializeVarLenString
-Input = ffffffffdeadbeef
-Expected = reject
-~~~
-
-### The example protocol ({{example-sumcheck}}), where the first prover message is an invalid serialization (`p`, the modulus, is added to the canonical encoding)
-~~~
-Id = fiat-shamir/codec/sumcheck_reject_noncanonical_coefficient
-Function = Sumcheck
-Modulus = 0x7fffffff
-NumVariables = 4
-SessionId =
-  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-ClaimedSum = 0xffff
-Narg =
-  5455008055550000b8eefc2728ccf677b7aabd44c1001d074205d5576c3d307d
-Expected = reject
-~~~
-
-### An invalid NARG string for the example protocol ({{example-sumcheck}}), where a prover message does not satisfy verification
-~~~
-Id = fiat-shamir/codec/sumcheck_reject_round_identity
-Function = Sumcheck
-Modulus = 0x7fffffff
-NumVariables = 4
-SessionId =
-  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-ClaimedSum = 0xffff
-Narg =
-  5655000055550000b8eefc2728ccf677b7aabd44c1001d074205d5576c3d307d
-Expected = reject
-~~~
-
-
-## SHAKE128 test vectors {#tv-shake128}
-
-This section contains vectors for the XOF duplex sponge instantiated with the SHAKE128 suite ({{suite-shake128}}).
-
-### Squeeze a 32-byte string after initialization
-~~~
-Id = fiat-shamir/shake128/init_squeeze
+Id = fiat-shamir/duplex-sponge/shake128/init_squeeze
 Function = DuplexSponge
-Hash = SHAKE128
+Suite = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1219,11 +1061,12 @@ Output =
   63e1b3543377fab6fb8cf0f7698a9980ca0211d5bc4aba213dd7a6ef7dd63cfa
 ~~~
 
-### Absorb the byte string `hello world`, then squeeze 64 bytes
+Absorb the byte string `hello world`, then squeeze 64 bytes.
+
 ~~~
-Id = fiat-shamir/shake128/absorb_squeeze
+Id = fiat-shamir/duplex-sponge/shake128/absorb_squeeze
 Function = DuplexSponge
-Hash = SHAKE128
+Suite = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1234,11 +1077,12 @@ Output =
   56d433cbde0ade711bdd55d7ed5de38bb9adea8b2eec4402a0df090c16371413
 ~~~
 
-### Absorb is associative: `Absorb("abc")` is equivalent to `Absorb("ab"); Absorb("c")`
+Absorb `ab`, then `c`, then squeeze 32 bytes. Absorbs insert no separator, so the output is that of absorbing `abc` in one call.
+
 ~~~
-Id = fiat-shamir/shake128/absorb_split
+Id = fiat-shamir/duplex-sponge/shake128/absorb_split
 Function = DuplexSponge
-Hash = SHAKE128
+Suite = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1249,26 +1093,12 @@ Output =
   a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1dd9e41
 ~~~
 
-### Squeeze is associative: `Squeeze(16 + 16)` is equivalent to `Squeeze(16) || Squeeze(16)`
-~~~
-Id = fiat-shamir/shake128/stream
-Function = DuplexSponge
-Hash = SHAKE128
-SessionId =
-  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-Operations =
-  - absorb 616263
-  - squeeze 16
-  - squeeze 16
-Output =
-  a629c32a309dda7605798fd07ce20ab14c76635446868eb46e20b6dfd1dd9e41
-~~~
+Absorb `abc`, squeeze 32 bytes, absorb the empty string, and squeeze 32 more bytes. Absorbing the empty string leaves the state unchanged, so the second squeeze continues the output stream of the first. The 64-byte output begins with the 32-byte output of the previous vector.
 
-### Absorb of the empty string is a no-op
 ~~~
-Id = fiat-shamir/shake128/empty_absorb
+Id = fiat-shamir/duplex-sponge/shake128/empty_absorb
 Function = DuplexSponge
-Hash = SHAKE128
+Suite = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1281,11 +1111,12 @@ Output =
   d88e36c20e053248b90967a90051ba319688a10783c2ce174602eccc02e8d1a6
 ~~~
 
-### Absorb and squeeze can be interleaved
+Interleave non-empty absorbs and squeezes. A non-empty absorb after a squeeze restarts the output stream over all the input absorbed so far.
+
 ~~~
-Id = fiat-shamir/shake128/interleave
+Id = fiat-shamir/duplex-sponge/shake128/interleave
 Function = DuplexSponge
-Hash = SHAKE128
+Suite = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1297,11 +1128,12 @@ Output =
   2da3c7e3a65c6e92901e8b668c43917eb9f02e9988e66d5ce2fbd833a0ecb93e
 ~~~
 
-### Absorbing a byte string of length longer than the rate.
+Absorb a 600-byte string, longer than the rate `R = 168`, then squeeze 600 bytes:
+
 ~~~
-Id = fiat-shamir/shake128/multiblock
+Id = fiat-shamir/duplex-sponge/shake128/multiblock
 Function = DuplexSponge
-Hash = SHAKE128
+Suite = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1346,11 +1178,12 @@ Output =
   33281e8b6c15029202d0bb34749b962cc314515c748b74f4
 ~~~
 
-### Squeeze at the rate boundary
+Test across the rate boundary: absorb exactly one rate block (`R = 168` bytes), then squeeze 167 bytes and 2 bytes.
+
 ~~~
-Id = fiat-shamir/shake128/rate_block
+Id = fiat-shamir/duplex-sponge/shake128/rate_block
 Function = DuplexSponge
-Hash = SHAKE128
+Suite = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1371,11 +1204,12 @@ Output =
   16595564c520292578
 ~~~
 
-### A zero-length squeeze between absorbs is a no-op
+A zero-length squeeze is a no-op. Absorb `abc`, squeeze 0 bytes, absorb `def`, and squeeze 32 bytes. The output is that of absorbing `abcdef` and squeezing 32 bytes.
+
 ~~~
-Id = fiat-shamir/shake128/squeeze_zero
+Id = fiat-shamir/duplex-sponge/shake128/squeeze_zero
 Function = DuplexSponge
-Hash = SHAKE128
+Suite = SHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1387,97 +1221,14 @@ Output =
   fc876a5ffbdc960106af16ca50e3b17b14a172f985f3a6f5df09c9a649ebf588
 ~~~
 
-### Derive a session identifier from an application tag
-~~~
-Id = fiat-shamir/shake128/derive_sid
-Function = DeriveSessionID
-Hash = SHAKE128
-Tag = 696e7465726f702d746573742d763030
-Output =
-  b508aca89eecac56cd33e4a28f817f43f849d035922f354173ae8466628308cf
-~~~
+### TurboSHAKE128 {#tv-duplex-turboshake128}
 
-### Squeeze and reduce a P-256 scalar challenge (`DecodeUint`)
-~~~
-Id = fiat-shamir/shake128/decode_uint
-Function = DecodeUint
-Hash = SHAKE128
-Modulus =
-  0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
-  51
-SessionId =
-  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-Operations =
-  - absorb 08000000696e7374616e6365
-  - squeeze 48
-Output =
-  7124d02b7cdfec99c4033dfd05624cfe2ff3af2c0e71656f770e676bd36de622
-  8f85fcb39f34f7bfc24c9f54ab35ddba
-Challenge =
-  0xf860997c65f8dabecbcc3459a7b89bf69301b19fa1a0e036eb0d132724436d
-  4f
-~~~
+Squeeze 32 bytes right after initialization.
 
-### The sumcheck protocol example ({{example-sumcheck}}) over Mersenne31.
 ~~~
-Id = fiat-shamir/shake128/sumcheck
-Function = Sumcheck
-Hash = SHAKE128
-Modulus = 0x7fffffff
-NumVariables = 4
-Tag = 73756d636865636b
-SessionId =
-  0568cefdf774622a3854d82934915fb3e38bc89dc44b6d673fc91b972c886fc2
-Witness =
-  - 1
-  - 2
-  - 4
-  - 8
-  - 16
-  - 32
-  - 64
-  - 128
-  - 256
-  - 512
-  - 1024
-  - 2048
-  - 4096
-  - 8192
-  - 16384
-  - 32768
-ClaimedSum = 0xffff
-Narg =
-  555500005555000023e362696ba9283c90a3362a74953379afc3b041d3eb126f
-FinalEvaluation = 0x3ebfb3b3
-~~~
-
-### A NARG string with trailing bytes is rejected
-~~~
-Id = fiat-shamir/shake128/sumcheck_reject_trailing_bytes
-Function = Sumcheck
-Hash = SHAKE128
-Modulus = 0x7fffffff
-NumVariables = 4
-Tag = 73756d636865636b
-SessionId =
-  0568cefdf774622a3854d82934915fb3e38bc89dc44b6d673fc91b972c886fc2
-ClaimedSum = 0xffff
-Narg =
-  555500005555000023e362696ba9283c90a3362a74953379afc3b041d3eb126f
-  00
-Expected = reject
-~~~
-
-
-## TurboSHAKE128 test vectors {#tv-turboshake128}
-
-This section contains vectors for the XOF duplex sponge instantiated with the TurboSHAKE128 suite ({{suite-turboshake128}}).
-
-### Squeeze a 32-byte string after initialization
-~~~
-Id = fiat-shamir/turboshake128/init_squeeze
+Id = fiat-shamir/duplex-sponge/turboshake128/init_squeeze
 Function = DuplexSponge
-Hash = TurboSHAKE128
+Suite = TurboSHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1486,11 +1237,12 @@ Output =
   7ad8a3af35a3083c055e4a953ff001cdd9eeb1198f4be7a3a9ec5a209434619b
 ~~~
 
-### Absorb the byte string `hello world`, then squeeze 64 bytes
+Absorb the byte string `hello world`, then squeeze 64 bytes.
+
 ~~~
-Id = fiat-shamir/turboshake128/absorb_squeeze
+Id = fiat-shamir/duplex-sponge/turboshake128/absorb_squeeze
 Function = DuplexSponge
-Hash = TurboSHAKE128
+Suite = TurboSHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1501,11 +1253,12 @@ Output =
   5b12c545bf9e2aa17c88673b6d9df4b08e728dc47f7d7094cee59a0d7d989634
 ~~~
 
-### Absorb is associative: `Absorb("abc")` is equivalent to `Absorb("ab"); Absorb("c")`
+Absorb `ab`, then `c`, then squeeze 32 bytes. Absorbs insert no separator, so the output is that of absorbing `abc` in one call.
+
 ~~~
-Id = fiat-shamir/turboshake128/absorb_split
+Id = fiat-shamir/duplex-sponge/turboshake128/absorb_split
 Function = DuplexSponge
-Hash = TurboSHAKE128
+Suite = TurboSHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1516,26 +1269,12 @@ Output =
   51acee1ee6f0c6a0c5a33b625ac9eaea54bc6b9b1cb85f9b2ef843e73631792e
 ~~~
 
-### Squeeze is associative: `Squeeze(16 + 16)` is equivalent to `Squeeze(16) || Squeeze(16)`
-~~~
-Id = fiat-shamir/turboshake128/stream
-Function = DuplexSponge
-Hash = TurboSHAKE128
-SessionId =
-  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-Operations =
-  - absorb 616263
-  - squeeze 16
-  - squeeze 16
-Output =
-  51acee1ee6f0c6a0c5a33b625ac9eaea54bc6b9b1cb85f9b2ef843e73631792e
-~~~
+Absorb `abc`, squeeze 32 bytes, absorb the empty string, and squeeze 32 more bytes. Absorbing the empty string leaves the state unchanged, so the second squeeze continues the output stream of the first. The 64-byte output begins with the 32-byte output of the previous vector.
 
-### Absorb of the empty string is a no-op
 ~~~
-Id = fiat-shamir/turboshake128/empty_absorb
+Id = fiat-shamir/duplex-sponge/turboshake128/empty_absorb
 Function = DuplexSponge
-Hash = TurboSHAKE128
+Suite = TurboSHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1548,11 +1287,12 @@ Output =
   599e1dfb1bf60638046f82f5bfa28bcfcabf1404b200647d184ead03e51fbf01
 ~~~
 
-### Absorb and squeeze can be interleaved
+Interleave non-empty absorbs and squeezes. A non-empty absorb after a squeeze restarts the output stream over all the input absorbed so far.
+
 ~~~
-Id = fiat-shamir/turboshake128/interleave
+Id = fiat-shamir/duplex-sponge/turboshake128/interleave
 Function = DuplexSponge
-Hash = TurboSHAKE128
+Suite = TurboSHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1564,11 +1304,12 @@ Output =
   f2745534347564bed146c95655122f14636bcc58f768296be8494208db29b6be
 ~~~
 
-### Absorbing a byte string of length longer than the rate.
+Absorb a 600-byte string, longer than the rate `R = 168`, then squeeze 600 bytes:
+
 ~~~
-Id = fiat-shamir/turboshake128/multiblock
+Id = fiat-shamir/duplex-sponge/turboshake128/multiblock
 Function = DuplexSponge
-Hash = TurboSHAKE128
+Suite = TurboSHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1613,11 +1354,12 @@ Output =
   b8a0b140bbc4f6a45eb6b05798721094cebe00e08f4f7bde
 ~~~
 
-### Squeeze at the rate boundary
+Test across the rate boundary: absorb exactly one rate block (`R = 168` bytes), then squeeze 167 bytes and 2 bytes.
+
 ~~~
-Id = fiat-shamir/turboshake128/rate_block
+Id = fiat-shamir/duplex-sponge/turboshake128/rate_block
 Function = DuplexSponge
-Hash = TurboSHAKE128
+Suite = TurboSHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1638,11 +1380,12 @@ Output =
   aeb77d6f33f7b578e9
 ~~~
 
-### A zero-length squeeze between absorbs is a no-op
+A zero-length squeeze is a no-op. Absorb `abc`, squeeze 0 bytes, absorb `def`, and squeeze 32 bytes. The output is that of absorbing `abcdef` and squeezing 32 bytes.
+
 ~~~
-Id = fiat-shamir/turboshake128/squeeze_zero
+Id = fiat-shamir/duplex-sponge/turboshake128/squeeze_zero
 Function = DuplexSponge
-Hash = TurboSHAKE128
+Suite = TurboSHAKE128
 SessionId =
   000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 Operations =
@@ -1654,21 +1397,79 @@ Output =
   61d3fecc576c3faafb92db1cb22b60794075a024df9626436394c7b852ade899
 ~~~
 
-### Derive a session identifier from an application tag
+## Session identifier derivation {#tv-session-id}
+
+Derive the session identifier of the application tag `interop-test-v00` ({{session-id}}).
+
 ~~~
-Id = fiat-shamir/turboshake128/derive_sid
+Id = fiat-shamir/session-id/shake128/derive_sid
 Function = DeriveSessionID
-Hash = TurboSHAKE128
+Suite = SHAKE128
 Tag = 696e7465726f702d746573742d763030
-Output =
+SessionId =
+  b508aca89eecac56cd33e4a28f817f43f849d035922f354173ae8466628308cf
+~~~
+
+Derive the session identifier of the application tag `interop-test-v00` ({{session-id}}).
+
+~~~
+Id = fiat-shamir/session-id/turboshake128/derive_sid
+Function = DeriveSessionID
+Suite = TurboSHAKE128
+Tag = 696e7465726f702d746573742d763030
+SessionId =
   4326208c9e56ae847be9356ca7c4447c752a9d7326a44a6cbee0c0dfc69505ac
 ~~~
 
-### Squeeze and reduce a P-256 scalar challenge (`DecodeUint`)
+## Codecs {#tv-codec}
+
+This section contains vectors for decoding verifier messages ({{decoding}}).
+The encoding of a prover message is its serialization ({{encoding-bytes}}), covered in {{tv-serialization}}.
+
+### Verifier-message decoding {#tv-decoding}
+
+Decoding is infallible and reduces modulo `M` ({{decoding-uint}}): the `Ns + 16 = 48`-byte little-endian encoding of `M` itself, the order of the P-256 group, decodes to 0. Deserialization instead rejects non-canonical integers ({{tv-serialization-invalid}}).
+
 ~~~
-Id = fiat-shamir/turboshake128/decode_uint
+Id = fiat-shamir/codec/decode_uint_wraparound
 Function = DecodeUint
-Hash = TurboSHAKE128
+Modulus =
+  0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
+  51
+Input =
+  512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff
+  00000000000000000000000000000000
+VerifierMessage = 0x00
+~~~
+
+Absorb the instance `instance`, serialized as a variable-length byte string, then squeeze `Ns + 16 = 48` bytes and decode them into a scalar of P-256 ({{decoding-uint}}).
+
+~~~
+Id = fiat-shamir/codec/shake128/decode_uint
+Function = DecodeUint
+Suite = SHAKE128
+Modulus =
+  0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
+  51
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Operations =
+  - absorb 08000000696e7374616e6365
+  - squeeze 48
+Output =
+  7124d02b7cdfec99c4033dfd05624cfe2ff3af2c0e71656f770e676bd36de622
+  8f85fcb39f34f7bfc24c9f54ab35ddba
+VerifierMessage =
+  0xf860997c65f8dabecbcc3459a7b89bf69301b19fa1a0e036eb0d132724436d
+  4f
+~~~
+
+Absorb the instance `instance`, serialized as a variable-length byte string, then squeeze `Ns + 16 = 48` bytes and decode them into a scalar of P-256 ({{decoding-uint}}).
+
+~~~
+Id = fiat-shamir/codec/turboshake128/decode_uint
+Function = DecodeUint
+Suite = TurboSHAKE128
 Modulus =
   0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
   51
@@ -1680,21 +1481,141 @@ Operations =
 Output =
   82a031e31b103ac01253ba3aae215f650a06a4bb24963a05ee1f8c0b82eae90d
   7bd36ea8cb560a91604ae8a97eb0d564
-Challenge =
+VerifierMessage =
   0xc2088b455016d0126fcdd76335a79566e7fd8379db1de019871d459bfee955
   8b
 ~~~
 
-### The sumcheck protocol example ({{example-sumcheck}}) over Mersenne31.
+## Serialization and deserialization {#tv-serialization}
+
+This section contains vectors for the serialization and deserialization of prover messages ({{narg-string}}). They do not depend on the suite. A conformant deserializer **MUST** reject the invalid inputs.
+
+### Valid inputs {#tv-serialization-valid}
+
+Serialize the byte string `proof` as a variable-length string: its length in 4 little-endian bytes, then its bytes ({{serialize-byte-strings}}).
+
 ~~~
-Id = fiat-shamir/turboshake128/sumcheck
+Id = fiat-shamir/serialization/serialize_varlen
+Function = SerializeVarLenString
+Input = 70726f6f66
+Output = 0500000070726f6f66
+~~~
+
+The serialization of the empty byte string as a variable-length string contains only the length prefix.
+
+~~~
+Id = fiat-shamir/serialization/serialize_varlen_empty
+Function = SerializeVarLenString
+Input = ""
+Output = 00000000
+~~~
+
+Serialize the integer `0xdeadbeef` modulo `p = 2^256 - 189` in `Ns = 32` little-endian bytes ({{serialize-uint}}).
+
+~~~
+Id = fiat-shamir/serialization/serialize_uint
+Function = SerializeUint
+Modulus =
+  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  43
+Value = 0xdeadbeef
+Output =
+  efbeadde00000000000000000000000000000000000000000000000000000000
+~~~
+
+Serialize `0xdeadbeef` as an element of the scalar field of P-256, whose standard fixes a big-endian serialization (`I2OSP`, {{serialize-field}}).
+
+~~~
+Id = fiat-shamir/serialization/serialize_field_be
+Function = SerializeField
+ByteOrder = big-endian
+Modulus =
+  0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc6325
+  51
+Value = 0xdeadbeef
+Output =
+  00000000000000000000000000000000000000000000000000000000deadbeef
+~~~
+
+### Invalid inputs {#tv-serialization-invalid}
+
+A payload shorter than the length specified by its prefix is rejected ({{deserialize-byte-strings}}).
+
+~~~
+Id = fiat-shamir/serialization/deserialize_varlen_reject_truncated
+Function = DeserializeVarLenString
+Input = 0500000070726f6f
+Expected = reject
+~~~
+
+The maximal length prefix `2^32 - 1` exceeds the available payload length. The length check must not overflow.
+
+~~~
+Id = fiat-shamir/serialization/deserialize_varlen_reject_overflow
+Function = DeserializeVarLenString
+Input = ffffffffdeadbeef
+Expected = reject
+~~~
+
+An integer modulo `p` is serialized by its representative in `[0, p)`. The modulus itself is rejected.
+
+~~~
+Id = fiat-shamir/serialization/deserialize_uint_reject_modulus
+Function = DeserializeUint
+Modulus =
+  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  43
+Input =
+  43ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+Expected = reject
+~~~
+
+An integer modulo `p = 2^256 - 189` is serialized in exactly `Ns = 32` bytes. Deserialization rejects inputs with fewer bytes.
+
+~~~
+Id = fiat-shamir/serialization/deserialize_uint_reject_short
+Function = DeserializeUint
+Modulus =
+  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  43
+Input =
+  efbeadde000000000000000000000000000000000000000000000000000000
+Expected = reject
+~~~
+
+Every coordinate of an extension-field element is validated. This degree-2 element is rejected because its second coordinate (`2^256 - 1`) is non-canonical, even though its first coordinate (`p - 1`) is canonical.
+
+~~~
+Id = fiat-shamir/serialization/deserialize_field_reject_coordinate
+Function = DeserializeField
+Modulus =
+  0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  43
+ExtensionDegree = 2
+Input =
+  42ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+Expected = reject
+~~~
+
+## NARG strings {#tv-narg}
+
+This section contains NARG strings of the sumcheck protocol of {{example-sumcheck}}, over Mersenne31 (`p = 2^31 - 1`) with `v = 4` variables. Each vector carries the session identifier, the instance (`NumVariables` and `ClaimedSum`), and the NARG string. The valid vectors also carry the witness and the evaluation `y` as `FinalEvaluation`; the adversarial vectors are rejected before the final check (step 10 of `SumcheckVerify`), whatever `y`.
+
+### Valid NARG strings {#tv-narg-valid}
+
+The sumcheck protocol of {{example-sumcheck}} for the witness `w = (1, 2, 4, ..., 2^15)`, with the session identifier derived from the application tag `sumcheck`.
+
+~~~
+Id = fiat-shamir/narg/shake128/sumcheck
 Function = Sumcheck
-Hash = TurboSHAKE128
+Suite = SHAKE128
 Modulus = 0x7fffffff
-NumVariables = 4
 Tag = 73756d636865636b
 SessionId =
-  abcbcae1f2f90d02b7e6417dbb2ffe162ab00477453eac3ce83d4e7e61000280
+  0568cefdf774622a3854d82934915fb3e38bc89dc44b6d673fc91b972c886fc2
+NumVariables = 4
+ClaimedSum = 0xffff
 Witness =
   - 1
   - 2
@@ -1712,24 +1633,97 @@ Witness =
   - 8192
   - 16384
   - 32768
-ClaimedSum = 0xffff
-Narg =
-  55550000555500006ff9a71d4decf758430dfb69f9c6b5359d8ab2744b13d83d
-FinalEvaluation = 0x654028db
+NargString =
+  555500005555000023e362696ba9283c90a3362a74953379afc3b041d3eb126f
+FinalEvaluation = 0x3ebfb3b3
+Expected = accept
 ~~~
 
-### A NARG string with trailing bytes is rejected
+The sumcheck protocol of {{example-sumcheck}} for the witness `w = (1, 2, 4, ..., 2^15)`, with the session identifier derived from the application tag `sumcheck`.
+
 ~~~
-Id = fiat-shamir/turboshake128/sumcheck_reject_trailing_bytes
+Id = fiat-shamir/narg/turboshake128/sumcheck
 Function = Sumcheck
-Hash = TurboSHAKE128
+Suite = TurboSHAKE128
 Modulus = 0x7fffffff
-NumVariables = 4
 Tag = 73756d636865636b
 SessionId =
   abcbcae1f2f90d02b7e6417dbb2ffe162ab00477453eac3ce83d4e7e61000280
+NumVariables = 4
 ClaimedSum = 0xffff
-Narg =
+Witness =
+  - 1
+  - 2
+  - 4
+  - 8
+  - 16
+  - 32
+  - 64
+  - 128
+  - 256
+  - 512
+  - 1024
+  - 2048
+  - 4096
+  - 8192
+  - 16384
+  - 32768
+NargString =
+  55550000555500006ff9a71d4decf758430dfb69f9c6b5359d8ab2744b13d83d
+FinalEvaluation = 0x654028db
+Expected = accept
+~~~
+
+### Adversarial vectors {#tv-narg-invalid}
+
+The coefficient `a0` of the first prover message is serialized as `p + a0`, a non-canonical representative. Deserialization rejects it (step 4 of `SumcheckVerify`), before the first squeeze.
+
+~~~
+Id = fiat-shamir/narg/sumcheck/noncanonical_coefficient
+Function = Sumcheck
+Modulus = 0x7fffffff
+SessionId =
+  000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+NumVariables = 4
+ClaimedSum = 0xffff
+NargString =
+  5455008055550000b8eefc2728ccf677b7aabd44c1001d074205d5576c3d307d
+Expected = reject
+~~~
+
+The NARG string carries one trailing zero byte (step 9).
+
+~~~
+Id = fiat-shamir/narg/shake128/sumcheck/trailing_bytes
+BaseId = fiat-shamir/narg/shake128/sumcheck
+Function = Sumcheck
+Suite = SHAKE128
+Modulus = 0x7fffffff
+Tag = 73756d636865636b
+SessionId =
+  0568cefdf774622a3854d82934915fb3e38bc89dc44b6d673fc91b972c886fc2
+NumVariables = 4
+ClaimedSum = 0xffff
+NargString =
+  555500005555000023e362696ba9283c90a3362a74953379afc3b041d3eb126f
+  00
+Expected = reject
+~~~
+
+The NARG string carries one trailing zero byte (step 9).
+
+~~~
+Id = fiat-shamir/narg/turboshake128/sumcheck/trailing_bytes
+BaseId = fiat-shamir/narg/turboshake128/sumcheck
+Function = Sumcheck
+Suite = TurboSHAKE128
+Modulus = 0x7fffffff
+Tag = 73756d636865636b
+SessionId =
+  abcbcae1f2f90d02b7e6417dbb2ffe162ab00477453eac3ce83d4e7e61000280
+NumVariables = 4
+ClaimedSum = 0xffff
+NargString =
   55550000555500006ff9a71d4decf758430dfb69f9c6b5359d8ab2744b13d83d
   00
 Expected = reject

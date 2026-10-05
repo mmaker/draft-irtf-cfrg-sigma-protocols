@@ -9,11 +9,12 @@ is regeneration wherever the vectors pin the randomness: the valid
 sigma-protocols proofs are re-proven byte-for-byte from the instance,
 the witness, and the seeded PRNG of the appendix ({{seeded-prng}}), the
 sumcheck NARG strings are re-proven from the witness, and the functional
-Fiat-Shamir vectors (sponge traces, session ids, codecs) are recomputed
-from their inputs. Records carrying `Expected = reject` MUST be refused;
-each sigma reject names in `BaseId` the accepted vector it mutates, so a
-verifier that rejects everything fails the accept/reject pairing instead
-of passing most of the suite.
+Fiat-Shamir vectors (sponge traces, session ids, codecs, serialization)
+are recomputed from their inputs. Records carrying `Expected = reject`
+MUST be refused; each rejected NARG string, of either draft, names in
+`BaseId` the accepted vector it mutates, so a verifier that rejects
+everything fails the accept/reject pairing instead of passing most of the
+suite.
 
 Batch verification is checked on the claim of the sigma draft's appendix:
 every subset of the valid batchable proofs verifies as a batch, and a
@@ -55,11 +56,20 @@ SUITES = {
 }
 
 # Named fields whose modulus a record may carry; pinned so a vector file
-# cannot silently drift from the group it claims.
-GROUP_MODULI = {
-    "P-256": P256Group().order,
+# cannot silently drift from the field it claims.
+FIELD_MODULI = {
+    "P-256 scalar field": P256Group().order,
     "Mersenne31": sumcheck.P,
 }
+
+# One vector file per section of the Fiat-Shamir Test Vectors appendix.
+FIAT_SHAMIR_STEMS = (
+    "fiat-shamir-duplex-sponge",
+    "fiat-shamir-session-id",
+    "fiat-shamir-codec",
+    "fiat-shamir-serialization",
+    "fiat-shamir-narg",
+)
 
 _checks = 0
 
@@ -123,13 +133,17 @@ def replay_operations(session_id, operations, new_ctx):
 def check_fiat_shamir_record(rec):
     rid = rec["Id"]
     fn = rec["Function"]
-    # A record names its hash suite; the codec records are hash-independent
-    # and any sponge they reach (the sumcheck rejections) must reject under
-    # both instantiations.
-    ctxs = [HASHES[rec["Hash"]]] if "Hash" in rec else list(HASHES.values())
-    if "Group" in rec:
-        check(to_int(rec["Modulus"]) == GROUP_MODULI[rec["Group"]],
-              f"{rid}: Modulus does not match {rec['Group']}")
+    # A record names its suite; the records without one are
+    # suite-independent, and any sponge they reach (the sumcheck rejections)
+    # must reject under both instantiations.
+    ctxs = [HASHES[rec["Suite"]]] if "Suite" in rec else list(HASHES.values())
+    check("Suite" in rec or fn not in ("DuplexSponge", "DeriveSessionID")
+          and "Operations" not in rec
+          and (fn != "Sumcheck" or rec["Expected"] == "reject"),
+          f"{rid}: the outcome depends on the suite")
+    if "Field" in rec:
+        check(to_int(rec["Modulus"]) == FIELD_MODULI[rec["Field"]],
+              f"{rid}: Modulus does not match {rec['Field']}")
 
     if fn == "DuplexSponge":
         out = replay_operations(bytes.fromhex(rec["SessionId"]),
@@ -137,7 +151,7 @@ def check_fiat_shamir_record(rec):
         check(out.hex() == rec["Output"], f"{rid}: sponge output")
     elif fn == "DeriveSessionID":
         sid = derive_session_id(bytes.fromhex(rec["Tag"]), ctxs[0])
-        check(sid.hex() == rec["Output"], f"{rid}: session id")
+        check(sid.hex() == rec["SessionId"], f"{rid}: session id")
     elif fn == "DecodeUint":
         p = to_int(rec["Modulus"])
         if "Operations" in rec:
@@ -147,8 +161,8 @@ def check_fiat_shamir_record(rec):
             buf = out
         else:
             buf = bytes.fromhex(rec["Input"])
-        check(decode_uint(buf, p) == to_int(rec["Challenge"]),
-              f"{rid}: decoded challenge")
+        check(decode_uint(buf, p) == to_int(rec["VerifierMessage"]),
+              f"{rid}: decoded verifier message")
     elif fn == "SerializeVarLenString":
         payload = bytes.fromhex(rec["Input"])
         out = serialize_varlen(payload)
@@ -200,18 +214,19 @@ def check_fiat_shamir_record(rec):
     elif fn == "Sumcheck":
         rounds = rec["NumVariables"]
         claimed = to_int(rec["ClaimedSum"])
-        narg = bytes.fromhex(rec["Narg"])
+        narg = bytes.fromhex(rec["NargString"])
         for new_ctx in ctxs:
             sid = bytes.fromhex(rec["SessionId"])
             if "Tag" in rec:
                 check(derive_session_id(bytes.fromhex(rec["Tag"]),
                                         new_ctx) == sid,
                       f"{rid}: session id")
-            if rec.get("Expected") == "reject":
+            if rec["Expected"] == "reject":
                 ok, _ = sumcheck.verify(sid, rounds, claimed, narg, 0,
                                         new_ctx)
                 check(not ok, f"{rid}: must reject")
                 continue
+            check(rec["Expected"] == "accept", f"{rid}: Expected")
             witness = [to_int(w) for w in rec["Witness"]]
             check(sum(witness) % sumcheck.P == claimed, f"{rid}: claimed sum")
             messages, challenges, final = sumcheck.prove(sid, witness,
@@ -229,6 +244,31 @@ def check_fiat_shamir_record(rec):
             check(not ok, f"{rid}: final evaluation binds (step 10)")
     else:
         check(False, f"{rid}: unknown Function {fn}")
+
+
+def check_fiat_shamir_file(stem, records):
+    """Every record of a section file, plus the `Id` scheme of the appendix
+    and the pairing of each suite's rejected NARG strings with their
+    baseline."""
+    section = stem.removeprefix("fiat-shamir-")
+    accepted = {rec["Id"]: rec for rec in records
+                if rec.get("Expected") == "accept"}
+    for rec in records:
+        rid = rec["Id"]
+        suite = rec["Suite"].lower() + "/" if "Suite" in rec else ""
+        check(rid.startswith(f"fiat-shamir/{section}/{suite}"),
+              f"{rid}: Id components")
+        derived = (rec["Function"] == "Sumcheck"
+                   and rec["Expected"] == "reject" and "Suite" in rec)
+        check(("BaseId" in rec) == derived, f"{rid}: BaseId")
+        if derived:
+            base = accepted.get(rec["BaseId"])
+            check(base is not None, f"{rid}: BaseId names no valid vector")
+            check(all(base[k] == rec[k] for k in ("Suite", "SessionId",
+                                                  "NumVariables",
+                                                  "ClaimedSum")),
+                  f"{rid}: baseline runs a different session")
+        check_fiat_shamir_record(rec)
 
 
 # --- Sigma-protocols vectors ------------------------------------------------
@@ -334,11 +374,7 @@ def check_sigma_batch(suite, valid, invalid):
 
 # The vector files inlined in each draft, in order of appearance.
 DRAFT_APPENDICES = {
-    "draft-irtf-cfrg-fiat-shamir.md": (
-        "fiatShamirCodecVectors",
-        "fiatShamirShake128Vectors",
-        "fiatShamirTurboShake128Vectors",
-    ),
+    "draft-irtf-cfrg-fiat-shamir.md": FIAT_SHAMIR_STEMS,
     "draft-irtf-cfrg-sigma-protocols.md": (
         "sigma-proofs_Shake128_P256",
         "sigma-proofs-invalid_Shake128_P256",
@@ -349,7 +385,7 @@ DRAFT_APPENDICES = {
 
 # Fields rendered as prose around the fenced block (or dropped) rather
 # than as `Key = value` lines inside it.
-PROSE_FIELDS = {"Name", "Title", "Comment", "Group"}
+PROSE_FIELDS = {"Comment", "Field"}
 
 
 def parse_markdown_vectors(path):
@@ -441,11 +477,9 @@ def load(stem):
 
 
 def main():
-    for stem in ("fiatShamirCodecVectors", "fiatShamirShake128Vectors",
-                 "fiatShamirTurboShake128Vectors"):
+    for stem in FIAT_SHAMIR_STEMS:
         before = _checks
-        for rec in load(stem):
-            check_fiat_shamir_record(rec)
+        check_fiat_shamir_file(stem, load(stem))
         print(f"{stem}: {_checks - before} checks")
 
     for suite in SUITES:
