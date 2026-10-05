@@ -1426,8 +1426,6 @@ SessionId =
 This section contains vectors for decoding verifier messages ({{decoding}}).
 The encoding of a prover message is its serialization ({{encoding-bytes}}), covered in {{tv-serialization}}.
 
-### Verifier-message decoding {#tv-decoding}
-
 Decoding is infallible and reduces modulo `M` ({{decoding-uint}}): the `Ns + 16 = 48`-byte little-endian encoding of `M` itself, the order of the P-256 group, decodes to 0. Deserialization instead rejects non-canonical integers ({{tv-serialization-invalid}}).
 
 ~~~
