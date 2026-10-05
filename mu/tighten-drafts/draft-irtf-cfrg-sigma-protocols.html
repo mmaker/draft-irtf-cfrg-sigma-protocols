@@ -1050,7 +1050,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù &amp; Yun</td>
-<td class="center">Expires 7 April 2027</td>
+<td class="center">Expires 8 April 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1063,12 +1063,12 @@ svg {
 <dd class="internet-draft">draft-irtf-cfrg-sigma-protocols-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-10-04" class="published">4 October 2026</time>
+<time datetime="2026-10-05" class="published">5 October 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-04-07">7 April 2027</time></dd>
+<dd class="expires"><time datetime="2027-04-08">8 April 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1123,7 +1123,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 7 April 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 8 April 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -2156,9 +2156,12 @@ sum(
         <h3 id="name-fiat-shamir-transformation">
 <a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-fiat-shamir-transformation" class="section-name selfRef">Fiat-Shamir transformation</a>
         </h3>
-<p id="section-7.2-1">Soundness holds only if the encoded instance contains the entire statement being proven (<a href="#serialize-linear-relations" class="auto internal xref">Section 3.6</a>). Omitting any statement element will compromise knowledge soundness of the resulting non-interactive argument <span>[<a href="#CVE-2022-29566" class="cite xref">CVE-2022-29566</a>]</span>. For example, consider the verifiable-decryption statement <code>M + E1 = x * E0</code>. If encoded with the single image element <code>F = M + E1</code>, then <code>M</code> and <code>E1</code> never enter the instance encoding function, and the resulting NARG string is malleable across statements: it verifies (unchanged) for every pair <code>(M', E1')</code> with <code>M' + E1' = F</code>. An attacker can thus present a NARG string generated for one plaintext-ciphertext pair as valid for a different one. Another example: encoding <code>Y = x * (E0 + E1)</code> with the single element <code>K = E0 + E1</code> as base instead of the two terms <code>x * E0 + x * E1</code> verifies unchanged for every pair <code>(E0', E1')</code> with <code>E0' + E1' = K</code>. Both examples violate <a href="#representation" class="auto internal xref">Section 3.2</a>, yet pass instance validation (<a href="#instance-validation" class="auto internal xref">Section 3.5</a>).<a href="#section-7.2-1" class="pilcrow">¶</a></p>
-<p id="section-7.2-2">The <em>challenge set</em> <code>C</code> is the full scalar field (<a href="#verifier" class="auto internal xref">Section 4.3</a>, <a href="#challenge-derivation" class="auto internal xref">Section 5.2</a>), so <code>1/|C| &lt; 2^-250</code> for the ciphersuites of <a href="#ciphersuites" class="auto internal xref">Section 8</a>. Compositions of Sigma Protocols (out of scope for this document) <strong>MAY</strong> restrict the challenge to a smaller <code>C</code>.<a href="#section-7.2-2" class="pilcrow">¶</a></p>
-<p id="section-7.2-3">Knowledge extraction in the random oracle model requires rewinding the adversary: by the Forking Lemma <span>[<a href="#PointchevalS00" class="cite xref">PointchevalS00</a>]</span>, an adversary that outputs an accepting proof with probability <code>epsilon</code> after <code>q</code> hash queries yields a witness with probability about <code>epsilon^2/q</code>, a quadratic loss. In the algebraic group model (with a random oracle), extraction is instead straight-line (when, for each row of <code>M</code>, finding a non-trivial linear relation among its elements is computationally hard) with total extraction error on the order of <code>q/|C|</code> (Section 9 of <span>[<a href="#Orru24" class="cite xref">Orru24</a>]</span>).<a href="#section-7.2-3" class="pilcrow">¶</a></p>
+<p id="section-7.2-1">Soundness holds only if the encoded instance contains the entire statement being proven (<a href="#serialize-linear-relations" class="auto internal xref">Section 3.6</a>). Omitting any statement element will compromise knowledge soundness of the resulting non-interactive argument <span>[<a href="#CVE-2022-29566" class="cite xref">CVE-2022-29566</a>]</span>.<a href="#section-7.2-1" class="pilcrow">¶</a></p>
+<p id="section-7.2-2">For example, consider the verifiable-decryption statement <code>M + E1 = x * E0</code>. Encoding only the image element <code>F = M + E1</code> omits <code>M</code> and <code>E1</code>. The resulting NARG string verifies unchanged for every pair <code>(M', E1')</code> with <code>M' + E1' = F</code>. An attacker can therefore reuse a proof for a different plaintext-ciphertext pair.<a href="#section-7.2-2" class="pilcrow">¶</a></p>
+<p id="section-7.2-3">Likewise, encoding <code>Y = x * (E0 + E1)</code> with the single base <code>K = E0 + E1</code>, instead of the two terms <code>x * E0 + x * E1</code>, lets the same NARG string verify for every pair <code>(E0', E1')</code> with <code>E0' + E1' = K</code>.<a href="#section-7.2-3" class="pilcrow">¶</a></p>
+<p id="section-7.2-4">Both encodings pass instance validation (<a href="#instance-validation" class="auto internal xref">Section 3.5</a>) but violate <a href="#representation" class="auto internal xref">Section 3.2</a>.<a href="#section-7.2-4" class="pilcrow">¶</a></p>
+<p id="section-7.2-5">The <em>challenge set</em> <code>C</code> is the full scalar field (<a href="#verifier" class="auto internal xref">Section 4.3</a>, <a href="#challenge-derivation" class="auto internal xref">Section 5.2</a>), so <code>1/|C| &lt; 2^-250</code> for the ciphersuites of <a href="#ciphersuites" class="auto internal xref">Section 8</a>. Compositions of Sigma Protocols (out of scope for this document) <strong>MAY</strong> restrict the challenge to a smaller <code>C</code>.<a href="#section-7.2-5" class="pilcrow">¶</a></p>
+<p id="section-7.2-6">Knowledge extraction in the random oracle model requires rewinding the adversary: by the Forking Lemma <span>[<a href="#PointchevalS00" class="cite xref">PointchevalS00</a>]</span>, an adversary that outputs an accepting proof with probability <code>epsilon</code> after <code>q</code> hash queries yields a witness with probability about <code>epsilon^2/q</code>, a quadratic loss. In the algebraic group model (with a random oracle), extraction is instead straight-line (when, for each row of <code>M</code>, finding a non-trivial linear relation among its elements is computationally hard) with total extraction error on the order of <code>q/|C|</code> (Section 9 of <span>[<a href="#Orru24" class="cite xref">Orru24</a>]</span>).<a href="#section-7.2-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="verifier-input-validation">
@@ -2197,10 +2200,12 @@ sum(
         <h3 id="name-constant-time-requirements">
 <a href="#section-7.6" class="section-number selfRef">7.6. </a><a href="#name-constant-time-requirements" class="section-name selfRef">Constant-Time Requirements</a>
         </h3>
-<p id="section-7.6-1">The secret values of this document are the witness, the nonces, and the prover state that carries them. The NARG string is public, and the instance usually is too. All group and field operations whose inputs include secret values <strong>SHOULD</strong> be constant-time in those values, and randomness <strong>SHOULD</strong> be derived with straight-line code, avoiding rejection sampling and other methods whose iteration count depends on the entropy drawn (<a href="#rng-definition" class="auto internal xref">Section 2.2</a>). Implementations <strong>MAY</strong> skip multiplications by coefficient <code>1</code>, or test instance coefficients for zero in variable time.<a href="#section-7.6-1" class="pilcrow">¶</a></p>
-<p id="section-7.6-2">The dominant secret-dependent operation is the multi-scalar multiplication <code>map(instance, nonces)</code> in <code>ProverCommitment</code>, whose scalars are secret and whose bases are public instance elements: it <strong>SHOULD</strong> be constant-time with respect to the scalars, a guarantee group libraries typically offer as an interface separate from their variable-time MSM. The variable-time algorithms of <a href="#efficiency-considerations" class="auto internal xref">Section 6</a> leak scalar bits through window sizes and iteration counts, and partial knowledge of the nonces will compromise the witness <span>[<a href="#HowgraveGrahamS01" class="cite xref">HowgraveGrahamS01</a>]</span> <span>[<a href="#JancarSSS20" class="cite xref">JancarSSS20</a>]</span>.<a href="#section-7.6-2" class="pilcrow">¶</a></p>
-<p id="section-7.6-3">In some applications, such as keyed-verification credentials, constant-time implementations are required for the verifier too: there, the instance itself depends on the issuer's secret key. The secret then enters the verification equation through the group elements rather than the scalars, and an MSM that is constant-time only with respect to the scalars is not sufficient: the point arithmetic must not branch on exceptional cases, and the comparison of the two sides of the verification equation must be constant-time.<a href="#section-7.6-3" class="pilcrow">¶</a></p>
-<p id="section-7.6-4">Implementations that expose the simulator (<a href="#core-interface" class="auto internal xref">Section 4.1</a>) for OR composition should note that which clause is simulated is itself determined by the witness. Real and simulated clauses <strong>SHOULD</strong> follow the same code path, with constant-time selection of the desired transcript.<a href="#section-7.6-4" class="pilcrow">¶</a></p>
+<p id="section-7.6-1">All group and field operations whose inputs include secret values <strong>SHOULD</strong> be constant-time in those values. The secret values are the witness, the nonces, and the prover state that carries them. The NARG string is public, and the instance usually is too.<a href="#section-7.6-1" class="pilcrow">¶</a></p>
+<p id="section-7.6-2">Randomness <strong>SHOULD</strong> be derived with straight-line code, avoiding rejection sampling and other methods whose iteration count depends on the entropy drawn (<a href="#rng-definition" class="auto internal xref">Section 2.2</a>).<a href="#section-7.6-2" class="pilcrow">¶</a></p>
+<p id="section-7.6-3">Implementations <strong>MAY</strong> skip multiplications by coefficient <code>1</code>, or test instance coefficients for zero in variable time.<a href="#section-7.6-3" class="pilcrow">¶</a></p>
+<p id="section-7.6-4">The multi-scalar multiplication <code>map(instance, nonces)</code> in <code>ProverCommitment</code> <strong>SHOULD</strong> be constant-time with respect to its secret scalars. Its bases are public instance elements. Group libraries typically provide a separate interface for this guarantee. The variable-time algorithms of <a href="#efficiency-considerations" class="auto internal xref">Section 6</a> leak scalar bits through window sizes and iteration counts; partial knowledge of the nonces will compromise the witness <span>[<a href="#HowgraveGrahamS01" class="cite xref">HowgraveGrahamS01</a>]</span> <span>[<a href="#JancarSSS20" class="cite xref">JancarSSS20</a>]</span>.<a href="#section-7.6-4" class="pilcrow">¶</a></p>
+<p id="section-7.6-5">Keyed-verification credentials also require constant-time verification because the instance depends on the issuer's secret key. The secret enters the verification equation through the group elements. An MSM that is constant-time only with respect to the scalars is therefore insufficient: point arithmetic must not branch on exceptional cases, and the comparison of the two sides of the verification equation must be constant-time.<a href="#section-7.6-5" class="pilcrow">¶</a></p>
+<p id="section-7.6-6">For OR composition, the witness determines which clause is simulated (<a href="#core-interface" class="auto internal xref">Section 4.1</a>). Real and simulated clauses <strong>SHOULD</strong> follow the same code path, with constant-time selection of the desired transcript.<a href="#section-7.6-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="post-quantum-security-considerations">
