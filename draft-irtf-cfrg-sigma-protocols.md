@@ -972,7 +972,13 @@ Because interactive Sigma Protocols do not have transferable message authenticit
 
 ## Fiat-Shamir transformation {#sigma-ni-security}
 
-Soundness holds only if the encoded instance contains the entire statement being proven ({{serialize-linear-relations}}). Omitting any statement element will compromise knowledge soundness of the resulting non-interactive argument {{CVE-2022-29566}}. For example, consider the verifiable-decryption statement `M + E1 = x * E0`. If encoded with the single image element `F = M + E1`, then `M` and `E1` never enter the instance encoding function, and the resulting NARG string is malleable across statements: it verifies (unchanged) for every pair `(M', E1')` with `M' + E1' = F`. An attacker can thus present a NARG string generated for one plaintext-ciphertext pair as valid for a different one. Another example: encoding `Y = x * (E0 + E1)` with the single element `K = E0 + E1` as base instead of the two terms `x * E0 + x * E1` verifies unchanged for every pair `(E0', E1')` with `E0' + E1' = K`. Both examples violate {{representation}}, yet pass instance validation ({{instance-validation}}).
+Soundness holds only if the encoded instance contains the entire statement being proven ({{serialize-linear-relations}}). Omitting any statement element will compromise knowledge soundness of the resulting non-interactive argument {{CVE-2022-29566}}.
+
+For example, consider the verifiable-decryption statement `M + E1 = x * E0`. Encoding only the image element `F = M + E1` omits `M` and `E1`. The resulting NARG string verifies unchanged for every pair `(M', E1')` with `M' + E1' = F`. An attacker can therefore reuse a proof for a different plaintext-ciphertext pair.
+
+Likewise, encoding `Y = x * (E0 + E1)` with the single base `K = E0 + E1`, instead of the two terms `x * E0 + x * E1`, lets the same NARG string verify for every pair `(E0', E1')` with `E0' + E1' = K`.
+
+Both encodings pass instance validation ({{instance-validation}}) but violate {{representation}}.
 
 The *challenge set* `C` is the full scalar field ({{verifier}}, {{challenge-derivation}}), so `1/|C| < 2^-250` for the ciphersuites of {{ciphersuites}}. Compositions of Sigma Protocols (out of scope for this document) **MAY** restrict the challenge to a smaller `C`.
 
@@ -1006,13 +1012,17 @@ Implementations **SHOULD** securely delete prover state as soon as it is no long
 
 ## Constant-Time Requirements {#constant-time}
 
-The secret values of this document are the witness, the nonces, and the prover state that carries them. The NARG string is public, and the instance usually is too. All group and field operations whose inputs include secret values **SHOULD** be constant-time in those values, and randomness **SHOULD** be derived with straight-line code, avoiding rejection sampling and other methods whose iteration count depends on the entropy drawn ({{rng-definition}}). Implementations **MAY** skip multiplications by coefficient `1`, or test instance coefficients for zero in variable time.
+All group and field operations whose inputs include secret values **SHOULD** be constant-time in those values. The secret values are the witness, the nonces, and the prover state that carries them. The NARG string is public, and the instance usually is too.
 
-The dominant secret-dependent operation is the multi-scalar multiplication `map(instance, nonces)` in `ProverCommitment`, whose scalars are secret and whose bases are public instance elements: it **SHOULD** be constant-time with respect to the scalars, a guarantee group libraries typically offer as an interface separate from their variable-time MSM. The variable-time algorithms of {{efficiency-considerations}} leak scalar bits through window sizes and iteration counts, and partial knowledge of the nonces will compromise the witness {{HowgraveGrahamS01}} {{JancarSSS20}}.
+Randomness **SHOULD** be derived with straight-line code, avoiding rejection sampling and other methods whose iteration count depends on the entropy drawn ({{rng-definition}}).
 
-In some applications, such as keyed-verification credentials, constant-time implementations are required for the verifier too: there, the instance itself depends on the issuer's secret key. The secret then enters the verification equation through the group elements rather than the scalars, and an MSM that is constant-time only with respect to the scalars is not sufficient: the point arithmetic must not branch on exceptional cases, and the comparison of the two sides of the verification equation must be constant-time.
+Implementations **MAY** skip multiplications by coefficient `1`, or test instance coefficients for zero in variable time.
 
-Implementations that expose the simulator ({{core-interface}}) for OR composition should note that which clause is simulated is itself determined by the witness. Real and simulated clauses **SHOULD** follow the same code path, with constant-time selection of the desired transcript.
+The multi-scalar multiplication `map(instance, nonces)` in `ProverCommitment` **SHOULD** be constant-time with respect to its secret scalars. Its bases are public instance elements. Group libraries typically provide a separate interface for this guarantee. The variable-time algorithms of {{efficiency-considerations}} leak scalar bits through window sizes and iteration counts; partial knowledge of the nonces will compromise the witness {{HowgraveGrahamS01}} {{JancarSSS20}}.
+
+Keyed-verification credentials also require constant-time verification because the instance depends on the issuer's secret key. The secret enters the verification equation through the group elements. An MSM that is constant-time only with respect to the scalars is therefore insufficient: point arithmetic must not branch on exceptional cases, and the comparison of the two sides of the verification equation must be constant-time.
+
+For OR composition, the witness determines which clause is simulated ({{core-interface}}). Real and simulated clauses **SHOULD** follow the same code path, with constant-time selection of the desired transcript.
 
 ## Post-Quantum Considerations {#post-quantum-security-considerations}
 
