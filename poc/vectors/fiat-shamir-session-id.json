@@ -1,0 +1,18 @@
+[
+  {
+    "Id": "fiat-shamir/session-id/shake128/derive_sid",
+    "Function": "DeriveSessionID",
+    "Suite": "SHAKE128",
+    "Tag": "696e7465726f702d746573742d763030",
+    "SessionId": "b508aca89eecac56cd33e4a28f817f43f849d035922f354173ae8466628308cf",
+    "Comment": "Derive the session identifier of the application tag `interop-test-v00` ({{session-id}})."
+  },
+  {
+    "Id": "fiat-shamir/session-id/turboshake128/derive_sid",
+    "Function": "DeriveSessionID",
+    "Suite": "TurboSHAKE128",
+    "Tag": "696e7465726f702d746573742d763030",
+    "SessionId": "4326208c9e56ae847be9356ca7c4447c752a9d7326a44a6cbee0c0dfc69505ac",
+    "Comment": "Derive the session identifier of the application tag `interop-test-v00` ({{session-id}})."
+  }
+]

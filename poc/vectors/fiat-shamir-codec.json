@@ -1,0 +1,53 @@
+[
+  {
+    "Id": "fiat-shamir/codec/decode_uint_wraparound",
+    "Function": "DecodeUint",
+    "Field": "P-256 scalar field",
+    "Modulus": "0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551",
+    "Input": "512563fcc2cab9f3849e17a7adfae6bcffffffffffffffff00000000ffffffff00000000000000000000000000000000",
+    "VerifierMessage": "0x00",
+    "Comment": "Decoding is infallible and reduces modulo `M` ({{decoding-uint}}): the `Ns + 16 = 48`-byte little-endian encoding of `M` itself, the order of the P-256 group, decodes to 0. Deserialization instead rejects non-canonical integers ({{tv-serialization-invalid}})."
+  },
+  {
+    "Id": "fiat-shamir/codec/shake128/decode_uint",
+    "Function": "DecodeUint",
+    "Suite": "SHAKE128",
+    "Field": "P-256 scalar field",
+    "Modulus": "0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "08000000696e7374616e6365"
+      },
+      {
+        "type": "squeeze",
+        "length": 48
+      }
+    ],
+    "Output": "7124d02b7cdfec99c4033dfd05624cfe2ff3af2c0e71656f770e676bd36de6228f85fcb39f34f7bfc24c9f54ab35ddba",
+    "VerifierMessage": "0xf860997c65f8dabecbcc3459a7b89bf69301b19fa1a0e036eb0d132724436d4f",
+    "Comment": "Absorb the instance `instance`, serialized as a variable-length byte string, then squeeze `Ns + 16 = 48` bytes and decode them into a scalar of P-256 ({{decoding-uint}})."
+  },
+  {
+    "Id": "fiat-shamir/codec/turboshake128/decode_uint",
+    "Function": "DecodeUint",
+    "Suite": "TurboSHAKE128",
+    "Field": "P-256 scalar field",
+    "Modulus": "0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551",
+    "SessionId": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "Operations": [
+      {
+        "type": "absorb",
+        "data": "08000000696e7374616e6365"
+      },
+      {
+        "type": "squeeze",
+        "length": 48
+      }
+    ],
+    "Output": "82a031e31b103ac01253ba3aae215f650a06a4bb24963a05ee1f8c0b82eae90d7bd36ea8cb560a91604ae8a97eb0d564",
+    "VerifierMessage": "0xc2088b455016d0126fcdd76335a79566e7fd8379db1de019871d459bfee9558b",
+    "Comment": "Absorb the instance `instance`, serialized as a variable-length byte string, then squeeze `Ns + 16 = 48` bytes and decode them into a scalar of P-256 ({{decoding-uint}})."
+  }
+]
