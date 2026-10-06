@@ -333,7 +333,7 @@ For an NP language, the instance is a word, the witness is a proof of its member
 
 The **NARG string** (non-interactive argument string) is the serialized output of the non-interactive prover.
 
-The notation in this document is for an interactive argument with `k` rounds in which the prover moves first (that is, sends the first message) and the verifier moves last. Other types of interactions can be expressed in the same notation by setting the unused messages to the empty string: a protocol whose verifier moves first (such as a batch argument) sets its first prover message to `""`, and one whose prover moves last (such as a sigma protocol) sets its final verifier message to `""`. Prover and verifier round messages `2`, ..., `k-1` **MUST** be non-empty.
+The notation in this document is for an interactive argument with `k` rounds in which the prover moves first (that is, sends the first message) and the verifier moves last. Other types of interactions can be expressed in the same notation by setting the unused messages to the empty string. Set the first prover message, or the final verifier message to the empty string when the protocol omits that message. Prover and verifier round messages `2`, ..., `k-1` **MUST** be non-empty.
 
 ## Codec and serialization
 
