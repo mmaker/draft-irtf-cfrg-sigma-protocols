@@ -75,7 +75,7 @@ Table of Contents
      2.1.  Bytes and integers
      2.2.  Duplex sponge interface
      2.3.  Proof systems terminology
-   3.  Codec and serialization requirements
+   3.  Codec and serialization
      3.1.  Encoding
      3.2.  Decoding
      3.3.  Serialization and deserialization
@@ -403,7 +403,7 @@ Table of Contents
    or final verifier message to "" when the protocol omits that message.
    All messages in rounds 2, ..., k-1 *MUST* be non-empty.
 
-3.  Codec and serialization requirements
+3.  Codec and serialization
 
    A prover message is processed in two independent ways: it is absorbed
    into the hash function to derive the verifier messages, and it is
@@ -450,9 +450,8 @@ Table of Contents
        of the encoding of another.
 
    2.  They have an efficiently computable left inverse, which the
-       knowledge extractor uses (Section 8.1).  For the serialization-
-       based encodings of this document, deserialization is that
-       inverse.
+       knowledge extractor uses (Section 8.1).  For the encodings of
+       this document, deserialization is that inverse.
 
 3.2.  Decoding
 
@@ -475,6 +474,14 @@ Table of Contents
    Decoding maps *SHOULD* be amenable to straight-line implementations.
    In particular, rejection sampling *SHOULD NOT* be used (see
    Section 8.2).
+
+   Decoding fixed-length byte strings is the identity; see
+   Appendix A.1.1 for the detailed requirements.
+
+   Decoding an integer modulo M uses Ns + 16 squeezed bytes, interpreted
+   as a little-endian non-negative integer and reduced modulo M.  See
+   Appendix A.1 for the normative decoding requirements for common
+   types.
 
 3.3.  Serialization and deserialization
 
@@ -499,6 +506,11 @@ Table of Contents
    5.  If any trailing bytes remain in the input after deserializing the
        last prover message, verification fails; otherwise, proofs are
        malleable.
+
+   Serialization of fixed-length byte strings is the identity;
+   serialization of an integer modulo M writes its canonical
+   representative as an Ns-byte little-endian string.  See Appendix A.2
+   for the normative serialization requirements for common types.
 
 4.  Duplex sponge
 
@@ -1140,8 +1152,7 @@ Informative References
 Appendix A.  Codecs and serialization
 
    This appendix specifies the normative decoding, serialization, and
-   deserialization functions for common types.  They satisfy the
-   requirements of Section 3.
+   deserialization functions for common types.
 
 A.1.  Decoding
 
@@ -1183,9 +1194,7 @@ A.1.2.  Unsigned integers
 
    The 16 extra bytes bound the statistical distance between the reduced
    value and the uniform distribution over [0, M) to 2^-128.  More
-   generally, sampling n extra bytes bounds the bias to 2^-8n.  An
-   instantiation targeting a security level of lambda bits *SHOULD*
-   squeeze lambda/8 extra bytes.
+   generally, sampling n extra bytes has bias at most 2^-8n.
 
    In three cases this approach is inefficient:
 
@@ -1201,10 +1210,8 @@ A.1.2.  Unsigned integers
       challenges does not require such a big modular reduction.
 
    In such cases, applications *MAY* use an alternative decoding
-   function that meets the requirements of Section 3.2.
-
-   A similar observation in the context of hashing to a finite field is
-   available in Section 5 of [RFC9380].
+   function that meets the requirements of Section 3.2.  See Section 5
+   of [RFC9380].
 
 A.1.3.  Field elements
 
@@ -1457,10 +1464,6 @@ A.3.4.  Field elements
 
    This consumes m * Ns bytes of the NARG string, and fails if fewer
    bytes remain or if any coordinate is non-canonical.
-
-   The deserialization *MUST* match the pinned serialization
-   (Appendix A.2.4): where the application pins a standard's own
-   serialization, that standard's deserialization governs.
 
 A.3.5.  Elliptic-curve group elements
 

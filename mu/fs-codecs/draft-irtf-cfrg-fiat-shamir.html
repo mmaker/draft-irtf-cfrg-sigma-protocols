@@ -1160,7 +1160,7 @@ svg {
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
-            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-codec-and-serialization-req" class="internal xref">Codec and serialization requirements</a></p>
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-codec-and-serialization" class="internal xref">Codec and serialization</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
                 <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-encoding" class="internal xref">Encoding</a></p>
@@ -1812,8 +1812,8 @@ svg {
 </div>
 <div id="codecs">
 <section id="section-3">
-      <h2 id="name-codec-and-serialization-req">
-<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-codec-and-serialization-req" class="section-name selfRef">Codec and serialization requirements</a>
+      <h2 id="name-codec-and-serialization">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-codec-and-serialization" class="section-name selfRef">Codec and serialization</a>
       </h2>
 <p id="section-3-1">A prover message is processed in two independent ways: it is absorbed into the hash function to derive the verifier messages, and it is written into the NARG string sent to the verifier. This document keeps the two separate.<a href="#section-3-1" class="pilcrow">¶</a></p>
 <p id="section-3-2">A <strong>codec</strong> is the pair of maps between messages and the hash function's alphabet (bytes, in this document):<a href="#section-3-2" class="pilcrow">¶</a></p>
@@ -1847,7 +1847,7 @@ svg {
             <p id="section-3.1-2.1.1">They are prefix-free: the encoding of one value is never a prefix of the encoding of another.<a href="#section-3.1-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-3.1-2.2">
-            <p id="section-3.1-2.2.1">They have an efficiently computable left inverse, which the knowledge extractor uses (<a href="#sec-codecs" class="auto internal xref">Section 8.1</a>). For the serialization-based encodings of this document, deserialization is that inverse.<a href="#section-3.1-2.2.1" class="pilcrow">¶</a></p>
+            <p id="section-3.1-2.2.1">They have an efficiently computable left inverse, which the knowledge extractor uses (<a href="#sec-codecs" class="auto internal xref">Section 8.1</a>). For the encodings of this document, deserialization is that inverse.<a href="#section-3.1-2.2.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
 </section>
@@ -1867,6 +1867,8 @@ svg {
 </li>
         </ol>
 <p id="section-3.2-3">Decoding maps <strong>SHOULD</strong> be amenable to straight-line implementations. In particular, rejection sampling <strong>SHOULD NOT</strong> be used (see <a href="#constant-time" class="auto internal xref">Section 8.2</a>).<a href="#section-3.2-3" class="pilcrow">¶</a></p>
+<p id="section-3.2-4">Decoding fixed-length byte strings is the identity; see <a href="#decoding-bytes" class="auto internal xref">Appendix A.1.1</a> for the detailed requirements.<a href="#section-3.2-4" class="pilcrow">¶</a></p>
+<p id="section-3.2-5">Decoding an integer modulo <code>M</code> uses <code>Ns + 16</code> squeezed bytes, interpreted as a little-endian non-negative integer and reduced modulo <code>M</code>. See <a href="#type-decoding" class="auto internal xref">Appendix A.1</a> for the normative decoding requirements for common types.<a href="#section-3.2-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="serialization">
@@ -1892,6 +1894,7 @@ svg {
             <p id="section-3.3-2.5.1">If any trailing bytes remain in the input after deserializing the last prover message, verification fails; otherwise, proofs are malleable.<a href="#section-3.3-2.5.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
+<p id="section-3.3-3">Serialization of fixed-length byte strings is the identity; serialization of an integer modulo <code>M</code> writes its canonical representative as an <code>Ns</code>-byte little-endian string. See <a href="#type-serialization" class="auto internal xref">Appendix A.2</a> for the normative serialization requirements for common types.<a href="#section-3.3-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2459,13 +2462,13 @@ enc(G) || enc(H) || enc(C) || enc(D)
       <h2 id="name-codecs-and-serialization">
 <a href="#appendix-A" class="section-number selfRef">Appendix A. </a><a href="#name-codecs-and-serialization" class="section-name selfRef">Codecs and serialization</a>
       </h2>
-<p id="appendix-A-1">This appendix specifies the normative decoding, serialization, and deserialization functions for common types. They satisfy the requirements of <a href="#codecs" class="auto internal xref">Section 3</a>.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
+<p id="appendix-A-1">This appendix specifies the normative decoding, serialization, and deserialization functions for common types.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
 <div id="type-decoding">
 <section id="appendix-A.1">
         <h3 id="name-decoding-2">
 <a href="#appendix-A.1" class="section-number selfRef">A.1. </a><a href="#name-decoding-2" class="section-name selfRef">Decoding</a>
         </h3>
-<div id="byte-strings">
+<div id="decoding-bytes">
 <section id="appendix-A.1.1">
           <h4 id="name-byte-strings">
 <a href="#appendix-A.1.1" class="section-number selfRef">A.1.1. </a><a href="#name-byte-strings" class="section-name selfRef">Byte strings</a>
@@ -2510,7 +2513,7 @@ Output: out, an integer in the range [0, M)
 </pre><a href="#appendix-A.1.2-2" class="pilcrow">¶</a>
 </div>
 <p id="appendix-A.1.2-3">Decoding always interprets bytes in little-endian order via <code>LE2IP</code>.<a href="#appendix-A.1.2-3" class="pilcrow">¶</a></p>
-<p id="appendix-A.1.2-4">The 16 extra bytes bound the statistical distance between the reduced value and the uniform distribution over <code>[0, M)</code> to <code>2^-128</code>. More generally, sampling <code>n</code> extra bytes bounds the bias to <code>2^-8n</code>. An instantiation targeting a security level of <code>lambda</code> bits <strong>SHOULD</strong> squeeze <code>lambda/8</code> extra bytes.<a href="#appendix-A.1.2-4" class="pilcrow">¶</a></p>
+<p id="appendix-A.1.2-4">The 16 extra bytes bound the statistical distance between the reduced value and the uniform distribution over <code>[0, M)</code> to <code>2^-128</code>. More generally, sampling <code>n</code> extra bytes has bias at most <code>2^-8n</code>.<a href="#appendix-A.1.2-4" class="pilcrow">¶</a></p>
 <p id="appendix-A.1.2-5">In three cases this approach is inefficient:<a href="#appendix-A.1.2-5" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="appendix-A.1.2-6.1">
@@ -2523,8 +2526,7 @@ Output: out, an integer in the range [0, M)
               <p id="appendix-A.1.2-6.3.1">if the soundness error of the interactive argument is much smaller than the bias introduced, for example a protocol with 30-bit challenges does not require such a big modular reduction.<a href="#appendix-A.1.2-6.3.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
-<p id="appendix-A.1.2-7">In such cases, applications <strong>MAY</strong> use an alternative decoding function that meets the requirements of <a href="#decoding" class="auto internal xref">Section 3.2</a>.<a href="#appendix-A.1.2-7" class="pilcrow">¶</a></p>
-<p id="appendix-A.1.2-8">A similar observation in the context of hashing to a finite field is available in <span><a href="https://rfc-editor.org/rfc/rfc9380#section-5" class="relref">Section 5</a> of [<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>.<a href="#appendix-A.1.2-8" class="pilcrow">¶</a></p>
+<p id="appendix-A.1.2-7">In such cases, applications <strong>MAY</strong> use an alternative decoding function that meets the requirements of <a href="#decoding" class="auto internal xref">Section 3.2</a>. See <span><a href="https://rfc-editor.org/rfc/rfc9380#section-5" class="relref">Section 5</a> of [<a href="#RFC9380" class="cite xref">RFC9380</a>]</span>.<a href="#appendix-A.1.2-7" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="decoding-field">
@@ -2776,7 +2778,6 @@ Output: a, an element of the field of order p^m, given by its
 </pre><a href="#appendix-A.3.4-2" class="pilcrow">¶</a>
 </div>
 <p id="appendix-A.3.4-3">This consumes <code>m * Ns</code> bytes of the NARG string, and fails if fewer bytes remain or if any coordinate is non-canonical.<a href="#appendix-A.3.4-3" class="pilcrow">¶</a></p>
-<p id="appendix-A.3.4-4">The deserialization <strong>MUST</strong> match the pinned serialization (<a href="#serialize-field" class="auto internal xref">Appendix A.2.4</a>): where the application pins a standard's own serialization, that standard's deserialization governs.<a href="#appendix-A.3.4-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="elliptic-curve-group-elements">
