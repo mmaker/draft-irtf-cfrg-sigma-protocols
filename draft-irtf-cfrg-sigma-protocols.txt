@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 5 April 2027                                        Apple, Inc.
-                                                          2 October 2026
+Expires: 9 April 2027                                        Apple, Inc.
+                                                          6 October 2026
 
 
                    Sigma Proofs for Linear Relations
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 5 April 2027.
+   This Internet-Draft will expire on 9 April 2027.
 
 Copyright Notice
 
@@ -238,6 +238,17 @@ Table of Contents
    element of the scalar field, similarly to RandomScalar() of
    Section 2.1 of [RFC9497].
 
+   Sampling a random scalar takes two steps: obtaining high-quality
+   entropy via a CSPRNG (e.g., getrandom(); see [RFC4086] for randomness
+   requirements), and reducing the resulting bytes to a scalar.  It is
+   *RECOMMENDED* that the latter be done via DecodeField as in
+   [fiat-shamir].  Different sampling mechanisms, such as the wide
+   reduction of hash_to_field (Section 5.2 of [RFC9380]) and the integer
+   conversion of Appendix A.4.1 of [FIPS186-5] do not affect
+   interoperability of proofs.  The "discard method" of Appendix A.4.2
+   of [FIPS186-5] is rejection sampling, which Section 7.6 advises
+   against.
+
 2.3.  Group abstraction
 
    Elliptic curves are presented using additive notation.
@@ -277,16 +288,6 @@ Table of Contents
    deserialization *MUST* fail on non-canonical encodings.  Arithmetic
    operations reduce their results modulo p.
 
-   Sampling a random scalar takes two steps: obtaining high-quality
-   entropy via a CSPRNG (e.g., getrandom(); see [RFC4086] for randomness
-   requirements), and reducing the resulting bytes to a scalar.  It is
-   *RECOMMENDED* that the latter be done via DecodeField as in
-   [fiat-shamir].  Different sampling mechanisms, such as the wide
-   reduction of hash_to_field (Section 5.2 of [RFC9380]) and the integer
-   conversion of Appendix A.4.1 of [FIPS186-5] do not affect
-   interoperability of proofs.  The "discard method" of Appendix A.4.2
-   of [FIPS186-5] *SHOULD NOT* be used Section 7.6.
-
 3.  Linear relations
 
    This section specifies the statement being proven: the preimage of a
@@ -313,10 +314,10 @@ Table of Contents
    num_equations is the number of group elements in image (the height of
    M).
 
-   As an example, Schnorr's identification protocol has num_scalars =
-   num_equations = 1 and M = [[G]], where G is the group generator,
-   proving knowledge of the scalar x such that the group element X
-   satisfies X = x * G [RFC8235].
+   As an example, Schnorr's identification protocol [Schnorr91] has
+   num_scalars = num_equations = 1 and M = [[G]], where G is the group
+   generator, proving knowledge of the scalar x such that the group
+   element X satisfies X = x * G [RFC8235].
 
    Another example is the Chaum-Pedersen relation [ChaumP92]: given the
    group generator G and group elements H, X, Y, the prover shows
@@ -327,21 +328,16 @@ Table of Contents
         [H]]
 
    Variants of the Chaum-Pedersen relation are widely used for VRFs
-   [RFC9381] and anonymous tokens [RFC9497].  Proofs of knowledge of the
-   opening (m, r) of a Pedersen commitment [Pedersen91] C = m * G + r *
-   H are Okamoto-Schnorr proofs [Okamoto92].
+   [RFC9381] and anonymous tokens [RFC9497].
 
    Affine equations with constant terms can be expressed directly
    through image terms and coefficients (Section 3.2).  More elaborate
    relations, such as quadratic equations, reduce to this same form by
    letting instance elements themselves serve as bases (Section 3.4).
 
-   The group Group, and its generator, are provided by the ciphersuite
-   Section 8.  The statement author has the responsibility to select the
-   appropriate M, and this requires care.  Computationally-independent
-   bases, sometimes also called _auxiliary generators_, or _nothing up
-   my sleeve (NUMS) generators_, may be computed via hash to the curve
-   (Section 3 of [RFC9380]).
+   Computationally-independent bases, sometimes also called _auxiliary
+   generators_, or _nothing up my sleeve (NUMS) generators_, may be
+   computed via hash to the curve (Section 3 of [RFC9380]).
 
 3.2.  Representation
 
@@ -352,11 +348,10 @@ Table of Contents
 
    A LinearRelation is the instance for the Sigma Protocol.  It fixes
    the linear map M and the image, that is, the instance (M, image) of
-   the relation R (Section 3.1).  There might be multiple witnesses for
-   the same (M, image), or no valid witness.  The word _relation_ is
-   used here in the linear-algebra sense: a system of linear equations
-   among group elements.  A LinearRelation is held and evaluated by both
-   prover and verifier (Section 3.3).
+   the relation R (Section 3.1).  The word _relation_ is used here in
+   the linear-algebra sense: a system of linear equations among group
+   elements.  A LinearRelation is held and evaluated by both prover and
+   verifier (Section 3.3).
 
    class LinearRelation:
      elements: list[Group]
@@ -374,10 +369,9 @@ Table of Contents
      if element_index == 1: return Group.generator()
      return instance.elements[element_index - 2]
 
-   A LinearRelation holds a list of group elements and a list of
-   equations.  The identity and generator have implicit element indices
-   0 and 1, respectively; elements[i] has element index i + 2.  Each row
-   of M is called an Equation, and consists of two lists of terms.
+   The identity and generator have implicit element indices 0 and 1.
+   Each row of M is called an Equation, and consists of two lists of
+   terms.
 
    The image terms (the left-hand side) are pairs (element_index,
    coeff).  The image is the sum of coeff * element(instance,
@@ -409,7 +403,6 @@ Table of Contents
    element may appear multiple times in the same equation, even with the
    same coefficient and scalar.
 
-   Every group element index *MUST* have an associated group element.
    Every element in instance.elements *MUST* appear in the terms or
    image terms of at least one equation.  The identity (index 0) and
    generator (index 1) are available in every instance whether or not an
@@ -493,8 +486,8 @@ Table of Contents
    rules apply: 2 * r * (X1 - X2) denotes 2 * r * X1 - 2 * r * X2.
 
    As an example with two witness scalars in a single equation, the
-   Okamoto-Schnorr proof proves knowledge of the opening of a Pedersen
-   commitment [Pedersen91]:
+   Okamoto-Schnorr proof [Okamoto92] proves knowledge of the opening of
+   a Pedersen commitment [Pedersen91]:
 
    Relation PedersenOpening(H, C):
      Witness: m, r
@@ -610,21 +603,18 @@ Table of Contents
 
    The prover *SHOULD* reject an invalid instance, and *MAY*
    additionally check that image == map(instance, witness) before
-   proving; Section 7.5 and Section 7.4 state when this check, or a
-   stronger precaution, is required.  The verifier *MUST* fail on an
-   invalid instance (Section 4.3, Section 5), either when the instance
-   is constructed or during verification itself.
+   proving.  When parts of the instance come from another party, see
+   Section 7.4 and Section 7.5.  The verifier *MUST* fail on an invalid
+   instance (Section 4.3, Section 5), either when the instance is
+   constructed or during verification itself.
 
    These checks admit identity images and columns, including M * x = Y
    with M = 0 and Y = 0, or with M != 0 and Y = 0.
 
    ValidateInstance(instance) denotes the function returning true if all
-   above predicates are met.  Instance validation won't flag all
-   violations of Section 3.2 (for instance, a registered element
-   obtained as a precomputed linear combination from one obtained
-   independently) because the instance generation can't know how a group
-   element is obtained.  A structurally valid instance may still yield
-   an unsound argument.
+   above predicates are met.  Instance validation cannot tell how a
+   group element was obtained, and so does not detect violations of
+   Section 3.2 (Section 7.2).
 
 3.6.  Serialization
 
@@ -722,9 +712,6 @@ Table of Contents
    state will compromise soundness and zero-knowledge.
 
 4.2.  Prover
-
-   The prover of a Sigma Protocol is stateful and will send two
-   messages, described below.
 
 4.2.1.  Prover commitment
 
@@ -826,8 +813,6 @@ Table of Contents
    honest one.  This is the honest-verifier zero-knowledge property
    (Section 7).
 
-   The simulator is also used by the compact verifier (Section 5).
-
 5.  Non-interactive Sigma Protocols
 
    The Fiat-Shamir transformation applied to Sigma Protocols yields a
@@ -849,12 +834,12 @@ Table of Contents
 
    The tag is a byte string following the security requirements on the
    session identifier in [fiat-shamir].  It *MUST* contain, verbatim,
-   the _flavor_ (DSFS for batchable NARG strings, CMPT for compact NARG
-   strings), and the ciphersuite identifier (Section 8).  Following the
-   domain-separation conventions of Section 3.1 of [RFC9380], an
-   application concatenates its own name, version, and epoch with these
-   two components.  As an example, a reasonable choice of tag for a
-   fictional application named Foo is:
+   the _flavor_ marker, DSFS (duplex sponge Fiat-Shamir) for batchable
+   NARG strings or CMPT for compact NARG strings, and the ciphersuite
+   identifier (Section 8).  Following the domain-separation conventions
+   of Section 3.1 of [RFC9380], an application concatenates its own
+   name, version, and epoch with these two components.  As an example, a
+   reasonable choice of tag for a fictional application named Foo is:
 
    FOO-V{xx}-{tttt}-{flavor}-with-{ciphersuiteID}
 
@@ -864,9 +849,6 @@ Table of Contents
    Section 8.  For instance, for batchable NARG strings:
 
    FOO-V01-0001-DSFS-with-sigma-proofs_Shake128_P256
-
-   The corresponding tag for compact NARG strings replaces the flavor
-   marker DSFS (duplex sponge Fiat-Shamir) with CMPT.
 
    The prover and the verifier each construct the tag (or session
    identifier).  Neither should accept a session identifier supplied by
@@ -899,10 +881,8 @@ Table of Contents
    5. return DecodeField(duplex_sponge.Squeeze(Ns + 16), p, 1)
 
    DS, DeriveSessionID, and DecodeField are defined in [fiat-shamir]; Ns
-   + 16 is the input length DecodeField requires over a prime field, and
-   the choices of DecodeField for the ciphersuites of this document are
-   discussed in Section 8.  The challenge is drawn from the full scalar
-   field (Section 7.2).
+   + 16 is the input length DecodeField requires over a prime field
+   (Section 8).
 
 5.3.  Non-interactive argument string serialization
 
@@ -957,8 +937,7 @@ Table of Contents
 5.5.  Compact NARG strings
 
    A *compact* NARG string serializes serialize(challenge) ||
-   serialize(response).  The Sigma Protocol transcript is recovered by
-   invoking the simulator.
+   serialize(response).
 
 ProveCompact(tag, instance, witness, rng)
 
@@ -980,9 +959,9 @@ Procedure:
 5. return Scalar.serialize([challenge]) || Scalar.serialize(response)
 
    The verifier recomputes the commitment from the challenge and
-   response via SimulateCommitment (Section 4.4), then recomputes the
-   challenge from that commitment and accepts only if it matches the one
-   in the NARG string.
+   response via SimulateCommitment (Section 4.4), which always returns
+   an accepting transcript, then recomputes the challenge from that
+   commitment and accepts only if it matches the one in the NARG string.
 
    VerifyCompact(tag, instance, narg_string)
 
@@ -1006,9 +985,6 @@ Procedure:
         Group.serialize(commitment))
    8. return challenge == expected_challenge
 
-   Since the simulator always outputs accepting transcripts, there is no
-   need to run Verifier in this case.
-
 5.6.  Batch verification
 
    Verification of multiple batchable NARG strings *MAY* be done more
@@ -1018,11 +994,9 @@ Procedure:
    few equations.  Batch verification is a local verifier-side
    optimization, which affects neither the prover nor the NARG string.
 
-   Batch verification is done by re-computing the verifier challenge of
-   each NARG string individually (Section 5.2), and then checking a
-   single random linear combination of the verification equations of the
-   whole batch.  See Section 8.2 of [RFC8032], [BDLSY11], and
-   [BellareGR98].
+   Batch verification checks a single random linear combination of the
+   verification equations of the whole batch.  See Section 8.2 of
+   [RFC8032], [BDLSY11], and [BellareGR98].
 
    The verification equation for Nt transcripts (commitment, challenge,
    response) of preimages of linear relations is:
@@ -1043,11 +1017,10 @@ Procedure:
      for j in 0, ..., num_equations(instances[i]) - 1
    ) == Group.identity()
 
-   Similarly to batch verification of Ed25519 signatures [BDLSY11], a
-   false NARG string will be accepted with probability at most 2^-128,
-   which is negligible.  In general, for batching_randomness elements
-   drawn uniformly from a set of 2^t scalars, a false NARG string will
-   be accepted with probability at most 2^-t.
+   For batching_randomness elements drawn uniformly from a set of 2^t
+   scalars, a false NARG string is accepted with probability at most 2^-
+   t, as in batch verification of Ed25519 signatures [BDLSY11]; below, t
+   = 128.
 
    It is *RECOMMENDED* that the batching randomness be generated
    deterministically, with the duplex sponge of [fiat-shamir] as
@@ -1103,16 +1076,13 @@ Procedure:
    verifier.
 
    The batching randomness elements *MAY* be replaced by the successive
-   powers 1, mu, mu^2, ... of a single uniformly random scalar mu,
-   assigned in row-major order (transcripts, then equations) to the
-   pairs (i, j) and computed in the scalar field.  In this case, step 7
-   squeezes 16 bytes instead of 16 * K, where K =
-   sum(num_equations(instances[i]) for i in 0, ..., Nt - 1) is the total
-   number of batched equations, and mu is the little-endian integer they
-   encode, read via LE2IP (Section 2.1), uniformly distributed in [0,
-   2^128).  In this case, an invalid batch is accepted with probability
-   at most (K - 1)/2^128, rather than the 2^-128 achieved by independent
-   sampling.
+   powers 1, mu, mu^2, ... of a single random scalar mu, assigned in
+   row-major order (transcripts, then equations) to the pairs (i, j) and
+   computed in the scalar field.  Step 7 then squeezes 16 bytes instead
+   of 16 * K, where K = sum(num_equations(instances[i]) for i in 0, ...,
+   Nt - 1) is the total number of batched equations, and mu is their
+   LE2IP value.  An invalid batch is then accepted with probability at
+   most (K - 1)/2^128, rather than 2^-128.
 
 6.  Efficiency Considerations
 
@@ -1162,7 +1132,8 @@ Procedure:
    and what additional care the non-interactive setting requires.  In
    either setting, every guarantee is relative to the instance:
    Section 7.4 collects the obligations on how prover and verifier
-   construct it and agree on it.
+   construct it and agree on it.  The security considerations of
+   [fiat-shamir] apply throughout.
 
 7.1.  Interactive security properties
 
@@ -1187,33 +1158,28 @@ Procedure:
 
 7.2.  Fiat-Shamir transformation
 
-   The security considerations of [fiat-shamir] apply here as well.
-
    Soundness holds only if the encoded instance contains the entire
    statement being proven (Section 3.6).  Omitting any statement element
    will compromise knowledge soundness of the resulting non-interactive
-   argument [CVE-2022-29566].  For example, consider the verifiable-
-   decryption statement M + E1 = x * E0.  If encoded with the single
-   image element F = M + E1, then M and E1 never enter the instance
-   encoding function, and the resulting NARG string is malleable across
-   statements: it verifies (unchanged) for every pair (M', E1') with M'
-   + E1' = F.  An attacker can thus present a NARG string generated for
-   one plaintext-ciphertext pair as valid for a different one.  Another
-   example: encoding Y = x * (E0 + E1) with the single element K = E0 +
-   E1 as base instead of the two terms x * E0 + x * E1 verifies
-   unchanged for every pair (E0', E1') with E0' + E1' = K.  Section 3.2
-   requires the instance to contain, individually, every group element
-   on which the application's acceptance depends; both examples above
-   violate that requirement while remaining structurally valid
-   (Section 3.5).
+   argument [CVE-2022-29566].
 
-   The challenge is drawn uniformly at random from the scalar field
-   (Section 4.3), and the non-interactive instantiations of Section 5
-   always derive full-field challenges.  Writing C for the set the
-   challenge is drawn from, 1/|C| < 2^-250 for the ciphersuites of
-   Section 8.  Compositions of Sigma Protocols (out of scope for this
-   document) *MAY* restrict the challenge to a smaller _challenge set_
-   C.
+   For example, consider the verifiable-decryption statement M + E1 = x
+   * E0.  Encoding only the image element F = M + E1 omits M and E1.
+   The resulting NARG string verifies unchanged for every pair (M', E1')
+   with M' + E1' = F.  An attacker can therefore reuse a proof for a
+   different plaintext-ciphertext pair.
+
+   Likewise, encoding Y = x * (E0 + E1) with the single base K = E0 +
+   E1, instead of the two terms x * E0 + x * E1, lets the same NARG
+   string verify for every pair (E0', E1') with E0' + E1' = K.
+
+   Both encodings pass instance validation (Section 3.5) but violate
+   Section 3.2.
+
+   The _challenge set_ C is the full scalar field (Section 4.3,
+   Section 5.2), so 1/|C| < 2^-250 for the ciphersuites of Section 8.
+   Compositions of Sigma Protocols (out of scope for this document)
+   *MAY* restrict the challenge to a smaller C.
 
    Knowledge extraction in the random oracle model requires rewinding
    the adversary: by the Forking Lemma [PointchevalS00], an adversary
@@ -1227,21 +1193,15 @@ Procedure:
 
 7.3.  NARG string validation
 
-   The security considerations of [fiat-shamir] apply here too.
-
-   In particular, for group elements, deserialization *MUST* verify that
-   each point is valid, lies on the curve, and in the prime-order
-   (sub-)group suited for cryptographic use.  Uncompressed or hybrid
-   forms of [SEC1] *MUST* be rejected [ChalkiasGN20].  Skipping the on-
-   curve or subgroup check enables invalid-curve attacks [JagerSS15].
-   Accepting non-canonical field elements will compromise soundness
-   [CVE-2022-23806].
+   For group elements, deserialization *MUST* verify that each point is
+   valid, lies on the curve, and in the prime-order (sub-)group suited
+   for cryptographic use.  Uncompressed or hybrid forms of [SEC1] *MUST*
+   be rejected [ChalkiasGN20].  Skipping the on-curve or subgroup check
+   enables invalid-curve attacks [JagerSS15].  Accepting non-canonical
+   field elements will compromise soundness [CVE-2022-23806].
 
    For scalars, deserialization *MUST* reject any value that is not the
    canonical representative in [0, p) [CVE-2023-33252] [CVE-2025-57801].
-
-   For compact NARG strings, the verifier *MUST* recompute the challenge
-   and compare it before accepting.
 
 7.4.  Instance security
 
@@ -1276,63 +1236,58 @@ Procedure:
    validation (Section 3.5) checks only the structure of the result; a
    well-formed instance may encode an attacker-chosen linear map.
 
-   The entropy source of ProverCommitment *MUST* provide different
-   scalars for every different input.  A re-used nonce reveals the
+   ProverCommitment *MUST* draw fresh nonces on every invocation, even
+   for the same instance and witness.  A re-used nonce reveals the
    witness [PS3].  (This is the extractor: given different challenges c1
    != c2, the witness is (s1 - s2) / (c1 - c2), where s1, s2 are the
    corresponding responses).
 
-   The Verifier procedure *SHOULD NOT* be used interactively with an
-   untrusted verifier: interactive Sigma Protocols only guarantee zero-
-   knowledge against honest verifiers (Section 7).
+   ProverCommitment and ProverResponse *SHOULD NOT* be used
+   interactively with an untrusted verifier: interactive Sigma Protocols
+   only guarantee zero-knowledge against honest verifiers (Section 7).
 
    For verification, VerifyBatchable and VerifyCompact *SHOULD* be used.
    The non-interactive Fiat-Shamir transformation yields statistically
    zero-knowledge arguments of knowledge.
 
    Implementations *SHOULD* securely delete prover state as soon as it
-   is no longer needed (witness and instance), and put in place
-   safeguards to prevent re-use of the prover state.  Private witness
-   information should not be part of crash dumps and diagnostic logging.
+   is no longer needed (witness and nonces), and put in place safeguards
+   to prevent re-use of the prover state.  Private witness information
+   should not be part of crash dumps and diagnostic logging.
 
 7.6.  Constant-Time Requirements
 
-   The secret values of this document are the witness, the nonces, and
-   the prover state that carries them.  The instance and the NARG string
-   are public.  All group and field operations whose inputs include
-   secret values *SHOULD* be constant-time in those values, and
-   randomness *SHOULD* be derived with straight-line code, avoiding
+   All group and field operations whose inputs include secret values
+   *SHOULD* be constant-time in those values.  The secret values are the
+   witness, the nonces, and the prover state that carries them.  The
+   NARG string is public, and the instance usually is too.
+
+   Randomness *SHOULD* be derived with straight-line code, avoiding
    rejection sampling and other methods whose iteration count depends on
-   the entropy drawn (Section 2.2).  Implementations *MAY* skip
-   multiplications by coefficient 1, or test instance coefficients for
-   zero in variable time.
+   the entropy drawn (Section 2.2).
 
-   The dominant secret-dependent operation is the multi-scalar
-   multiplication map(instance, nonces) in ProverCommitment, whose
-   scalars are secret and whose bases are public instance elements: it
-   *SHOULD* be constant-time with respect to the scalars, a guarantee
-   group libraries typically offer as an interface separate from their
-   variable-time MSM.  The variable-time algorithms of Section 6 leak
-   scalar bits through window sizes and iteration counts, and partial
-   knowledge of the nonces will compromise the witness
-   [HowgraveGrahamS01] [JancarSSS20].
+   Implementations *MAY* skip multiplications by coefficient 1, or test
+   instance coefficients for zero in variable time.
 
-   In some applications, such as keyed-verification credentials,
-   constant-time implementations are required for the verifier too:
-   there, the instance itself depends on the issuer's secret key.  The
-   secret then enters the verification equation through the group
-   elements rather than the scalars, and an MSM that is constant-time
-   only with respect to the scalars is not sufficient: the point
-   arithmetic must not branch on exceptional cases, and the comparison
-   of the two sides of the verification equation must be constant-time.
+   The multi-scalar multiplication map(instance, nonces) in
+   ProverCommitment *SHOULD* be constant-time with respect to its secret
+   scalars.  Its bases are public instance elements.  Group libraries
+   typically provide a separate interface for this guarantee.  The
+   variable-time algorithms of Section 6 leak scalar bits through window
+   sizes and iteration counts; partial knowledge of the nonces will
+   compromise the witness [HowgraveGrahamS01] [JancarSSS20].
 
-   The constant-time requirements of [fiat-shamir] apply here, and
-   extend to the encoding of the instance during challenge derivation.
-   Implementations that expose the simulator (Section 4.1) for OR
-   composition should note that which clause is simulated is itself
-   determined by the witness.  Real and simulated clauses *SHOULD*
-   follow the same code path, with constant-time selection of the
-   desired transcript.
+   Keyed-verification credentials also require constant-time
+   verification because the instance depends on the issuer's secret key.
+   The secret enters the verification equation through the group
+   elements.  An MSM that is constant-time only with respect to the
+   scalars is therefore insufficient: point arithmetic must not branch
+   on exceptional cases, and the comparison of the two sides of the
+   verification equation must be constant-time.
+
+   For OR composition, the witness determines which clause is simulated
+   (Section 4.1).  Real and simulated clauses *SHOULD* follow the same
+   code path, with constant-time selection of the desired transcript.
 
 7.7.  Post-Quantum Considerations
 
@@ -1400,18 +1355,14 @@ Procedure:
 
            Table 1: Non-interactive Sigma Protocol ciphersuites
 
-   Each row uses the Sigma Protocol of Section 4 over the named group.
-   Ne and Ns are the element and scalar byte lengths of that group.  The
-   ciphersuite identifier fixes the group, the codecs, and the hash
-   instantiation, and is included verbatim in the tag (Section 5.1).
+   Ne and Ns are the byte lengths of a serialized group element and
+   scalar.  The ciphersuite identifier fixes the group, the codecs, and
+   the hash instantiation.
 
-   For every ciphersuite in this document, the verifier challenge is
-   derived with DecodeField(buf, p, 1) exactly as specified in
-   [fiat-shamir]: the scalar field is prime, and its serialization
-   length Ns = 32 equals the smallest integer such that 256^Ns >= p, so
-   provers and verifiers squeeze exactly Ns + 16 = 48 bytes per
-   challenge (Section 5.2).  Note that DecodeField interprets the
-   squeezed bytes as a little-endian integer.
+   For all ciphersuites, the scalar serialization length Ns = 32 equals
+   the smallest integer such that 256^Ns >= p, so each challenge
+   consumes Ns + 16 = 48 squeezed bytes (Section 5.2).  Note that
+   DecodeField interprets the squeezed bytes as a little-endian integer.
 
    The groups are prime-order elliptic curve groups, defined as follows.
 
@@ -1435,8 +1386,8 @@ Procedure:
       [fiat-shamir], which inverts the conversion above.  Every non-
       identity point *MUST* perform all checks of Section 5.6.2.3.4 of
       [NIST-SP-800-56A].  Deserialization *MUST* accept only compressed
-      form, an Ne-byte that begins with 0x00, 0x02, or 0x03, as
-      specified in [fiat-shamir]).
+      form, an Ne-byte string that begins with 0x00, 0x02, or 0x03, as
+      specified in [fiat-shamir].
 
 8.1.2.  Scalar Field of P-256
 
@@ -1461,7 +1412,7 @@ Procedure:
       97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb.
 
    *  serialize([A]): the compressed G1 serialization of Appendix C of
-      [PAIRING] (`Ne = 48).
+      [PAIRING] (Ne = 48).
 
    *  deserialize(buf): inverts the serialization above and *MUST*
       perform full point validation.
@@ -1812,7 +1763,7 @@ A.1.  Seeded PRNG
 
    Applications *MUST NOT* use this deterministic pseudorandom
    generator.  The prover's randomness *MUST* be seeded from operating-
-   system entropy (Section 2.3.2).
+   system entropy (Section 2.2).
 
 A.2.  sigma-proofs_Shake128_P256
 
