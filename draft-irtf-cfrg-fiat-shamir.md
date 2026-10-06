@@ -335,7 +335,7 @@ The **NARG string** (non-interactive argument string) is the serialized output o
 
 The notation in this document is for an interactive argument with `k` rounds in which the prover moves first (that is, sends the first message) and the verifier moves last. Other types of interactions can be expressed in the same notation: set the first prover message or final verifier message to `""` when the protocol omits that message. All messages in rounds `2`, ..., `k-1` **MUST** be non-empty.
 
-# Codec and serialization requirements {#codecs}
+# Codec and serialization {#codecs}
 
 A prover message is processed in two independent ways: it is absorbed into the hash function to derive the verifier messages, and it is written into the NARG string sent to the verifier. This document keeps the two separate.
 
@@ -358,7 +358,7 @@ The session identifier binds the choice of codecs (requirement 2 of {{session-id
 The encoding of the instance and of each prover message is its serialization ({{type-serialization}}). Encoding maps **MUST** satisfy the following requirements:
 
 1. They are prefix-free: the encoding of one value is never a prefix of the encoding of another.
-2. They have an efficiently computable left inverse, which the knowledge extractor uses ({{sec-codecs}}). For the serialization-based encodings of this document, deserialization is that inverse.
+2. They have an efficiently computable left inverse, which the knowledge extractor uses ({{sec-codecs}}). For the encodings of this document, deserialization is that inverse.
 
 ## Decoding {#decoding}
 
@@ -369,6 +369,10 @@ Decoding is not deserialization, and need not invert encoding nor even be inject
 
 Decoding maps **SHOULD** be amenable to straight-line implementations. In particular, rejection sampling **SHOULD NOT** be used (see {{constant-time}}).
 
+Decoding fixed-length byte strings is the identity; see {{decoding-bytes}} for the detailed requirements.
+
+Decoding an integer modulo `M` uses `Ns + 16` squeezed bytes, interpreted as a little-endian non-negative integer and reduced modulo `M`. See {{type-decoding}} for the normative decoding requirements for common types.
+
 ## Serialization and deserialization {#serialization}
 
 Serialization and deserialization **MUST** jointly satisfy the following requirements:
@@ -378,6 +382,8 @@ Serialization and deserialization **MUST** jointly satisfy the following require
 3. Deserialization enforces every validity condition of the value's type: for example, an elliptic-curve point lies in the prime-order subgroup, and an integer or field element is in its canonical range.
 4. Deserialization fails gracefully on inputs. Lengths and counts read from the NARG string are untrusted and checked before being used for indexing, allocation, or arithmetic.
 5. If any trailing bytes remain in the input after deserializing the last prover message, verification fails; otherwise, proofs are malleable.
+
+Serialization of fixed-length byte strings is the identity; serialization of an integer modulo `M` writes its canonical representative as an `Ns`-byte little-endian string. See {{type-serialization}} for the normative serialization requirements for common types.
 
 # Duplex sponge {#hash-instantiations}
 
@@ -676,11 +682,11 @@ The authors thank Thomas Pornin, Vishruti Ganesh, Brent Zundel, Hart Montgomery,
 
 # Codecs and serialization {#type-codecs}
 
-This appendix specifies the normative decoding, serialization, and deserialization functions for common types. They satisfy the requirements of {{codecs}}.
+This appendix specifies the normative decoding, serialization, and deserialization functions for common types.
 
 ## Decoding {#type-decoding}
 
-### Byte strings
+### Byte strings {#decoding-bytes}
 
 The decoding function for fixed-length byte strings is the identity.
 
@@ -718,7 +724,7 @@ Output: out, an integer in the range [0, M)
 
 Decoding always interprets bytes in little-endian order via `LE2IP`.
 
-The 16 extra bytes bound the statistical distance between the reduced value and the uniform distribution over `[0, M)` to `2^-128`. More generally, sampling `n` extra bytes bounds the bias to `2^-8n`. An instantiation targeting a security level of `lambda` bits **SHOULD** squeeze `lambda/8` extra bytes.
+The 16 extra bytes bound the statistical distance between the reduced value and the uniform distribution over `[0, M)` to `2^-128`. More generally, sampling `n` extra bytes has bias at most `2^-8n`.
 
 In three cases this approach is inefficient:
 
@@ -726,9 +732,7 @@ In three cases this approach is inefficient:
 - if `M` is only slightly below a power of `256` (for example, the secp256k1 scalar field order) where squeezing just `Ns` bytes and reducing with a single conditional subtraction already has bias of approximately `2^-128`;
 - if the soundness error of the interactive argument is much smaller than the bias introduced, for example a protocol with 30-bit challenges does not require such a big modular reduction.
 
-In such cases, applications **MAY** use an alternative decoding function that meets the requirements of {{decoding}}.
-
-A similar observation in the context of hashing to a finite field is available in {{Section 5 of ?RFC9380}}.
+In such cases, applications **MAY** use an alternative decoding function that meets the requirements of {{decoding}}. See {{Section 5 of ?RFC9380}}.
 
 ### Field elements {#decoding-field}
 
@@ -936,8 +940,6 @@ Output: a, an element of the field of order p^m, given by its
 ~~~
 
 This consumes `m * Ns` bytes of the NARG string, and fails if fewer bytes remain or if any coordinate is non-canonical.
-
-The deserialization **MUST** match the pinned serialization ({{serialize-field}}): where the application pins a standard's own serialization, that standard's deserialization governs.
 
 ### Elliptic-curve group elements
 
