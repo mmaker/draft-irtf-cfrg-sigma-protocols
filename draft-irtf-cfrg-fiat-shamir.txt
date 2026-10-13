@@ -75,35 +75,20 @@ Table of Contents
      2.1.  Bytes and integers
      2.2.  Duplex sponge interface
      2.3.  Proof systems terminology
-     2.4.  Codec and serialization
-   3.  Duplex sponge
-     3.1.  Interface
-     3.2.  XOF duplex sponge
-       3.2.1.  Init
-       3.2.2.  Absorb
-       3.2.3.  Squeeze
-   4.  Codecs
-     4.1.  Encoding into byte strings
-     4.2.  Decoding from byte strings
-       4.2.1.  Byte strings
-       4.2.2.  Unsigned integers
-       4.2.3.  Field elements
+   3.  Codec and serialization
+     3.1.  Encoding
+     3.2.  Decoding
+     3.3.  Serialization and deserialization
+   4.  Duplex sponge
+     4.1.  Interface
+     4.2.  XOF duplex sponge
+       4.2.1.  Init
+       4.2.2.  Absorb
+       4.2.3.  Squeeze
    5.  Initialization
      5.1.  Session identifiers
      5.2.  Instance
    6.  Non-interactive argument string
-     6.1.  Serialization
-       6.1.1.  Byte strings
-       6.1.2.  Sequences and tuples
-       6.1.3.  Unsigned integers
-       6.1.4.  Field elements
-       6.1.5.  Elliptic curve group elements
-     6.2.  Deserialization
-       6.2.1.  Byte strings
-       6.2.2.  Sequences and tuples
-       6.2.3.  Unsigned integers
-       6.2.4.  Field elements
-       6.2.5.  Elliptic-curve group elements
    7.  Efficiency considerations
    8.  Security considerations
      8.1.  Codecs
@@ -123,19 +108,36 @@ Table of Contents
    References
      Normative References
      Informative References
-   Appendix A.  Example protocol: sumcheck
-   Appendix B.  Test Vectors
-     B.1.  Duplex sponge
-       B.1.1.  SHAKE128
-       B.1.2.  TurboSHAKE128
-     B.2.  Session identifier derivation
-     B.3.  Codecs
-     B.4.  Serialization and deserialization
-       B.4.1.  Valid inputs
-       B.4.2.  Invalid inputs
-     B.5.  NARG strings
-       B.5.1.  Valid NARG strings
-       B.5.2.  Adversarial vectors
+   Appendix A.  Codecs and serialization
+     A.1.  Decoding
+       A.1.1.  Byte strings
+       A.1.2.  Unsigned integers
+       A.1.3.  Field elements
+     A.2.  Serialization
+       A.2.1.  Byte strings
+       A.2.2.  Sequences and tuples
+       A.2.3.  Unsigned integers
+       A.2.4.  Field elements
+       A.2.5.  Elliptic curve group elements
+     A.3.  Deserialization
+       A.3.1.  Byte strings
+       A.3.2.  Sequences and tuples
+       A.3.3.  Unsigned integers
+       A.3.4.  Field elements
+       A.3.5.  Elliptic-curve group elements
+   Appendix B.  Example protocol: sumcheck
+   Appendix C.  Test Vectors
+     C.1.  Duplex sponge
+       C.1.1.  SHAKE128
+       C.1.2.  TurboSHAKE128
+     C.2.  Session identifier derivation
+     C.3.  Codecs
+     C.4.  Serialization and deserialization
+       C.4.1.  Valid inputs
+       C.4.2.  Invalid inputs
+     C.5.  NARG strings
+       C.5.1.  Valid NARG strings
+       C.5.2.  Adversarial vectors
    Author's Address
 
 1.  Introduction
@@ -167,10 +169,10 @@ Table of Contents
    Both the non-interactive prover and verifier rely on:
 
    *  a duplex sponge, prescribing how to interact with the
-      cryptographic hash function (Section 3);
+      cryptographic hash function (Section 4);
 
    *  a set of codecs, describing how each prover and verifier message
-      talks to the duplex sponge (Section 4);
+      talks to the duplex sponge (Section 3);
 
    *  a serialization and deserialization procedure for the NARG string
       produced by the prover (Section 6).
@@ -333,7 +335,7 @@ Table of Contents
    some byte string z (even empty).  An encoding is *prefix-free* if,
    for any two distinct values, the encoding of one is never a prefix of
    the encoding of the other.  A simple prefix-free encoding of a byte
-   string b is LE(len(b), 4) || b as described in Section 6.1.1.
+   string b is LE(len(b), 4) || b as described in Appendix A.2.1.
 
    LE(n, w) and LE2IP(x) are the integer/byte-string conversion
    primitives used throughout this document.  LE(n, w) converts a non-
@@ -348,7 +350,7 @@ Table of Contents
 
    The Fiat-Shamir transformation relies on a cryptographic hash
    function, modeled as a random oracle.  This is implemented as a
-   stateful interface called a *duplex sponge* (defined in Section 3),
+   stateful interface called a *duplex sponge* (defined in Section 4),
    which Absorbs prover messages into an evolving internal state and
    Squeezes from that state the bytes from which verifier messages are
    derived.
@@ -401,24 +403,24 @@ Table of Contents
    or final verifier message to "" when the protocol omits that message.
    All messages in rounds 2, ..., k-1 *MUST* be non-empty.
 
-2.4.  Codec and serialization
+3.  Codec and serialization
 
    A prover message is processed in two independent ways: it is absorbed
    into the hash function to derive the verifier messages, and it is
    written into the NARG string sent to the verifier.  This document
    keeps the two separate.
 
-   A *codec* (Section 4) is the pair of maps between messages and the
-   hash function's alphabet (bytes, in this document):
+   A *codec* is the pair of maps between messages and the hash
+   function's alphabet (bytes, in this document):
 
    *  *Encoding* converts the instance and each prover message into the
-      bytes absorbed by the duplex sponge (Section 4.1).
+      bytes absorbed by the duplex sponge (Section 3.1).
 
    *  *Decoding* converts the bytes squeezed from the duplex sponge into
-      a uniformly-distributed verifier message (Section 4.2).
+      a uniformly-distributed verifier message (Section 3.2).
 
-   *Serialization* (Section 6) is concerned with mapping prover messages
-   to and from the NARG string:
+   *Serialization* is concerned with mapping prover messages to and from
+   the NARG string (Section 6):
 
    *  *Serialization* writes the prover messages into the NARG string
       produced by the non-interactive prover.
@@ -428,14 +430,91 @@ Table of Contents
 
    For a prover message, the encoded bytes coincide with the serialized
    bytes: the encoding maps are the serialization functions of
-   Section 6.1.  However, codecs and serialization serve different
+   Appendix A.2.  However, codecs and serialization serve different
    purposes.  Codecs must maintain the soundness of the transformation,
    whereas deserialization keeps the NARG string unambiguous and rejects
-   malformed proofs (see Section 4.2 and Section 6.2).
+   malformed proofs.
 
-3.  Duplex sponge
+   The session identifier binds the choice of codecs (requirement 2 of
+   Section 5.1).  Appendix A specifies the decoding, serialization, and
+   deserialization functions for common types, which satisfy the
+   requirements below.
 
-3.1.  Interface
+3.1.  Encoding
+
+   The encoding of the instance and of each prover message is its
+   serialization (Appendix A.2).  Encoding maps *MUST* satisfy the
+   following requirements:
+
+   1.  They are prefix-free: the encoding of one value is never a prefix
+       of the encoding of another.
+
+   2.  They have an efficiently computable left inverse, which the
+       knowledge extractor uses (Section 8.1).  For the encodings of
+       this document, deserialization is that inverse.
+
+3.2.  Decoding
+
+   Decoding is not deserialization, and need not invert encoding nor
+   even be injective.  Each verifier message type fixes the number of
+   bytes to squeeze (Appendix A.1).  Decoding maps *MUST* satisfy the
+   following requirements:
+
+   1.  They are infallible.
+
+   2.  They are _distribution-preserving_: on a uniformly random input,
+       the output is statistically close to uniformly distributed over
+       the verifier message type.  The bias adds to the soundness error
+       of the resulting non-interactive argument.  An alternative to the
+       decodings of Appendix A.1 *MUST* have bias at most the soundness
+       error of the interactive argument, so that the non-interactive
+       soundness error stays within a small multiple of the interactive
+       one.
+
+   Decoding maps *SHOULD* be amenable to straight-line implementations.
+   In particular, rejection sampling *SHOULD NOT* be used (see
+   Section 8.2).
+
+   Decoding fixed-length byte strings is the identity; see
+   Appendix A.1.1 for the detailed requirements.
+
+   Decoding an integer modulo M uses Ns + 16 squeezed bytes, interpreted
+   as a little-endian non-negative integer and reduced modulo M.  See
+   Appendix A.1 for the normative decoding requirements for common
+   types.
+
+3.3.  Serialization and deserialization
+
+   Serialization and deserialization *MUST* jointly satisfy the
+   following requirements:
+
+   1.  Deserialization inverts serialization and fails on any byte
+       string that is not the serialization of a valid value.
+
+   2.  Each value has a unique serialization.  Accepting more than one
+       serialization of a value makes proofs malleable.
+
+   3.  Deserialization enforces every validity condition of the value's
+       type: for example, an elliptic-curve point lies in the prime-
+       order subgroup, and an integer or field element is in its
+       canonical range.
+
+   4.  Deserialization fails gracefully on inputs.  Lengths and counts
+       read from the NARG string are untrusted and checked before being
+       used for indexing, allocation, or arithmetic.
+
+   5.  If any trailing bytes remain in the input after deserializing the
+       last prover message, verification fails; otherwise, proofs are
+       malleable.
+
+   Serialization of fixed-length byte strings is the identity;
+   serialization of an integer modulo M writes its canonical
+   representative as an Ns-byte little-endian string.  See Appendix A.2
+   for the normative serialization requirements for common types.
+
+4.  Duplex sponge
+
+4.1.  Interface
 
    Prover and verifier messages are handled via three operations:
 
@@ -459,7 +538,7 @@ Table of Contents
    in Section 5.1; its role in composability and reuse is discussed in
    Section 8.3.
 
-3.2.  XOF duplex sponge
+4.2.  XOF duplex sponge
 
    This section implements the duplex sponge from an eXtendable-Output
    Function (XOF).  XOF(M, L) maps a byte string M to an L-byte string.
@@ -486,9 +565,9 @@ Table of Contents
 
    The session identifier is padded with R - 32 zero bytes so that the
    instance and prover messages begin on a fresh rate-block boundary
-   (see Section 3.2.1), for efficiency (Section 7).
+   (see Section 4.2.1), for efficiency (Section 7).
 
-3.2.1.  Init
+4.2.1.  Init
 
    Seed the state by absorbing the session identifier, padded with zeros
    to fill the rate (the remaining R - 32 bytes).
@@ -502,7 +581,7 @@ Table of Contents
    1. assert len(session_id) == 32
    2. return state := (M = session_id || zeros(R - 32), offset = 0)
 
-3.2.2.  Absorb
+4.2.2.  Absorb
 
    Feed a byte string x into the state.  Absorbing the empty string
    leaves the state unchanged.
@@ -515,7 +594,7 @@ Table of Contents
    2.    state.M = state.M || x
    3.    state.offset = 0
 
-3.2.3.  Squeeze
+4.2.3.  Squeeze
 
    Returns the next n bytes of the XOF output stream computed over the
    absorbed input.  Consecutive Squeeze calls *continue* the same output
@@ -536,134 +615,6 @@ Output: a uniformly-distributed random n-byte string
    keep an incremental XOF context that absorbs M as it grows, and
    squeeze from a reader over a copy of that context, continuing from
    offset; this yields identical bytes.
-
-4.  Codecs
-
-   The only security requirement on encoding maps is that they be
-   prefix-free.  Decoding maps are infallible, and *MUST* be
-   distribution-preserving (Section 4.2).
-
-4.1.  Encoding into byte strings
-
-   The encoding of the instance and of each prover message is its
-   serialization, as described in Section 6.1.
-
-4.2.  Decoding from byte strings
-
-   Each verifier message type fixes the number of bytes to squeeze.
-
-   Decoding is not deserialization, and need not invert encoding nor
-   even be injective; its only requirement is to be _distribution-
-   preserving_: if its input is a uniformly random byte string, then its
-   output is (statistically close to) uniformly distributed over the
-   verifier message type.
-
-4.2.1.  Byte strings
-
-   The decoding function for fixed-length byte strings is the identity.
-
-   DecodeBytes(buf, N)
-
-   Inputs:
-
-   - buf, a byte string
-   - N, the expected byte length
-
-   Output: out, a byte string of length N
-
-   1. assert len(buf) == N
-   2. return buf
-
-4.2.2.  Unsigned integers
-
-   To sample a uniformly random element modulo M, squeeze Ns + 16 bytes,
-   interpret them as a little-endian non-negative integer via LE2IP, and
-   reduce modulo M.
-
-   DecodeUint(buf, M)
-
-   Inputs:
-
-   - buf, a byte string of length Ns + 16
-   - M, the modulus
-
-   Output: out, an integer in the range [0, M)
-
-   1. assert len(buf) == Ns + 16
-   2. return LE2IP(buf) mod M
-
-   Decoding always interprets bytes in little-endian order via LE2IP.
-
-   The 16 extra bytes bound the statistical distance between the reduced
-   value and the uniform distribution over [0, M) to 2^-128.  More
-   generally, sampling n extra bytes bounds the bias to 2^-8n.  An
-   instantiation targeting a security level of lambda bits *SHOULD*
-   squeeze lambda/8 extra bytes.
-
-   In three cases this approach is inefficient:
-
-   *  if M is a power of two, since the decoding bias is always 0;
-
-   *  if M is only slightly below a power of 256 (for example, the
-      secp256k1 scalar field order) where squeezing just Ns bytes and
-      reducing with a single conditional subtraction already has bias of
-      approximately 2^-128;
-
-   *  if the soundness error of the interactive argument is much smaller
-      than the bias introduced, for example a protocol with 30-bit
-      challenges does not require such a big modular reduction.
-
-   In such cases, applications *MAY* use an alternative decoding
-   function, provided it meets the following security requirements:
-
-   *  The function *MUST* have bias at most the soundness error of the
-      interactive argument.  The bias adds to the soundness error of the
-      resulting non-interactive argument, and this requirement asks that
-      the resulting non-interactive soundness error stays within a small
-      multiple of the interactive soundness error.
-
-   *  The function *SHOULD* be amenable to straight-line
-      implementations.  In particular, rejection sampling *SHOULD NOT*
-      be used (see Section 8.2).
-
-   A similar observation in the context of hashing to a finite field is
-   available in Section 5 of [RFC9380].
-
-4.2.3.  Field elements
-
-   A field element of a field of order p^m is decoded coordinate by
-   coordinate, via DecodeUint (Section 4.2.2), starting from the least-
-   significant.  This consumes m * (Ns + 16) bytes.  A prime field is
-   the case m = 1.
-
-   DecodeField(buf, p, m)
-
-   Inputs:
-
-   - buf, a byte string of length m * (Ns + 16)
-   - p, the prime characteristic of the field
-   - m, the extension degree
-
-   Output: out, an element of the field of order p^m, given by its
-           coordinates (a[0], ..., a[m-1]) over the prime field
-
-   1. assert len(buf) == m * (Ns + 16)
-   2. for i in 0, ..., m-1:
-   3.    chunk = buf[i * (Ns + 16) : (i + 1) * (Ns + 16)]
-   4.    a[i] = DecodeUint(chunk, p)
-   5. return (a[0], ..., a[m-1])
-
-   For m = 1, DecodeField is DecodeUint, and Section 4.2.2 applies,
-   including its alternatives.
-
-   For m > 1, decoding relies on 16 * m additional randomness bytes.
-   Applications with big-integer arithmetic available *MAY* use a more
-   randomness-efficient decoding algorithm, by instead sampling Nm + 16
-   bytes, where Nm is the smallest integer with 256^Nm >= p^m,
-   interpreting them as an integer via LE2IP, reducing modulo p^m, and
-   recovering the coordinates (a[0], ..., a[m-1]) as the base-p digits
-   of the result (least-significant digit first), with the same 2^-128
-   bias bound.
 
 5.  Initialization
 
@@ -730,7 +681,7 @@ Output: a uniformly-distributed random n-byte string
    2. duplex_sponge.Absorb(tag)
    3. return duplex_sponge.Squeeze(32)
 
-   Above, DS denotes the duplex sponge in use (Section 3), instantiated
+   Above, DS denotes the duplex sponge in use (Section 4), instantiated
    with one of the suites of Section 9.  The 32-byte string "irtf-cfrg-
    fiat-shamir/session-id" is a domain separator for this derivation.
 
@@ -777,10 +728,10 @@ Output: a uniformly-distributed random n-byte string
    Section 5.1 fixes the language, the instance selects one of its
    members.
 
-   As for every encoding map, encode[0] *MUST* be prefix-free, else a
-   malicious prover may be able to produce valid NARG strings on
-   statements it cannot prove (see Section 4).  The encoding map
-   encode[0] *SHOULD* reuse the serialization functions of Section 6.1.
+   Like every encoding map, encode[0] must be prefix-free (Section 3.1);
+   otherwise, a malicious prover may be able to produce valid NARG
+   strings on statements it cannot prove.  The encoding map encode[0]
+   *SHOULD* reuse the serialization functions of Appendix A.2.
 
    As an example, consider the sumcheck relation for multilinear
    polynomials in N variables over the field of size p^m.  For a
@@ -823,7 +774,7 @@ Output: a uniformly-distributed random n-byte string
    enc(G) || enc(H) || enc(C) || enc(D)
 
    where enc is the group element-serialization function described in
-   Section 6.1.5.
+   Appendix A.2.5.
 
    Omitting public statement data from the transformation, such as N in
    the first example or the group generators G, H in the second, can
@@ -831,273 +782,28 @@ Output: a uniformly-distributed random n-byte string
 
 6.  Non-interactive argument string
 
-   Serialization and deserialization *MUST* satisfy the following
-   security requirements:
-
-   1.  Deserialization inverts serialization and fails on any byte
-       string that is not the serialization of a valid value.
-
-   2.  Each value has a unique serialization.  Accepting more than one
-       serialization of a value makes proofs malleable.
-
-   3.  Deserialization enforces every validity condition of the value's
-       type: for example, an elliptic-curve point lies in the prime-
-       order subgroup, and an integer or field element is in its
-       canonical range.
-
-   4.  Deserialization fails gracefully on inputs.  Lengths and counts
-       read from the NARG string are untrusted and checked before being
-       used for indexing, allocation, or arithmetic.
-
-   5.  If any trailing bytes remain in the input after deserializing the
-       last prover message, verification fails; otherwise, proofs are
-       malleable.
-
-6.1.  Serialization
-
    The NARG string is the concatenation of the serialization of each
-   prover message, as defined below.
-
-6.1.1.  Byte strings
-
-   Serialization of an N-byte string is the identity function.
-
-   SerializeBytes(s)
-
-   Input: s, an N-byte string
-
-   Output: out, an N-byte string
-
-   1. return s
-
-   SerializeBytes carries no length information of its own.  It *MUST
-   NOT* be used unless N is fixed by the message's type and the
-   instance, so that prover and verifier agree on N before the NARG
-   string is parsed (see Section 6.2.1).  On such a fixed-length domain
-   the identity is prefix-free, as required of encodings by Section 4.
-
-   Otherwise, when the length is below 2^32 bytes, a prefix-free
-   serialization is given by
-
-   SerializeVarLenString(s)
-
-   Input: s, an N-byte string
-
-   Output: out, an (N+4)-byte string
-
-   1. return LE(len(s), 4) || s
-
-6.1.2.  Sequences and tuples
-
-   A fixed-length array or a tuple is serialized as the concatenation of
-   the serializations of its elements, with no separators.
-
-6.1.3.  Unsigned integers
-
-   An integer modulo M is represented by its unique integer
-   representative in the range [0, M) and serialized via LE.
-
-   SerializeUint(x, M)
-
-   Inputs:
-
-   - x, an integer modulo M
-   - M, the modulus
-
-   Output: out, an Ns-byte string
-
-   1. assert 0 <= x < M
-   2. return LE(x, Ns)
-
-6.1.4.  Field elements
-
-   This section specifies the _default_ serialization of a finite field
-   of order p^m, where p is the prime characteristic and m >= 1 is the
-   extension degree.
-
-   The choice of field serialization *MUST* be reflected in the session
-   tag (see Section 5.1).  The field serialization function *MUST* be
-   prefix-free.  The default is the serialization specified below, which
-   encodes each prime-field coordinate as a fixed-width little-endian
-   integer via SerializeUint (Section 6.1.3); if the standard the
-   application builds on already fixes a canonical serialization for the
-   field, that serialization *SHOULD* be pinned in place of the default.
-
-   For example, Curve25519 [RFC7748], Ed25519 [RFC8032], ristretto255
-   Section 4.4 of [RFC9496] serialize field elements as a fixed-width
-   little-endian integer, matching the default.  Similarly, in
-   Section 7.1 of [FIPS204], the integer coordinates of lattice vectors
-   are serialized least-significant-byte first.  Other standards instead
-   fix a big-endian serialization, such as P-256 [SEC1] and BLS12-381
-   [I-D.irtf-cfrg-pairing-friendly-curves] via I2OSP (Section 4.1 of
-   [RFC8017]).
-
-   With respect to a fixed basis, a field element is represented by its
-   m coordinates in the prime field, each an integer in [0, p), and
-   serializes to m * Ns bytes, with Ns taken for the modulus p.
-
-   SerializeField(a, p, m)
-
-   Inputs:
-
-   - a, an element of the field of order p^m, given by its
-        coordinates (a[0], ..., a[m-1]) over the prime field
-   - p, the prime characteristic of the field
-   - m, the extension degree
-
-   Output: out, an (m * Ns)-byte string
-
-   1. out := ""
-   2. for i in 0, ..., m-1:
-   3.    out := out || SerializeUint(a[i], p)
-   4. return out
-
-   Note that a prime field is the case m = 1, in which case
-   SerializeField is equivalent to SerializeUint.
-
-6.1.5.  Elliptic curve group elements
-
-   A group element is serialized using the group's element-serialization
-   function, into an Ne-byte string, where Ne is fixed by the group.
-
-   For many prime-order elliptic-curve groups, this is the compressed
-   Elliptic-Curve-Point-to-Octet-String conversion of [SEC1].  This
-   document alters [SEC1] serialization: uncompressed and hybrid
-   encodings are forbidden, so the only accepted initial octets are
-   0x00, 0x02, and 0x03; the identity is encoded as Ne zero octets
-   instead of [SEC1]'s single 0x00 octet.  Restricting the accepted
-   initial octets guarantees unique serialization.  Padding the identity
-   element removes branching from the parsing of the NARG string.
-
-   The ristretto255 and decaf448 [RFC9496] encodings of the identity are
-   already fixed-length Ne-byte strings.
-
-6.2.  Deserialization
+   prover message (Appendix A.2); serialization and deserialization
+   satisfy the requirements of Section 3.3.
 
    Deserialization of the NARG string consists of reading the prover
    messages: each message is read by consuming, from the front of the
    input, a byte string whose length is determined by its type and the
-   instance.  Each deserialization function below returns the decoded
-   value together with the unread remainder of its input; the remainder
-   is the input to the next read.
+   instance.  Each deserialization function of Appendix A.3 returns the
+   decoded value together with the unread remainder of its input; the
+   remainder is the input to the next read.
 
    Verification *MUST* fail if any of the prover messages cannot be
    deserialized successfully.
 
-6.2.1.  Byte strings
-
-   For an N-byte string whose length is known from the message's type
-   and the instance, deserialization reads N bytes.
-
-   DeserializeBytes(input, N)
-
-   Inputs:
-
-   - input, the unread remainder of the NARG string
-   - N, the expected byte length
-
-   Output: an N-byte string, and the unread remainder of input
-
-   1. fail if len(input) < N
-   2. return (input[0 : N], input[N : len(input)])
-
-   DeserializeBytes is the inverse of SerializeBytes (Section 6.1.1),
-   and consumes N bytes of the NARG string, and fails if fewer bytes
-   remain.
-
-   A byte string whose length is not known in advance is deserialized by
-   reading a 4-byte length N via LE2IP, then reading the next N bytes;
-   this is the inverse of SerializeVarLenString (Section 6.1.1).
-
-   DeserializeVarLenString(input)
-
-   Input: input, the unread remainder of the NARG string
-
-   Output: an N-byte string, and the unread remainder of input
-
-   1. fail if len(input) < 4
-   2. N := LE2IP(input[0 : 4])
-   3. fail if len(input) - 4 < N
-   4. return (input[4 : 4 + N], input[4 + N : len(input)])
-
-   This consumes 4 + N bytes of the NARG string, and fails if fewer
-   bytes remain.  The value decoded is the resulting byte string.
-
-6.2.2.  Sequences and tuples
-
-   Deserialize each element in order.  Fail if any element fails to
-   deserialize.  The number and types of the elements are fixed by the
-   protocol.
-
-6.2.3.  Unsigned integers
-
-   Read the next Ns bytes and interpret them as a little-endian integer
-   x = LE2IP(.).  If x >= M, fail: non-canonical integer encodings
-   *MUST* be rejected.  The value returned is x.  This is the inverse of
-   SerializeUint (Section 6.1.3).
-
-   DeserializeUint(input, M)
-
-   Inputs:
-
-   - input, the unread remainder of the NARG string
-   - M, the modulus
-
-   Output: x, an integer in the range [0, M), and the unread
-           remainder of input
-
-   1. fail if len(input) < Ns
-   2. x := LE2IP(input[0 : Ns])
-   3. fail if x >= M
-   4. return (x, input[Ns : len(input)])
-
-   This consumes Ns bytes of the NARG string.  It fails if fewer bytes
-   remain, or if the integer read is not in the range [0, M).
-
-6.2.4.  Field elements
-
-   A field element of a field of order p^m is deserialized coordinate by
-   coordinate: read m * Ns bytes and deserialize each Ns-byte coordinate
-   as an integer modulo p using the unsigned-integer deserialization
-   above.  A prime field is the case m = 1.  This is the inverse of
-   SerializeField (Section 6.1.4).
-
-   DeserializeField(input, p, m)
-
-   Inputs:
-
-   - input, the unread remainder of the NARG string
-   - p, the prime characteristic of the field
-   - m, the extension degree
-
-   Output: a, an element of the field of order p^m, given by its
-           coordinates (a[0], ..., a[m-1]) over the prime field, and
-           the unread remainder of input
-
-   1. for i in 0, ..., m-1:
-   2.    (a[i], input) := DeserializeUint(input, p)
-   3. return ((a[0], ..., a[m-1]), input)
-
-   This consumes m * Ns bytes of the NARG string, and fails if fewer
-   bytes remain or if any coordinate is non-canonical.
-
-   The deserialization *MUST* match the pinned serialization
-   (Section 6.1.4): where the application pins a standard's own
-   serialization, that standard's deserialization governs.
-
-6.2.5.  Elliptic-curve group elements
-
-   Read the next Ne bytes and convert them to a group element using the
-   group's element-deserialization function.
-
 7.  Efficiency considerations
 
-   Init(session_id) (see Section 3.1) can be precomputed.
+   Init(session_id) (see Section 4.1) can be precomputed.
    Implementations can therefore start each prover and verifier
    execution from a copy of the duplex sponge state, instead of
-   initializing it every time.  In the XOF duplex sponge (Section 3.2),
+   initializing it every time.  In the XOF duplex sponge (Section 4.2),
    the padded session identifier fills exactly one rate block
-   (Section 3.2.1), saving one invocation of the permutation function
+   (Section 4.2.1), saving one invocation of the permutation function
    per execution.  Similarly, DeriveSessionID can be precomputed when
    the session identifier is derived from a tag.  The same observation
    extends to longer shared prefixes: proofs for the same instance can
@@ -1221,7 +927,7 @@ Output: a uniformly-distributed random n-byte string
    The transformation does not itself validate the instance.  The
    verifier *MUST* therefore validate the syntax of the instance before
    use, exactly as it validates prover messages during deserialization
-   (Section 6.2): for example, checking that each claimed group element
+   (Appendix A.3): for example, checking that each claimed group element
    lies in the prime-order group, and that integers are in canonical
    range.
 
@@ -1247,7 +953,7 @@ Output: a uniformly-distributed random n-byte string
    prover message in turn with a different value.
 
    The NARG string is untrusted input (Section 6).  For example, in
-   Section 6.2.1 the 4-byte length prefix read by LE2IP in
+   Appendix A.3.1 the 4-byte length prefix read by LE2IP in
    DeserializeVarLenString is attacker-controlled, and can be as large
    as 2^32 - 1, so computing 4 + N can overflow 32-bit integers.  As
    another example, a crafted length indicator can make verification
@@ -1443,7 +1149,328 @@ Informative References
               "Cryptographic Sponge Functions", 2011,
               <https://keccak.team/files/CSF-0.1.pdf>.
 
-Appendix A.  Example protocol: sumcheck
+Appendix A.  Codecs and serialization
+
+   This appendix specifies the normative decoding, serialization, and
+   deserialization functions for common types.
+
+A.1.  Decoding
+
+A.1.1.  Byte strings
+
+   The decoding function for fixed-length byte strings is the identity.
+
+   DecodeBytes(buf, N)
+
+   Inputs:
+
+   - buf, a byte string
+   - N, the expected byte length
+
+   Output: out, a byte string of length N
+
+   1. assert len(buf) == N
+   2. return buf
+
+A.1.2.  Unsigned integers
+
+   To sample a uniformly random element modulo M, squeeze Ns + 16 bytes,
+   interpret them as a little-endian non-negative integer via LE2IP, and
+   reduce modulo M.
+
+   DecodeUint(buf, M)
+
+   Inputs:
+
+   - buf, a byte string of length Ns + 16
+   - M, the modulus
+
+   Output: out, an integer in the range [0, M)
+
+   1. assert len(buf) == Ns + 16
+   2. return LE2IP(buf) mod M
+
+   Decoding always interprets bytes in little-endian order via LE2IP.
+
+   The 16 extra bytes bound the statistical distance between the reduced
+   value and the uniform distribution over [0, M) to 2^-128.  More
+   generally, sampling n extra bytes has bias at most 2^-8n.
+
+   In three cases this approach is inefficient:
+
+   *  if M is a power of two, since the decoding bias is always 0;
+
+   *  if M is only slightly below a power of 256 (for example, the
+      secp256k1 scalar field order) where squeezing just Ns bytes and
+      reducing with a single conditional subtraction already has bias of
+      approximately 2^-128;
+
+   *  if the soundness error of the interactive argument is much smaller
+      than the bias introduced, for example a protocol with 30-bit
+      challenges does not require such a big modular reduction.
+
+   In such cases, applications *MAY* use an alternative decoding
+   function that meets the requirements of Section 3.2.  See Section 5
+   of [RFC9380].
+
+A.1.3.  Field elements
+
+   A field element of a field of order p^m is decoded coordinate by
+   coordinate, via DecodeUint (Appendix A.1.2), starting from the least-
+   significant.  This consumes m * (Ns + 16) bytes.  A prime field is
+   the case m = 1.
+
+   DecodeField(buf, p, m)
+
+   Inputs:
+
+   - buf, a byte string of length m * (Ns + 16)
+   - p, the prime characteristic of the field
+   - m, the extension degree
+
+   Output: out, an element of the field of order p^m, given by its
+           coordinates (a[0], ..., a[m-1]) over the prime field
+
+   1. assert len(buf) == m * (Ns + 16)
+   2. for i in 0, ..., m-1:
+   3.    chunk = buf[i * (Ns + 16) : (i + 1) * (Ns + 16)]
+   4.    a[i] = DecodeUint(chunk, p)
+   5. return (a[0], ..., a[m-1])
+
+   For m = 1, DecodeField is DecodeUint, and Appendix A.1.2 applies,
+   including its alternatives.
+
+   For m > 1, decoding relies on 16 * m additional randomness bytes.
+   Applications with big-integer arithmetic available *MAY* use a more
+   randomness-efficient decoding algorithm, by instead sampling Nm + 16
+   bytes, where Nm is the smallest integer with 256^Nm >= p^m,
+   interpreting them as an integer via LE2IP, reducing modulo p^m, and
+   recovering the coordinates (a[0], ..., a[m-1]) as the base-p digits
+   of the result (least-significant digit first), with the same 2^-128
+   bias bound.
+
+A.2.  Serialization
+
+A.2.1.  Byte strings
+
+   Serialization of an N-byte string is the identity function.
+
+   SerializeBytes(s)
+
+   Input: s, an N-byte string
+
+   Output: out, an N-byte string
+
+   1. return s
+
+   SerializeBytes carries no length information of its own.  It *MUST
+   NOT* be used unless N is fixed by the message's type and the
+   instance, so that prover and verifier agree on N before the NARG
+   string is parsed (see Appendix A.3.1).  On such a fixed-length domain
+   the identity is prefix-free, as required of encodings by Section 3.1.
+
+   Otherwise, when the length is below 2^32 bytes, a prefix-free
+   serialization is given by
+
+   SerializeVarLenString(s)
+
+   Input: s, an N-byte string
+
+   Output: out, an (N+4)-byte string
+
+   1. return LE(len(s), 4) || s
+
+A.2.2.  Sequences and tuples
+
+   A fixed-length array or a tuple is serialized as the concatenation of
+   the serializations of its elements, with no separators.
+
+A.2.3.  Unsigned integers
+
+   An integer modulo M is represented by its unique integer
+   representative in the range [0, M) and serialized via LE.
+
+   SerializeUint(x, M)
+
+   Inputs:
+
+   - x, an integer modulo M
+   - M, the modulus
+
+   Output: out, an Ns-byte string
+
+   1. assert 0 <= x < M
+   2. return LE(x, Ns)
+
+A.2.4.  Field elements
+
+   This section specifies the _default_ serialization of a finite field
+   of order p^m, where p is the prime characteristic and m >= 1 is the
+   extension degree.
+
+   The choice of field serialization *MUST* be reflected in the session
+   tag (see Section 5.1).  The default is the serialization specified
+   below, which encodes each prime-field coordinate as a fixed-width
+   little-endian integer via SerializeUint (Appendix A.2.3); if the
+   standard the application builds on already fixes a canonical
+   serialization for the field, that serialization *SHOULD* be pinned in
+   place of the default.  A pinned serialization is an encoding map, and
+   satisfies Section 3.1.
+
+   For example, Curve25519 [RFC7748], Ed25519 [RFC8032], ristretto255
+   Section 4.4 of [RFC9496] serialize field elements as a fixed-width
+   little-endian integer, matching the default.  Similarly, in
+   Section 7.1 of [FIPS204], the integer coordinates of lattice vectors
+   are serialized least-significant-byte first.  Other standards instead
+   fix a big-endian serialization, such as P-256 [SEC1] and BLS12-381
+   [I-D.irtf-cfrg-pairing-friendly-curves] via I2OSP (Section 4.1 of
+   [RFC8017]).
+
+   With respect to a fixed basis, a field element is represented by its
+   m coordinates in the prime field, each an integer in [0, p), and
+   serializes to m * Ns bytes, with Ns taken for the modulus p.
+
+   SerializeField(a, p, m)
+
+   Inputs:
+
+   - a, an element of the field of order p^m, given by its
+        coordinates (a[0], ..., a[m-1]) over the prime field
+   - p, the prime characteristic of the field
+   - m, the extension degree
+
+   Output: out, an (m * Ns)-byte string
+
+   1. out := ""
+   2. for i in 0, ..., m-1:
+   3.    out := out || SerializeUint(a[i], p)
+   4. return out
+
+   Note that a prime field is the case m = 1, in which case
+   SerializeField is equivalent to SerializeUint.
+
+A.2.5.  Elliptic curve group elements
+
+   A group element is serialized using the group's element-serialization
+   function, into an Ne-byte string, where Ne is fixed by the group.
+
+   For many prime-order elliptic-curve groups, this is the compressed
+   Elliptic-Curve-Point-to-Octet-String conversion of [SEC1].  This
+   document alters [SEC1] serialization: uncompressed and hybrid
+   encodings are forbidden, so the only accepted initial octets are
+   0x00, 0x02, and 0x03; the identity is encoded as Ne zero octets
+   instead of [SEC1]'s single 0x00 octet.  Restricting the accepted
+   initial octets guarantees unique serialization.  Padding the identity
+   element removes branching from the parsing of the NARG string.
+
+   The ristretto255 and decaf448 [RFC9496] encodings of the identity are
+   already fixed-length Ne-byte strings.
+
+A.3.  Deserialization
+
+A.3.1.  Byte strings
+
+   For an N-byte string whose length is known from the message's type
+   and the instance, deserialization reads N bytes.
+
+   DeserializeBytes(input, N)
+
+   Inputs:
+
+   - input, the unread remainder of the NARG string
+   - N, the expected byte length
+
+   Output: an N-byte string, and the unread remainder of input
+
+   1. fail if len(input) < N
+   2. return (input[0 : N], input[N : len(input)])
+
+   DeserializeBytes is the inverse of SerializeBytes (Appendix A.2.1),
+   and consumes N bytes of the NARG string, and fails if fewer bytes
+   remain.
+
+   A byte string whose length is not known in advance is deserialized by
+   reading a 4-byte length N via LE2IP, then reading the next N bytes;
+   this is the inverse of SerializeVarLenString (Appendix A.2.1).
+
+   DeserializeVarLenString(input)
+
+   Input: input, the unread remainder of the NARG string
+
+   Output: an N-byte string, and the unread remainder of input
+
+   1. fail if len(input) < 4
+   2. N := LE2IP(input[0 : 4])
+   3. fail if len(input) - 4 < N
+   4. return (input[4 : 4 + N], input[4 + N : len(input)])
+
+   This consumes 4 + N bytes of the NARG string, and fails if fewer
+   bytes remain.  The value decoded is the resulting byte string.
+
+A.3.2.  Sequences and tuples
+
+   Deserialize each element in order.  Fail if any element fails to
+   deserialize.  The number and types of the elements are fixed by the
+   protocol.
+
+A.3.3.  Unsigned integers
+
+   Read the next Ns bytes and interpret them as a little-endian integer
+   x = LE2IP(.).  If x >= M, fail: non-canonical integer encodings
+   *MUST* be rejected.  The value returned is x.  This is the inverse of
+   SerializeUint (Appendix A.2.3).
+
+   DeserializeUint(input, M)
+
+   Inputs:
+
+   - input, the unread remainder of the NARG string
+   - M, the modulus
+
+   Output: x, an integer in the range [0, M), and the unread
+           remainder of input
+
+   1. fail if len(input) < Ns
+   2. x := LE2IP(input[0 : Ns])
+   3. fail if x >= M
+   4. return (x, input[Ns : len(input)])
+
+   This consumes Ns bytes of the NARG string.  It fails if fewer bytes
+   remain, or if the integer read is not in the range [0, M).
+
+A.3.4.  Field elements
+
+   A field element of a field of order p^m is deserialized coordinate by
+   coordinate: read m * Ns bytes and deserialize each Ns-byte coordinate
+   as an integer modulo p using the unsigned-integer deserialization
+   above.  A prime field is the case m = 1.  This is the inverse of
+   SerializeField (Appendix A.2.4).
+
+   DeserializeField(input, p, m)
+
+   Inputs:
+
+   - input, the unread remainder of the NARG string
+   - p, the prime characteristic of the field
+   - m, the extension degree
+
+   Output: a, an element of the field of order p^m, given by its
+           coordinates (a[0], ..., a[m-1]) over the prime field, and
+           the unread remainder of input
+
+   1. for i in 0, ..., m-1:
+   2.    (a[i], input) := DeserializeUint(input, p)
+   3. return ((a[0], ..., a[m-1]), input)
+
+   This consumes m * Ns bytes of the NARG string, and fails if fewer
+   bytes remain or if any coordinate is non-canonical.
+
+A.3.5.  Elliptic-curve group elements
+
+   Read the next Ne bytes and convert them to a group element using the
+   group's element-deserialization function.
+
+Appendix B.  Example protocol: sumcheck
 
    This appendix describes the Fiat-Shamir transformation for the
    sumcheck protocol.  This protocol is not meant for standalone use; it
@@ -1519,12 +1546,12 @@ Appendix A.  Example protocol: sumcheck
    10. fail if S != y
    11. return accept
 
-   The test vectors (Appendix B.5) instantiate p = 2^31 - 1, v = 4, and
+   The test vectors (Appendix C.5) instantiate p = 2^31 - 1, v = 4, and
    the witness w = (1, 2, 4, ..., 2^15), giving S = 65535.  They report
    the NARG string as NargString and f(r[1], ..., r[v]) as
    FinalEvaluation.
 
-Appendix B.  Test Vectors
+Appendix C.  Test Vectors
 
    Each test vector in this section is a block of lines of the form Key
    = Value, with no repeated keys.  A value is written inline or on
@@ -1537,7 +1564,7 @@ Appendix B.  Test Vectors
    describe.  The suite (Section 9) is identified with the key Suite.  A
    vector without Suite has the same outcome under every suite.  The key
    ByteOrder marks the vectors exercising a non-default serialization
-   (Section 6.1.4).  A vector carrying Expected is a verifier decision,
+   (Appendix A.2.4).  A vector carrying Expected is a verifier decision,
    accept or reject.  The prose accompanying each rejected vector states
    which check fails.  Each key has a value of one of the following
    kinds:
@@ -1551,12 +1578,12 @@ Appendix B.  Test Vectors
    *  a name (for Id, Function, Suite, or Expected);
 
    *  a sequence of values (one item per line, each introduced by -),
-      including the duplex sponge operations described in Appendix B.1.
+      including the duplex sponge operations described in Appendix C.1.
 
    A copy of the test vectors below is provided in JSON format as part
    of this specification's repo.
 
-B.1.  Duplex sponge
+C.1.  Duplex sponge
 
    Each Operations item is either absorb followed by a byte string, or
    squeeze followed by a number of bytes.  Each vector runs the
@@ -1564,7 +1591,7 @@ B.1.  Duplex sponge
    Output is the concatenation of all squeezed bytes, written as two
    hexadecimal characters per byte.
 
-B.1.1.  SHAKE128
+C.1.1.  SHAKE128
 
    Squeeze 32 bytes right after initialization.
 
@@ -1734,7 +1761,7 @@ Output =
    Output =
      fc876a5ffbdc960106af16ca50e3b17b14a172f985f3a6f5df09c9a649ebf588
 
-B.1.2.  TurboSHAKE128
+C.1.2.  TurboSHAKE128
 
    Squeeze 32 bytes right after initialization.
 
@@ -1904,7 +1931,7 @@ Output =
    Output =
      61d3fecc576c3faafb92db1cb22b60794075a024df9626436394c7b852ade899
 
-B.2.  Session identifier derivation
+C.2.  Session identifier derivation
 
    Derive the session identifier of the application tag interop-test-v00
    (Section 5.1).
@@ -1926,16 +1953,16 @@ B.2.  Session identifier derivation
    SessionId =
      4326208c9e56ae847be9356ca7c4447c752a9d7326a44a6cbee0c0dfc69505ac
 
-B.3.  Codecs
+C.3.  Codecs
 
    This section contains vectors for decoding verifier messages
-   (Section 4.2).  The encoding of a prover message is its serialization
-   (Section 4.1), covered in Appendix B.4.
+   (Section 3.2).  The encoding of a prover message is its serialization
+   (Section 3.1), covered in Appendix C.4.
 
-   Decoding is infallible and reduces modulo M (Section 4.2.2): the Ns +
-   16 = 48-byte little-endian encoding of M itself, the order of the
+   Decoding is infallible and reduces modulo M (Appendix A.1.2): the Ns
+   + 16 = 48-byte little-endian encoding of M itself, the order of the
    P-256 group, decodes to 0.  Deserialization instead rejects non-
-   canonical integers (Appendix B.4.2).
+   canonical integers (Appendix C.4.2).
 
    Id = fiat-shamir/codec/decode_uint_wraparound
    Function = DecodeUint
@@ -1949,7 +1976,7 @@ B.3.  Codecs
 
    Absorb the instance instance, serialized as a variable-length byte
    string, then squeeze Ns + 16 = 48 bytes and decode them into a scalar
-   of P-256 (Section 4.2.2).
+   of P-256 (Appendix A.1.2).
 
    Id = fiat-shamir/codec/shake128/decode_uint
    Function = DecodeUint
@@ -1971,7 +1998,7 @@ B.3.  Codecs
 
    Absorb the instance instance, serialized as a variable-length byte
    string, then squeeze Ns + 16 = 48 bytes and decode them into a scalar
-   of P-256 (Section 4.2.2).
+   of P-256 (Appendix A.1.2).
 
    Id = fiat-shamir/codec/turboshake128/decode_uint
    Function = DecodeUint
@@ -1991,17 +2018,17 @@ B.3.  Codecs
      0xc2088b455016d0126fcdd76335a79566e7fd8379db1de019871d459bfee955
      8b
 
-B.4.  Serialization and deserialization
+C.4.  Serialization and deserialization
 
    This section contains vectors for the serialization and
    deserialization of prover messages (Section 6).  They do not depend
    on the suite.  A conformant deserializer *MUST* reject the invalid
    inputs.
 
-B.4.1.  Valid inputs
+C.4.1.  Valid inputs
 
    Serialize the byte string proof as a variable-length string: its
-   length in 4 little-endian bytes, then its bytes (Section 6.1.1).
+   length in 4 little-endian bytes, then its bytes (Appendix A.2.1).
 
    Id = fiat-shamir/serialization/serialize_varlen
    Function = SerializeVarLenString
@@ -2017,7 +2044,7 @@ B.4.1.  Valid inputs
    Output = 00000000
 
    Serialize the integer 0xdeadbeef modulo p = 2^256 - 189 in Ns = 32
-   little-endian bytes (Section 6.1.3).
+   little-endian bytes (Appendix A.2.3).
 
    Id = fiat-shamir/serialization/serialize_uint
    Function = SerializeUint
@@ -2030,7 +2057,7 @@ B.4.1.  Valid inputs
 
    Serialize 0xdeadbeef as an element of the scalar field of P-256,
    whose standard fixes a big-endian serialization (I2OSP,
-   Section 6.1.4).
+   Appendix A.2.4).
 
    Id = fiat-shamir/serialization/serialize_field_be
    Function = SerializeField
@@ -2042,10 +2069,10 @@ B.4.1.  Valid inputs
    Output =
      00000000000000000000000000000000000000000000000000000000deadbeef
 
-B.4.2.  Invalid inputs
+C.4.2.  Invalid inputs
 
    A payload shorter than the length specified by its prefix is rejected
-   (Section 6.2.1).
+   (Appendix A.3.1).
 
    Id = fiat-shamir/serialization/deserialize_varlen_reject_truncated
    Function = DeserializeVarLenString
@@ -2100,19 +2127,19 @@ B.4.2.  Invalid inputs
      ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
    Expected = reject
 
-B.5.  NARG strings
+C.5.  NARG strings
 
    This section contains NARG strings of the sumcheck protocol of
-   Appendix A, over Mersenne31 (p = 2^31 - 1) with v = 4 variables.
+   Appendix B, over Mersenne31 (p = 2^31 - 1) with v = 4 variables.
    Each vector carries the session identifier, the instance
    (NumVariables and ClaimedSum), and the NARG string.  The valid
    vectors also carry the witness and the evaluation y as
    FinalEvaluation; the adversarial vectors are rejected before the
    final check (step 10 of SumcheckVerify), whatever y.
 
-B.5.1.  Valid NARG strings
+C.5.1.  Valid NARG strings
 
-   The sumcheck protocol of Appendix A for the witness w = (1, 2, 4,
+   The sumcheck protocol of Appendix B for the witness w = (1, 2, 4,
    ..., 2^15), with the session identifier derived from the application
    tag sumcheck.
 
@@ -2147,7 +2174,7 @@ B.5.1.  Valid NARG strings
    FinalEvaluation = 0x3ebfb3b3
    Expected = accept
 
-   The sumcheck protocol of Appendix A for the witness w = (1, 2, 4,
+   The sumcheck protocol of Appendix B for the witness w = (1, 2, 4,
    ..., 2^15), with the session identifier derived from the application
    tag sumcheck.
 
@@ -2182,7 +2209,7 @@ B.5.1.  Valid NARG strings
    FinalEvaluation = 0x654028db
    Expected = accept
 
-B.5.2.  Adversarial vectors
+C.5.2.  Adversarial vectors
 
    The coefficient a0 of the first prover message is serialized as p +
    a0, a non-canonical representative.  Deserialization rejects it (step
