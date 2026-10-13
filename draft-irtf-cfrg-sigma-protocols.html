@@ -1050,7 +1050,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù &amp; Yun</td>
-<td class="center">Expires 9 April 2027</td>
+<td class="center">Expires 16 April 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1063,12 +1063,12 @@ svg {
 <dd class="internet-draft">draft-irtf-cfrg-sigma-protocols-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-10-06" class="published">6 October 2026</time>
+<time datetime="2026-10-13" class="published">13 October 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-04-09">9 April 2027</time></dd>
+<dd class="expires"><time datetime="2027-04-16">16 April 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1123,7 +1123,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 9 April 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 16 April 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -2618,8 +2618,8 @@ sum(
 <a href="#appendix-A" class="section-number selfRef">Appendix A. </a><a href="#name-test-vectors" class="section-name selfRef">Test Vectors</a>
       </h2>
 <p id="appendix-A-1">This appendix contains test vectors for the non-interactive Sigma Protocols specified in this document, one section per ciphersuite (<a href="#tv-p256" class="auto internal xref">Appendix A.2</a>, <a href="#tv-bls12381" class="auto internal xref">Appendix A.3</a>). Each ciphersuite section has two subsections: valid proofs, and adversarial vectors. <a href="#seeded-prng" class="auto internal xref">Appendix A.1</a> pins the randomness used, so that the vectors are reproducible from this document alone.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
-<p id="appendix-A-2">The vectors follow the format specified in the Test Vectors appendix of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>: a block of <code>Key = Value</code> lines, no key repeated, values inline or indented under their key, and sequences written one <code>- </code> item per line. Every vector carries <code>Id</code>, its stable name, and <code>Function</code>, which is <code>SigmaProof</code> throughout this document. Where <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> identifies the hash suite with <code>Hash</code>, these vectors carry <code>Ciphersuite</code>, which fixes the group and the hash together (<a href="#ciphersuites" class="auto internal xref">Section 8</a>). Every vector also carries <code>Expected</code>, which is <code>accept</code> or <code>reject</code>: unlike the functional vectors of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>, each vector here is a verifier decision.<a href="#appendix-A-2" class="pilcrow">¶</a></p>
-<p id="appendix-A-3">The remaining keys are those of the protocol. <code>Relation</code> names the relation of <a href="#relation-notation" class="auto internal xref">Section 3.4</a> and <code>Flavor</code> is <code>batchable</code> or <code>compact</code>; one vector covers one flavor, so <code>Tag</code>, <code>SessionId</code> and <code>NargString</code> are unambiguous. The <code>Witness</code> field, which never appears on the wire, is encoded as the concatenation of <code>Scalar.serialize</code> of the witness scalars, in the order given by each relation.<a href="#appendix-A-3" class="pilcrow">¶</a></p>
+<p id="appendix-A-2">The vectors follow the format specified in the Test Vectors appendix of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>: a block of <code>Key = Value</code> lines, no key repeated, values inline or indented under their key, and sequences written one <code>- </code> item per line. Every vector carries <code>Id</code>, its stable name, and <code>Function</code>, which is <code>SigmaProof</code> throughout this document. Where <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> identifies the duplex sponge suite with <code>Suite</code>, these vectors carry <code>Ciphersuite</code>, which fixes the group and the hash together (<a href="#ciphersuites" class="auto internal xref">Section 8</a>). Every vector also carries <code>Expected</code>, which is <code>accept</code> or <code>reject</code>: unlike the functional vectors of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>, each vector here is a verifier decision.<a href="#appendix-A-2" class="pilcrow">¶</a></p>
+<p id="appendix-A-3">The remaining keys are those of the protocol. <code>Relation</code> names the relation of <a href="#relation-notation" class="auto internal xref">Section 3.4</a> and <code>Flavor</code> is <code>batchable</code> or <code>compact</code>; one vector covers one flavor, so <code>Tag</code>, <code>SessionId</code> and <code>NargString</code> are unambiguous. <code>Tag</code> is a name: its value is the US-ASCII tag itself, not its hexadecimal encoding. The <code>Witness</code> field, which never appears on the wire, is encoded as the concatenation of <code>Scalar.serialize</code> of the witness scalars, in the order given by each relation.<a href="#appendix-A-3" class="pilcrow">¶</a></p>
 <p id="appendix-A-4">Every adversarial vector carries <code>BaseId</code>, naming the valid vector it is derived from: it re-verifies that transcript under a different tag, statement, or encoding, and a conformant verifier <strong>MUST</strong> reject it while accepting its baseline. Testing only that the adversarial vectors are rejected is therefore not sufficient; an implementation that rejects every input passes no accept/reject pair. The prose accompanying each vector states which check fails; where the rejection step depends on the implementation's check order, any of the stated rejection points is conformant.<a href="#appendix-A-4" class="pilcrow">¶</a></p>
 <p id="appendix-A-5">Batch verification (<a href="#batch-verification" class="auto internal xref">Section 5.6</a>) can be tested on any subset of these vectors: a batch of valid batchable proofs <strong>MUST</strong> verify, and a batch containing any invalid batchable proof <strong>MUST</strong> be rejected.<a href="#appendix-A-5" class="pilcrow">¶</a></p>
 <div id="seeded-prng">

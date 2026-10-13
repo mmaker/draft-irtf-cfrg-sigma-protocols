@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 9 April 2027                                        Apple, Inc.
-                                                          6 October 2026
+Expires: 16 April 2027                                       Apple, Inc.
+                                                         13 October 2026
 
 
                    Sigma Proofs for Linear Relations
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 9 April 2027.
+   This Internet-Draft will expire on 16 April 2027.
 
 Copyright Notice
 
@@ -1707,18 +1707,19 @@ Appendix A.  Test Vectors
    values inline or indented under their key, and sequences written one
    - item per line.  Every vector carries Id, its stable name, and
    Function, which is SigmaProof throughout this document.  Where
-   [fiat-shamir] identifies the hash suite with Hash, these vectors
-   carry Ciphersuite, which fixes the group and the hash together
-   (Section 8).  Every vector also carries Expected, which is accept or
-   reject: unlike the functional vectors of [fiat-shamir], each vector
-   here is a verifier decision.
+   [fiat-shamir] identifies the duplex sponge suite with Suite, these
+   vectors carry Ciphersuite, which fixes the group and the hash
+   together (Section 8).  Every vector also carries Expected, which is
+   accept or reject: unlike the functional vectors of [fiat-shamir],
+   each vector here is a verifier decision.
 
    The remaining keys are those of the protocol.  Relation names the
    relation of Section 3.4 and Flavor is batchable or compact; one
    vector covers one flavor, so Tag, SessionId and NargString are
-   unambiguous.  The Witness field, which never appears on the wire, is
-   encoded as the concatenation of Scalar.serialize of the witness
-   scalars, in the order given by each relation.
+   unambiguous.  Tag is a name: its value is the US-ASCII tag itself,
+   not its hexadecimal encoding.  The Witness field, which never appears
+   on the wire, is encoded as the concatenation of Scalar.serialize of
+   the witness scalars, in the order given by each relation.
 
    Every adversarial vector carries BaseId, naming the valid vector it
    is derived from: it re-verifies that transcript under a different
