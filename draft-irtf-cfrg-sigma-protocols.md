@@ -829,10 +829,11 @@ Group.serialize(commitment) || Scalar.serialize(response)
 `ProveBatchable` and `VerifyBatchable` are the NARG prover and verifier of {{fiat-shamir}} instantiated with the Sigma Protocol of {{sigma-protocol-group}}.
 
 - `ProveBatchable(tag, instance, witness, rng)` computes the commitment message with `ProverCommitment`, derives the challenge as `DeriveChallenge(tag, instance, Group.serialize(commitment))` ({{challenge-derivation}}), computes the response with `ProverResponse(prover_state, challenge)`, and outputs the NARG string above.
-- `VerifyBatchable(tag, instance, narg_string)` checks:
-  1.  `len(narg_string)` is exactly `Ne * num_equations(instance) + Ns * num_scalars(instance)`
-  2.  deserialization succeeds
-  3.  `Verifier(instance, commitment, challenge, response)` accepts.
+- `VerifyBatchable(tag, instance, narg_string)`:
+  1.  Check that `len(narg_string)` is exactly `Ne * num_equations(instance) + Ns * num_scalars(instance)`; fail otherwise.
+  2.  Deserialize the commitment and response; fail if deserialization fails.
+  3.  Compute `challenge = DeriveChallenge(tag, instance, Group.serialize(commitment))`.
+  4.  Return `Verifier(instance, commitment, challenge, response)`.
 
 ## Compact NARG strings {#narg-string-compact}
 
