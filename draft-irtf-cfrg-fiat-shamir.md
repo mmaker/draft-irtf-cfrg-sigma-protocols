@@ -730,7 +730,7 @@ In three cases this approach is inefficient:
 
 - if `M` is a power of two, since the decoding bias is always 0;
 - if `M` is only slightly below a power of `256` (for example, the secp256k1 scalar field order) where squeezing just `Ns` bytes and reducing with a single conditional subtraction already has bias of approximately `2^-128`;
-- if the soundness error of the interactive argument is much smaller than the bias introduced, for example a protocol with 30-bit challenges does not require such a big modular reduction.
+- if the soundness error of the interactive argument is much larger than the bias introduced, for example a protocol with 30-bit challenges does not require such a big modular reduction.
 
 In such cases, applications **MAY** use an alternative decoding function that meets the requirements of {{decoding}}. See {{Section 5 of ?RFC9380}}.
 
