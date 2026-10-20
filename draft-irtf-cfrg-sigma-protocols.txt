@@ -507,15 +507,16 @@ Table of Contents
 
    Terms compile to the two lists of Section 3.2.  A term carrying a
    witness scalar compiles to the right-hand side term (homomorphism)
-   (scalar_index, element_index, coeff); a term without one (a _constant
-   term_) compiles to the left-hand side term (image) (element_index,
-   coeff), with its coefficient negated when the term is written on the
-   right-hand side.  Terms appear in the order written, left-hand side
-   first; equations compile in the order they are written under
-   Equations:. Indices attach to names: every occurrence of a name,
-   within or across equations, denotes the same scalar or element index,
-   and every occurrence of a scalar parameter denotes the same public
-   value.
+   (scalar_index, element_index, coeff), with its coefficient negated
+   when the term is written on the left-hand side; a term without one (a
+   _constant term_) compiles to the left-hand side term (image)
+   (element_index, coeff), with its coefficient negated when the term is
+   written on the right-hand side.  Terms appear in the order written,
+   left-hand side first; equations compile in the order they are written
+   under Equations:. Indices attach to names: every occurrence of a
+   name, within or across equations, denotes the same scalar or element
+   index, and every occurrence of a scalar parameter denotes the same
+   public value.
 
    As an example with a public scalar parameter, below is the relation
    stating that C opens to the _public_ value m, that is, C - m * G = r
