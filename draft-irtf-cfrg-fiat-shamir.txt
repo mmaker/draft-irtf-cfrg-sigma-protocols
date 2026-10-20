@@ -4,8 +4,8 @@
 
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
-Intended status: Informational                           13 October 2026
-Expires: 16 April 2027
+Intended status: Informational                           20 October 2026
+Expires: 23 April 2027
 
 
                        Fiat-Shamir Transformation
@@ -55,7 +55,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 16 April 2027.
+   This Internet-Draft will expire on 23 April 2027.
 
 Copyright Notice
 
@@ -1205,7 +1205,7 @@ A.1.2.  Unsigned integers
       reducing with a single conditional subtraction already has bias of
       approximately 2^-128;
 
-   *  if the soundness error of the interactive argument is much smaller
+   *  if the soundness error of the interactive argument is much larger
       than the bias introduced, for example a protocol with 30-bit
       challenges does not require such a big modular reduction.
 
