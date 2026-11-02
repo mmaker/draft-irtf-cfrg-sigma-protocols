@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 2 May 2027                                          Apple, Inc.
-                                                         29 October 2026
+Expires: 6 May 2027                                          Apple, Inc.
+                                                         2 November 2026
 
 
                    Sigma Proofs for Linear Relations
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 2 May 2027.
+   This Internet-Draft will expire on 6 May 2027.
 
 Copyright Notice
 
@@ -138,17 +138,17 @@ Table of Contents
    than what is already revealed by the statement itself.
 
    Sigma Protocols are an essential component of a number of
-   cryptographic constructions, such as anonymous credentials [ARC]
-   [BBS], verifiable random functions [RFC9381], anonymous tokens
-   [RFC9497], blind signatures [BBSBlind], and proofs of knowledge of
-   the opening of a Pedersen commitment [Pedersen91].  This document
-   specifies a single Sigma Protocol for proving knowledge of a preimage
-   of a linear map over a prime-order group [Brands00], [Cramer97],
-   [Maurer09].  A _linear relation_ is a system of equations among group
-   elements that is linear in the secret scalars; affine relations with
-   constant terms (e.g. verifiable encryption) and quadratic equations
-   (e.g. range proofs) can also be expressed as the preimage of a linear
-   map (Section 3.1).
+   cryptographic constructions, such as anonymous credentials [BBS],
+   verifiable random functions [RFC9381], anonymous tokens [RFC9497],
+   blind signatures [BBSBlind], and proofs of knowledge of the opening
+   of a Pedersen commitment [Pedersen91].  This document specifies a
+   single Sigma Protocol for proving knowledge of a preimage of a linear
+   map over a prime-order group [Brands00], [Cramer97], [Maurer09].  A
+   _linear relation_ is a system of equations among group elements that
+   is linear in the secret scalars; affine relations with constant terms
+   (e.g. verifiable encryption) and quadratic equations (e.g. range
+   proofs) can also be expressed as the preimage of a linear map
+   (Section 3.1).
 
    A Sigma Protocol is an interactive proof with the following three-
    message flow:
@@ -245,9 +245,7 @@ Table of Contents
    [fiat-shamir].  Different sampling mechanisms, such as the wide
    reduction of hash_to_field (Section 5.2 of [RFC9380]) and the integer
    conversion of Appendix A.4.1 of [FIPS186-5] do not affect
-   interoperability of proofs.  The "discard method" of Appendix A.4.2
-   of [FIPS186-5] is rejection sampling, which Section 7.6 advises
-   against.
+   interoperability of proofs.
 
 2.3.  Group abstraction
 
@@ -830,17 +828,14 @@ Table of Contents
 
    The session identifier session_id is a 32-byte string.  It *SHOULD*
    be derived from a string tag using DeriveSessionID of [fiat-shamir].
-   The prover and verifier initialize their duplex sponge state from it
-   (Section 5.2).
-
    The tag is a byte string following the security requirements on the
    session identifier in [fiat-shamir].  It *MUST* contain, verbatim,
    the _flavor_ marker, DSFS (duplex sponge Fiat-Shamir) for batchable
    NARG strings or CMPT for compact NARG strings, and the ciphersuite
-   identifier (Section 8).  Following the domain-separation conventions
-   of Section 3.1 of [RFC9380], an application concatenates its own
-   name, version, and epoch with these two components.  As an example, a
-   reasonable choice of tag for a fictional application named Foo is:
+   identifier (Section 8).
+
+   As an example, a reasonable choice of tag for a fictional application
+   named Foo is:
 
    FOO-V{xx}-{tttt}-{flavor}-with-{ciphersuiteID}
 
@@ -853,17 +848,13 @@ Table of Contents
 
    The prover and the verifier each construct the tag (or session
    identifier).  Neither should accept a session identifier supplied by
-   a third party.  An adversary who controls the entire session
-   identifier can cause a proof to be accepted where it was never
-   intended.
+   an untrusted third party.  An adversary who controls the entire
+   session identifier can cause a proof to be accepted where it was
+   never intended.
 
 5.2.  Challenge derivation
 
-   The prover derives the challenge from the tag (Section 5.1), the
-   instance being proven, and the serialized commitment message; the
-   verifier re-derives it from the same values, exactly as the prover
-   does.  Both compute DeriveChallenge, which outputs the challenge, a
-   scalar:
+   The prover and verifier derive the challenge as follows:
 
    DeriveChallenge(tag, instance, commitment_bytes)
 
@@ -919,21 +910,22 @@ Table of Contents
    ProveBatchable and VerifyBatchable are the NARG prover and verifier
    of [fiat-shamir] instantiated with the Sigma Protocol of Section 4.
 
-   *  ProveBatchable(tag, instance, witness, rng) computes the
-      commitment message with ProverCommitment, derives the challenge as
-      DeriveChallenge(tag, instance, Group.serialize(commitment))
-      (Section 5.2), computes the response with
-      ProverResponse(prover_state, challenge), and outputs the NARG
-      string above.
+   ProveBatchable(tag, instance, witness, rng) computes the commitment
+   message with ProverCommitment, derives the challenge as
+   DeriveChallenge(tag, instance, Group.serialize(commitment))
+   (Section 5.2), computes the response with
+   ProverResponse(prover_state, challenge), and outputs the NARG string
+   above.
 
-   *  VerifyBatchable(tag, instance, narg_string) checks:
+   VerifyBatchable(tag, instance, narg_string) accepts the proof only
+   if:
 
-      1.  len(narg_string) is exactly Ne * num_equations(instance) + Ns
-          * num_scalars(instance)
+   1.  len(narg_string) is exactly Ne * num_equations(instance) + Ns *
+       num_scalars(instance)
 
-      2.  deserialization succeeds
+   2.  deserialization succeeds
 
-      3.  Verifier(instance, commitment, challenge, response) accepts.
+   3.  Verifier(instance, commitment, challenge, response) accepts.
 
 5.5.  Compact NARG strings
 
@@ -988,16 +980,13 @@ Procedure:
 
 5.6.  Batch verification
 
-   Verification of multiple batchable NARG strings *MAY* be done more
-   efficiently than verifying each NARG string on its own, via batch
-   verification.  Batch verification can be more efficient even in the
-   presence of a single instance, provided the instance has at least a
-   few equations.  Batch verification is a local verifier-side
-   optimization, which affects neither the prover nor the NARG string.
-
-   Batch verification checks a single random linear combination of the
-   verification equations of the whole batch.  See Section 8.2 of
-   [RFC8032], [BDLSY11], and [BellareGR98].
+   Batch verification *MAY* verify multiple batchable NARG strings more
+   efficiently than individual verification.  It can also improve
+   efficiency for a single instance with several equations.  Batch
+   verification does not affect the prover or the NARG string.  It
+   checks a single random linear combination of the verification
+   equations.  See Section 8.2 of [RFC8032], [BDLSY11], and
+   [BellareGR98].
 
    The verification equation for Nt transcripts (commitment, challenge,
    response) of preimages of linear relations is:
@@ -1023,12 +1012,11 @@ Procedure:
    t, as in batch verification of Ed25519 signatures [BDLSY11]; below, t
    = 128.
 
-   It is *RECOMMENDED* that the batching randomness be generated
-   deterministically, with the duplex sponge of [fiat-shamir] as
-   follows; it *MAY* instead be freshly sampled from a cryptographically
-   secure random number generator.  Below, session_ids[i] is the 32-byte
-   session identifier of the i-th NARG string being verified
-   (Section 5.1).
+   The following procedure derives batching randomness
+   deterministically.  Alternatively, batching randomness *MAY* be
+   sampled from a cryptographically secure random number generator.
+   Below, session_ids[i] is the 32-byte session identifier of the i-th
+   NARG string being verified (Section 5.1).
 
     1. batching_sid = DeriveSessionID(
          "irtf-cfrg-sigma-protocols/batch-verify")
@@ -1041,7 +1029,13 @@ Procedure:
          16 * sum(num_equations(instances[i]) for i in 0, ..., Nt - 1))
 
    The session identifier has fixed length, and the length of each NARG
-   string is determined by the respective instance.
+   string is determined by the respective instance.  Omitting any of the
+   instances or NARG strings (i.e., prover messages) will compromise
+   soundness of batch verification [SOLANA-ZK] [SOLANA-PHANTOM].  When
+   sampled, the batching randomness *MUST* be drawn only after every
+   NARG string in the batch is received, and *MUST NOT* be reused across
+   batches.  The batch verification procedure *MUST NOT* reuse the
+   duplex sponge of a NARG verifier.
 
    The squeezed output is read in row-major order (for example, the
    second batching randomness corresponds to the second equation of the
@@ -1061,20 +1055,8 @@ Procedure:
    instance, and *MUST* compute each of the verifier challenges with
    DeriveChallenge (Section 5.2).  Empty batches are accepted as valid;
    the batch size *MUST* be less than 2^32.  Upon failure, batch
-   verification does not identify the offending NARG string; an
+   verification does not identify the offending NARG string, and an
    application may fall back to verifying the NARG strings individually.
-
-   Batch verification is sound only if the prover(s) cannot choose their
-   messages as a function of the batching randomness.  When derived
-   deterministically, the batching randomness *MUST* therefore absorb
-   every value in the batched equation before squeezing.  In particular,
-   this includes the response message.  Omitting prover messages from
-   the derivation will compromise soundness of batch verification
-   [SOLANA-ZK] [SOLANA-PHANTOM].  When sampled, the batching randomness
-   *MUST* be drawn only after every NARG string in the batch is
-   received, and *MUST NOT* be reused across batches.  The batch
-   verification procedure *MUST NOT* reuse the duplex sponge of a NARG
-   verifier.
 
    The batching randomness elements *MAY* be replaced by the successive
    powers 1, mu, mu^2, ... of a single random scalar mu, assigned in
@@ -1263,9 +1245,8 @@ Procedure:
    witness, the nonces, and the prover state that carries them.  The
    NARG string is public, and the instance usually is too.
 
-   Randomness *SHOULD* be derived with straight-line code, avoiding
-   rejection sampling and other methods whose iteration count depends on
-   the entropy drawn (Section 2.2).
+   Randomness *SHOULD* be derived using implementations that are
+   constant-time with respect to the entropy drawn (Section 2.2).
 
    Implementations *MAY* skip multiplications by coefficient 1, or test
    instance coefficients for zero in variable time.
@@ -1446,10 +1427,10 @@ References
 Normative References
 
    [fiat-shamir]
-              Orrù, M., "Fiat-Shamir Transformation", Work in Progress,
-              Internet-Draft, draft-irtf-cfrg-fiat-shamir-03, 16 August
-              2026, <https://datatracker.ietf.org/doc/html/draft-irtf-
-              cfrg-fiat-shamir-03>.
+              Orrù, M. and C. Yun, "Fiat-Shamir Transformation", Work in
+              Progress, Internet-Draft, draft-irtf-cfrg-fiat-shamir-04,
+              2 November 2026, <https://datatracker.ietf.org/doc/html/
+              draft-irtf-cfrg-fiat-shamir-04>.
 
    [NIST-SP-800-56A]
               Barker, E., Chen, L., Roginsky, A., Vassilev, A., and R.
@@ -1469,9 +1450,9 @@ Normative References
 
    [PAIRING]  Sakemi, Y., Kanno, S., and R. S. Wahby, "Pairing-Friendly
               Curves", Work in Progress, Internet-Draft, draft-irtf-
-              cfrg-pairing-friendly-curves-14, 7 September 2026,
+              cfrg-pairing-friendly-curves-15, 1 November 2026,
               <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
-              pairing-friendly-curves-14>.
+              pairing-friendly-curves-15>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -1498,12 +1479,6 @@ Normative References
 
 Informative References
 
-   [ARC]      Yun, C., Wood, C. A., and A. F. Faz-Hernandez, "Anonymous
-              Rate-Limited Credentials Cryptography", Work in Progress,
-              Internet-Draft, draft-ietf-privacypass-arc-crypto-01, 2
-              March 2026, <https://datatracker.ietf.org/doc/html/draft-
-              ietf-privacypass-arc-crypto-01>.
-
    [AttemaCK21]
               Attema, T., Cramer, R., and L. Kohl, "A Compressed Sigma-
               Protocol Theory for Lattices",
@@ -1512,15 +1487,15 @@ Informative References
    [BBS]      Looker, T., Kalos, V., Whitehead, A., Lodder, M., and G.
               M. Bernstein, "The BBS Signature Scheme", Work in
               Progress, Internet-Draft, draft-irtf-cfrg-bbs-signatures-
-              13, 13 October 2026,
+              14, 29 October 2026,
               <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
-              bbs-signatures-13>.
+              bbs-signatures-14>.
 
    [BBSBlind] Kalos, V. and G. M. Bernstein, "Blind BBS Signatures",
               Work in Progress, Internet-Draft, draft-irtf-cfrg-bbs-
-              blind-signatures-03, 26 June 2026,
+              blind-signatures-05, 30 October 2026,
               <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
-              bbs-blind-signatures-03>.
+              bbs-blind-signatures-05>.
 
    [BDFLSZ11] Boneh, D., Dagdelen, Ö., Fischlin, M., Lehmann, A.,
               Schaffner, C., and M. Zhandry, "Random Oracles in a
