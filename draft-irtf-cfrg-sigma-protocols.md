@@ -234,7 +234,6 @@ informative:
     date: 2024
     author:
       - fullname: "Michele Orrù"
-  ARC: I-D.ietf-privacypass-arc-crypto
   BBS: I-D.irtf-cfrg-bbs-signatures
   BBSBlind: I-D.irtf-cfrg-bbs-blind-signatures
   CVE-2022-23806:
@@ -310,7 +309,7 @@ Examples include zero-knowledge proofs for discrete logarithm relations, ElGamal
 
 Zero-knowledge proofs of knowledge allow a prover to convince a verifier that a statement is true, without revealing anything other than what is already revealed by the statement itself.
 
-Sigma Protocols are an essential component of a number of cryptographic constructions, such as anonymous credentials {{ARC}} {{BBS}}, verifiable random functions {{?RFC9381}}, anonymous tokens {{?RFC9497}}, blind signatures {{BBSBlind}}, and proofs of knowledge of the opening of a Pedersen commitment {{Pedersen91}}. This document specifies a single Sigma Protocol for proving knowledge of a preimage of a linear map over a prime-order group {{Brands00}}, {{Cramer97}}, {{Maurer09}}. A *linear relation* is a system of equations among group elements that is linear in the secret scalars; affine relations with constant terms (e.g. verifiable encryption) and quadratic equations (e.g. range proofs) can also be expressed as the preimage of a linear map ({{linear-map}}).
+Sigma Protocols are an essential component of a number of cryptographic constructions, such as anonymous credentials {{BBS}}, verifiable random functions {{?RFC9381}}, anonymous tokens {{?RFC9497}}, blind signatures {{BBSBlind}}, and proofs of knowledge of the opening of a Pedersen commitment {{Pedersen91}}. This document specifies a single Sigma Protocol for proving knowledge of a preimage of a linear map over a prime-order group {{Brands00}}, {{Cramer97}}, {{Maurer09}}. A *linear relation* is a system of equations among group elements that is linear in the secret scalars; affine relations with constant terms (e.g. verifiable encryption) and quadratic equations (e.g. range proofs) can also be expressed as the preimage of a linear map ({{linear-map}}).
 
 A Sigma Protocol is an interactive proof with the following three-message flow:
 
@@ -358,7 +357,7 @@ A byte is an 8-bit unsigned integer (an octet), and a *byte string* is a finite 
 
 The prover commitment algorithm requires fresh, single-use randomness for zero-knowledge. This document denotes with `rng` a cryptographically secure random number generator (CSPRNG), and uses `Group.random_scalar(rng)` to denote sampling a uniformly random element of the scalar field, similarly to `RandomScalar()` of {{Section 2.1 of ?RFC9497}}.
 
-Sampling a random scalar takes two steps: obtaining high-quality entropy via a CSPRNG (e.g., `getrandom()`; see {{?RFC4086}} for randomness requirements), and reducing the resulting bytes to a scalar. It is **RECOMMENDED** that the latter be done via `DecodeField` as in {{fiat-shamir}}. Different sampling mechanisms, such as the wide reduction of `hash_to_field` ({{Section 5.2 of ?RFC9380}}) and the integer conversion of Appendix A.4.1 of {{FIPS186-5}} do not affect interoperability of proofs. The "discard method" of Appendix A.4.2 of {{FIPS186-5}} is rejection sampling, which {{constant-time}} advises against.
+Sampling a random scalar takes two steps: obtaining high-quality entropy via a CSPRNG (e.g., `getrandom()`; see {{?RFC4086}} for randomness requirements), and reducing the resulting bytes to a scalar. It is **RECOMMENDED** that the latter be done via `DecodeField` as in {{fiat-shamir}}. Different sampling mechanisms, such as the wide reduction of `hash_to_field` ({{Section 5.2 of ?RFC9380}}) and the integer conversion of Appendix A.4.1 of {{FIPS186-5}} do not affect interoperability of proofs.
 
 ## Group abstraction {#group-abstraction}
 
@@ -767,9 +766,9 @@ The Fiat-Shamir transformation applied to Sigma Protocols yields a non-interacti
 
 ## Tag and session identifier {#sigma-proofs-tag}
 
-The session identifier `session_id` is a 32-byte string. It **SHOULD** be derived from a string `tag` using `DeriveSessionID` of {{fiat-shamir}}. The prover and verifier initialize their duplex sponge state from it ({{challenge-derivation}}).
+The session identifier `session_id` is a 32-byte string. It **SHOULD** be derived from a string `tag` using `DeriveSessionID` of {{fiat-shamir}}. The `tag` is a byte string following the security requirements on the session identifier in {{fiat-shamir}}. It **MUST** contain, verbatim, the *flavor* marker, `DSFS` (duplex sponge Fiat-Shamir) for batchable NARG strings or `CMPT` for compact NARG strings, and the ciphersuite identifier ({{ciphersuites}}).
 
-The `tag` is a byte string following the security requirements on the session identifier in {{fiat-shamir}}. It **MUST** contain, verbatim, the *flavor* marker, `DSFS` (duplex sponge Fiat-Shamir) for batchable NARG strings or `CMPT` for compact NARG strings, and the ciphersuite identifier ({{ciphersuites}}). Following the domain-separation conventions of {{Section 3.1 of !RFC9380}}, an application concatenates its own name, version, and epoch with these two components. As an example, a reasonable choice of `tag` for a fictional application named Foo is:
+As an example, a reasonable choice of `tag` for a fictional application named Foo is:
 
 ~~~
 FOO-V{xx}-{tttt}-{flavor}-with-{ciphersuiteID}
@@ -781,11 +780,11 @@ where `xx` is the two-digit number indicating the version, `tttt` is the four-di
 FOO-V01-0001-DSFS-with-sigma-proofs_Shake128_P256
 ~~~
 
-The prover and the verifier each construct the tag (or session identifier). Neither should accept a session identifier supplied by a third party. An adversary who controls the entire session identifier can cause a proof to be accepted where it was never intended.
+The prover and the verifier each construct the tag (or session identifier). Neither should accept a session identifier supplied by an untrusted third party. An adversary who controls the entire session identifier can cause a proof to be accepted where it was never intended.
 
 ## Challenge derivation {#challenge-derivation}
 
-The prover derives the challenge from the tag ({{sigma-proofs-tag}}), the instance being proven, and the serialized commitment message; the verifier re-derives it from the same values, exactly as the prover does. Both compute `DeriveChallenge`, which outputs the challenge, a scalar:
+The prover and verifier derive the challenge as follows:
 
 ~~~
 DeriveChallenge(tag, instance, commitment_bytes)
@@ -828,8 +827,10 @@ Group.serialize(commitment) || Scalar.serialize(response)
 
 `ProveBatchable` and `VerifyBatchable` are the NARG prover and verifier of {{fiat-shamir}} instantiated with the Sigma Protocol of {{sigma-protocol-group}}.
 
-- `ProveBatchable(tag, instance, witness, rng)` computes the commitment message with `ProverCommitment`, derives the challenge as `DeriveChallenge(tag, instance, Group.serialize(commitment))` ({{challenge-derivation}}), computes the response with `ProverResponse(prover_state, challenge)`, and outputs the NARG string above.
-- `VerifyBatchable(tag, instance, narg_string)` checks:
+`ProveBatchable(tag, instance, witness, rng)` computes the commitment message with `ProverCommitment`, derives the challenge as `DeriveChallenge(tag, instance, Group.serialize(commitment))` ({{challenge-derivation}}), computes the response with `ProverResponse(prover_state, challenge)`, and outputs the NARG string above.
+
+`VerifyBatchable(tag, instance, narg_string)` accepts the proof only if:
+
   1.  `len(narg_string)` is exactly `Ne * num_equations(instance) + Ns * num_scalars(instance)`
   2.  deserialization succeeds
   3.  `Verifier(instance, commitment, challenge, response)` accepts.
@@ -887,9 +888,7 @@ Procedure:
 
 ## Batch verification {#batch-verification}
 
-Verification of multiple batchable NARG strings **MAY** be done more efficiently than verifying each NARG string on its own, via batch verification. Batch verification can be more efficient even in the presence of a single instance, provided the instance has at least a few equations. Batch verification is a local verifier-side optimization, which affects neither the prover nor the NARG string.
-
-Batch verification checks a single random linear combination of the verification equations of the whole batch. See {{Section 8.2 of ?RFC8032}}, {{BDLSY11}}, and {{BellareGR98}}.
+Batch verification **MAY** verify multiple batchable NARG strings more efficiently than individual verification. It can also improve efficiency for a single instance with several equations. Batch verification does not affect the prover or the NARG string. It checks a single random linear combination of the verification equations. See {{Section 8.2 of ?RFC8032}}, {{BDLSY11}}, and {{BellareGR98}}.
 
 The verification equation for `Nt` transcripts `(commitment, challenge, response)` of preimages of linear relations is:
 
@@ -913,7 +912,7 @@ sum(
 
 For `batching_randomness` elements drawn uniformly from a set of `2^t` scalars, a false NARG string is accepted with probability at most `2^-t`, as in batch verification of Ed25519 signatures {{BDLSY11}}; below, `t = 128`.
 
-It is **RECOMMENDED** that the batching randomness be generated deterministically, with the duplex sponge of {{fiat-shamir}} as follows; it **MAY** instead be freshly sampled from a cryptographically secure random number generator. Below, `session_ids[i]` is the 32-byte session identifier of the `i`-th NARG string being verified ({{sigma-proofs-tag}}).
+The following procedure derives batching randomness deterministically. Alternatively, batching randomness **MAY** be sampled from a cryptographically secure random number generator. Below, `session_ids[i]` is the 32-byte session identifier of the `i`-th NARG string being verified ({{sigma-proofs-tag}}).
 
 ~~~
  1. batching_sid = DeriveSessionID(
@@ -927,7 +926,7 @@ It is **RECOMMENDED** that the batching randomness be generated deterministicall
       16 * sum(num_equations(instances[i]) for i in 0, ..., Nt - 1))
 ~~~
 
-The session identifier has fixed length, and the length of each NARG string is determined by the respective instance.
+The session identifier has fixed length, and the length of each NARG string is determined by the respective instance. Omitting any of the instances or NARG strings (i.e., prover messages) will compromise soundness of batch verification {{SOLANA-ZK}} {{SOLANA-PHANTOM}}. When sampled, the batching randomness **MUST** be drawn only after every NARG string in the batch is received, and **MUST NOT** be reused across batches. The batch verification procedure **MUST NOT** reuse the duplex sponge of a NARG verifier.
 
 The squeezed output is read in row-major order (for example, the second batching randomness corresponds to the second equation of the first transcript). Each 16-byte chunk is interpreted as a little-endian integer via `LE2IP` ({{bytes-and-integers}}). The batching randomness elements are uniform in `[0, 2^128)` and are used as scalars without further reduction.
 
@@ -940,9 +939,7 @@ The squeezed output is read in row-major order (for example, the second batching
 12.     k = k + 1
 ~~~
 
-The batch verifier **MUST** perform instance validation for each instance, and **MUST** compute each of the verifier challenges with `DeriveChallenge` ({{challenge-derivation}}). Empty batches are accepted as valid; the batch size **MUST** be less than `2^32`. Upon failure, batch verification does not identify the offending NARG string; an application may fall back to verifying the NARG strings individually.
-
-Batch verification is sound only if the prover(s) cannot choose their messages as a function of the batching randomness. When derived deterministically, the batching randomness **MUST** therefore absorb every value in the batched equation before squeezing. In particular, this includes the response message. Omitting prover messages from the derivation will compromise soundness of batch verification {{SOLANA-ZK}} {{SOLANA-PHANTOM}}. When sampled, the batching randomness **MUST** be drawn only after every NARG string in the batch is received, and **MUST NOT** be reused across batches. The batch verification procedure **MUST NOT** reuse the duplex sponge of a NARG verifier.
+The batch verifier **MUST** perform instance validation for each instance, and **MUST** compute each of the verifier challenges with `DeriveChallenge` ({{challenge-derivation}}). Empty batches are accepted as valid; the batch size **MUST** be less than `2^32`. Upon failure, batch verification does not identify the offending NARG string, and an application may fall back to verifying the NARG strings individually.
 
 The batching randomness elements **MAY** be replaced by the successive powers `1, mu, mu^2, ...` of a single random scalar `mu`, assigned in row-major order (transcripts, then equations) to the pairs `(i, j)` and computed in the scalar field. Step 7 then squeezes 16 bytes instead of `16 * K`, where `K = sum(num_equations(instances[i]) for i in 0, ..., Nt - 1)` is the total number of batched equations, and `mu` is their `LE2IP` value. An invalid batch is then accepted with probability at most `(K - 1)/2^128`, rather than `2^-128`.
 
@@ -1014,7 +1011,7 @@ Implementations **SHOULD** securely delete prover state as soon as it is no long
 
 All group and field operations whose inputs include secret values **SHOULD** be constant-time in those values. The secret values are the witness, the nonces, and the prover state that carries them. The NARG string is public, and the instance usually is too.
 
-Randomness **SHOULD** be derived with straight-line code, avoiding rejection sampling and other methods whose iteration count depends on the entropy drawn ({{rng-definition}}).
+Randomness **SHOULD** be derived using implementations that are constant-time with respect to the entropy drawn ({{rng-definition}}).
 
 Implementations **MAY** skip multiplications by coefficient `1`, or test instance coefficients for zero in variable time.
 
