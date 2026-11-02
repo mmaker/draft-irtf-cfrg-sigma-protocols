@@ -356,7 +356,7 @@ Decoding maps **MUST** satisfy the following requirements:
 1. They are infallible.
 2. They are _distribution-preserving_: on a uniformly random input, the output is statistically close to uniformly distributed over the verifier message type. The bias adds to the soundness error of the resulting non-interactive argument. An alternative to the decodings of {{type-decoding}} **MUST** have bias at most the soundness error of the interactive argument, so that the non-interactive soundness error stays within a small multiple of the interactive one.
 
-Decoding maps **SHOULD** be amenable to straight-line implementations.
+Decoding maps **SHOULD** be amenable to constant-time implementations.
 
 Unlike deserialization, decoding need not be injective. Each verifier message type fixes the number of bytes to squeeze. Decoding a fixed-length byte string is the identity ({{decoding-bytes}}), and decoding an integer modulo `M` reads `Ns + 16` squeezed bytes as a little-endian integer and reduces it modulo `M` ({{decoding-uint}}).
 
