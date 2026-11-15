@@ -314,7 +314,7 @@ def check_sigma_valid(suite, records):
               f"{rid}: verifier acceptance")
 
 
-def check_sigma_invalid(suite, records, valid_ids):
+def check_sigma_invalid(suite, records, valid):
     _, group = SUITES[suite]
     for rec in records:
         rid = rec["Id"]
@@ -328,8 +328,12 @@ def check_sigma_invalid(suite, records, valid_ids):
             check("BaseId" not in rec, f"{rid}: baselines carry no BaseId")
         else:
             check(not accepted, f"{rid}: must reject")
-            check(rec["BaseId"] in valid_ids,
-                  f"{rid}: BaseId names no valid vector")
+            base = valid.get(rec["BaseId"])
+            check(base is not None, f"{rid}: BaseId names no valid vector")
+            check(rec["Instance"] == base["Instance"]
+                  or rec["NargString"] == base["NargString"],
+                  f"{rid}: shares neither Instance nor NargString with "
+                  "its baseline")
 
 
 def check_sigma_batch(suite, valid, invalid):
@@ -487,7 +491,7 @@ def main():
         valid = load(suite)
         invalid = load(f"sigma-proofs-invalid_{suite.removeprefix('sigma-proofs_')}")
         check_sigma_valid(suite, valid)
-        check_sigma_invalid(suite, invalid, {rec["Id"] for rec in valid})
+        check_sigma_invalid(suite, invalid, {rec["Id"]: rec for rec in valid})
         check_sigma_batch(suite, valid, invalid)
         print(f"{suite}: {_checks - before} checks")
 
