@@ -2136,7 +2136,7 @@ Verification fails if the statement's two equations are swapped.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/F2b
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
+BaseId = sigma-protocols/p256/dleq/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -2187,7 +2187,7 @@ Verification fails if the statement's two equations are swapped.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/compact/F2b
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
+BaseId = sigma-protocols/p256/dleq/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -3380,7 +3380,7 @@ Verification fails if the statement's two equations are swapped.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F2b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
+BaseId = sigma-protocols/bls12381/dleq/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3433,7 +3433,7 @@ Verification fails if the statement's two equations are swapped.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/F2b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
+BaseId = sigma-protocols/bls12381/dleq/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact

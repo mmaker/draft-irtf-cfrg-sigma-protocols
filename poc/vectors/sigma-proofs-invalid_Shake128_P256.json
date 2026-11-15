@@ -281,7 +281,7 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/F2b",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
+    "BaseId": "sigma-protocols/p256/dleq/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -304,7 +304,7 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/compact/F2b",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/compact",
+    "BaseId": "sigma-protocols/p256/dleq/compact",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "compact",
