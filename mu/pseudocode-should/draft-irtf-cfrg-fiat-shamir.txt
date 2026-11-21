@@ -434,7 +434,7 @@ Table of Contents
        soundness error stays within a small multiple of the interactive
        one.
 
-   Decoding maps *SHOULD* be amenable to constant-time implementations.
+   Decoding maps *SHOULD* be amenable to straight-line implementations.
 
    Unlike deserialization, decoding need not be injective.  Each
    verifier message type fixes the number of bytes to squeeze.  Decoding

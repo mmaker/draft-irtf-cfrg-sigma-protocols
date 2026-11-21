@@ -1857,7 +1857,7 @@ svg {
             <p id="section-3.2-2.2.1">They are <em>distribution-preserving</em>: on a uniformly random input, the output is statistically close to uniformly distributed over the verifier message type. The bias adds to the soundness error of the resulting non-interactive argument. An alternative to the decodings of <a href="#type-decoding" class="auto internal xref">Appendix A.1</a> <strong>MUST</strong> have bias at most the soundness error of the interactive argument, so that the non-interactive soundness error stays within a small multiple of the interactive one.<a href="#section-3.2-2.2.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
-<p id="section-3.2-3">Decoding maps <strong>SHOULD</strong> be amenable to constant-time implementations.<a href="#section-3.2-3" class="pilcrow">¶</a></p>
+<p id="section-3.2-3">Decoding maps <strong>SHOULD</strong> be amenable to straight-line implementations.<a href="#section-3.2-3" class="pilcrow">¶</a></p>
 <p id="section-3.2-4">Unlike deserialization, decoding need not be injective. Each verifier message type fixes the number of bytes to squeeze. Decoding a fixed-length byte string is the identity (<a href="#decoding-bytes" class="auto internal xref">Appendix A.1.1</a>), and decoding an integer modulo <code>M</code> reads <code>Ns + 16</code> squeezed bytes as a little-endian integer and reduces it modulo <code>M</code> (<a href="#decoding-uint" class="auto internal xref">Appendix A.1.2</a>).<a href="#section-3.2-4" class="pilcrow">¶</a></p>
 </section>
 </div>
