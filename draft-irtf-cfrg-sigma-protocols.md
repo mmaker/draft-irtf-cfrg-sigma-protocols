@@ -798,10 +798,12 @@ Inputs:
 
 Output: the challenge, a scalar
 
+# This follows the SHOULD directive of Section 5.1.
 1. session_id = DeriveSessionID(tag)
 2. duplex_sponge = DS.Init(session_id)
 3. duplex_sponge.Absorb(SerializeLinearRelation(instance))
 4. duplex_sponge.Absorb(commitment_bytes)
+# The default decoding of Appendix A.1.2 of the Fiat-Shamir draft.
 5. return DecodeField(duplex_sponge.Squeeze(Ns + 16), p, 1)
 ~~~
 
