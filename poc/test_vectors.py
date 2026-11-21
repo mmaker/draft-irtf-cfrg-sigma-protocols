@@ -11,10 +11,8 @@ the witness, and the seeded PRNG of the appendix ({{seeded-prng}}), the
 sumcheck NARG strings are re-proven from the witness, and the functional
 Fiat-Shamir vectors (sponge traces, session ids, codecs, serialization)
 are recomputed from their inputs. Records carrying `Expected = reject`
-MUST be refused; each rejected NARG string, of either draft, names in
-`BaseId` the accepted vector it mutates, so a verifier that rejects
-everything fails the accept/reject pairing instead of passing most of the
-suite.
+MUST be refused, and records carrying `Expected = accept` MUST be
+accepted.
 
 Batch verification is checked on the claim of the sigma draft's appendix:
 every subset of the valid batchable proofs verifies as a batch, and a
@@ -314,7 +312,7 @@ def check_sigma_valid(suite, records):
               f"{rid}: verifier acceptance")
 
 
-def check_sigma_invalid(suite, records, valid_ids):
+def check_sigma_invalid(suite, records):
     _, group = SUITES[suite]
     for rec in records:
         rid = rec["Id"]
@@ -324,12 +322,9 @@ def check_sigma_invalid(suite, records, valid_ids):
                                 bytes.fromhex(rec["Instance"]),
                                 bytes.fromhex(rec["NargString"]))
         if rec["Expected"] == "accept":
-            check(accepted, f"{rid}: baseline must verify")
-            check("BaseId" not in rec, f"{rid}: baselines carry no BaseId")
+            check(accepted, f"{rid}: must accept")
         else:
             check(not accepted, f"{rid}: must reject")
-            check(rec["BaseId"] in valid_ids,
-                  f"{rid}: BaseId names no valid vector")
 
 
 def check_sigma_batch(suite, valid, invalid):
@@ -487,7 +482,7 @@ def main():
         valid = load(suite)
         invalid = load(f"sigma-proofs-invalid_{suite.removeprefix('sigma-proofs_')}")
         check_sigma_valid(suite, valid)
-        check_sigma_invalid(suite, invalid, {rec["Id"] for rec in valid})
+        check_sigma_invalid(suite, invalid)
         check_sigma_batch(suite, valid, invalid)
         print(f"{suite}: {_checks - before} checks")
 

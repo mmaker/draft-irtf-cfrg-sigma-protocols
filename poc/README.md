@@ -30,6 +30,5 @@ python3 poc/test_vectors.py
 Verification is regeneration wherever the vectors pin the randomness:
 valid proofs are re-proven byte-for-byte from the instance, witness, and
 the seeded PRNG of the appendix, so the vectors are reproducible from the
-drafts alone; `Expected = reject` records must be refused, and each
-rejected NARG string is paired with the accepted baseline vector it
-mutates.
+drafts alone; `Expected = reject` records must be refused, and
+`Expected = accept` records must be accepted.

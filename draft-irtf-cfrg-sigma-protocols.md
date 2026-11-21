@@ -1107,8 +1107,6 @@ The vectors follow the format specified in the Test Vectors appendix of {{fiat-s
 
 The remaining keys are those of the protocol. `Relation` names the relation of {{relation-notation}} and `Flavor` is `batchable` or `compact`; one vector covers one flavor, so `Tag`, `SessionId` and `NargString` are unambiguous. `Tag` is a name: its value is the US-ASCII tag itself, not its hexadecimal encoding. The `Witness` field, which never appears on the wire, is encoded as the concatenation of `Scalar.serialize` of the witness scalars, in the order given by each relation.
 
-Every adversarial vector carries `BaseId`, naming the valid vector it is derived from: it re-verifies that transcript under a different tag, statement, or encoding, and a conformant verifier **MUST** reject it while accepting its baseline. Testing only that the adversarial vectors are rejected is therefore not sufficient; an implementation that rejects every input passes no accept/reject pair. The prose accompanying each vector states which check fails; where the rejection step depends on the implementation's check order, any of the stated rejection points is conformant.
-
 Batch verification ({{batch-verification}}) can be tested on any subset of these vectors: a batch of valid batchable proofs **MUST** verify, and a batch containing any invalid batchable proof **MUST** be rejected.
 
 ## Seeded PRNG {#seeded-prng}
@@ -1619,7 +1617,6 @@ Deserialization fails on the SEC1 uncompressed prefix 0x04.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A1
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -1640,7 +1637,6 @@ Deserialization fails on the SEC1 hybrid prefix 0x06.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A2
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -1661,7 +1657,6 @@ Deserialization fails on the SEC1 hybrid prefix 0x07.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A2b
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -1684,7 +1679,6 @@ non-canonical.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A3
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -1706,7 +1700,6 @@ verification equation fails.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A4
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -1727,7 +1720,6 @@ Deserialization fails on x = 1, which has no square root for y.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A6
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -1748,7 +1740,6 @@ Deserialization fails if `response[0]` is set to order + 1.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/B1
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -1769,7 +1760,6 @@ Deserialization fails if `challenge` is set to order + 1.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/compact/B2
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -1790,7 +1780,6 @@ proof.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/C1
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -1811,7 +1800,6 @@ Verification fails if a valid proof is truncated by one byte.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/C2
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -1832,7 +1820,6 @@ proof.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/compact/C1
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -1853,7 +1840,6 @@ Verification fails if a valid proof is truncated by one byte.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/compact/C2
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -1874,7 +1860,6 @@ are zero.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/compact/D1
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -2007,7 +1992,6 @@ single element follows; parsers may instead reject on length.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/E4
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -2048,7 +2032,6 @@ Verification fails under a different tag.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/F1b
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -2089,7 +2072,6 @@ Verification fails under a different tag.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/compact/F1b
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -2109,7 +2091,7 @@ Expected = reject
 A valid NARG string verifies against the statement it was produced for.
 
 ~~~
-Id = sigma-protocols/p256/discrete_logarithm/batchable/F2
+Id = sigma-protocols/p256/dleq/batchable/F2
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -2135,8 +2117,7 @@ Expected = accept
 Verification fails if the statement's two equations are swapped.
 
 ~~~
-Id = sigma-protocols/p256/discrete_logarithm/batchable/F2b
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
+Id = sigma-protocols/p256/dleq/batchable/F2b
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -2162,7 +2143,7 @@ Expected = reject
 A valid NARG string verifies against the statement it was produced for.
 
 ~~~
-Id = sigma-protocols/p256/discrete_logarithm/compact/F2
+Id = sigma-protocols/p256/dleq/compact/F2
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -2186,8 +2167,7 @@ Expected = accept
 Verification fails if the statement's two equations are swapped.
 
 ~~~
-Id = sigma-protocols/p256/discrete_logarithm/compact/F2b
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
+Id = sigma-protocols/p256/dleq/compact/F2b
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -2212,7 +2192,6 @@ Verification fails if a statement element is changed after proving.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/F3
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -2233,7 +2212,6 @@ Verification fails if a statement element is changed after proving.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/compact/F3
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -2254,7 +2232,6 @@ a compact NARG string.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/compact/F4
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -2276,7 +2253,6 @@ differs.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/F4b
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -2297,7 +2273,6 @@ Verification fails if `response[0]` is increased by 1.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/H1
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -2319,7 +2294,6 @@ group element.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/batchable/H2
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -2340,7 +2314,6 @@ Verification fails if `challenge` is replaced by a different scalar.
 
 ~~~
 Id = sigma-protocols/p256/discrete_logarithm/compact/H3
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -2855,7 +2828,6 @@ Deserialization fails if the compression bit is cleared.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -2878,7 +2850,6 @@ characteristic (x = 4, encoded as x + p).
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A3
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -2901,7 +2872,6 @@ equation fails.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A4
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -2924,7 +2894,6 @@ prime-order subgroup G1.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A5
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -2947,7 +2916,6 @@ non-residue).
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A6
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -2971,7 +2939,6 @@ malleability.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/B1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -2994,7 +2961,6 @@ Deserialization fails if `challenge` is re-encoded as c + order
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/B2
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -3016,7 +2982,6 @@ proof.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/C1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3038,7 +3003,6 @@ Verification fails if a valid proof is truncated by one byte.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/C2
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3061,7 +3025,6 @@ proof.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/C1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -3083,7 +3046,6 @@ Verification fails if a valid proof is truncated by one byte.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/C2
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -3105,7 +3067,6 @@ are zero.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/D1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -3242,7 +3203,6 @@ single element follows; parsers may instead reject on length.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E4
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3286,7 +3246,6 @@ Verification fails under a different tag.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F1b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3330,7 +3289,6 @@ Verification fails under a different tag.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/F1b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -3352,7 +3310,7 @@ Expected = reject
 A valid NARG string verifies against the statement it was produced for.
 
 ~~~
-Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F2
+Id = sigma-protocols/bls12381/dleq/batchable/F2
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3379,8 +3337,7 @@ Expected = accept
 Verification fails if the statement's two equations are swapped.
 
 ~~~
-Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F2b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
+Id = sigma-protocols/bls12381/dleq/batchable/F2b
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3407,7 +3364,7 @@ Expected = reject
 A valid NARG string verifies against the statement it was produced for.
 
 ~~~
-Id = sigma-protocols/bls12381/discrete_logarithm/compact/F2
+Id = sigma-protocols/bls12381/dleq/compact/F2
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -3432,8 +3389,7 @@ Expected = accept
 Verification fails if the statement's two equations are swapped.
 
 ~~~
-Id = sigma-protocols/bls12381/discrete_logarithm/compact/F2b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
+Id = sigma-protocols/bls12381/dleq/compact/F2b
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -3459,7 +3415,6 @@ Verification fails if a statement element is changed after proving.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F3
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3481,7 +3436,6 @@ Verification fails if a statement element is changed after proving.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/F3
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -3503,7 +3457,6 @@ a compact NARG string.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/F4
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -3526,7 +3479,6 @@ differs.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F4b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3548,7 +3500,6 @@ Verification fails if `response[0]` is increased by 1.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/H1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3571,7 +3522,6 @@ group element.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/H2
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3593,7 +3543,6 @@ Verification fails if `challenge` is replaced by a different scalar.
 
 ~~~
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/H3
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact

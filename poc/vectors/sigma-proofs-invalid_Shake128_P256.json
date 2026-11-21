@@ -1,7 +1,6 @@
 [
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/A1",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -13,7 +12,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/A2",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -25,7 +23,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/A2b",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -37,7 +34,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/A3",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -49,7 +45,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/A4",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -61,7 +56,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/A6",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -73,7 +67,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/B1",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -85,7 +78,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/compact/B2",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/compact",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "compact",
@@ -97,7 +89,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/C1",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -109,7 +100,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/C2",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -121,7 +111,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/compact/C1",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/compact",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "compact",
@@ -133,7 +122,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/compact/C2",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/compact",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "compact",
@@ -145,7 +133,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/compact/D1",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/compact",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "compact",
@@ -212,7 +199,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/E4",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -235,7 +221,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/F1b",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -258,7 +243,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/compact/F1b",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/compact",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "compact",
@@ -269,7 +253,7 @@
     "Comment": "Verification fails under a different tag."
   },
   {
-    "Id": "sigma-protocols/p256/discrete_logarithm/batchable/F2",
+    "Id": "sigma-protocols/p256/dleq/batchable/F2",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -280,8 +264,7 @@
     "Comment": "A valid NARG string verifies against the statement it was produced for."
   },
   {
-    "Id": "sigma-protocols/p256/discrete_logarithm/batchable/F2b",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
+    "Id": "sigma-protocols/p256/dleq/batchable/F2b",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -292,7 +275,7 @@
     "Comment": "Verification fails if the statement's two equations are swapped."
   },
   {
-    "Id": "sigma-protocols/p256/discrete_logarithm/compact/F2",
+    "Id": "sigma-protocols/p256/dleq/compact/F2",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "compact",
@@ -303,8 +286,7 @@
     "Comment": "A valid NARG string verifies against the statement it was produced for."
   },
   {
-    "Id": "sigma-protocols/p256/discrete_logarithm/compact/F2b",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/compact",
+    "Id": "sigma-protocols/p256/dleq/compact/F2b",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "compact",
@@ -316,7 +298,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/F3",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -328,7 +309,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/compact/F3",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/compact",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "compact",
@@ -340,7 +320,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/compact/F4",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/compact",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "compact",
@@ -352,7 +331,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/F4b",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -364,7 +342,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/H1",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -376,7 +353,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/batchable/H2",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/batchable",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "batchable",
@@ -388,7 +364,6 @@
   },
   {
     "Id": "sigma-protocols/p256/discrete_logarithm/compact/H3",
-    "BaseId": "sigma-protocols/p256/discrete_logarithm/compact",
     "Function": "SigmaProof",
     "Ciphersuite": "sigma-proofs_Shake128_P256",
     "Flavor": "compact",
