@@ -1544,10 +1544,8 @@ NargString =
 Expected = accept
 ~~~
 
-The `ChaumPedersen` relation of {{relation-notation}} again, with `Y = x
-* H` derived by the prover from its witness rather than received: the
-compiled instance matches `dleq`, and only the tag (hence the proof
-bytes) differs.
+The `ChaumPedersen` relation of {{relation-notation}} again. This vector
+uses separately generated instance and witness values and a distinct tag.
 
 ~~~
 Id = sigma-protocols/p256/dleq_derived_element/batchable
@@ -1578,10 +1576,8 @@ NargString =
 Expected = accept
 ~~~
 
-The `ChaumPedersen` relation of {{relation-notation}} again, with `Y = x
-* H` derived by the prover from its witness rather than received: the
-compiled instance matches `dleq`, and only the tag (hence the proof
-bytes) differs.
+The `ChaumPedersen` relation of {{relation-notation}} again. This vector
+uses separately generated instance and witness values and a distinct tag.
 
 ~~~
 Id = sigma-protocols/p256/dleq_derived_element/compact
@@ -2753,10 +2749,8 @@ NargString =
 Expected = accept
 ~~~
 
-The `ChaumPedersen` relation of {{relation-notation}} again, with `Y = x
-* H` derived by the prover from its witness rather than received: the
-compiled instance matches `dleq`, and only the tag (hence the proof
-bytes) differs.
+The `ChaumPedersen` relation of {{relation-notation}} again. This vector
+uses separately generated instance and witness values and a distinct tag.
 
 ~~~
 Id = sigma-protocols/bls12381/dleq_derived_element/batchable
@@ -2788,10 +2782,8 @@ NargString =
 Expected = accept
 ~~~
 
-The `ChaumPedersen` relation of {{relation-notation}} again, with `Y = x
-* H` derived by the prover from its witness rather than received: the
-compiled instance matches `dleq`, and only the tag (hence the proof
-bytes) differs.
+The `ChaumPedersen` relation of {{relation-notation}} again. This vector
+uses separately generated instance and witness values and a distinct tag.
 
 ~~~
 Id = sigma-protocols/bls12381/dleq_derived_element/compact
