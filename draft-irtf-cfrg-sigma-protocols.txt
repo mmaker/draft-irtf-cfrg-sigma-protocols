@@ -5,8 +5,8 @@
 Crypto Forum                                                     M. Orrù
 Internet-Draft                                                      CNRS
 Intended status: Informational                                    C. Yun
-Expires: 6 May 2027                                          Apple, Inc.
-                                                         2 November 2026
+Expires: 29 May 2027                                         Apple, Inc.
+                                                        25 November 2026
 
 
                    Sigma Proofs for Linear Relations
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 6 May 2027.
+   This Internet-Draft will expire on 29 May 2027.
 
 Copyright Notice
 
@@ -1450,9 +1450,9 @@ Normative References
 
    [PAIRING]  Sakemi, Y., Kanno, S., and R. S. Wahby, "Pairing-Friendly
               Curves", Work in Progress, Internet-Draft, draft-irtf-
-              cfrg-pairing-friendly-curves-15, 1 November 2026,
+              cfrg-pairing-friendly-curves-16, 16 November 2026,
               <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
-              pairing-friendly-curves-15>.
+              pairing-friendly-curves-16>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -1487,9 +1487,9 @@ Informative References
    [BBS]      Looker, T., Kalos, V., Whitehead, A., Lodder, M., and G.
               M. Bernstein, "The BBS Signature Scheme", Work in
               Progress, Internet-Draft, draft-irtf-cfrg-bbs-signatures-
-              14, 29 October 2026,
+              15, 19 November 2026,
               <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-
-              bbs-signatures-14>.
+              bbs-signatures-15>.
 
    [BBSBlind] Kalos, V. and G. M. Bernstein, "Blind BBS Signatures",
               Work in Progress, Internet-Draft, draft-irtf-cfrg-bbs-
@@ -1696,16 +1696,6 @@ Appendix A.  Test Vectors
    not its hexadecimal encoding.  The Witness field, which never appears
    on the wire, is encoded as the concatenation of Scalar.serialize of
    the witness scalars, in the order given by each relation.
-
-   Every adversarial vector carries BaseId, naming the valid vector it
-   is derived from: it re-verifies that transcript under a different
-   tag, statement, or encoding, and a conformant verifier *MUST* reject
-   it while accepting its baseline.  Testing only that the adversarial
-   vectors are rejected is therefore not sufficient; an implementation
-   that rejects every input passes no accept/reject pair.  The prose
-   accompanying each vector states which check fails; where the
-   rejection step depends on the implementation's check order, any of
-   the stated rejection points is conformant.
 
    Batch verification (Section 5.6) can be tested on any subset of these
    vectors: a batch of valid batchable proofs *MUST* verify, and a batch
@@ -2122,10 +2112,8 @@ A.2.1.  Valid proofs
      80dfe181f95f6f29fb356f862551f7e5acb26f7f320fd5026095b1109cd2cea4
    Expected = accept
 
-   The ChaumPedersen relation of Section 3.4 again, with Y = x * H
-   derived by the prover from its witness rather than received: the
-   compiled instance matches dleq, and only the tag (hence the proof
-   bytes) differs.
+   The ChaumPedersen relation of Section 3.4 again.  This vector uses
+   separately generated instance and witness values and a distinct tag.
 
    Id = sigma-protocols/p256/dleq_derived_element/batchable
    Function = SigmaProof
@@ -2154,10 +2142,8 @@ A.2.1.  Valid proofs
      ea8d
    Expected = accept
 
-   The ChaumPedersen relation of Section 3.4 again, with Y = x * H
-   derived by the prover from its witness rather than received: the
-   compiled instance matches dleq, and only the tag (hence the proof
-   bytes) differs.
+   The ChaumPedersen relation of Section 3.4 again.  This vector uses
+   separately generated instance and witness values and a distinct tag.
 
    Id = sigma-protocols/p256/dleq_derived_element/compact
    Function = SigmaProof
@@ -2189,7 +2175,6 @@ A.2.2.  Adversarial vectors
    Deserialization fails on the SEC1 uncompressed prefix 0x04.
 
    Id = sigma-protocols/p256/discrete_logarithm/batchable/A1
-   BaseId = sigma-protocols/p256/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2208,7 +2193,6 @@ A.2.2.  Adversarial vectors
    Deserialization fails on the SEC1 hybrid prefix 0x06.
 
    Id = sigma-protocols/p256/discrete_logarithm/batchable/A2
-   BaseId = sigma-protocols/p256/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2227,7 +2211,6 @@ A.2.2.  Adversarial vectors
    Deserialization fails on the SEC1 hybrid prefix 0x07.
 
    Id = sigma-protocols/p256/discrete_logarithm/batchable/A2b
-   BaseId = sigma-protocols/p256/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2248,7 +2231,6 @@ A.2.2.  Adversarial vectors
    canonical.
 
    Id = sigma-protocols/p256/discrete_logarithm/batchable/A3
-   BaseId = sigma-protocols/p256/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2268,7 +2250,6 @@ A.2.2.  Adversarial vectors
    verification equation fails.
 
    Id = sigma-protocols/p256/discrete_logarithm/batchable/A4
-   BaseId = sigma-protocols/p256/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2287,7 +2268,6 @@ A.2.2.  Adversarial vectors
    Deserialization fails on x = 1, which has no square root for y.
 
    Id = sigma-protocols/p256/discrete_logarithm/batchable/A6
-   BaseId = sigma-protocols/p256/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2306,7 +2286,6 @@ A.2.2.  Adversarial vectors
    Deserialization fails if response[0] is set to order + 1.
 
    Id = sigma-protocols/p256/discrete_logarithm/batchable/B1
-   BaseId = sigma-protocols/p256/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2325,7 +2304,6 @@ A.2.2.  Adversarial vectors
    Deserialization fails if challenge is set to order + 1.
 
    Id = sigma-protocols/p256/discrete_logarithm/compact/B2
-   BaseId = sigma-protocols/p256/discrete_logarithm/compact
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2344,7 +2322,6 @@ A.2.2.  Adversarial vectors
    proof.
 
    Id = sigma-protocols/p256/discrete_logarithm/batchable/C1
-   BaseId = sigma-protocols/p256/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2363,7 +2340,6 @@ A.2.2.  Adversarial vectors
    Verification fails if a valid proof is truncated by one byte.
 
    Id = sigma-protocols/p256/discrete_logarithm/batchable/C2
-   BaseId = sigma-protocols/p256/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2382,7 +2358,6 @@ A.2.2.  Adversarial vectors
    proof.
 
    Id = sigma-protocols/p256/discrete_logarithm/compact/C1
-   BaseId = sigma-protocols/p256/discrete_logarithm/compact
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2401,7 +2376,6 @@ A.2.2.  Adversarial vectors
    Verification fails if a valid proof is truncated by one byte.
 
    Id = sigma-protocols/p256/discrete_logarithm/compact/C2
-   BaseId = sigma-protocols/p256/discrete_logarithm/compact
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2420,7 +2394,6 @@ A.2.2.  Adversarial vectors
    response are zero.
 
    Id = sigma-protocols/p256/discrete_logarithm/compact/D1
-   BaseId = sigma-protocols/p256/discrete_logarithm/compact
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2541,7 +2514,6 @@ Expected = accept
    a single element follows; parsers may instead reject on length.
 
  Id = sigma-protocols/p256/discrete_logarithm/batchable/E4
- BaseId = sigma-protocols/p256/discrete_logarithm/batchable
  Function = SigmaProof
  Ciphersuite = sigma-proofs_Shake128_P256
  Flavor = batchable
@@ -2578,7 +2550,6 @@ Expected = accept
    Verification fails under a different tag.
 
  Id = sigma-protocols/p256/discrete_logarithm/batchable/F1b
- BaseId = sigma-protocols/p256/discrete_logarithm/batchable
  Function = SigmaProof
  Ciphersuite = sigma-proofs_Shake128_P256
  Flavor = batchable
@@ -2615,7 +2586,6 @@ Expected = accept
    Verification fails under a different tag.
 
  Id = sigma-protocols/p256/discrete_logarithm/compact/F1b
- BaseId = sigma-protocols/p256/discrete_logarithm/compact
  Function = SigmaProof
  Ciphersuite = sigma-proofs_Shake128_P256
  Flavor = compact
@@ -2634,7 +2604,7 @@ Expected = accept
    A valid NARG string verifies against the statement it was produced
    for.
 
-   Id = sigma-protocols/p256/discrete_logarithm/batchable/F2
+   Id = sigma-protocols/p256/dleq/batchable/F2
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2658,8 +2628,7 @@ Expected = accept
 
    Verification fails if the statement's two equations are swapped.
 
-   Id = sigma-protocols/p256/discrete_logarithm/batchable/F2b
-   BaseId = sigma-protocols/p256/discrete_logarithm/batchable
+   Id = sigma-protocols/p256/dleq/batchable/F2b
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2684,7 +2653,7 @@ Expected = accept
    A valid NARG string verifies against the statement it was produced
    for.
 
-   Id = sigma-protocols/p256/discrete_logarithm/compact/F2
+   Id = sigma-protocols/p256/dleq/compact/F2
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2706,8 +2675,7 @@ Expected = accept
 
    Verification fails if the statement's two equations are swapped.
 
-   Id = sigma-protocols/p256/discrete_logarithm/compact/F2b
-   BaseId = sigma-protocols/p256/discrete_logarithm/compact
+   Id = sigma-protocols/p256/dleq/compact/F2b
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2730,7 +2698,6 @@ Expected = accept
    Verification fails if a statement element is changed after proving.
 
    Id = sigma-protocols/p256/discrete_logarithm/batchable/F3
-   BaseId = sigma-protocols/p256/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2749,7 +2716,6 @@ Expected = accept
    Verification fails if a statement element is changed after proving.
 
    Id = sigma-protocols/p256/discrete_logarithm/compact/F3
-   BaseId = sigma-protocols/p256/discrete_logarithm/compact
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2768,7 +2734,6 @@ Expected = accept
    as a compact NARG string.
 
    Id = sigma-protocols/p256/discrete_logarithm/compact/F4
-   BaseId = sigma-protocols/p256/discrete_logarithm/compact
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -2788,7 +2753,6 @@ Expected = accept
    tag differs.
 
    Id = sigma-protocols/p256/discrete_logarithm/batchable/F4b
-   BaseId = sigma-protocols/p256/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2807,7 +2771,6 @@ Expected = accept
    Verification fails if response[0] is increased by 1.
 
    Id = sigma-protocols/p256/discrete_logarithm/batchable/H1
-   BaseId = sigma-protocols/p256/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2827,7 +2790,6 @@ Expected = accept
    group element.
 
    Id = sigma-protocols/p256/discrete_logarithm/batchable/H2
-   BaseId = sigma-protocols/p256/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = batchable
@@ -2846,7 +2808,6 @@ Expected = accept
    Verification fails if challenge is replaced by a different scalar.
 
    Id = sigma-protocols/p256/discrete_logarithm/compact/H3
-   BaseId = sigma-protocols/p256/discrete_logarithm/compact
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_P256
    Flavor = compact
@@ -3259,10 +3220,8 @@ Expected = accept
      2580e6e5f90db9bcfdacd138569f0d34d65e55612e9ffada52f8c8192da67fcf
    Expected = accept
 
-   The ChaumPedersen relation of Section 3.4 again, with Y = x * H
-   derived by the prover from its witness rather than received: the
-   compiled instance matches dleq, and only the tag (hence the proof
-   bytes) differs.
+   The ChaumPedersen relation of Section 3.4 again.  This vector uses
+   separately generated instance and witness values and a distinct tag.
 
    Id = sigma-protocols/bls12381/dleq_derived_element/batchable
    Function = SigmaProof
@@ -3292,10 +3251,8 @@ Expected = accept
      11a3025eb36866da1582915d58453ac0a7417975461551c8e00feea8300a75a1
    Expected = accept
 
-   The ChaumPedersen relation of Section 3.4 again, with Y = x * H
-   derived by the prover from its witness rather than received: the
-   compiled instance matches dleq, and only the tag (hence the proof
-   bytes) differs.
+   The ChaumPedersen relation of Section 3.4 again.  This vector uses
+   separately generated instance and witness values and a distinct tag.
 
    Id = sigma-protocols/bls12381/dleq_derived_element/compact
    Function = SigmaProof
@@ -3328,7 +3285,6 @@ A.3.2.  Adversarial vectors
    Deserialization fails if the compression bit is cleared.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A1
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3349,7 +3305,6 @@ A.3.2.  Adversarial vectors
    characteristic (x = 4, encoded as x + p).
 
    Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A3
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3370,7 +3325,6 @@ A.3.2.  Adversarial vectors
    equation fails.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A4
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3391,7 +3345,6 @@ A.3.2.  Adversarial vectors
    prime-order subgroup G1.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A5
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3412,7 +3365,6 @@ A.3.2.  Adversarial vectors
    a non-residue).
 
    Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A6
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3434,7 +3386,6 @@ A.3.2.  Adversarial vectors
    yields malleability.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/batchable/B1
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3455,7 +3406,6 @@ A.3.2.  Adversarial vectors
    canonical bytes).
 
    Id = sigma-protocols/bls12381/discrete_logarithm/compact/B2
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3475,7 +3425,6 @@ A.3.2.  Adversarial vectors
    proof.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/batchable/C1
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3495,7 +3444,6 @@ A.3.2.  Adversarial vectors
    Verification fails if a valid proof is truncated by one byte.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/batchable/C2
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3516,7 +3464,6 @@ A.3.2.  Adversarial vectors
    proof.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/compact/C1
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3536,7 +3483,6 @@ A.3.2.  Adversarial vectors
    Verification fails if a valid proof is truncated by one byte.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/compact/C2
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3556,7 +3502,6 @@ A.3.2.  Adversarial vectors
    response are zero.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/compact/D1
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3681,7 +3626,6 @@ Expected = accept
    a single element follows; parsers may instead reject on length.
 
  Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E4
- BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
  Function = SigmaProof
  Ciphersuite = sigma-proofs_Shake128_BLS12381
  Flavor = batchable
@@ -3721,7 +3665,6 @@ Expected = accept
    Verification fails under a different tag.
 
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F1b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -3761,7 +3704,6 @@ Expected = reject
    Verification fails under a different tag.
 
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/F1b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -3782,7 +3724,7 @@ Expected = reject
    A valid NARG string verifies against the statement it was produced
    for.
 
-   Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F2
+   Id = sigma-protocols/bls12381/dleq/batchable/F2
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3807,8 +3749,7 @@ Expected = reject
 
    Verification fails if the statement's two equations are swapped.
 
-   Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F2b
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
+   Id = sigma-protocols/bls12381/dleq/batchable/F2b
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3834,7 +3775,7 @@ Expected = reject
    A valid NARG string verifies against the statement it was produced
    for.
 
-   Id = sigma-protocols/bls12381/discrete_logarithm/compact/F2
+   Id = sigma-protocols/bls12381/dleq/compact/F2
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3857,8 +3798,7 @@ Expected = reject
 
    Verification fails if the statement's two equations are swapped.
 
-   Id = sigma-protocols/bls12381/discrete_logarithm/compact/F2b
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
+   Id = sigma-protocols/bls12381/dleq/compact/F2b
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3882,7 +3822,6 @@ Expected = reject
    Verification fails if a statement element is changed after proving.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F3
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3902,7 +3841,6 @@ Expected = reject
    Verification fails if a statement element is changed after proving.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/compact/F3
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3922,7 +3860,6 @@ Expected = reject
    as a compact NARG string.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/compact/F4
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact
@@ -3943,7 +3880,6 @@ Expected = reject
    tag differs.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F4b
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3963,7 +3899,6 @@ Expected = reject
    Verification fails if response[0] is increased by 1.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/batchable/H1
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -3984,7 +3919,6 @@ Expected = reject
    group element.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/batchable/H2
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = batchable
@@ -4004,7 +3938,6 @@ Expected = reject
    Verification fails if challenge is replaced by a different scalar.
 
    Id = sigma-protocols/bls12381/discrete_logarithm/compact/H3
-   BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
    Function = SigmaProof
    Ciphersuite = sigma-proofs_Shake128_BLS12381
    Flavor = compact

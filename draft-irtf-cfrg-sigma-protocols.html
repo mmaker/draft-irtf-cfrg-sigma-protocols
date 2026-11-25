@@ -11,26 +11,26 @@
        This document describes Sigma Protocols for proving knowledge of preimages of linear maps in prime-order elliptic curve groups. These are sometimes also called  Maurer Proofs , or  proofs of knowledge of a preimage of a group homomorphism . 
        Examples include zero-knowledge proofs for discrete logarithm relations, ElGamal encryptions, Pedersen commitments, and range proofs. 
     " name="description">
-<meta content="xml2rfc 3.34.1" name="generator">
+<meta content="xml2rfc 3.35.0" name="generator">
 <meta content="zero-knowledge" name="keyword">
 <meta content="sigma protocols" name="keyword">
 <meta content="cryptography" name="keyword">
 <meta content="proofs of knowledge" name="keyword">
 <meta content="draft-irtf-cfrg-sigma-protocols-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.34.1
-    Python 3.14.8
-    ConfigArgParse 1.8.0
+  xml2rfc 3.35.0
+    Python 3.14.10
+    ConfigArgParse 1.10.1
     google-i18n-address 3.1.1
     intervaltree 3.2.1
     Jinja2 3.1.6
     lxml 6.1.1
     natsort 8.4.0
-    platformdirs 4.13.4
+    platformdirs 4.14.7
     pycountry 24.6.1
     PyYAML 6.0.3
     requests 2.33.1
-    wcwidth 0.9.2
+    wcwidth 0.9.4
 -->
 <link href="draft-irtf-cfrg-sigma-protocols.xml" rel="alternate" type="application/rfc+xml">
 <link href="#copyright" rel="license">
@@ -1031,7 +1031,7 @@ svg {
   & :is([stroke="white"], [stroke^="#fff"]) {
     stroke: var(--background-color);
   }
-  & :is([fill="black"], [fill^="#000"], :not([fill])) {
+  & :is([fill="black"], [fill^="#000"], :not([fill], [fill] *)) {
     fill: var(--text-color);
   }
   & :is([fill="white"], [fill^="#fff"]) {
@@ -1050,7 +1050,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Orrù &amp; Yun</td>
-<td class="center">Expires 6 May 2027</td>
+<td class="center">Expires 29 May 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1063,12 +1063,12 @@ svg {
 <dd class="internet-draft">draft-irtf-cfrg-sigma-protocols-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-11-02" class="published">2 November 2026</time>
+<time datetime="2026-11-25" class="published">25 November 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-05-06">6 May 2027</time></dd>
+<dd class="expires"><time datetime="2027-05-29">29 May 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1123,7 +1123,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 6 May 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 29 May 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -2404,7 +2404,7 @@ sum(
 <dd class="break"></dd>
 <dt id="PAIRING">[PAIRING]</dt>
         <dd>
-<span class="refAuthor">Sakemi, Y.</span>, <span class="refAuthor">Kanno, S.</span>, and <span class="refAuthor">R. S. Wahby</span>, <span class="refTitle">"Pairing-Friendly Curves"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-irtf-cfrg-pairing-friendly-curves-15</span>, <time datetime="2026-11-01" class="refDate">1 November 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-pairing-friendly-curves-15">https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-pairing-friendly-curves-15</a>&gt;</span>. </dd>
+<span class="refAuthor">Sakemi, Y.</span>, <span class="refAuthor">Kanno, S.</span>, and <span class="refAuthor">R. S. Wahby</span>, <span class="refTitle">"Pairing-Friendly Curves"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-irtf-cfrg-pairing-friendly-curves-16</span>, <time datetime="2026-11-16" class="refDate">16 November 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-pairing-friendly-curves-16">https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-pairing-friendly-curves-16</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC2119">[RFC2119]</dt>
         <dd>
@@ -2441,7 +2441,7 @@ sum(
 <dd class="break"></dd>
 <dt id="BBS">[BBS]</dt>
         <dd>
-<span class="refAuthor">Looker, T.</span>, <span class="refAuthor">Kalos, V.</span>, <span class="refAuthor">Whitehead, A.</span>, <span class="refAuthor">Lodder, M.</span>, and <span class="refAuthor">G. M. Bernstein</span>, <span class="refTitle">"The BBS Signature Scheme"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-irtf-cfrg-bbs-signatures-14</span>, <time datetime="2026-10-29" class="refDate">29 October 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-bbs-signatures-14">https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-bbs-signatures-14</a>&gt;</span>. </dd>
+<span class="refAuthor">Looker, T.</span>, <span class="refAuthor">Kalos, V.</span>, <span class="refAuthor">Whitehead, A.</span>, <span class="refAuthor">Lodder, M.</span>, and <span class="refAuthor">G. M. Bernstein</span>, <span class="refTitle">"The BBS Signature Scheme"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-irtf-cfrg-bbs-signatures-15</span>, <time datetime="2026-11-19" class="refDate">19 November 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-bbs-signatures-15">https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-bbs-signatures-15</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="BBSBlind">[BBSBlind]</dt>
         <dd>
@@ -2608,8 +2608,7 @@ sum(
 <p id="appendix-A-1">This appendix contains test vectors for the non-interactive Sigma Protocols specified in this document, one section per ciphersuite (<a href="#tv-p256" class="auto internal xref">Appendix A.2</a>, <a href="#tv-bls12381" class="auto internal xref">Appendix A.3</a>). Each ciphersuite section has two subsections: valid proofs, and adversarial vectors. <a href="#seeded-prng" class="auto internal xref">Appendix A.1</a> pins the randomness used, so that the vectors are reproducible from this document alone.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
 <p id="appendix-A-2">The vectors follow the format specified in the Test Vectors appendix of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>: a block of <code>Key = Value</code> lines, no key repeated, values inline or indented under their key, and sequences written one <code>- </code> item per line. Every vector carries <code>Id</code>, its stable name, and <code>Function</code>, which is <code>SigmaProof</code> throughout this document. Where <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span> identifies the duplex sponge suite with <code>Suite</code>, these vectors carry <code>Ciphersuite</code>, which fixes the group and the hash together (<a href="#ciphersuites" class="auto internal xref">Section 8</a>). Every vector also carries <code>Expected</code>, which is <code>accept</code> or <code>reject</code>: unlike the functional vectors of <span>[<a href="#fiat-shamir" class="cite xref">fiat-shamir</a>]</span>, each vector here is a verifier decision.<a href="#appendix-A-2" class="pilcrow">¶</a></p>
 <p id="appendix-A-3">The remaining keys are those of the protocol. <code>Relation</code> names the relation of <a href="#relation-notation" class="auto internal xref">Section 3.4</a> and <code>Flavor</code> is <code>batchable</code> or <code>compact</code>; one vector covers one flavor, so <code>Tag</code>, <code>SessionId</code> and <code>NargString</code> are unambiguous. <code>Tag</code> is a name: its value is the US-ASCII tag itself, not its hexadecimal encoding. The <code>Witness</code> field, which never appears on the wire, is encoded as the concatenation of <code>Scalar.serialize</code> of the witness scalars, in the order given by each relation.<a href="#appendix-A-3" class="pilcrow">¶</a></p>
-<p id="appendix-A-4">Every adversarial vector carries <code>BaseId</code>, naming the valid vector it is derived from: it re-verifies that transcript under a different tag, statement, or encoding, and a conformant verifier <strong>MUST</strong> reject it while accepting its baseline. Testing only that the adversarial vectors are rejected is therefore not sufficient; an implementation that rejects every input passes no accept/reject pair. The prose accompanying each vector states which check fails; where the rejection step depends on the implementation's check order, any of the stated rejection points is conformant.<a href="#appendix-A-4" class="pilcrow">¶</a></p>
-<p id="appendix-A-5">Batch verification (<a href="#batch-verification" class="auto internal xref">Section 5.6</a>) can be tested on any subset of these vectors: a batch of valid batchable proofs <strong>MUST</strong> verify, and a batch containing any invalid batchable proof <strong>MUST</strong> be rejected.<a href="#appendix-A-5" class="pilcrow">¶</a></p>
+<p id="appendix-A-4">Batch verification (<a href="#batch-verification" class="auto internal xref">Section 5.6</a>) can be tested on any subset of these vectors: a batch of valid batchable proofs <strong>MUST</strong> verify, and a batch containing any invalid batchable proof <strong>MUST</strong> be rejected.<a href="#appendix-A-4" class="pilcrow">¶</a></p>
 <div id="seeded-prng">
 <section id="appendix-A.1">
         <h3 id="name-seeded-prng">
@@ -3050,10 +3049,8 @@ NargString =
 Expected = accept
 </pre><a href="#appendix-A.2.1-24" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.1-25">The <code>ChaumPedersen</code> relation of <a href="#relation-notation" class="auto internal xref">Section 3.4</a> again, with <code>Y = x
-* H</code> derived by the prover from its witness rather than received: the
-compiled instance matches <code>dleq</code>, and only the tag (hence the proof
-bytes) differs.<a href="#appendix-A.2.1-25" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.1-25">The <code>ChaumPedersen</code> relation of <a href="#relation-notation" class="auto internal xref">Section 3.4</a> again. This vector
+uses separately generated instance and witness values and a distinct tag.<a href="#appendix-A.2.1-25" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.1-26">
 <pre>
 Id = sigma-protocols/p256/dleq_derived_element/batchable
@@ -3084,10 +3081,8 @@ NargString =
 Expected = accept
 </pre><a href="#appendix-A.2.1-26" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.2.1-27">The <code>ChaumPedersen</code> relation of <a href="#relation-notation" class="auto internal xref">Section 3.4</a> again, with <code>Y = x
-* H</code> derived by the prover from its witness rather than received: the
-compiled instance matches <code>dleq</code>, and only the tag (hence the proof
-bytes) differs.<a href="#appendix-A.2.1-27" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.1-27">The <code>ChaumPedersen</code> relation of <a href="#relation-notation" class="auto internal xref">Section 3.4</a> again. This vector
+uses separately generated instance and witness values and a distinct tag.<a href="#appendix-A.2.1-27" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.1-28">
 <pre>
 Id = sigma-protocols/p256/dleq_derived_element/compact
@@ -3127,7 +3122,6 @@ Expected = accept
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-2">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A1
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3148,7 +3142,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-4">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A2
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3169,7 +3162,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-6">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A2b
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3192,7 +3184,6 @@ non-canonical.<a href="#appendix-A.2.2-7" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-8">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A3
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3214,7 +3205,6 @@ verification equation fails.<a href="#appendix-A.2.2-9" class="pilcrow">¶</a></
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-10">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A4
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3235,7 +3225,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-12">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/A6
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3256,7 +3245,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-14">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/B1
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3277,7 +3265,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-16">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/compact/B2
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -3298,7 +3285,6 @@ proof.<a href="#appendix-A.2.2-17" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-18">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/C1
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3319,7 +3305,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-20">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/C2
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3340,7 +3325,6 @@ proof.<a href="#appendix-A.2.2-21" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-22">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/compact/C1
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -3361,7 +3345,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-24">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/compact/C2
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -3382,7 +3365,6 @@ are zero.<a href="#appendix-A.2.2-25" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-26">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/compact/D1
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -3515,7 +3497,6 @@ single element follows; parsers may instead reject on length.<a href="#appendix-
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-38">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/E4
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3556,7 +3537,6 @@ Expected = accept
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-42">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/F1b
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3597,7 +3577,6 @@ Expected = accept
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-46">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/compact/F1b
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -3617,7 +3596,7 @@ Expected = reject
 <p id="appendix-A.2.2-47">A valid NARG string verifies against the statement it was produced for.<a href="#appendix-A.2.2-47" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-48">
 <pre>
-Id = sigma-protocols/p256/discrete_logarithm/batchable/F2
+Id = sigma-protocols/p256/dleq/batchable/F2
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3643,8 +3622,7 @@ Expected = accept
 <p id="appendix-A.2.2-49">Verification fails if the statement's two equations are swapped.<a href="#appendix-A.2.2-49" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-50">
 <pre>
-Id = sigma-protocols/p256/discrete_logarithm/batchable/F2b
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
+Id = sigma-protocols/p256/dleq/batchable/F2b
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3670,7 +3648,7 @@ Expected = reject
 <p id="appendix-A.2.2-51">A valid NARG string verifies against the statement it was produced for.<a href="#appendix-A.2.2-51" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-52">
 <pre>
-Id = sigma-protocols/p256/discrete_logarithm/compact/F2
+Id = sigma-protocols/p256/dleq/compact/F2
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -3694,8 +3672,7 @@ Expected = accept
 <p id="appendix-A.2.2-53">Verification fails if the statement's two equations are swapped.<a href="#appendix-A.2.2-53" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-54">
 <pre>
-Id = sigma-protocols/p256/discrete_logarithm/compact/F2b
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
+Id = sigma-protocols/p256/dleq/compact/F2b
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -3720,7 +3697,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-56">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/F3
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3741,7 +3717,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-58">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/compact/F3
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -3762,7 +3737,6 @@ a compact NARG string.<a href="#appendix-A.2.2-59" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-60">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/compact/F4
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -3784,7 +3758,6 @@ differs.<a href="#appendix-A.2.2-61" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-62">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/F4b
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3805,7 +3778,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-64">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/H1
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3827,7 +3799,6 @@ group element.<a href="#appendix-A.2.2-65" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-66">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/batchable/H2
-BaseId = sigma-protocols/p256/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = batchable
@@ -3848,7 +3819,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.2.2-68">
 <pre>
 Id = sigma-protocols/p256/discrete_logarithm/compact/H3
-BaseId = sigma-protocols/p256/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_P256
 Flavor = compact
@@ -4296,10 +4266,8 @@ NargString =
 Expected = accept
 </pre><a href="#appendix-A.3.1-24" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.1-25">The <code>ChaumPedersen</code> relation of <a href="#relation-notation" class="auto internal xref">Section 3.4</a> again, with <code>Y = x
-* H</code> derived by the prover from its witness rather than received: the
-compiled instance matches <code>dleq</code>, and only the tag (hence the proof
-bytes) differs.<a href="#appendix-A.3.1-25" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.1-25">The <code>ChaumPedersen</code> relation of <a href="#relation-notation" class="auto internal xref">Section 3.4</a> again. This vector
+uses separately generated instance and witness values and a distinct tag.<a href="#appendix-A.3.1-25" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.1-26">
 <pre>
 Id = sigma-protocols/bls12381/dleq_derived_element/batchable
@@ -4331,10 +4299,8 @@ NargString =
 Expected = accept
 </pre><a href="#appendix-A.3.1-26" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3.1-27">The <code>ChaumPedersen</code> relation of <a href="#relation-notation" class="auto internal xref">Section 3.4</a> again, with <code>Y = x
-* H</code> derived by the prover from its witness rather than received: the
-compiled instance matches <code>dleq</code>, and only the tag (hence the proof
-bytes) differs.<a href="#appendix-A.3.1-27" class="pilcrow">¶</a></p>
+<p id="appendix-A.3.1-27">The <code>ChaumPedersen</code> relation of <a href="#relation-notation" class="auto internal xref">Section 3.4</a> again. This vector
+uses separately generated instance and witness values and a distinct tag.<a href="#appendix-A.3.1-27" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.1-28">
 <pre>
 Id = sigma-protocols/bls12381/dleq_derived_element/compact
@@ -4375,7 +4341,6 @@ Expected = accept
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-2">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -4398,7 +4363,6 @@ characteristic (x = 4, encoded as x + p).<a href="#appendix-A.3.2-3" class="pilc
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-4">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A3
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -4421,7 +4385,6 @@ equation fails.<a href="#appendix-A.3.2-5" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-6">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A4
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -4444,7 +4407,6 @@ prime-order subgroup G1.<a href="#appendix-A.3.2-7" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-8">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A5
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -4467,7 +4429,6 @@ non-residue).<a href="#appendix-A.3.2-9" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-10">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/A6
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -4491,7 +4452,6 @@ malleability.<a href="#appendix-A.3.2-11" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-12">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/B1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -4514,7 +4474,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-14">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/B2
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -4536,7 +4495,6 @@ proof.<a href="#appendix-A.3.2-15" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-16">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/C1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -4558,7 +4516,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-18">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/C2
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -4581,7 +4538,6 @@ proof.<a href="#appendix-A.3.2-19" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-20">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/C1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -4603,7 +4559,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-22">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/C2
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -4625,7 +4580,6 @@ are zero.<a href="#appendix-A.3.2-23" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-24">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/D1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -4762,7 +4716,6 @@ single element follows; parsers may instead reject on length.<a href="#appendix-
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-36">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/E4
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -4806,7 +4759,6 @@ Expected = accept
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-40">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F1b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -4850,7 +4802,6 @@ Expected = accept
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-44">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/F1b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -4872,7 +4823,7 @@ Expected = reject
 <p id="appendix-A.3.2-45">A valid NARG string verifies against the statement it was produced for.<a href="#appendix-A.3.2-45" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-46">
 <pre>
-Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F2
+Id = sigma-protocols/bls12381/dleq/batchable/F2
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -4899,8 +4850,7 @@ Expected = accept
 <p id="appendix-A.3.2-47">Verification fails if the statement's two equations are swapped.<a href="#appendix-A.3.2-47" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-48">
 <pre>
-Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F2b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
+Id = sigma-protocols/bls12381/dleq/batchable/F2b
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -4927,7 +4877,7 @@ Expected = reject
 <p id="appendix-A.3.2-49">A valid NARG string verifies against the statement it was produced for.<a href="#appendix-A.3.2-49" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-50">
 <pre>
-Id = sigma-protocols/bls12381/discrete_logarithm/compact/F2
+Id = sigma-protocols/bls12381/dleq/compact/F2
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -4952,8 +4902,7 @@ Expected = accept
 <p id="appendix-A.3.2-51">Verification fails if the statement's two equations are swapped.<a href="#appendix-A.3.2-51" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-52">
 <pre>
-Id = sigma-protocols/bls12381/discrete_logarithm/compact/F2b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
+Id = sigma-protocols/bls12381/dleq/compact/F2b
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -4979,7 +4928,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-54">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F3
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -5001,7 +4949,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-56">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/F3
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -5023,7 +4970,6 @@ a compact NARG string.<a href="#appendix-A.3.2-57" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-58">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/F4
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
@@ -5046,7 +4992,6 @@ differs.<a href="#appendix-A.3.2-59" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-60">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/F4b
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -5068,7 +5013,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-62">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/H1
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -5091,7 +5035,6 @@ group element.<a href="#appendix-A.3.2-63" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-64">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/batchable/H2
-BaseId = sigma-protocols/bls12381/discrete_logarithm/batchable
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = batchable
@@ -5113,7 +5056,6 @@ Expected = reject
 <div class="alignLeft art-text artwork" id="appendix-A.3.2-66">
 <pre>
 Id = sigma-protocols/bls12381/discrete_logarithm/compact/H3
-BaseId = sigma-protocols/bls12381/discrete_logarithm/compact
 Function = SigmaProof
 Ciphersuite = sigma-proofs_Shake128_BLS12381
 Flavor = compact
